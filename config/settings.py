@@ -24,6 +24,16 @@ SUPPORTED_VIDEO_EXTENSIONS = {
     ".webm",
 }
 
+SUPPORTED_AUDIO_EXTENSIONS = {
+    ".mp3",
+    ".wav",
+    ".m4a",
+    ".aac",
+    ".flac",
+    ".ogg",
+    ".wma",
+}
+
 # Video analysis
 DEFAULT_VIDEO_SAMPLE_FRAMES = 30
 

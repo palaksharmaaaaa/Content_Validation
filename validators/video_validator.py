@@ -2,9 +2,6 @@
 Video validator module: Inspects video frames, quality, usability coverage, and AI characteristics.
 """
 from typing import Any, Dict
-import cv2
-import numpy as np
-
 from config.settings import (
     MIN_CONTENT_COVERAGE,
     PARTIAL_CONTENT_COVERAGE,
@@ -13,10 +10,15 @@ from video.frame_extractor import get_video_metadata, extract_sampled_frames
 from video.frame_analyzer import analyze_sampled_frames
 
 
-def analyze_video(video_path: str, sample_count: int = 30, ai_detector=None) -> Dict[str, Any]:
+def analyze_video(
+    video_path: str,
+    sample_count: int = 30,
+    ai_detector=None,
+    sensitivity: str = "high",
+) -> Dict[str, Any]:
     """
     Performs comprehensive video analysis: metadata retrieval, frame sampling,
-    usability scoring (blank/blurry), and frame-level AI detection.
+    usability scoring (blank/blurry), temporal consistency, and AI synthetic detection.
     """
     metadata = get_video_metadata(video_path)
     if metadata is None:
@@ -43,6 +45,7 @@ def analyze_video(video_path: str, sample_count: int = 30, ai_detector=None) -> 
         duration_seconds=duration,
         total_video_frames=total_frames,
         ai_detector=ai_detector,
+        sensitivity=sensitivity,
     )
 
     usable_pct = analysis["usable_percentage"]
@@ -50,7 +53,6 @@ def analyze_video(video_path: str, sample_count: int = 30, ai_detector=None) -> 
     blank_pct = analysis["blank_percentage"]
     coverage = analysis["content_coverage"]
 
-    # Compute approximate durations
     usable_duration = duration * (usable_pct / 100.0)
     blurry_duration = duration * (blurry_pct / 100.0)
     blank_duration = duration * (blank_pct / 100.0)
@@ -82,5 +84,7 @@ def analyze_video(video_path: str, sample_count: int = 30, ai_detector=None) -> 
         "blank_duration_seconds": round(blank_duration, 2),
         "unusable_duration_seconds": round(unusable_duration, 2),
         "ai_video_rating": analysis["ai_video_rating"],
+        "temporal_consistency": analysis.get("temporal_consistency", {}),
+        "temporal_segments": analysis.get("temporal_segments", []),
         "frame_details": analysis["analyzed_frames"],
     }
