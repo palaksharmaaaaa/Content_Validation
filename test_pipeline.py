@@ -23,6 +23,7 @@ from models.ai_audio_detector import AIAudioDetector
 from models.ai_image_detector import AIImageDetector
 from models.content_analyzer import ContentAnalyzer
 from models.face_detector import FaceDeepfakeDetector
+from models.model_attribution import ModelAttributionEngine
 from scoring.cross_modal_engine import evaluate_cross_modal_consistency
 from scoring.decision_engine import generate_final_decision
 from utils.media_profiler import profile_media
@@ -121,14 +122,35 @@ def run_pipeline_test():
         print(f" -> Audio Verdict: {audio_res.get('label')}")
 
         # 8. Cross-Modal Consistency Check
-        print("\n[Step 8/9] Testing Cross-Modal Consistency Engine...")
+        print("\n[Step 8/10] Testing Cross-Modal Consistency Engine...")
         mock_vid_res = {"ai_video_rating": {"ai_percentage": 25.0}, "temporal_consistency": {"temporal_warping_risk": "LOW"}}
         cross_modal_res = evaluate_cross_modal_consistency(mock_vid_res, audio_res, content_img)
         print(f" -> Cross-Modal Status: {cross_modal_res['cross_modal_status']} (Tampering Risk: {cross_modal_res['tampering_risk']})")
         print(f" -> Modality Asymmetry: {cross_modal_res['asymmetry_score']}%")
 
-        # 9. Complete NIST-Style Media Forensics Dossier Report
-        print("\n[Step 9/9] Generating Official Media Forensics Dossier Report...")
+        # 9. Global Generative Model Attribution & Watermarking
+        print("\n[Step 9/10] Testing Global Generative Model Attribution Engine...")
+        attribution_engine = ModelAttributionEngine()
+        attr_img = attribution_engine.attribute_media(
+            str(tmp_img_path),
+            modality="image",
+            forensic_data=ai_img_res,
+            profile_data=img_profile,
+            provenance_data=prov_img,
+        )
+        attr_aud = attribution_engine.attribute_media(
+            str(tmp_aud_path),
+            modality="audio",
+            forensic_data=audio_res,
+            profile_data=aud_profile,
+            provenance_data=prov_img,
+        )
+        print(f" -> Image Attributed Model: {attr_img['attributed_model']} ({attr_img['region_of_origin']}) - Conf: {attr_img['attribution_confidence']}")
+        print(f" -> Audio Attributed Model: {attr_aud['attributed_model']} ({attr_aud['region_of_origin']}) - Conf: {attr_aud['attribution_confidence']}")
+        print(f" -> Watermark Detected: {attr_img['watermark_detected']}")
+
+        # 10. Complete NIST-Style Media Forensics Dossier Report
+        print("\n[Step 10/10] Generating Official Media Forensics Dossier Report...")
         dossier = generate_final_decision(
             file_validation=file_res_img,
             quality_result=quality_res,
@@ -137,11 +159,13 @@ def run_pipeline_test():
             content_inventory=content_img,
             provenance_result=prov_img,
             cross_modal_result=cross_modal_res,
+            attribution_result=attr_img,
         )
 
         probs = dossier["authenticity_probabilities"]
         inv = dossier["content_inventory"]
         loc = dossier["localization"]
+        attr = dossier.get("model_attribution", {})
 
         print("\n" + "=" * 70)
         print("          OFFICIAL MEDIA FORENSICS DOSSIER REPORT")
@@ -152,6 +176,11 @@ def run_pipeline_test():
         print(f"   • P(Undetermined / OOD): {probs['p_undecided']}%")
         print(f" FINAL STATUS:             {dossier['final_status']}")
         print(f" REASON:                   {dossier['reason']}")
+        print("-" * 70)
+        print(" GLOBAL MODEL ATTRIBUTION:")
+        print(f"   • Attributed Model:     {attr.get('attributed_model')}")
+        print(f"   • Region of Origin:     {attr.get('region_of_origin')}")
+        print(f"   • Confidence:           {int(attr.get('attribution_confidence', 0) * 100)}%")
         print("-" * 70)
         print(" CONTENT INVENTORY:")
         print(f"   • Persons: {inv['persons_count']} | Faces: {inv['faces_count']} | Text Regions: {inv['text_regions_count']}")
@@ -170,7 +199,7 @@ def run_pipeline_test():
         for t in dossier.get("evidence_trail", []):
             print(f"   • {t}")
         print("=" * 70)
-        print("[SUCCESS] ALL 9 FORENSIC STAGES COMPLETED SUCCESSFULLY!")
+        print("[SUCCESS] ALL 10 FORENSIC STAGES COMPLETED SUCCESSFULLY!")
         print("=" * 70)
 
     finally:

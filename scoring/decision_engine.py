@@ -21,6 +21,7 @@ def generate_final_decision(
     content_inventory: Optional[Dict[str, Any]] = None,
     provenance_result: Optional[Dict[str, Any]] = None,
     cross_modal_result: Optional[Dict[str, Any]] = None,
+    attribution_result: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Generates a structured, evidence-backed forensic dossier report.
@@ -119,7 +120,20 @@ def generate_final_decision(
         if cross_modal_result.get("tampering_risk") in ("HIGH", "CRITICAL"):
             active_probs.append((88.0, 10.0, 1.5))
 
-    # 4. Calibrated Probability Aggregation
+    # 4. Global Generative Model Attribution Evidence
+    if attribution_result:
+        for attr_cue in attribution_result.get("attribution_cues", []):
+            evidence_trail.append(f"[Model Attribution] {attr_cue}")
+        attr_conf = float(attribution_result.get("attribution_confidence", 0.0))
+        attr_key = attribution_result.get("model_key", "")
+        if attr_conf >= 0.45 and attr_key not in ("unknown_ai", ""):
+            active_probs.append((min(99.0, attr_conf * 100.0), 1.0, 1.35))
+            evidence_trail.append(
+                f"[Model Attribution] High-confidence fingerprint alignment: {attribution_result.get('attributed_model')} "
+                f"({attribution_result.get('region_of_origin')}) at {int(attr_conf * 100)}% match."
+            )
+
+    # 5. Calibrated Probability Aggregation
     if active_probs:
         total_w = sum(w for _, _, w in active_probs)
         weighted_ai = sum(ai * w for ai, _, w in active_probs) / total_w
@@ -238,5 +252,13 @@ def generate_final_decision(
             "provenance_verdict": prov.get("provenance_verdict", "PROVENANCE_UNKNOWN"),
         },
         "cross_modal": cross_modal_result or {},
+        "model_attribution": attribution_result or {
+            "attributed_model": "Unattributable / Custom Fine-Tuned Model",
+            "model_key": "unknown_ai",
+            "region_of_origin": "Global / Open-Source",
+            "attribution_confidence": 0.0,
+            "attribution_cues": [],
+            "top_candidates": [],
+        },
         "evidence_trail": evidence_trail,
     }
