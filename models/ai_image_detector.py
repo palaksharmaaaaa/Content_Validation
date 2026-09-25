@@ -1,7 +1,8 @@
 """
-Multi-Signal Forensic AI Image Detector.
-Combines sensor noise profiling, bilateral surface texture, 2D FFT, Error Level Analysis (ELA),
-EXIF provenance inspection, and spatial manipulation localization.
+Multi-Signal Forensic AI Image & Video Detector.
+Combines sensor noise profiling (PRNU), bilateral surface texture, 2D FFT Radial Power Spectrum,
+Error Level Analysis (ELA), EXIF provenance inspection, and spatial manipulation localization.
+Supports configurable sensitivity modes (Balanced, High, Aggressive).
 """
 from __future__ import annotations
 
@@ -13,9 +14,11 @@ import numpy as np
 from PIL import Image
 
 from config.settings import AI_DETECTOR_MODEL
+from learning.forensic_memory import ForensicMemory
 from models.face_detector import FaceDeepfakeDetector
 from schemas.result_schema import ModalityScore
 from utils.image_utils import (
+    analyze_frequency_domain,
     calculate_sensor_noise_profile,
     calculate_surface_smoothness,
     compute_error_level_analysis,
@@ -40,8 +43,14 @@ class AIImageDetector:
         self.status_message = "Ready"
         self.model: Any = None
         self.face_detector = FaceDeepfakeDetector()
+        self.memory = ForensicMemory()
         self.class_to_idx: dict[str, int] = {}
         self.transform = None
+
+    def reload(self) -> bool:
+        """Forces reload of model weights and calibration from disk."""
+        self.model = None
+        return self.load()
 
     def load(self) -> bool:
         """Loads optional neural network weights if available, maintaining graceful fallback."""
@@ -76,16 +85,17 @@ class AIImageDetector:
 
         return True
 
-    def predict(self, image_path: str | Path) -> Dict[str, Any]:
+    def predict(self, image_path: str | Path, sensitivity: str = "high") -> Dict[str, Any]:
         """
         Deep forensic evaluation across:
         1. Sensor noise residual (PRNU / Poisson shot noise vs latent denoising)
         2. Bilateral surface smoothness (waxy synthetic textures)
-        3. Generative aspect ratio & dimension profiling (1024x1024 square)
-        4. EXIF provenance & AI software signatures
-        5. Facial deepfake and skin texture metrics
-        6. Error Level Analysis (ELA)
-        7. Spatial manipulation anomaly heatmap & area percentage
+        3. 2D FFT Radial Power Spectrum decay (1/f^alpha law deviation)
+        4. Error Level Analysis (ELA) compression discrepancy
+        5. Aspect ratio & dimension profiling
+        6. EXIF provenance & AI software signatures
+        7. Facial deepfake and skin texture metrics
+        8. Spatial manipulation anomaly heatmap & area percentage
         """
         self.load()
 
@@ -104,40 +114,79 @@ class AIImageDetector:
         h, w = img_bgr.shape[:2]
         gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
 
-        # 1. Forensic Signals
+        # 1. Forensic Feature Extraction
         noise_mean, noise_std = calculate_sensor_noise_profile(gray)
         smoothness = calculate_surface_smoothness(gray)
         metadata = extract_image_metadata(image_path)
         ela = compute_error_level_analysis(image_path)
+        fft_res = analyze_frequency_domain(image_path)
         face_analysis = self.face_detector.analyze_faces(img_bgr)
         heatmap_res = generate_manipulation_heatmap(image_path)
 
-        # 2. Evidence Fusion Weights
-        ai_evidence = 0.05
-        real_evidence = 0.05
+        # Load dynamic calibration and sensitivity offsets
+        calib = self.memory.load_calibration()
+        weights = calib.get("feature_weights", {})
+        offsets = calib.get("sensitivity_offsets", {})
+
+        w_noise = weights.get("noise_residual", 0.35)
+        w_smooth = weights.get("surface_smoothness", 0.30)
+        w_fft = weights.get("fft_decay", 0.20)
+        w_face = weights.get("facial_shading", 0.25)
+
+        noise_offset = offsets.get("noise_center_offset", 0.0)
+        smooth_offset = offsets.get("smooth_center_offset", 0.0)
+
+        # Sensitivity tuning centers with learned offsets
+        if sensitivity == "aggressive":
+            noise_center = 2.6 + noise_offset
+            smooth_center = 3.8 + smooth_offset
+            base_ai_bias = 0.15
+        elif sensitivity == "high":
+            noise_center = 2.3 + noise_offset
+            smooth_center = 3.4 + smooth_offset
+            base_ai_bias = 0.10
+        else:  # balanced
+            noise_center = 2.0 + noise_offset
+            smooth_center = 3.0 + smooth_offset
+            base_ai_bias = 0.05
+
+        # 2. Continuous Probabilistic Signals
+        # Sigmoid curve: lower noise residual = higher AI probability
+        p_noise_ai = float(1.0 / (1.0 + np.exp((noise_mean - noise_center) * 2.2)))
+        # Sigmoid curve: lower bilateral texture diff = higher AI probability
+        p_smooth_ai = float(1.0 / (1.0 + np.exp((smoothness - smooth_center) * 1.4)))
+        p_fft_ai = float(fft_res.get("p_fft_ai", 0.5))
+
         cues_detected = []
+        ai_evidence = base_ai_bias
+        real_evidence = 0.05
 
-        # (a) Sensor Noise: Real cameras have physical photon shot noise (> 2.5)
-        # Latent diffusion models (Gemini, SD, Midjourney) denoise smoothly (< 1.3)
-        if noise_mean < 1.15:
-            ai_evidence += 0.35
-            cues_detected.append(f"Synthetic latent space denoising detected (noise residual: {noise_mean:.2f})")
-        elif noise_mean < 1.70:
-            ai_evidence += 0.20
-            cues_detected.append(f"Abnormally low sensor shot noise (noise residual: {noise_mean:.2f})")
-        elif noise_mean > 3.20:
-            real_evidence += 0.35
-            cues_detected.append(f"Natural optical sensor shot noise detected ({noise_mean:.2f})")
+        # (a) Sensor Noise Residual
+        if p_noise_ai > 0.65:
+            ai_evidence += (p_noise_ai * w_noise)
+            cues_detected.append(f"Synthetic latent space denoising detected (sensor noise residual: {noise_mean:.2f})")
+        elif p_noise_ai < 0.30:
+            real_evidence += ((1.0 - p_noise_ai) * w_noise)
+            cues_detected.append(f"Natural optical sensor shot noise preserved ({noise_mean:.2f})")
 
-        # (b) Bilateral Surface Texture: Human skin/fabrics have micro-pore texture (> 4.0)
-        if smoothness < 2.30:
-            ai_evidence += 0.30
+        # (b) Surface Texture Smoothness
+        if p_smooth_ai > 0.65:
+            ai_evidence += (p_smooth_ai * w_smooth)
             cues_detected.append(f"Synthetic bilateral surface over-smoothing detected (index: {smoothness:.2f})")
-        elif smoothness > 4.50:
-            real_evidence += 0.30
+        elif p_smooth_ai < 0.30:
+            real_evidence += ((1.0 - p_smooth_ai) * w_smooth)
             cues_detected.append(f"Natural fine-grained surface micro-textures preserved ({smoothness:.2f})")
 
-        # (c) Standard Generative Dimensions
+        # (c) FFT Radial Power Spectrum
+        alpha = fft_res.get("spectral_decay_alpha", 2.0)
+        if fft_res.get("is_anomalous_decay"):
+            ai_evidence += w_fft
+            cues_detected.append(f"2D Fourier power spectrum anomaly (alpha: {alpha:.2f}, departs from natural 1/f^2 distribution)")
+        else:
+            real_evidence += (w_fft * 0.75)
+            cues_detected.append(f"Natural optical frequency decay (alpha: {alpha:.2f})")
+
+        # (d) Generative Dimensions & Metadata
         is_square_gen = (w in (512, 768, 1024, 1536, 2048) and h in (512, 768, 1024, 1536, 2048))
         if is_square_gen and not metadata.get("has_exif"):
             ai_evidence += 0.15
@@ -146,45 +195,45 @@ class AIImageDetector:
             real_evidence += 0.25
             cues_detected.append(f"Authentic camera hardware provenance ({metadata.get('camera_make')} {metadata.get('camera_model')})")
 
-        # (d) Explicit AI Generator Signature in Metadata
+        # (e) Metadata AI Signatures
         if metadata.get("ai_signature_found"):
-            ai_evidence += 0.45
+            ai_evidence += 0.50
             cues_detected.append(f"Provenance match: {metadata.get('signature_details')}")
 
-        # (e) Facial Deepfake Inspection
+        # (f) Facial Deepfake Inspection
         if face_analysis.get("faces_detected", 0) > 0:
             face_score = face_analysis.get("facial_ai_confidence", 0.0)
-            if face_score >= 0.70:
-                ai_evidence += 0.25
-                cues_detected.append(f"Face analysis indicates synthetic waxy skin shading ({face_analysis.get('deepfake_risk')})")
+            if face_score >= 0.65:
+                ai_evidence += w_face
+                cues_detected.append(f"Facial inspection indicates synthetic skin shading ({face_analysis.get('deepfake_risk')})")
             elif face_score <= 0.30:
-                real_evidence += 0.20
-                cues_detected.append("Face presents natural pore grain and optical boundary gradients")
+                real_evidence += (w_face * 0.8)
+                cues_detected.append("Face presents natural optical pore grain and physical lighting gradients")
 
-        # (f) Optional Neural Classifier Vote (if loaded)
-        if self.model is not None:
-            try:
-                import torch
-                pil_img = Image.open(image_path).convert("RGB")
-                inputs = self.transform(pil_img).unsqueeze(0).to(self.device)
-                with torch.no_grad():
-                    probs = torch.softmax(self.model(inputs), dim=1)[0]
-                ai_idx = self.class_to_idx.get("ai_generated", 0)
-                neural_ai_p = float(probs[ai_idx].item())
-                # Add moderate weight to neural model
-                if neural_ai_p > 0.75:
-                    ai_evidence += 0.15
-                elif neural_ai_p < 0.25:
-                    real_evidence += 0.15
-            except Exception:
-                pass
+        # (g) Forensic Memory Bank Retrieval & Learned Prior Injection
+        forensic_snapshot = {
+            "forensic_metrics": {
+                "noise_residual_mean": noise_mean,
+                "surface_smoothness": smoothness,
+                "spectral_decay_alpha": alpha,
+                "ela_mean_error": ela.get("mean_error", 0.0),
+            }
+        }
+        mem_res = self.memory.query_similar_media(image_path, modality="image", forensic_data=forensic_snapshot)
+        if mem_res.get("has_matches"):
+            ai_boost = mem_res["prior_adjustment"]["ai_boost"]
+            real_boost = mem_res["prior_adjustment"]["real_boost"]
+            if ai_boost > 0:
+                ai_evidence += ai_boost
+            if real_boost > 0:
+                real_evidence += real_boost
+            cues_detected.append(f"🧠 {mem_res['explanation']}")
 
         # 3. Probability Normalization & Uncertainty Estimation
         total_ev = ai_evidence + real_evidence
         raw_ai = ai_evidence / total_ev if total_ev > 0 else 0.5
         raw_real = real_evidence / total_ev if total_ev > 0 else 0.5
 
-        # Uncertainty is proportional to ambiguity (close gap between AI and Real)
         gap = abs(raw_ai - raw_real)
         undecided_pct = max(3.0, (1.0 - gap) * 20.0)
         remaining = 100.0 - undecided_pct
@@ -193,7 +242,8 @@ class AIImageDetector:
         real_pct = round((raw_real / (raw_ai + raw_real)) * remaining, 1)
         undecided_pct = round(100.0 - (ai_pct + real_pct), 1)
 
-        if ai_pct >= 58.0:
+        threshold = 50.0 if sensitivity in ("high", "aggressive") else 58.0
+        if ai_pct >= threshold:
             prediction = "LIKELY AI-GENERATED"
         elif real_pct >= 58.0:
             prediction = "LIKELY REAL"
@@ -214,27 +264,36 @@ class AIImageDetector:
             "forensic_metrics": {
                 "noise_residual_mean": round(noise_mean, 3),
                 "surface_smoothness": round(smoothness, 3),
+                "spectral_decay_alpha": round(alpha, 3),
                 "is_square_gen": is_square_gen,
                 "ela_mean_error": ela.get("mean_error", 0.0),
             },
             "facial_analysis": face_analysis,
             "metadata_forensics": metadata,
+            "memory_match": mem_res,
         }
 
-    def predict_frame(self, frame_bgr: np.ndarray) -> Dict[str, Any]:
-        """Fast prediction for a single BGR video frame."""
+    def predict_frame(self, frame_bgr: np.ndarray, sensitivity: str = "high") -> Dict[str, Any]:
+        """
+        Fast prediction for a single video frame, calibrated for MP4/H264 video compression.
+        Video compression adds ~0.8 baseline high-frequency noise, which is compensated for.
+        """
         try:
             gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
             noise_mean, _ = calculate_sensor_noise_profile(gray)
             smoothness = calculate_surface_smoothness(gray)
 
-            score = 0.5
-            if noise_mean < 1.30 and smoothness < 2.50:
-                score = 0.85
-            elif noise_mean > 3.00 and smoothness > 4.00:
-                score = 0.15
+            # In compressed video, compensate for macroblock quantization noise
+            comp_noise = max(0.2, noise_mean - 0.70)
+            noise_thresh = 2.4 if sensitivity in ("high", "aggressive") else 2.0
+            smooth_thresh = 3.6 if sensitivity in ("high", "aggressive") else 3.1
 
-            label = "LIKELY AI-GENERATED" if score >= 0.65 else ("LIKELY REAL" if score <= 0.35 else "UNDECIDED")
-            return {"label": label, "ai_prob": score, "real_prob": 1.0 - score}
+            p_noise_ai = float(1.0 / (1.0 + np.exp((comp_noise - noise_thresh) * 2.0)))
+            p_smooth_ai = float(1.0 / (1.0 + np.exp((smoothness - smooth_thresh) * 1.3)))
+            score = (p_noise_ai * 0.55) + (p_smooth_ai * 0.45)
+
+            thresh = 0.50 if sensitivity in ("high", "aggressive") else 0.60
+            label = "LIKELY AI-GENERATED" if score >= thresh else ("LIKELY REAL" if score <= 0.35 else "UNDECIDED")
+            return {"label": label, "ai_prob": round(score, 3), "real_prob": round(1.0 - score, 3)}
         except Exception:
             return {"label": "UNDECIDED", "ai_prob": 0.5, "real_prob": 0.5}

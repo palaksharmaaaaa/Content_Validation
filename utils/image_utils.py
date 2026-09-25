@@ -1,6 +1,6 @@
 """
 Forensic image utilities: EXIF metadata inspection, Error Level Analysis (ELA),
-2D FFT Frequency pattern analysis, sensor noise residual profiling, and spatial manipulation heatmaps.
+2D FFT Radial Power Spectrum analysis, sensor noise residual profiling, and spatial manipulation heatmaps.
 """
 from __future__ import annotations
 
@@ -28,6 +28,11 @@ KNOWN_AI_SOFTWARE_SIGNATURES = [
     "imagen",
     "gemini",
     "flux",
+    "runway",
+    "kling",
+    "sora",
+    "pika",
+    "luma",
 ]
 
 
@@ -119,38 +124,55 @@ def compute_error_level_analysis(
 
 def analyze_frequency_domain(image_path: str | Path) -> Dict[str, Any]:
     """
-    Performs 2D Fast Fourier Transform (FFT) analysis to check for high-frequency grid artifacts
-    that commonly occur from convolutional deconvolution and neural network upsamplers.
+    Performs 2D Fast Fourier Transform (FFT) analysis and computes the radial power spectrum decay (alpha).
+    Natural images exhibit power spectral density P(f) ~ 1 / f^alpha where alpha is typically in [1.8, 2.3].
+    Generative diffusion models depart from this physical distribution due to convolutional upsampling and latent decoding.
     """
     try:
         img = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
         if img is None:
             return {"success": False, "error": "Unable to read image."}
 
+        h, w = img.shape
         dft = np.fft.fft2(img)
         dft_shift = np.fft.fftshift(dft)
-        magnitude_spectrum = 20 * np.log(np.abs(dft_shift) + 1e-9)
+        psd2D = np.abs(dft_shift) ** 2
 
-        h, w = img.shape
         cy, cx = h // 2, w // 2
-        center_region = magnitude_spectrum[max(0, cy - 20) : cy + 20, max(0, cx - 20) : cx + 20]
-        high_freq_mean = float(np.mean(magnitude_spectrum))
-        center_mean = float(np.mean(center_region)) if center_region.size > 0 else 1.0
-        high_freq_ratio = float(high_freq_mean / center_mean) if center_mean > 0 else 0.0
+        y, x = np.ogrid[:h, :w]
+        r = np.sqrt((x - cx) ** 2 + (y - cy) ** 2).astype(int)
+        r_max = min(cy, cx)
+
+        radial_prof = np.bincount(r.ravel(), psd2D.ravel())[:r_max] / np.maximum(1, np.bincount(r.ravel())[:r_max])
+        freqs = np.arange(1, len(radial_prof))
+
+        # Fit log(P) = -alpha * log(f) + c
+        log_f = np.log(freqs)
+        log_p = np.log(radial_prof[1:] + 1e-12)
+        fit_len = min(len(log_f), r_max // 2)
+        if fit_len > 15:
+            slope, _ = np.polyfit(log_f[5:fit_len], log_p[5:fit_len], 1)
+            alpha = float(-slope)
+        else:
+            alpha = 2.0
+
+        is_anomalous_decay = (alpha < 1.75 or alpha > 2.55)
+        p_fft_ai = 0.85 if is_anomalous_decay else 0.20
 
         return {
             "success": True,
-            "high_freq_mean": round(high_freq_mean, 2),
-            "high_freq_ratio": round(high_freq_ratio, 3),
+            "spectral_decay_alpha": round(alpha, 3),
+            "is_anomalous_decay": is_anomalous_decay,
+            "p_fft_ai": round(p_fft_ai, 2),
         }
     except Exception as exc:
-        return {"success": False, "error": str(exc)}
+        return {"success": False, "error": str(exc), "spectral_decay_alpha": 2.0, "is_anomalous_decay": False, "p_fft_ai": 0.5}
 
 
 def calculate_sensor_noise_profile(gray_img: np.ndarray) -> Tuple[float, float]:
     """
-    Measures sensor shot noise residuals. Real cameras produce physical Poisson/Gaussian shot noise.
-    Diffusion models operate in latent spaces and denoise smoothly, yielding abnormally low noise residuals (< 1.3).
+    Measures sensor shot noise residuals. Real optical cameras produce physical Poisson/Gaussian noise.
+    Diffusion models denoise in latent space, yielding abnormally low high-frequency residuals.
     """
     blurred = cv2.GaussianBlur(gray_img, (3, 3), 0)
     noise_residual = cv2.absdiff(gray_img, blurred)
@@ -159,7 +181,7 @@ def calculate_sensor_noise_profile(gray_img: np.ndarray) -> Tuple[float, float]:
 
 def calculate_surface_smoothness(gray_img: np.ndarray) -> float:
     """
-    Measures bilateral texture preservation. Diffusion faces exhibit artificial plastic/waxy smoothness (< 2.2).
+    Measures bilateral texture preservation. Diffusion models produce unnatural waxy skin and plastic surfaces.
     """
     bilateral = cv2.bilateralFilter(gray_img, 9, 75, 75)
     diff = cv2.absdiff(gray_img, bilateral)
@@ -180,14 +202,12 @@ def generate_manipulation_heatmap(image_path: str | Path) -> Dict[str, Any]:
         blurred = cv2.GaussianBlur(gray, (5, 5), 0)
         noise_diff = cv2.absdiff(gray, blurred)
 
-        # Invert normalized noise so smooth generative latent regions appear as hot (red/yellow) anomalies
         norm_noise = cv2.normalize(noise_diff, None, 0, 255, cv2.NORM_MINMAX)
         inverted = 255 - norm_noise
         heatmap_color = cv2.applyColorMap(inverted, cv2.COLORMAP_INFERNO)
         overlay_bgr = cv2.addWeighted(img_bgr, 0.55, heatmap_color, 0.45, 0)
         overlay_rgb = cv2.cvtColor(overlay_bgr, cv2.COLOR_BGR2RGB)
 
-        # Spatial proportion: pixels exhibiting synthetic smoothness
         anomaly_mask = noise_diff < 3
         ai_spatial_area_pct = float((np.sum(anomaly_mask) / float(gray.size)) * 100.0)
 

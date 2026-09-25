@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "last_updated": "2026-09-25T15:58:53.197669",
+  "feedback_count": 4,
+  "feature_weights": {
+    "noise_residual": 0.41000000000000003,
+    "surface_smoothness": 0.36,
+    "fft_decay": 0.28,
+    "facial_shading": 0.25,
+    "vocoder_cutoff": 0.4,
+    "spectral_flatness": 0.3,
+    "silence_ratio": 0.25
+  },
+  "sensitivity_offsets": {
+    "noise_center_offset": -0.020000000000000004,
+    "smooth_center_offset": -0.020000000000000004,
+    "audio_ai_offset": 0.0
+  },
+  "learned_clusters": []
+}

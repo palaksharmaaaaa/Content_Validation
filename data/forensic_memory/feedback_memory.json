@@ -1,0 +1,314 @@
+[
+  {
+    "id": "fb9c8123-efd4-45a5-99fb-a58592f02b53",
+    "timestamp": "2026-09-25T14:53:49.733966",
+    "modality": "image",
+    "ratings": {
+      "real_score": 2.0,
+      "synthetic_score": 9.5,
+      "forged_score": 4.0,
+      "undetected_score": 8.0
+    },
+    "ground_truth": "AI-Generated",
+    "generator_tag": "Gemini/Diffusion Test Suite",
+    "user_notes": "Simulated AI synthetic artifact with smooth gradients",
+    "file_identity": {
+      "filename": "tmp83tdm5b8.jpg",
+      "extension": ".jpg",
+      "sha256": "0c325272f7e874da2b787d95db6b771224d775d9432668a5a26f02db9bcc0fab",
+      "md5": "61ff66ecc37b9ee197daf046f22c61f0",
+      "size_bytes": 7706,
+      "size_kb": 7.53,
+      "size_mb": 0.007,
+      "mime_type": "image/jpeg",
+      "container_format": "JPEG"
+    },
+    "specifications": {
+      "pixel_data_type": "uint8",
+      "bits_per_channel": 8,
+      "bits_per_pixel": 24,
+      "channel_count": 3,
+      "color_space": "RGB / BGR",
+      "width": 400,
+      "height": 400,
+      "total_pixels": 160000,
+      "megapixels": 0.16,
+      "aspect_ratio": "1:1",
+      "aspect_ratio_decimal": 1.0,
+      "shannon_entropy_bpp": 0.329,
+      "channel_means": {
+        "R": 174.03,
+        "G": 194.96,
+        "B": 214.55
+      },
+      "channel_std_devs": {
+        "R": 27.47,
+        "G": 27.75,
+        "B": 25.1
+      },
+      "pixel_variance": 992.06
+    },
+    "provenance_metadata": {
+      "has_exif": false,
+      "camera_make": null,
+      "camera_model": null,
+      "software": null,
+      "date_time": null,
+      "ai_signature_found": false,
+      "signature_details": null,
+      "raw_tags": {}
+    },
+    "forensic_metrics": {
+      "noise_residual_mean": 1.429,
+      "surface_smoothness": 0.759,
+      "spectral_decay_alpha": 2.446,
+      "is_square_gen": false,
+      "ela_mean_error": 0.16
+    },
+    "archived_sample_path": "data\\forensic_memory\\samples\\image\\0c325272f7e874da_1790328229.jpg",
+    "feature_vector": [
+      0.2858,
+      0.094875,
+      0.6115,
+      0.016,
+      0.041125,
+      0.5,
+      0.3333333333333333,
+      0.09920599999999999
+    ]
+  },
+  {
+    "id": "7c1c7108-bc66-4c1f-adfc-7d96a087bf6f",
+    "timestamp": "2026-09-25T15:12:41.826296",
+    "modality": "image",
+    "ratings": {
+      "real_score": 9.0,
+      "synthetic_score": 3.0,
+      "forged_score": 2.0,
+      "undetected_score": 2.0
+    },
+    "ground_truth": "Real / Camera Authentic",
+    "generator_tag": "Android Mobile Camera",
+    "user_notes": "",
+    "file_identity": {
+      "filename": "active_image.jpg",
+      "extension": ".jpg",
+      "sha256": "f6fc3d585d7d8dec8cefa18039a88a1cf76d5ccfc83c9bf9c322601e20ae3061",
+      "md5": "de1c116277dc3b50b187f75c74b9ced5",
+      "size_bytes": 185130,
+      "size_kb": 180.79,
+      "size_mb": 0.177,
+      "mime_type": "image/jpeg",
+      "container_format": "JPEG"
+    },
+    "specifications": {
+      "pixel_data_type": "uint8",
+      "bits_per_channel": 8,
+      "bits_per_pixel": 24,
+      "channel_count": 3,
+      "color_space": "RGB / BGR",
+      "width": 734,
+      "height": 1600,
+      "total_pixels": 1174400,
+      "megapixels": 1.174,
+      "aspect_ratio": "367:800",
+      "aspect_ratio_decimal": 0.459,
+      "shannon_entropy_bpp": 7.45,
+      "channel_means": {
+        "R": 126.13,
+        "G": 125.99,
+        "B": 123.71
+      },
+      "channel_std_devs": {
+        "R": 54.67,
+        "G": 52.83,
+        "B": 63.51
+      },
+      "pixel_variance": 3272.68
+    },
+    "provenance_metadata": {
+      "has_exif": false,
+      "camera_make": null,
+      "camera_model": null,
+      "software": null,
+      "date_time": null,
+      "ai_signature_found": false,
+      "signature_details": null,
+      "raw_tags": {}
+    },
+    "forensic_metrics": {
+      "noise_residual_mean": 4.144,
+      "surface_smoothness": 6.967,
+      "spectral_decay_alpha": 2.203,
+      "is_square_gen": false,
+      "ela_mean_error": 0.73
+    },
+    "archived_sample_path": "data\\forensic_memory\\samples\\image\\f6fc3d585d7d8dec_1790329361.jpg",
+    "feature_vector": [
+      0.8288,
+      0.870875,
+      0.55075,
+      0.073,
+      0.93125,
+      0.5,
+      0.153,
+      0.327268
+    ]
+  },
+  {
+    "id": "84f28528-d2df-48cd-ad77-40d973d22fed",
+    "timestamp": "2026-09-25T15:13:41.143887",
+    "modality": "image",
+    "ratings": {
+      "real_score": 9.5,
+      "synthetic_score": 2.0,
+      "forged_score": 1.0,
+      "undetected_score": 0.0
+    },
+    "ground_truth": "Real / Camera Authentic",
+    "generator_tag": "Android Mobile Camera",
+    "user_notes": "",
+    "file_identity": {
+      "filename": "active_image.jpeg",
+      "extension": ".jpeg",
+      "sha256": "ff35c6b62ee79419c8a31dcab3f722d59a9cbb34f55b429e921d0b678615bfa4",
+      "md5": "3ef8ba744ea83af7fdb3c3cd09fe997d",
+      "size_bytes": 196804,
+      "size_kb": 192.19,
+      "size_mb": 0.188,
+      "mime_type": "image/jpeg",
+      "container_format": "JPEG"
+    },
+    "specifications": {
+      "pixel_data_type": "uint8",
+      "bits_per_channel": 8,
+      "bits_per_pixel": 24,
+      "channel_count": 3,
+      "color_space": "RGB / BGR",
+      "width": 1100,
+      "height": 1600,
+      "total_pixels": 1760000,
+      "megapixels": 1.76,
+      "aspect_ratio": "11:16",
+      "aspect_ratio_decimal": 0.688,
+      "shannon_entropy_bpp": 6.09,
+      "channel_means": {
+        "R": 191.71,
+        "G": 194.46,
+        "B": 205.64
+      },
+      "channel_std_devs": {
+        "R": 37.36,
+        "G": 36.68,
+        "B": 34.92
+      },
+      "pixel_variance": 1356.43
+    },
+    "provenance_metadata": {
+      "has_exif": false,
+      "camera_make": null,
+      "camera_model": null,
+      "software": null,
+      "date_time": null,
+      "ai_signature_found": false,
+      "signature_details": null,
+      "raw_tags": {}
+    },
+    "forensic_metrics": {
+      "noise_residual_mean": 3.94,
+      "surface_smoothness": 5.358,
+      "spectral_decay_alpha": 1.324,
+      "is_square_gen": false,
+      "ela_mean_error": 0.39
+    },
+    "archived_sample_path": "data\\forensic_memory\\samples\\image\\ff35c6b62ee79419_1790329421.jpeg",
+    "feature_vector": [
+      0.788,
+      0.66975,
+      0.331,
+      0.039,
+      0.76125,
+      0.5,
+      0.2293333333333333,
+      0.135643
+    ]
+  },
+  {
+    "id": "c1012a7e-edd3-4547-96af-610aab32ecce",
+    "timestamp": "2026-09-25T15:58:53.185874",
+    "modality": "image",
+    "ratings": {
+      "real_score": 2.0,
+      "synthetic_score": 9.0,
+      "forged_score": 2.0,
+      "undetected_score": 0.0
+    },
+    "ground_truth": "AI-Generated",
+    "generator_tag": "",
+    "user_notes": "",
+    "file_identity": {
+      "filename": "active_image.jpg",
+      "extension": ".jpg",
+      "sha256": "0810453b4643c9d214b80dd45208c1adb936f284db668ae2ac0d9fa11286958c",
+      "md5": "79f45ad4e05eabe36011f43f929cd1b7",
+      "size_bytes": 71358,
+      "size_kb": 69.69,
+      "size_mb": 0.068,
+      "mime_type": "image/jpeg",
+      "container_format": "JPEG"
+    },
+    "specifications": {
+      "pixel_data_type": "uint8",
+      "bits_per_channel": 8,
+      "bits_per_pixel": 24,
+      "channel_count": 3,
+      "color_space": "RGB / BGR",
+      "width": 736,
+      "height": 1308,
+      "total_pixels": 962688,
+      "megapixels": 0.963,
+      "aspect_ratio": "184:327",
+      "aspect_ratio_decimal": 0.563,
+      "shannon_entropy_bpp": 2.806,
+      "channel_means": {
+        "R": 29.97,
+        "G": 31.17,
+        "B": 28.35
+      },
+      "channel_std_devs": {
+        "R": 39.24,
+        "G": 38.33,
+        "B": 31.3
+      },
+      "pixel_variance": 1330.91
+    },
+    "provenance_metadata": {
+      "has_exif": false,
+      "camera_make": null,
+      "camera_model": null,
+      "software": null,
+      "date_time": null,
+      "ai_signature_found": false,
+      "signature_details": null,
+      "raw_tags": {}
+    },
+    "forensic_metrics": {
+      "noise_residual_mean": 1.241,
+      "surface_smoothness": 2.47,
+      "spectral_decay_alpha": 2.332,
+      "is_square_gen": false,
+      "ela_mean_error": 0.25
+    },
+    "archived_sample_path": "data\\forensic_memory\\samples\\image\\0810453b4643c9d2_1790332133.jpg",
+    "feature_vector": [
+      0.24820000000000003,
+      0.30875,
+      0.583,
+      0.025,
+      0.35075,
+      0.5,
+      0.18766666666666665,
+      0.13309100000000001
+    ]
+  }
+]
