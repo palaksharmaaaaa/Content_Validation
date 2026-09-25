@@ -1,0 +1,10 @@
+streamlit
+opencv-python
+pillow
+numpy
+torch
+torchvision
+transformers
+huggingface-hub
+safetensors
+requests
