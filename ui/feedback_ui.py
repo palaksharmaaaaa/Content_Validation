@@ -219,12 +219,37 @@ def render_feedback_box(
                 ],
                 key=f"{unique_key}_gt",
             )
-        with rcol2:
-            generator_tag = st.text_input(
-                "Generator Model or Source Camera",
-                placeholder="e.g. Gemini 1.5, Midjourney v6, iPhone 15 Pro, ElevenLabs",
-                key=f"{unique_key}_gen_tag",
+            generator_select = st.selectbox(
+                "Known / Suspected Generator Family",
+                [
+                    "Auto-Attributed / Unspecified",
+                    "Google Gemini / Imagen 3 (USA)",
+                    "OpenAI Sora (USA)",
+                    "OpenAI DALL-E 3 / ChatGPT (USA)",
+                    "Kuaishou Kling AI (China)",
+                    "ByteDance Seedance / Jimeng AI (China)",
+                    "MiniMax Hailuo AI (China)",
+                    "Black Forest Labs Flux.1 (Germany/EU)",
+                    "Midjourney v5 / v6 (USA)",
+                    "Runway Gen-2 / Gen-3 (USA)",
+                    "Stability AI SDXL / SD 3.5 (UK)",
+                    "Luma Dream Machine (USA)",
+                    "ElevenLabs Voice Engine (USA/Poland)",
+                    "Alibaba CosyVoice (China)",
+                    "Suno AI Music (USA)",
+                    "Udio AI Music (USA)",
+                    "Authentic Camera (Apple / Sony / Canon / Nikon)",
+                    "Other Custom Generator",
+                ],
+                key=f"{unique_key}_gen_select",
             )
+        with rcol2:
+            custom_gen_tag = st.text_input(
+                "Custom Generator / Camera Hardware Details (Optional)",
+                placeholder="e.g. Gemini 1.5 Flash, Midjourney v6.1 --v 6.1, iPhone 16 Pro Max",
+                key=f"{unique_key}_custom_gen_tag",
+            )
+            generator_tag = custom_gen_tag.strip() if custom_gen_tag.strip() else (generator_select if generator_select != "Auto-Attributed / Unspecified" else "")
 
         user_notes = st.text_area(
             "Forensic Observations & Commentary",
@@ -432,10 +457,24 @@ def render_forensic_dossier(dossier: Dict[str, Any]) -> None:
     pcol2.metric("C2PA Signature", prov.get("c2pa_signature", "Absent"))
     pcol3.metric("AI Declared in Claim", "YES" if prov.get("ai_declared_in_c2pa") else "NO")
 
-    if prov.get("hardware_make") or prov.get("hardware_model"):
-        st.caption(f"📷 Hardware Provenance: {prov.get('hardware_make')} {prov.get('hardware_model') or ''}")
+    # 5. Global Model Attribution
+    attr = dossier.get("model_attribution", {})
+    if attr:
+        st.markdown("#### 🌐 Global Model Attribution & Fingerprint")
+        acol1, acol2, acol3 = st.columns(3)
+        acol1.metric("Attributed Generator", attr.get("attributed_model", "Unknown"))
+        acol2.metric("Region / Country of Origin", attr.get("region_of_origin", "Global"))
+        acol3.metric("Attribution Confidence", f"{int(attr.get('attribution_confidence', 0) * 100)}%")
 
-    # 5. Cross-Modal Engine
+        candidates = attr.get("top_candidates", [])
+        if candidates:
+            cand_str = " • ".join(f"**{c.get('model_name')}** ({c.get('region')}): `{c.get('attribution_probability')}%`" for c in candidates)
+            st.caption(f"Top Candidate Fingerprints: {cand_str}")
+
+        if attr.get("watermark_detected"):
+            st.warning("⚠️ **Impressioned Watermark / Emblem Detected** in media corners.")
+
+    # 6. Cross-Modal Engine
     cm = dossier.get("cross_modal", {})
     if cm and cm.get("is_multimodal"):
         st.markdown("#### 🔄 Cross-Modal Consistency (Audio-Visual Sync)")
@@ -443,7 +482,7 @@ def render_forensic_dossier(dossier: Dict[str, Any]) -> None:
         cm_col1.metric("Synchronization Status", cm.get("cross_modal_status"))
         cm_col2.metric("Tampering Risk", cm.get("tampering_risk"))
 
-    # 6. Forensic Evidence Trail
+    # 7. Forensic Evidence Trail
     st.markdown("#### 🔍 Forensic Evidence Audit Trail")
     trail = dossier.get("evidence_trail", [])
     if trail:
@@ -451,4 +490,298 @@ def render_forensic_dossier(dossier: Dict[str, Any]) -> None:
             st.markdown(f"• {t}")
     else:
         st.write("No anomalous cues detected.")
+
+
+def render_analysis_right_panel(decision: Dict[str, Any], content_res: Dict[str, Any], modality: str = "image") -> None:
+    """
+    Renders the unified forensic analysis and intelligence panel for the 2nd top column.
+    Provides multi-audience readability (beginners, non-tech, professionals, forensic experts).
+    """
+    if not decision:
+        return
+
+    st.subheader("📊 Forensic Analysis & Media Intelligence")
+
+    # 1. Executive Verdict Card (Plain English + Color-Coded)
+    status = decision.get("final_status", "UNDETERMINED_OOD")
+    probs = decision.get("authenticity_probabilities", {})
+    p_ai = float(probs.get("p_ai", 0.0))
+    p_real = float(probs.get("p_real", 0.0))
+    p_und = float(probs.get("p_undecided", 100.0))
+
+    if status == "LIKELY_SYNTHETIC":
+        st.error(f"🚨 **Verdict: AI-Generated / Synthetic Media ({p_ai:.1f}% Confidence)**")
+        st.write("📌 *Plain-English Summary:* This media displays distinctive mathematical telltales of AI generative diffusion models (e.g. absent physical camera noise, artificial surface smoothing, or latent frequency anomalies).")
+    elif status == "LIKELY_AUTHENTIC":
+        st.success(f"✅ **Verdict: Authentic Camera / Sensor Capture ({p_real:.1f}% Confidence)**")
+        st.write("📌 *Plain-English Summary:* This file exhibits natural physical camera sensor noise (PRNU), organic optical light distribution, and expected hardware compression traces.")
+    elif status == "PARTIALLY_SYNTHETIC_OR_EDITED":
+        st.warning(f"⚠️ **Verdict: Partially Synthetic / Manipulated ({p_ai:.1f}% AI Signals)**")
+        st.write("📌 *Plain-English Summary:* While portions of the media appear authentic, localized regions exhibit digital tampering, face-swapping, or generative AI inpainting.")
+    else:
+        st.info(f"❓ **Verdict: Undetermined / Out-of-Distribution**")
+        st.write("📌 *Plain-English Summary:* Forensic indicators are balanced or heavy compression has degraded sensor signals. The system maintains formal scientific uncertainty rather than guessing.")
+
+    # 2. Probability Gauges with Visual Progress Bars
+    st.markdown("##### 📈 Authenticity Probabilities")
+    st.caption("Calibrated Bayesian probabilities separating synthetic generation from genuine capture.")
+    col_p1, col_p2, col_p3 = st.columns(3)
+    col_p1.metric("🤖 AI-Generated", f"{p_ai:.1f}%")
+    col_p2.metric("📷 Camera Authentic", f"{p_real:.1f}%")
+    col_p3.metric("❓ Undetermined", f"{p_und:.1f}%")
+
+    st.progress(min(1.0, max(0.0, p_ai / 100.0)), text=f"Generative AI Probability: {p_ai:.1f}%")
+
+    st.markdown("---")
+
+    # 3. Global AI Generator Attribution & Fingerprint
+    attr = decision.get("model_attribution", {})
+    if attr:
+        st.markdown("##### 🌐 Global AI Generator Attribution")
+        st.caption("Cross-matched against international AI models (US, China, Europe, Open-Source).")
+        acol1, acol2, acol3 = st.columns(3)
+        acol1.metric("Attributed Model", attr.get("attributed_model", "Unattributable"))
+        acol2.metric("Region / Country", attr.get("region_of_origin", "Global"))
+        acol3.metric("Attribution Match", f"{int(attr.get('attribution_confidence', 0) * 100)}%")
+
+        candidates = attr.get("top_candidates", [])
+        if candidates:
+            cand_items = [f"**{c.get('model_name')}** ({c.get('region')}): `{c.get('attribution_probability')}%`" for c in candidates[:3]]
+            st.caption("Top Candidates: " + " • ".join(cand_items))
+
+        if attr.get("watermark_detected"):
+            st.warning("⚠️ **Visible Impressioned Logo/Emblem Detected** in media corner.")
+
+    # 4. Content & Scene Intelligence ("What is depicted in the media")
+    st.markdown("##### 🌐 Scene, Content & Environmental Depiction")
+    st.caption("Contextual breakdown of entities, environment, lighting, and tone present in the file.")
+    inv = decision.get("content_inventory", {})
+    if inv:
+        s1, s2 = st.columns(2)
+        with s1:
+            st.write(f"• **Depiction / Purpose:** `{inv.get('photographic_purpose', 'General Scene')}`")
+            st.write(f"• **Setting & Surroundings:** `{inv.get('location_context', 'N/A')}` • `{inv.get('setting_type', 'General')}`")
+            st.write(f"• **Daytime & Lighting:** `{inv.get('estimated_daytime', 'Daylight')}` ({inv.get('lighting_style', 'Ambient')})")
+            st.write(f"• **Atmosphere & Tone:** `{inv.get('color_tone', 'Neutral')}` • `{inv.get('atmospheric_mood', 'Balanced')}`")
+        with s2:
+            st.write(f"• **Living Humans:** `{inv.get('persons_count', 0)}` person(s), `{inv.get('faces_count', 0)}` face(s)")
+            if inv.get("animals_detected"):
+                st.write(f"• **Animals:** {', '.join(inv.get('animal_types', []))}")
+            if inv.get("vehicles_detected"):
+                st.write(f"• **Vehicles:** {', '.join(inv.get('vehicle_types', []))}")
+            items = inv.get("identified_items", [])
+            if items:
+                st.write(f"• **Identified Items:** {', '.join(f'`{i}`' for i in items[:3])}")
+            if inv.get("dominant_audio_type") and inv.get("dominant_audio_type") != "N/A":
+                st.write(f"• **Audio Acoustics:** `{inv.get('dominant_audio_type')}` ({inv.get('acoustic_environment', 'Studio')})")
+
+    # 5. Provenance & C2PA Credentials
+    prov = decision.get("provenance", {})
+    st.markdown("##### 🛡️ Provenance & Content Credentials (C2PA)")
+    pr1, pr2, pr3 = st.columns(3)
+    pr1.metric("C2PA Manifest", "PRESENT" if prov.get("c2pa_present") else "ABSENT")
+    pr2.metric("Signature", prov.get("c2pa_signature", "Absent"))
+    pr3.metric("Hardware EXIF", "Found" if prov.get("hardware_make") else "None")
+
+    if prov.get("hardware_make"):
+        st.caption(f"📷 Camera Hardware: **{prov.get('hardware_make')} {prov.get('hardware_model') or ''}**")
+    else:
+        st.caption("ℹ️ *NIST Rule: Absence of C2PA/EXIF metadata indicates UNKNOWN provenance, not evidence of synthetic creation.*")
+
+    # 6. Localization
+    loc = decision.get("localization", {})
+    if loc.get("suspicious_image_area_pct", 0) > 0 or loc.get("suspicious_video_duration_pct", 0) > 0 or loc.get("suspicious_audio_duration_pct", 0) > 0:
+        st.markdown("##### 📍 Manipulation Localization")
+        if loc.get("suspicious_image_area_pct", 0) > 0:
+            st.write(f"• **Manipulated Frame Area:** `{loc.get('suspicious_image_area_pct', 0):.1f}%` of pixels")
+        if loc.get("suspicious_video_duration_pct", 0) > 0:
+            st.write(f"• **Manipulated Timeline Duration:** `{loc.get('suspicious_video_duration_pct', 0):.1f}%` of video")
+        if loc.get("suspicious_audio_duration_pct", 0) > 0:
+            st.write(f"• **Manipulated Speech Duration:** `{loc.get('suspicious_audio_duration_pct', 0):.1f}%` of audio")
+
+    # 7. Complete Forensic Audit Trail
+    with st.expander("🔍 Deep Forensic Audit Trail (For Professionals & Auditors)", expanded=False):
+        trail = decision.get("evidence_trail", [])
+        if trail:
+            for t in trail:
+                st.markdown(f"• {t}")
+        else:
+            st.write("No anomalous cues detected.")
+
+
+def render_bottom_feedback_panel(
+    media_path: str | Path,
+    modality: str,
+    forensic_data: Dict[str, Any],
+    profile_data: Dict[str, Any],
+    decision: Dict[str, Any],
+    unique_key: str,
+) -> None:
+    """
+    Renders the unified single wide bottom panel across the entire screen:
+    1. Multi-criteria 1-10 rating sliders & online auto-retraining.
+    2. Deep technical media, pixel & signal specifications.
+    3. Complete JSON forensic dossier export and download.
+    """
+    st.markdown("---")
+    st.subheader("📝 Forensic Feedback, Continual Retraining & Deep Technical Specifications")
+    st.caption(
+        "Help the engine learn and continuously improve: rate the authenticity out of 10. "
+        "The system will remember this file's pixel profile, metadata, and physics metrics, "
+        "dynamically auto-updating its neural weights and detection thresholds."
+    )
+
+    tab_fb, tab_specs, tab_json = st.tabs([
+        "⭐ Rate Media & Dynamically Retrain Algorithm",
+        "🔬 Deep Media, Pixel & Signal Specifications",
+        "📥 Export Complete Forensic JSON Dossier",
+    ])
+
+    with tab_fb:
+        fcol1, fcol2 = st.columns(2)
+        with fcol1:
+            real_score = st.slider(
+                "📷 Real / Authentic Score (1-10)",
+                min_value=1.0,
+                max_value=10.0,
+                value=5.0,
+                step=0.5,
+                key=f"{unique_key}_real_score",
+                help="1 = Completely Fake/Synthetic, 10 = 100% Genuine Camera/Microphone Capture",
+            )
+            synth_score = st.slider(
+                "🤖 Synthetic / AI-Generated Score (1-10)",
+                min_value=1.0,
+                max_value=10.0,
+                value=5.0,
+                step=0.5,
+                key=f"{unique_key}_synth_score",
+                help="1 = Natural/Organic, 10 = Full Generative Synthesis (Midjourney, Gemini, ElevenLabs, Sora)",
+            )
+
+        with fcol2:
+            forged_score = st.slider(
+                "✂️ Forged / Edited / Deepfake Score (1-10)",
+                min_value=1.0,
+                max_value=10.0,
+                value=3.0,
+                step=0.5,
+                key=f"{unique_key}_forged_score",
+                help="1 = Unaltered, 10 = Heavily Doctored / Face-Swapped / Splice-Edited",
+            )
+            undetected_score = st.slider(
+                "⚠️ Undetected / Missed Artifacts Score (0-10)",
+                min_value=0.0,
+                max_value=10.0,
+                value=2.0,
+                step=0.5,
+                key=f"{unique_key}_undetected_score",
+                help="How much did current automated detection miss or under-report? (0 = Caught Everything, 10 = Missed Crucial Artifacts)",
+            )
+
+        rcol1, rcol2 = st.columns(2)
+        with rcol1:
+            ground_truth = st.selectbox(
+                "Confirmed Ground Truth Label",
+                [
+                    "AI-Generated",
+                    "Real / Camera Authentic",
+                    "Partially Forged / Deepfake",
+                    "Undetermined / Mixed",
+                ],
+                key=f"{unique_key}_gt",
+            )
+            generator_select = st.selectbox(
+                "Known / Suspected Generator Family",
+                [
+                    "Auto-Attributed / Unspecified",
+                    "Google Gemini / Imagen 3 (USA)",
+                    "OpenAI Sora (USA)",
+                    "OpenAI DALL-E 3 / ChatGPT (USA)",
+                    "Kuaishou Kling AI (China)",
+                    "ByteDance Seedance / Jimeng AI (China)",
+                    "MiniMax Hailuo AI (China)",
+                    "Black Forest Labs Flux.1 (Germany/EU)",
+                    "Midjourney v5 / v6 (USA)",
+                    "Runway Gen-2 / Gen-3 (USA)",
+                    "Stability AI SDXL / SD 3.5 (UK)",
+                    "Luma Dream Machine (USA)",
+                    "ElevenLabs Voice Engine (USA/Poland)",
+                    "Alibaba CosyVoice (China)",
+                    "Suno AI Music (USA)",
+                    "Udio AI Music (USA)",
+                    "Authentic Camera (Apple / Sony / Canon / Nikon)",
+                    "Other Custom Generator",
+                ],
+                key=f"{unique_key}_gen_select",
+            )
+        with rcol2:
+            custom_gen_tag = st.text_input(
+                "Custom Generator / Camera Hardware Details (Optional)",
+                placeholder="e.g. Gemini 1.5 Flash, Midjourney v6.1, iPhone 16 Pro Max",
+                key=f"{unique_key}_custom_gen_tag",
+            )
+            generator_tag = custom_gen_tag.strip() if custom_gen_tag.strip() else (generator_select if generator_select != "Auto-Attributed / Unspecified" else "")
+
+            user_notes = st.text_area(
+                "Forensic Observations & Commentary",
+                placeholder="Describe specific telltales: waxy skin, warped fingers, abnormal reflections, vocoder cutoff...",
+                key=f"{unique_key}_notes",
+            )
+
+        if st.button("💾 Submit Rating & Dynamically Retrain Algorithm", key=f"{unique_key}_submit_btn"):
+            with st.spinner("Archiving fingerprint, auto-calibrating parameters, and updating models..."):
+                memory = ForensicMemory()
+                ratings = {
+                    "real_score": real_score,
+                    "synthetic_score": synth_score,
+                    "forged_score": forged_score,
+                    "undetected_score": undetected_score,
+                }
+                reg_res = memory.register_feedback(
+                    media_path=media_path,
+                    modality=modality,
+                    ratings=ratings,
+                    ground_truth=ground_truth,
+                    forensic_data=forensic_data,
+                    user_notes=user_notes,
+                    generator_tag=generator_tag,
+                )
+
+            if reg_res.get("success"):
+                st.success("✅ **Forensic Feedback Successfully Remembered!**")
+                update_info = reg_res.get("auto_update", {})
+                modifications = update_info.get("modifications", [])
+                if modifications:
+                    st.info("🧠 **Dynamic Calibration Updates:**\n" + "\n".join(f"• {m}" for m in modifications))
+
+                finetune = update_info.get("online_finetune", {})
+                if finetune.get("status") == "success":
+                    st.success(f"⚡ **Online Neural Checkpoint Updated!** ({finetune.get('samples_trained')} samples trained)")
+                elif finetune.get("status") == "skipped":
+                    st.caption(f"ℹ️ Online fine-tuning: {finetune.get('reason')}")
+            else:
+                st.error("Failed to register feedback.")
+
+    with tab_specs:
+        render_media_specs(profile_data)
+
+    with tab_json:
+        st.markdown("##### 📋 Complete Multi-Modal Forensic Dossier")
+        full_dossier_payload = {
+            "media_file": str(media_path),
+            "modality": modality,
+            "dossier": decision,
+            "specifications": profile_data,
+            "forensic_signals": forensic_data,
+        }
+        st.json(full_dossier_payload)
+        import json
+        st.download_button(
+            label="💾 Download Official Forensic Dossier (JSON)",
+            data=json.dumps(full_dossier_payload, indent=2, default=str),
+            file_name=f"forensic_dossier_{Path(media_path).stem}.json",
+            mime="application/json",
+            key=f"{unique_key}_dl_btn",
+        )
 

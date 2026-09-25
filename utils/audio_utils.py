@@ -213,3 +213,47 @@ def segment_audio_temporal(
         "label": curr_lbl,
     })
     return segments
+
+
+def generate_spectrogram_image(samples: np.ndarray, sample_rate: int) -> Optional[np.ndarray]:
+    """
+    Generates an RGB spectrogram heatmap image from audio PCM samples.
+    Visualizes frequency distribution over time to expose vocoder cutoff lines
+    and synthetic harmonic smoothing.
+    """
+    if len(samples) < 512 or sample_rate <= 0:
+        return None
+    try:
+        import cv2
+
+        n_fft = min(1024, len(samples))
+        hop_length = n_fft // 4
+        window = np.hanning(n_fft)
+        num_frames = (len(samples) - n_fft) // hop_length + 1
+        if num_frames < 2:
+            return None
+
+        specs = []
+        for i in range(num_frames):
+            chunk = samples[i * hop_length : i * hop_length + n_fft] * window
+            mag = np.abs(np.fft.rfft(chunk))
+            specs.append(mag)
+
+        spec_mat = np.array(specs).T  # (freq_bins, time_frames)
+        spec_mat = np.flipud(spec_mat)  # lowest frequency at the bottom
+
+        spec_db = 20 * np.log10(np.maximum(spec_mat, 1e-6))
+        min_db = float(np.percentile(spec_db, 5))
+        max_db = float(np.percentile(spec_db, 95))
+        if max_db > min_db:
+            spec_norm = np.clip((spec_db - min_db) / (max_db - min_db) * 255.0, 0, 255).astype(np.uint8)
+        else:
+            spec_norm = np.zeros_like(spec_db, dtype=np.uint8)
+
+        spec_resized = cv2.resize(spec_norm, (640, 220), interpolation=cv2.INTER_LINEAR)
+        heatmap_bgr = cv2.applyColorMap(spec_resized, cv2.COLORMAP_MAGMA)
+        heatmap_rgb = cv2.cvtColor(heatmap_bgr, cv2.COLOR_BGR2RGB)
+        return heatmap_rgb
+    except Exception as exc:
+        logger.debug(f"Spectrogram generation failed: {exc}")
+        return None
