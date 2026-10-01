@@ -20,11 +20,11 @@ from image_detector.explain import build_nine_dimensions_dossier, generate_newbi
 from video_detector import VideoProfiler, VideoSelfImprover
 
 
-def profile_media(file_path: str | Path, modality: str = "auto") -> Dict[str, Any]:
+def profile_media(file_path: str | Path, modality: str = "auto", source: str = "User Upload") -> Dict[str, Any]:
     p = Path(file_path)
     suffix = p.suffix.lower()
     if modality == "image" or (modality == "auto" and suffix in (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff")):
-        res = ImageProfiler().profile_image(file_path)
+        res = ImageProfiler().profile_image(file_path, source=source)
         if res.get("valid"):
             res["success"] = True
             res["file_identity"] = {

@@ -302,8 +302,7 @@ class ImageContentAnalyzer:
 
             resized_bgr = cv2.resize(img_bgr, (sw, sh), interpolation=cv2.INTER_AREA)
             rgb = cv2.cvtColor(resized_bgr, cv2.COLOR_BGR2RGB)
-            pil_img = Image.fromarray(rgb)
-            tensor = TF.to_tensor(pil_img).unsqueeze(0)
+            tensor = TF.to_tensor(rgb).unsqueeze(0)
 
             with torch.no_grad():
                 preds = self.vision_model(tensor)[0]
@@ -316,6 +315,8 @@ class ImageContentAnalyzer:
             k_boxes = boxes[keep].tolist()
             k_labels = labels[keep].tolist()
             k_scores = scores[keep].tolist()
+
+            del tensor, preds, boxes, labels, scores
 
             person_boxes: List[Tuple[int, int, int, int]] = []
             detected_animals: List[str] = []

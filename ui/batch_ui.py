@@ -51,11 +51,19 @@ def process_single_image(
             "file_res": file_res,
         }
 
+    # 1. Stage 1: Pre-Analysis Feature & Metadata Extraction FIRST
+    img_profile = profile_media(img_path, modality="image", source=source)
+
+    # 2. Provenance & Cryptographic C2PA Verification
     provenance_res = analyze_provenance(img_path)
-    content_res = content_analyzer.analyze_image_content(img_path)
-    image_result = analyze_image(img_path)
+
+    # 3. Deep Learning & Statistical Sensor Noise AI Detection
     ai_result = detector.predict(img_path, sensitivity=sensitivity)
-    img_profile = profile_media(img_path, modality="image")
+
+    # 4. Scene & Content Intelligence (Living entities, objects, text regions)
+    content_res = content_analyzer.analyze_image_content(img_path)
+
+    # 5. Foundation Model Attribution
     attribution_res = attribution_engine.attribute_media(
         img_path,
         modality="image",
@@ -63,6 +71,10 @@ def process_single_image(
         profile_data=img_profile,
         provenance_data=provenance_res,
     )
+
+    image_result = analyze_image(img_path)
+
+    # 6. Multi-evidence Bayesian Decision & Taxonomy Assignment
     decision = generate_final_decision(
         file_validation=file_res,
         quality_result=image_result,
@@ -72,6 +84,7 @@ def process_single_image(
         attribution_result=attribution_res,
     )
 
+    # 7. Stage 2: 9-Dimensional NIST Forensic Dossier
     nine_dims = build_nine_dimensions_dossier(
         profile_data=img_profile,
         ai_result=ai_result,
@@ -79,6 +92,8 @@ def process_single_image(
         provenance_result=provenance_res,
         attribution_result=attribution_res,
     )
+
+    # 8. Stage 5: Plain-English Newbie Narrative Explanation
     newbie_expl = generate_newbie_explanation(
         filename=filename,
         profile_data=img_profile,
@@ -339,11 +354,11 @@ def render_batch_summary_dashboard(batch_results: List[Dict[str, Any]], modality
 
     synthetic_count = sum(
         1 for r in valid_results
-        if r.get("decision", {}).get("final_status") == "LIKELY_SYNTHETIC"
+        if r.get("decision", {}).get("final_status") in ("LIKELY_SYNTHETIC", "LIKELY AI-GENERATED")
     )
     authentic_count = sum(
         1 for r in valid_results
-        if r.get("decision", {}).get("final_status") == "LIKELY_AUTHENTIC"
+        if r.get("decision", {}).get("final_status") in ("LIKELY_AUTHENTIC", "LIKELY REAL")
     )
     partial_or_und = successful - (synthetic_count + authentic_count)
 
@@ -437,9 +452,9 @@ def render_batch_overview_table(batch_results: List[Dict[str, Any]], modality: s
         tax_label = decision.get("taxonomy_label") or status
 
         # Status badge
-        if status == "LIKELY_SYNTHETIC":
+        if status in ("LIKELY_SYNTHETIC", "LIKELY AI-GENERATED"):
             status_badge = "🚨 AI Generated"
-        elif status == "LIKELY_AUTHENTIC":
+        elif status in ("LIKELY_AUTHENTIC", "LIKELY REAL"):
             status_badge = "✅ Camera Capture"
         elif status == "PARTIALLY_SYNTHETIC_OR_EDITED":
             status_badge = "⚠️ Partially Synthetic"
@@ -531,7 +546,7 @@ def render_batch_file_selector(
             dec = r.get("decision", {})
             st_text = dec.get("final_status", "")
             p_ai = dec.get("authenticity_probabilities", {}).get("p_ai", 0.0)
-            tag = "🚨 AI" if "SYNTHETIC" in st_text else ("✅ Real" if "AUTHENTIC" in st_text else "❓ Undet")
+            tag = "🚨 AI" if any(w in st_text for w in ("SYNTHETIC", "AI-GENERATED", "AI")) else ("✅ Real" if any(w in st_text for w in ("AUTHENTIC", "REAL")) else "❓ Undet")
             options.append(f"[{tag} {p_ai:.0f}%] {fname}")
         else:
             options.append(f"[❌ Error] {fname}")

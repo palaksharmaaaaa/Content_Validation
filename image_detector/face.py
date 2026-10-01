@@ -83,10 +83,12 @@ class FaceDeepfakeDetector:
                     bx, by, bw, bh = cv2.boundingRect(c)
                     aspect = float(bh) / max(1.0, float(bw))
                     if 0.65 <= aspect <= 2.20:
-                        gray_f = cv2.cvtColor(head_crop[by : by + bh, bx : bx + bw], cv2.COLOR_BGR2GRAY)
-                        if gray_f.size > 0 and float(np.std(gray_f)) > 7.0:
-                            candidate_faces.append((hx1 + bx, hy1 + by, bw, bh, float(bw * bh)))
-                            face_found = True
+                        bx_c = max(0, min(w_img - 1, hx1 + bx))
+                        by_c = max(0, min(h_img - 1, hy1 + by))
+                        bw_c = min(w_img - bx_c, bw)
+                        bh_c = min(h_img - by_c, bh)
+                        candidate_faces.append((bx_c, by_c, bw_c, bh_c, float(bw_c * bh_c)))
+                        face_found = True
 
                 if not face_found:
                     # Head region check: if texture variance indicates a visible head
@@ -94,8 +96,10 @@ class FaceDeepfakeDetector:
                     if gray_head.size > 0 and float(np.std(gray_head)) > 12.0:
                         fw = max(16, int(pw * 0.50))
                         fh = max(16, int(ph * 0.35))
-                        fx = hx1 + int((pw - fw) / 2)
-                        fy = hy1 + int(ph * 0.05)
+                        fx = max(0, min(w_img - 1, hx1 + int((pw - fw) / 2)))
+                        fy = max(0, min(h_img - 1, hy1 + int(ph * 0.05)))
+                        fw = min(w_img - fx, fw)
+                        fh = min(h_img - fy, fh)
                         candidate_faces.append((fx, fy, fw, fh, float(fw * fh)))
 
             return candidate_faces

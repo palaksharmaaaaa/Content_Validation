@@ -165,6 +165,12 @@ class ImageForensicPipeline:
                 "persons_count": content_res.get("persons_count", 0),
                 "faces_count": content_res.get("faces_count", 0),
                 "is_stylized_character": content_res.get("living_entities", {}).get("humans", {}).get("is_stylized_character", False),
+                "animals_count": content_res.get("living_entities", {}).get("animals", {}).get("count", 0),
+                "animal_types": content_res.get("living_entities", {}).get("animals", {}).get("animal_types", []),
+            },
+            "vehicles": {
+                "vehicles_count": content_res.get("vehicles", {}).get("count", 0),
+                "vehicle_types": content_res.get("vehicles", {}).get("types", []),
             },
             "objects_and_items": {
                 "items_count": len(content_res.get("contents_and_items", {}).get("identified_items", [])),
