@@ -1,24 +1,118 @@
-# Kaggle dataset
+# Kaggle dataset & local datasets
 dataset/
+**/dataset/
 
-# Python cache
+# Python cache & virtual environments
 __pycache__/
-*.pyc
-
-# Virtual environment
+*.py[cod]
+*$py.class
+*.so
 venv/
 .venv/
 env/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# VS Code settings
+# IDE & Editor settings
 .vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+desktop.ini
 
-# Environment variables
+# Environment variables & secrets
 .env
+.env.*
+*.secret
 
-# Trained model files
+# Trained model files & weights
 *.pkl
 *.joblib
 *.h5
 *.pt
 *.pth
+*.onnx
+*.bin
+*.weights
+*.ckpt
+
+# Media files (Images) - Strictly prevent personal photo uploads
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.gif
+*.bmp
+*.tiff
+*.tif
+*.svg
+*.raw
+*.cr2
+*.nef
+*.heic
+*.heif
+*.ico
+
+# Media files (Videos) - Strictly prevent personal video uploads
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+*.flv
+*.wmv
+*.m4v
+
+# Media files (Audios) - Strictly prevent personal audio uploads
+*.mp3
+*.wav
+*.m4a
+*.aac
+*.flac
+*.ogg
+*.wma
+*.opus
+
+# Local session caches, personal evaluations, feedback memory & samples
+data/
+**/data/samples/
+**/data/session_cache/
+**/data/forensic_memory/
+**/data/*_evaluation.json
+**/data/*_baseline.json
+**/data/*_feedback.json
+**/data/*_memory.json
+*.log
+*.tmp
+tmp*
+scratch/
+
+# Local diagnostic & scratch evaluation scripts with personal paths
+analyze_android_dataset.py
+compare_profiles.py
+diagnose_camera_pic.py
+evaluate_family_images.py
+evaluate_wedding_ai.py
+test_all_domains.py
+test_android_photos.py
+test_sony_camera.py
+train_and_learn_wedding.py
+train_on_android_dataset.py
+train_on_camera_dataset.py
+image_detector_update_implementation_plan.md

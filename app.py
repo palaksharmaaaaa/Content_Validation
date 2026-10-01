@@ -1,48 +1,69 @@
 import os
 from pathlib import Path
-import shutil
-import tempfile
+import re
 
-import cv2
+from PIL import ImageFile
 import streamlit as st
 
-from models.ai_audio_detector import AIAudioDetector
-from models.ai_image_detector import AIImageDetector
-from models.content_analyzer import ContentAnalyzer
-from models.face_detector import FaceDeepfakeDetector
-from models.model_attribution import ModelAttributionEngine
-from scoring.cross_modal_engine import evaluate_cross_modal_consistency
-from scoring.decision_engine import generate_final_decision
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+
+from audio_detector import AudioAIDetector
+from image_detector import (
+    FaceDeepfakeDetector,
+    ImageAIDetector,
+    ImageContentAnalyzer as ContentAnalyzer,
+    ImageModelAttributionEngine as ModelAttributionEngine,
+    analyze_image,
+)
+from video_detector import VideoAIDetector, analyze_video, evaluate_cross_modal_consistency
+from ui.batch_ui import (
+    process_single_audio,
+    process_single_image,
+    process_single_video,
+    render_batch_file_selector,
+    render_batch_overview_table,
+    render_batch_summary_dashboard,
+    run_batch_pipeline,
+)
 from ui.feedback_ui import (
+    generate_final_decision,
+    profile_media,
     render_analysis_right_panel,
     render_bottom_feedback_panel,
     render_feedback_box,
     render_forensic_dossier,
     render_learning_dashboard,
+    render_linear_image_pipeline_results,
     render_media_specs,
+    render_pre_analysis_specifications,
     render_scene_and_content_intelligence,
 )
-from utils.media_profiler import profile_media
-from validators.file_validator import validate_file
-from validators.image_validator import analyze_image
-from validators.provenance_validator import analyze_provenance
-from validators.url_validator import (
+from ui.validators import (
+    analyze_provenance,
+    cleanup_url_download,
     fetch_media_from_url,
     validate_expected_platform,
+    validate_file,
 )
-from validators.video_validator import analyze_video
 
 
-DETECTOR_CHECKPOINT = Path(__file__).resolve().parent / "models" / "ai_detector.pt"
-SESSION_CACHE_DIR = Path(__file__).resolve().parent / "data" / "session_cache"
+DETECTOR_CHECKPOINT = Path(__file__).resolve().parent / "image_detector" / "models" / "ai_detector.pt"
+SESSION_CACHE_DIR = Path(__file__).resolve().parent / "image_detector" / "data" / "session_cache"
 SESSION_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 
 @st.cache_resource
 def get_ai_detector():
-    detector = AIImageDetector(checkpoint_path=DETECTOR_CHECKPOINT)
+    detector = ImageAIDetector(checkpoint_path=DETECTOR_CHECKPOINT)
     detector.load()
     return detector
+
+
+@st.cache_resource
+def get_video_detector():
+    v_detector = VideoAIDetector(frame_detector=get_ai_detector())
+    v_detector.load()
+    return v_detector
 
 
 @st.cache_resource
@@ -52,7 +73,7 @@ def get_face_detector():
 
 @st.cache_resource
 def get_audio_detector():
-    return AIAudioDetector()
+    return AudioAIDetector()
 
 
 @st.cache_resource
@@ -93,7 +114,8 @@ else:
 st.sidebar.info(
     f"Active Mode: **{sensitivity_key.upper()}**\n\n"
     "• High: Tightens PRNU, spectral slope, and vocoder cutoff thresholds to detect modern subtle generators (Gemini, Midjourney, Flux, Sora, ElevenLabs).\n"
-    "• Aggressive: Maximizes scrutiny against compressed social media reposts."
+    "• Aggressive: Maximizes scrutiny against compressed social media reposts.\n"
+    "• Balanced: Recommended for scanned albums and studio portrait photography with shallow depth of field."
 )
 
 st.title("🔍 OmniForensics: Multi-Modal Media Authenticity Engine")
@@ -111,250 +133,266 @@ tab_image, tab_video, tab_audio, tab_url, tab_memory = st.tabs([
 ])
 
 detector = get_ai_detector()
+video_detector = get_video_detector()
 face_detector = get_face_detector()
 audio_detector = get_audio_detector()
 content_analyzer = get_content_analyzer()
 attribution_engine = get_attribution_engine()
 
+image_detectors_map = {
+    "detector": detector,
+    "face_detector": face_detector,
+    "content_analyzer": content_analyzer,
+    "attribution_engine": attribution_engine,
+}
+
+video_detectors_map = {
+    "detector": detector,
+    "video_detector": video_detector,
+    "face_detector": face_detector,
+    "content_analyzer": content_analyzer,
+    "audio_detector": audio_detector,
+    "attribution_engine": attribution_engine,
+}
+
+audio_detectors_map = {
+    "audio_detector": audio_detector,
+    "content_analyzer": content_analyzer,
+    "attribution_engine": attribution_engine,
+}
+
 
 # =====================================================================
-# 1. SEGREGATED IMAGE TAB
+# 1. SEGREGATED IMAGE TAB (SINGLE & BATCH PROCESSING)
 # =====================================================================
 with tab_image:
-    col_img_left, col_img_right = st.columns([1, 1.2], gap="large")
+    st.subheader("📥 Image Ingestion & Spatial Inspection")
+    img_mode = st.radio(
+        "Image Input Method",
+        ["Upload Image File(s) (Single or Batch)", "Fetch Image from URL(s)"],
+        horizontal=True,
+        key="img_mode",
+    )
 
-    img_path = None
-    img_file_name = None
-    file_res = None
-    image_result = None
-    ai_result = None
-    content_res = None
-    provenance_res = None
-    attribution_res = None
-    decision = None
-    img_profile = None
+    img_items_to_process = []
 
-    with col_img_left:
-        st.subheader("📥 Image Ingestion & Spatial Inspection")
-        img_mode = st.radio("Image Input Method", ["Upload Image File", "Fetch Image from URL"], horizontal=True, key="img_mode")
-
-        if img_mode == "Upload Image File":
-            uploaded_img = st.file_uploader(
-                "Upload Image",
-                type=["jpg", "jpeg", "png", "webp", "bmp", "tiff"],
-                key="uploader_img",
-            )
-            if uploaded_img:
-                suffix = Path(uploaded_img.name).suffix or ".jpg"
-                img_path = str(SESSION_CACHE_DIR / f"active_image{suffix}")
-                with open(img_path, "wb") as f:
-                    f.write(uploaded_img.getbuffer())
-                img_file_name = uploaded_img.name
-        else:
-            img_url = st.text_input("Paste Direct Image URL", placeholder="https://example.com/photo.jpg", key="img_url_input")
-            if st.button("Fetch & Analyze Image", key="btn_fetch_img") and img_url:
-                with st.spinner("Downloading image from URL..."):
-                    fetch_res = fetch_media_from_url(img_url, expected_type="image")
-                if not fetch_res["success"]:
-                    st.error(f"❌ {fetch_res['error']}")
-                else:
-                    img_path = fetch_res["file_path"]
-                    img_file_name = fetch_res["filename"]
-                    st.success(f"✅ Downloaded {img_file_name} ({fetch_res['size_mb']} MB)")
-
-        if img_path and Path(img_path).is_file():
-            file_res = validate_file(img_path)
-            if not file_res["readable"]:
-                st.error(f"❌ File corrupted or unreadable: {file_res.get('error')}")
+    if img_mode == "Upload Image File(s) (Single or Batch)":
+        uploaded_imgs = st.file_uploader(
+            "Upload Image(s)",
+            type=["jpg", "jpeg", "png", "webp", "bmp", "tiff"],
+            accept_multiple_files=True,
+            key="uploader_img",
+            help="Select one or multiple images simultaneously for instant batch forensic evaluation.",
+        )
+        if uploaded_imgs:
+            for idx, u_img in enumerate(uploaded_imgs):
+                clean_name = re.sub(r'[^a-zA-Z0-9_.-]', '_', u_img.name)
+                save_path = str(SESSION_CACHE_DIR / f"img_batch_{idx}_{clean_name}")
+                with open(save_path, "wb") as f:
+                    f.write(u_img.getbuffer())
+                    f.flush()
+                    os.fsync(f.fileno())
+                img_items_to_process.append({
+                    "path": save_path,
+                    "filename": u_img.name,
+                    "size": u_img.size,
+                    "source": "Local Device Upload",
+                })
+    else:
+        img_urls_input = st.text_area(
+            "Paste Image URL(s) (One per line or comma-separated)",
+            placeholder="https://example.com/photo1.jpg\nhttps://example.com/photo2.png",
+            key="img_urls_input",
+            help="Paste one or multiple direct image URLs for batch downloading and forensic analysis.",
+        )
+        if st.button("Fetch & Analyze Image(s)", key="btn_fetch_img") and img_urls_input:
+            urls = [u.strip() for u in img_urls_input.replace(",", "\n").splitlines() if u.strip().startswith("http")]
+            if not urls:
+                st.error("Please enter at least one valid URL starting with http:// or https://")
             else:
-                with st.spinner("Executing File Forensics, C2PA Provenance, and Parallel Content Analysis..."):
-                    provenance_res = analyze_provenance(img_path)
-                    content_res = content_analyzer.analyze_image_content(img_path)
-                    image_result = analyze_image(img_path)
+                for idx, u in enumerate(urls):
+                    with st.spinner(f"Downloading image #{idx+1} from {u[:40]}..."):
+                        fetch_res = fetch_media_from_url(u, expected_type="image")
+                    if fetch_res.get("success"):
+                        p = fetch_res["file_path"]
+                        img_items_to_process.append({
+                            "path": p,
+                            "filename": fetch_res["filename"],
+                            "size": Path(p).stat().st_size,
+                            "source": f"URL Stream ({u[:35]}...)",
+                        })
+                    else:
+                        st.error(f"❌ Failed to download {u}: {fetch_res.get('error')}")
 
-                with st.spinner("Running PRNU noise profiling, ELA, surface texture, 2D Fourier power slope, and memory bank lookup..."):
-                    ai_result = detector.predict(img_path, sensitivity=sensitivity_key)
+    # Session caching for image batch
+    img_batch_sig = tuple((item["filename"], item.get("size", 0), sensitivity_key) for item in img_items_to_process)
+    if img_items_to_process:
+        if st.session_state.get("img_batch_sig") != img_batch_sig:
+            progress_bar = st.progress(0, text="Initializing batch image analysis...")
 
-                with st.spinner("Profiling container chunks, visible watermarks, and international AI generator signatures..."):
-                    img_profile = profile_media(img_path, modality="image")
-                    attribution_res = attribution_engine.attribute_media(
-                        img_path,
-                        modality="image",
-                        forensic_data=ai_result,
-                        profile_data=img_profile,
-                        provenance_data=provenance_res,
-                    )
+            def update_img_progress(curr, total, name):
+                progress_bar.progress(curr / total, text=f"Analyzing image {curr}/{total}: {name}...")
 
-                decision = generate_final_decision(
-                    file_validation=file_res,
-                    quality_result=image_result,
-                    ai_result=ai_result,
-                    content_inventory=content_res,
-                    provenance_result=provenance_res,
-                    attribution_result=attribution_res,
-                )
-
-                # Visual Inspection & Spatial Localization Heatmap
-                st.markdown("#### 🖼️ Visual Inspection & Spatial Localization Heatmap")
-                col_orig, col_heat = st.columns(2)
-                with col_orig:
-                    st.image(img_path, caption=f"Original Media ({image_result.get('width')}x{image_result.get('height')})", width="stretch")
-                with col_heat:
-                    heatmap_rgb = ai_result.get("heatmap_rgb")
-                    if heatmap_rgb is not None:
-                        ai_area = ai_result.get("ai_spatial_area_pct", 0.0)
-                        st.image(heatmap_rgb, caption=f"Spatial Anomaly Map (Estimated AI Area: {ai_area}%)", width="stretch")
-
-                st.caption(
-                    "🟢 **Cool / Low Residual:** Natural physical camera sensor noise (PRNU), organic optical grain.\n\n"
-                    "🔴 **Hot / High Anomaly Zones:** Neural latent denoising, synthetic bilateral over-smoothing, or localized inpainting."
-                )
-
-    with col_img_right:
-        if decision and content_res:
-            render_analysis_right_panel(decision, content_res, modality="image")
-        else:
-            st.info(
-                "👈 **Upload an image or paste a URL in the left panel to begin forensic analysis.**\n\n"
-                "The right panel will automatically render:\n"
-                "• Plain-English Executive Authenticity Verdict\n"
-                "• Calibrated Authenticity Probabilities ($P(\\text{AI})$ vs $P(\\text{Real})$)\n"
-                "• Scene & Content Depiction Intelligence (Entities, Items, Setting, Tone)\n"
-                "• International AI Generator Attribution (Gemini, Flux, Midjourney, DALL-E, etc.)\n"
-                "• Provenance & C2PA Content Credentials"
+            img_results = run_batch_pipeline(
+                items=img_items_to_process,
+                modality="image",
+                detectors=image_detectors_map,
+                sensitivity=sensitivity_key,
+                cache_dir=SESSION_CACHE_DIR,
+                progress_callback=update_img_progress,
             )
+            progress_bar.empty()
+            st.session_state["img_batch_results"] = img_results
+            st.session_state["img_batch_sig"] = img_batch_sig
+        else:
+            img_results = st.session_state.get("img_batch_results", [])
+    else:
+        img_results = []
 
-    # Bottom single wide panel
-    if decision and img_path and Path(img_path).is_file():
-        render_bottom_feedback_panel(
-            media_path=img_path,
-            modality="image",
-            forensic_data=ai_result or {},
-            profile_data=img_profile or {},
-            decision=decision,
-            unique_key="img_tab",
+    # Display results in completely linear flow
+    if img_results:
+        is_batch = len(img_results) > 1
+
+        if is_batch:
+            render_batch_summary_dashboard(img_results, modality="image")
+            render_batch_overview_table(img_results, modality="image")
+            selected_img = render_batch_file_selector(img_results, modality="image", key="img_selector")
+        else:
+            selected_img = img_results[0]
+
+        if selected_img and selected_img.get("success"):
+            render_linear_image_pipeline_results(selected_img)
+        elif selected_img and not selected_img.get("success"):
+            st.error(f"❌ Failed to process `{selected_img['filename']}`: {selected_img.get('error')}")
+    else:
+        st.info(
+            "👈 **Upload an image file (or paste image URLs) in the panel above to begin.**\n\n"
+            "• **Completely Linear Flow:** Upload image file ➔ Extract each and every detail (Dimensions, DPI, Pixels, EXIF, Colors, Noise) ➔ "
+            "Run 9-Dimensions Forensic Analyzer (As described in GLOBAL_IMAGE_TAXONOMY_AND_FORENSIC_RESEARCH_REPORT.md) ➔ "
+            "Identify Image Type & Category ➔ Predict percentages and counts ➔ Result & Beginner Newbie Narrative Explanation."
         )
 
 
 # =====================================================================
-# =====================================================================
-# 2. SEGREGATED VIDEO TAB
+# 2. SEGREGATED VIDEO TAB (SINGLE & BATCH PROCESSING)
 # =====================================================================
 with tab_video:
-    col_vid_left, col_vid_right = st.columns([1, 1.2], gap="large")
+    st.subheader("📥 Video Ingestion & Temporal Inspection")
+    vid_mode = st.radio(
+        "Video Input Method",
+        ["Upload Video File(s) (Single or Batch)", "Fetch Video from URL(s)"],
+        horizontal=True,
+        key="vid_mode",
+    )
 
-    vid_path = None
-    vid_file_name = None
-    file_res = None
-    video_result = None
-    audio_result = None
-    content_res = None
-    provenance_res = None
-    attribution_res = None
-    cross_modal_res = None
-    decision = None
-    vid_profile = None
-    tmp_kf_path = None
+    vid_items_to_process = []
 
-    with col_vid_left:
-        st.subheader("📥 Video Ingestion & Temporal Inspection")
-        vid_mode = st.radio("Video Input Method", ["Upload Video File", "Fetch Video from URL"], horizontal=True, key="vid_mode")
-
-        if vid_mode == "Upload Video File":
-            uploaded_vid = st.file_uploader(
-                "Upload Video",
-                type=["mp4", "mov", "avi", "mkv", "webm"],
-                key="uploader_vid",
-            )
-            if uploaded_vid:
-                suffix = Path(uploaded_vid.name).suffix or ".mp4"
-                vid_path = str(SESSION_CACHE_DIR / f"active_video{suffix}")
-                with open(vid_path, "wb") as f:
-                    f.write(uploaded_vid.getbuffer())
-                vid_file_name = uploaded_vid.name
-        else:
-            vid_url = st.text_input("Paste Direct Video URL", placeholder="https://example.com/video.mp4", key="vid_url_input")
-            if st.button("Fetch & Analyze Video", key="btn_fetch_vid") and vid_url:
-                with st.spinner("Downloading video from URL..."):
-                    fetch_res = fetch_media_from_url(vid_url, expected_type="video")
-                if not fetch_res["success"]:
-                    st.error(f"❌ {fetch_res['error']}")
-                else:
-                    vid_path = fetch_res["file_path"]
-                    vid_file_name = fetch_res["filename"]
-                    st.success(f"✅ Downloaded {vid_file_name} ({fetch_res['size_mb']} MB)")
-
-        if vid_path and Path(vid_path).is_file():
-            file_res = validate_file(vid_path)
-            if not file_res["readable"]:
-                st.error(f"❌ Video corrupted or unreadable: {file_res.get('error')}")
+    if vid_mode == "Upload Video File(s) (Single or Batch)":
+        uploaded_vids = st.file_uploader(
+            "Upload Video(s)",
+            type=["mp4", "mov", "avi", "mkv", "webm"],
+            accept_multiple_files=True,
+            key="uploader_vid",
+            help="Select one or multiple videos simultaneously for batch temporal and cross-modal evaluation.",
+        )
+        if uploaded_vids:
+            for idx, u_vid in enumerate(uploaded_vids):
+                clean_name = re.sub(r'[^a-zA-Z0-9_.-]', '_', u_vid.name)
+                save_path = str(SESSION_CACHE_DIR / f"vid_batch_{idx}_{clean_name}")
+                with open(save_path, "wb") as f:
+                    f.write(u_vid.getbuffer())
+                    f.flush()
+                    os.fsync(f.fileno())
+                vid_items_to_process.append({
+                    "path": save_path,
+                    "filename": u_vid.name,
+                    "size": u_vid.size,
+                })
+    else:
+        vid_urls_input = st.text_area(
+            "Paste Video URL(s) (One per line or comma-separated)",
+            placeholder="https://example.com/video1.mp4\nhttps://example.com/video2.mp4",
+            key="vid_urls_input",
+            help="Paste direct video URLs for batch downloading and forensic evaluation.",
+        )
+        if st.button("Fetch & Analyze Video(s)", key="btn_fetch_vid") and vid_urls_input:
+            urls = [u.strip() for u in vid_urls_input.replace(",", "\n").splitlines() if u.strip().startswith("http")]
+            if not urls:
+                st.error("Please enter at least one valid URL starting with http:// or https://")
             else:
-                st.markdown("#### 🎥 Video Preview")
-                st.video(vid_path)
+                for idx, u in enumerate(urls):
+                    with st.spinner(f"Downloading video #{idx+1} from {u[:40]}..."):
+                        fetch_res = fetch_media_from_url(u, expected_type="video")
+                    if fetch_res.get("success"):
+                        p = fetch_res["file_path"]
+                        vid_items_to_process.append({
+                            "path": p,
+                            "filename": fetch_res["filename"],
+                            "size": Path(p).stat().st_size,
+                        })
+                    else:
+                        st.error(f"❌ Failed to download {u}: {fetch_res.get('error')}")
 
-                with st.spinner("Extracting frames, profiling temporal consistency, demuxing audio, and scanning C2PA..."):
-                    provenance_res = analyze_provenance(vid_path)
-                    video_result = analyze_video(
-                        vid_path,
-                        sample_count=30,
-                        ai_detector=detector,
-                        sensitivity=sensitivity_key,
-                    )
-                    audio_result = audio_detector.analyze_audio_file(vid_path, sensitivity=sensitivity_key)
+    # Session caching for video batch
+    vid_batch_sig = tuple((item["filename"], item.get("size", 0), sensitivity_key) for item in vid_items_to_process)
+    if vid_items_to_process:
+        if st.session_state.get("vid_batch_sig") != vid_batch_sig:
+            progress_bar = st.progress(0, text="Initializing batch video analysis...")
 
-                # Sample keyframe for content inventory
-                cap = cv2.VideoCapture(vid_path)
-                ret, sample_frame = cap.read()
-                cap.release()
-                content_res = {}
-                if ret and sample_frame is not None:
-                    tmp_kf = SESSION_CACHE_DIR / "temp_kf.jpg"
-                    cv2.imwrite(str(tmp_kf), sample_frame)
-                    content_res = content_analyzer.analyze_image_content(str(tmp_kf))
-                    tmp_kf_path = str(tmp_kf)
+            def update_vid_progress(curr, total, name):
+                progress_bar.progress(curr / total, text=f"Analyzing video {curr}/{total}: {name}...")
 
-                cross_modal_res = evaluate_cross_modal_consistency(video_result, audio_result, content_res)
+            vid_results = run_batch_pipeline(
+                items=vid_items_to_process,
+                modality="video",
+                detectors=video_detectors_map,
+                sensitivity=sensitivity_key,
+                cache_dir=SESSION_CACHE_DIR,
+                progress_callback=update_vid_progress,
+            )
+            progress_bar.empty()
+            st.session_state["vid_batch_results"] = vid_results
+            st.session_state["vid_batch_sig"] = vid_batch_sig
+        else:
+            vid_results = st.session_state.get("vid_batch_results", [])
+    else:
+        vid_results = []
 
-                with st.spinner("Profiling video stream signatures, corner badges, and international AI generator telltales..."):
-                    vid_profile = profile_media(vid_path, modality="video")
-                    attribution_res = attribution_engine.attribute_media(
-                        vid_path,
-                        modality="video",
-                        forensic_data=video_result.get("ai_video_rating", {}),
-                        profile_data=vid_profile,
-                        provenance_data=provenance_res,
-                    )
+    # Display video results
+    if vid_results:
+        is_batch = len(vid_results) > 1
 
-                decision = generate_final_decision(
-                    file_validation=file_res,
-                    quality_result=video_result,
-                    ai_result=None,
-                    audio_result=audio_result,
-                    content_inventory=content_res,
-                    provenance_result=provenance_res,
-                    cross_modal_result=cross_modal_res,
-                    attribution_result=attribution_res,
-                )
+        if is_batch:
+            render_batch_summary_dashboard(vid_results, modality="video")
+            render_batch_overview_table(vid_results, modality="video")
+            selected_vid = render_batch_file_selector(vid_results, modality="video", key="vid_selector")
+        else:
+            selected_vid = vid_results[0]
 
-                # Visual Keyframe Spatial Inspection & Temporal Heatmap Timeline
-                st.markdown("#### 🖼️ Keyframe Spatial Anomaly & Temporal Timeline")
+        if selected_vid and selected_vid.get("success"):
+            st.markdown("---")
+            col_vid_left, col_vid_right = st.columns([1, 1.2], gap="large")
+
+            with col_vid_left:
+                st.markdown(f"#### 🎥 Video Preview & Timeline: `{selected_vid['filename']}`")
+                st.video(selected_vid["path"])
+
+                tmp_kf_path = selected_vid.get("tmp_kf_path")
+                kf_ai = selected_vid.get("kf_ai")
                 if tmp_kf_path and Path(tmp_kf_path).is_file():
-                    kf_ai = detector.predict(tmp_kf_path, sensitivity=sensitivity_key)
+                    st.markdown("##### 🖼️ Sampled Keyframe Spatial Anomaly")
                     col_kf_orig, col_kf_heat = st.columns(2)
                     with col_kf_orig:
                         st.image(tmp_kf_path, caption="Sampled Video Keyframe", width="stretch")
                     with col_kf_heat:
-                        kf_heat = kf_ai.get("heatmap_rgb")
-                        if kf_heat is not None:
-                            st.image(kf_heat, caption=f"Keyframe Spatial Heatmap ({kf_ai.get('ai_spatial_area_pct', 0)}% AI area)", width="stretch")
-                    if Path(tmp_kf_path).exists():
-                        try:
-                            Path(tmp_kf_path).unlink()
-                        except OSError:
-                            pass
+                        if kf_ai and kf_ai.get("heatmap_rgb") is not None:
+                            st.image(
+                                kf_ai["heatmap_rgb"],
+                                caption=f"Keyframe Heatmap ({kf_ai.get('ai_spatial_area_pct', 0)}% AI area)",
+                                width="stretch",
+                            )
 
-                # Temporal Timeline Display
-                segments = video_result.get("temporal_segments", [])
+                segments = selected_vid.get("video_result", {}).get("temporal_segments", [])
                 if segments:
                     st.markdown("##### ⏱️ Video Temporal Timeline Attribution")
                     for s in segments:
@@ -362,119 +400,145 @@ with tab_video:
                         st.write(f"• `{s['start_seconds']}s ── {s['end_seconds']}s` ({s['duration_seconds']}s) : **{badge}**")
                     st.caption("Temporal consistency checks analyze inter-frame motion vector continuity to expose diffusion flickering and warped object boundaries.")
 
-    with col_vid_right:
-        if decision and content_res:
-            render_analysis_right_panel(decision, content_res, modality="video")
-        else:
-            st.info(
-                "👈 **Upload a video or paste a URL in the left panel to begin forensic analysis.**\n\n"
-                "The right panel will automatically render:\n"
-                "• Plain-English Executive Authenticity Verdict\n"
-                "• Calibrated Authenticity Probabilities ($P(\\text{AI})$ vs $P(\\text{Real})$)\n"
-                "• Scene & Content Depiction Intelligence (Entities, Items, Setting, Tone)\n"
-                "• International AI Generator Attribution (Sora, Kling, Seedance, Runway, Hailuo)\n"
-                "• Audio-Visual Cross-Modal Consistency & Synchronization"
-            )
+            with col_vid_right:
+                render_analysis_right_panel(
+                    selected_vid["decision"],
+                    selected_vid["content_res"],
+                    modality="video",
+                )
 
-    # Bottom single wide panel
-    if decision and vid_path and Path(vid_path).is_file():
-        render_bottom_feedback_panel(
-            media_path=vid_path,
-            modality="video",
-            forensic_data=video_result or {},
-            profile_data=vid_profile or {},
-            decision=decision,
-            unique_key="vid_tab",
+            # Bottom single wide panel
+            render_bottom_feedback_panel(
+                media_path=selected_vid["path"],
+                modality="video",
+                forensic_data=selected_vid.get("video_result", {}),
+                profile_data=selected_vid.get("vid_profile", {}),
+                decision=selected_vid["decision"],
+                unique_key=f"vid_tab_{selected_vid['filename']}",
+            )
+        elif selected_vid and not selected_vid.get("success"):
+            st.error(f"❌ Failed to process `{selected_vid['filename']}`: {selected_vid.get('error')}")
+    else:
+        st.info(
+            "👈 **Upload one or more videos (or paste video URLs) in the panel above to begin forensic analysis.**\n\n"
+            "• **Single Video Mode:** Inspects temporal continuity, keyframe noise, vocoder voice clone sync, and generator signatures.\n"
+            "• **Batch Analysis Mode:** Evaluates multiple videos simultaneously with automated comparative risk dashboard and exportable reports."
         )
 
 
 # =====================================================================
-# 3. SEGREGATED AUDIO TAB
+# 3. SEGREGATED AUDIO TAB (SINGLE & BATCH PROCESSING)
 # =====================================================================
 with tab_audio:
-    col_aud_left, col_aud_right = st.columns([1, 1.2], gap="large")
+    st.subheader("📥 Audio Ingestion & Spectral Inspection")
+    aud_mode = st.radio(
+        "Audio Input Method",
+        ["Upload Audio File(s) (Single or Batch)", "Fetch Audio from URL(s)"],
+        horizontal=True,
+        key="aud_mode",
+    )
 
-    aud_path = None
-    aud_file_name = None
-    file_res = None
-    audio_result = None
-    content_res = None
-    provenance_res = None
-    attribution_res = None
-    decision = None
-    aud_profile = None
+    aud_items_to_process = []
 
-    with col_aud_left:
-        st.subheader("📥 Audio Ingestion & Spectral Inspection")
-        aud_mode = st.radio("Audio Input Method", ["Upload Audio File", "Fetch Audio from URL"], horizontal=True, key="aud_mode")
-
-        if aud_mode == "Upload Audio File":
-            uploaded_aud = st.file_uploader(
-                "Upload Audio",
-                type=["mp3", "wav", "m4a", "aac", "flac", "ogg"],
-                key="uploader_aud",
-            )
-            if uploaded_aud:
-                suffix = Path(uploaded_aud.name).suffix or ".mp3"
-                aud_path = str(SESSION_CACHE_DIR / f"active_audio{suffix}")
-                with open(aud_path, "wb") as f:
-                    f.write(uploaded_aud.getbuffer())
-                aud_file_name = uploaded_aud.name
-        else:
-            aud_url = st.text_input("Paste Direct Audio URL", placeholder="https://example.com/speech.mp3", key="aud_url_input")
-            if st.button("Fetch & Analyze Audio", key="btn_fetch_aud") and aud_url:
-                with st.spinner("Downloading audio from URL..."):
-                    fetch_res = fetch_media_from_url(aud_url, expected_type="audio")
-                if not fetch_res["success"]:
-                    st.error(f"❌ {fetch_res['error']}")
-                else:
-                    aud_path = fetch_res["file_path"]
-                    aud_file_name = fetch_res["filename"]
-                    st.success(f"✅ Downloaded {aud_file_name} ({fetch_res['size_mb']} MB)")
-
-        if aud_path and Path(aud_path).is_file():
-            file_res = validate_file(aud_path)
-            if not file_res["readable"]:
-                st.error(f"❌ Audio corrupted or unreadable: {file_res.get('error')}")
+    if aud_mode == "Upload Audio File(s) (Single or Batch)":
+        uploaded_auds = st.file_uploader(
+            "Upload Audio Recording(s)",
+            type=["mp3", "wav", "m4a", "aac", "flac", "ogg"],
+            accept_multiple_files=True,
+            key="uploader_aud",
+            help="Select one or multiple audio recordings simultaneously for batch vocoder and voice synthesis evaluation.",
+        )
+        if uploaded_auds:
+            for idx, u_aud in enumerate(uploaded_auds):
+                clean_name = re.sub(r'[^a-zA-Z0-9_.-]', '_', u_aud.name)
+                save_path = str(SESSION_CACHE_DIR / f"aud_batch_{idx}_{clean_name}")
+                with open(save_path, "wb") as f:
+                    f.write(u_aud.getbuffer())
+                    f.flush()
+                    os.fsync(f.fileno())
+                aud_items_to_process.append({
+                    "path": save_path,
+                    "filename": u_aud.name,
+                    "size": u_aud.size,
+                })
+    else:
+        aud_urls_input = st.text_area(
+            "Paste Audio URL(s) (One per line or comma-separated)",
+            placeholder="https://example.com/speech1.mp3\nhttps://example.com/voice2.wav",
+            key="aud_urls_input",
+            help="Paste direct audio URLs for batch downloading and acoustic forensics.",
+        )
+        if st.button("Fetch & Analyze Audio(s)", key="btn_fetch_aud") and aud_urls_input:
+            urls = [u.strip() for u in aud_urls_input.replace(",", "\n").splitlines() if u.strip().startswith("http")]
+            if not urls:
+                st.error("Please enter at least one valid URL starting with http:// or https://")
             else:
-                st.markdown("#### 🎙️ Audio Player")
-                st.audio(aud_path)
+                for idx, u in enumerate(urls):
+                    with st.spinner(f"Downloading audio #{idx+1} from {u[:40]}..."):
+                        fetch_res = fetch_media_from_url(u, expected_type="audio")
+                    if fetch_res.get("success"):
+                        p = fetch_res["file_path"]
+                        aud_items_to_process.append({
+                            "path": p,
+                            "filename": fetch_res["filename"],
+                            "size": Path(p).stat().st_size,
+                        })
+                    else:
+                        st.error(f"❌ Failed to download {u}: {fetch_res.get('error')}")
 
-                with st.spinner("Extracting audio signal, inspecting vocoder cutoff, and checking C2PA credentials..."):
-                    from utils.audio_utils import extract_audio_samples, generate_spectrogram_image
-                    samples, sr, duration = extract_audio_samples(aud_path)
-                    provenance_res = analyze_provenance(aud_path)
-                    content_res = content_analyzer.analyze_audio_content(samples, sr, duration)
-                    audio_result = audio_detector.analyze_audio_file(aud_path, sensitivity=sensitivity_key)
+    # Session caching for audio batch
+    aud_batch_sig = tuple((item["filename"], item.get("size", 0), sensitivity_key) for item in aud_items_to_process)
+    if aud_items_to_process:
+        if st.session_state.get("aud_batch_sig") != aud_batch_sig:
+            progress_bar = st.progress(0, text="Initializing batch audio analysis...")
 
-                with st.spinner("Profiling vocoder cutoff frequency, acoustic phase, and voice synthesis signatures..."):
-                    aud_profile = profile_media(aud_path, modality="audio")
-                    attribution_res = attribution_engine.attribute_media(
-                        aud_path,
-                        modality="audio",
-                        forensic_data=audio_result,
-                        profile_data=aud_profile,
-                        provenance_data=provenance_res,
+            def update_aud_progress(curr, total, name):
+                progress_bar.progress(curr / total, text=f"Analyzing audio {curr}/{total}: {name}...")
+
+            aud_results = run_batch_pipeline(
+                items=aud_items_to_process,
+                modality="audio",
+                detectors=audio_detectors_map,
+                sensitivity=sensitivity_key,
+                cache_dir=SESSION_CACHE_DIR,
+                progress_callback=update_aud_progress,
+            )
+            progress_bar.empty()
+            st.session_state["aud_batch_results"] = aud_results
+            st.session_state["aud_batch_sig"] = aud_batch_sig
+        else:
+            aud_results = st.session_state.get("aud_batch_results", [])
+    else:
+        aud_results = []
+
+    # Display audio results
+    if aud_results:
+        is_batch = len(aud_results) > 1
+
+        if is_batch:
+            render_batch_summary_dashboard(aud_results, modality="audio")
+            render_batch_overview_table(aud_results, modality="audio")
+            selected_aud = render_batch_file_selector(aud_results, modality="audio", key="aud_selector")
+        else:
+            selected_aud = aud_results[0]
+
+        if selected_aud and selected_aud.get("success"):
+            st.markdown("---")
+            col_aud_left, col_aud_right = st.columns([1, 1.2], gap="large")
+
+            with col_aud_left:
+                st.markdown(f"#### 🎙️ Audio Player & Spectrogram: `{selected_aud['filename']}`")
+                st.audio(selected_aud["path"])
+
+                spec_img = selected_aud.get("spec_img")
+                if spec_img is not None:
+                    st.image(
+                        spec_img,
+                        caption="Spectral Heatmap (Frequency vs Time) — Exposing Vocoder Cutoff Lines & Harmonic Smoothing",
+                        width="stretch",
                     )
 
-                decision = generate_final_decision(
-                    file_validation=file_res,
-                    quality_result={},
-                    audio_result=audio_result,
-                    content_inventory=content_res,
-                    provenance_result=provenance_res,
-                    attribution_result=attribution_res,
-                )
-
-                # Visual Acoustic Spectrogram Heatmap & Speech Timeline
-                st.markdown("#### 🌊 Acoustic Spectrogram & Spectral Heatmap")
-                if samples is not None and len(samples) > 0:
-                    spec_img = generate_spectrogram_image(samples, sr)
-                    if spec_img is not None:
-                        st.image(spec_img, caption="Spectral Heatmap (Frequency vs Time) — Exposing Vocoder Cutoff Lines & Harmonic Smoothing", width="stretch")
-
-                # Speech Timeline Display
-                audio_segs = audio_result.get("temporal_segments", [])
+                audio_segs = selected_aud.get("audio_result", {}).get("temporal_segments", [])
                 if audio_segs:
                     st.markdown("##### ⏱️ Speech Timeline Attribution")
                     for a_seg in audio_segs:
@@ -482,29 +546,29 @@ with tab_audio:
                         st.write(f"• `{a_seg['start_seconds']}s ── {a_seg['end_seconds']}s` ({a_seg['duration_seconds']}s) : **{badge}**")
                     st.caption("Acoustic analysis checks for brick-wall vocoder cutoffs (e.g. 7.5kHz/16kHz in ElevenLabs/Suno/CosyVoice), unnaturally flat Wiener entropy, and digital zero silence dropouts.")
 
-    with col_aud_right:
-        if decision and content_res:
-            render_analysis_right_panel(decision, content_res, modality="audio")
-        else:
-            st.info(
-                "👈 **Upload an audio file or paste a URL in the left panel to begin forensic analysis.**\n\n"
-                "The right panel will automatically render:\n"
-                "• Plain-English Executive Authenticity Verdict\n"
-                "• Calibrated Authenticity Probabilities ($P(\\text{AI})$ vs $P(\\text{Real})$)\n"
-                "• Acoustic Scene & Vocal Delivery Tone Intelligence\n"
-                "• International Voice/Music Generator Attribution (ElevenLabs, CosyVoice, Suno, Udio)\n"
-                "• Provenance & C2PA Content Credentials"
-            )
+            with col_aud_right:
+                render_analysis_right_panel(
+                    selected_aud["decision"],
+                    selected_aud["content_res"],
+                    modality="audio",
+                )
 
-    # Bottom single wide panel
-    if decision and aud_path and Path(aud_path).is_file():
-        render_bottom_feedback_panel(
-            media_path=aud_path,
-            modality="audio",
-            forensic_data=audio_result or {},
-            profile_data=aud_profile or {},
-            decision=decision,
-            unique_key="aud_tab",
+            # Bottom single wide panel
+            render_bottom_feedback_panel(
+                media_path=selected_aud["path"],
+                modality="audio",
+                forensic_data=selected_aud.get("audio_result", {}) or {},
+                profile_data=selected_aud.get("aud_profile", {}) or {},
+                decision=selected_aud["decision"],
+                unique_key=f"aud_tab_{selected_aud['filename']}",
+            )
+        elif selected_aud and not selected_aud.get("success"):
+            st.error(f"❌ Failed to process `{selected_aud['filename']}`: {selected_aud.get('error')}")
+    else:
+        st.info(
+            "👈 **Upload one or more audio files (or paste audio URLs) in the panel above to begin forensic analysis.**\n\n"
+            "• **Single Audio Mode:** Inspects brick-wall vocoder cutoffs, vocal delivery tone, and speech timelines.\n"
+            "• **Batch Analysis Mode:** Evaluates multiple audio tracks simultaneously with batch comparison metrics and export options."
         )
 
 

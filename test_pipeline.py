@@ -17,19 +17,18 @@ import cv2
 import numpy as np
 from PIL import Image, ImageDraw
 
-from learning.auto_learner import AutoLearner
-from learning.forensic_memory import ForensicMemory
-from models.ai_audio_detector import AIAudioDetector
-from models.ai_image_detector import AIImageDetector
-from models.content_analyzer import ContentAnalyzer
-from models.face_detector import FaceDeepfakeDetector
-from models.model_attribution import ModelAttributionEngine
-from scoring.cross_modal_engine import evaluate_cross_modal_consistency
-from scoring.decision_engine import generate_final_decision
-from utils.media_profiler import profile_media
-from validators.file_validator import validate_file
-from validators.image_validator import analyze_image
-from validators.provenance_validator import analyze_provenance
+from audio_detector import AudioAIDetector, AudioSelfImprover, AudioContentAnalyzer
+from image_detector import (
+    FaceDeepfakeDetector,
+    ImageAIDetector,
+    ImageContentAnalyzer,
+    ImageModelAttributionEngine as ModelAttributionEngine,
+    ImageSelfImprover,
+    analyze_image,
+)
+from video_detector import evaluate_cross_modal_consistency
+from ui.feedback_ui import generate_final_decision, profile_media
+from ui.validators import analyze_provenance, validate_file
 
 
 def run_pipeline_test():
@@ -86,9 +85,10 @@ def run_pipeline_test():
         print(f" -> Quality Status: {quality_res.get('quality')} | Blur Score: {quality_res.get('blur_score')}")
 
         # 5. Parallel Content & Semantic Inventory
-        content_analyzer = ContentAnalyzer()
+        content_analyzer = ImageContentAnalyzer()
+        aud_content_analyzer = AudioContentAnalyzer()
         content_img = content_analyzer.analyze_image_content(str(tmp_img_path))
-        content_aud = content_analyzer.analyze_audio_content(signal, sr, 3.0)
+        content_aud = aud_content_analyzer.analyze_audio_content(signal, sr, 3.0)
         humans_cnt = content_img["entities"]["humans"]["persons_count"]
         faces_cnt = content_img["entities"]["humans"]["faces_count"]
         text_cnt = content_img["contents_and_items"]["text_regions_count"]
@@ -98,7 +98,7 @@ def run_pipeline_test():
 
         print(f" -> Image Content: Persons={humans_cnt}, Faces={faces_cnt}, Text Regions={text_cnt}")
         print(f" -> Surroundings: {setting_typ} | Daytime: {daytime_est} | Tone: {tone_est}")
-        print(f" -> Audio Content: Dominant={content_aud['dominant_audio_type']}, Speakers={content_aud['estimated_speakers']}")
+        print(f" -> Audio Content: Dominant={content_aud.get('dominant_modality', 'Vocal')}, Setting={content_aud.get('setting', 'Studio')}")
 
         # 6. Deep Media Profiler (Pixel Specs, Entropy, Bit Depth)
         print("\n[Step 6/9] Running Deep Media Profiler (Pixel Specs, Entropy, Hashes)...")
@@ -106,17 +106,17 @@ def run_pipeline_test():
         aud_profile = profile_media(str(tmp_aud_path), modality="audio")
         pix_spec = img_profile.get("pixel_specifications", {})
         print(f" -> Image SHA-256: {img_profile['file_identity']['sha256'][:16]}...")
-        print(f" -> Pixel Dtype: {pix_spec.get('pixel_data_type')} | Data per Pixel: {pix_spec.get('bits_per_pixel')} bpp")
-        print(f" -> Shannon Entropy: {pix_spec.get('shannon_entropy_bpp')} bits/pixel")
+        print(f" -> Aspect Ratio: {pix_spec.get('aspect_ratio')}")
+        print(f" -> Shannon Entropy: {pix_spec.get('pixel_entropy')} bits/pixel")
 
         # 7. Multi-Modal AI Detection (Image + Audio)
         print("\n[Step 7/9] Running Multi-Modal AI Forensics (PRNU, FFT, Vocoder)...")
-        ai_detector = AIImageDetector()
+        ai_detector = ImageAIDetector()
         ai_img_res = ai_detector.predict(str(tmp_img_path), sensitivity="high")
         print(f" -> Image AI %: {ai_img_res.get('ai_percentage')}% | Real %: {ai_img_res.get('real_percentage')}% | Undecided: {ai_img_res.get('undecided_percentage')}%")
         print(f" -> Spatial Anomaly Area: {ai_img_res.get('ai_spatial_area_pct')}%")
 
-        audio_detector = AIAudioDetector()
+        audio_detector = AudioAIDetector()
         audio_res = audio_detector.analyze_audio_file(str(tmp_aud_path), sensitivity="high")
         print(f" -> Audio AI %: {audio_res.get('ai_percentage')}% | Real %: {audio_res.get('real_percentage')}%")
         print(f" -> Audio Verdict: {audio_res.get('label')}")
@@ -145,9 +145,9 @@ def run_pipeline_test():
             profile_data=aud_profile,
             provenance_data=prov_img,
         )
-        print(f" -> Image Attributed Model: {attr_img['attributed_model']} ({attr_img['region_of_origin']}) - Conf: {attr_img['attribution_confidence']}")
-        print(f" -> Audio Attributed Model: {attr_aud['attributed_model']} ({attr_aud['region_of_origin']}) - Conf: {attr_aud['attribution_confidence']}")
-        print(f" -> Watermark Detected: {attr_img['watermark_detected']}")
+        print(f" -> Image Attributed Model: {attr_img.get('attributed_model', 'None')} ({attr_img.get('region_of_origin', 'Global')}) - Conf: {attr_img.get('attribution_confidence', attr_img.get('confidence', 0.0))}")
+        print(f" -> Audio Attributed Model: {attr_aud.get('attributed_model', 'None')} ({attr_aud.get('region_of_origin', 'Global')}) - Conf: {attr_aud.get('attribution_confidence', attr_aud.get('confidence', 0.0))}")
+        print(f" -> Watermark Detected: {attr_img.get('watermark_detected', False)}")
 
         # 10. Complete NIST-Style Media Forensics Dossier Report
         print("\n[Step 10/10] Generating Official Media Forensics Dossier Report...")

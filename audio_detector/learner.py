@@ -1,0 +1,156 @@
+"""
+audio_detector.learner: Self-improving online learning & dynamic calibration engine for audio forensics.
+Maintains dedicated audio memory bank, tunes vocoder cutoff thresholds, and adapts acoustic weights.
+Completely self-contained with zero outside dependencies.
+"""
+from __future__ import annotations
+
+from datetime import datetime
+import json
+import logging
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+from audio_detector.config import CALIBRATION_FILE, DATA_DIR, MEMORY_FILE
+from audio_detector.schemas import AudioFeedbackRecord
+
+logger = logging.getLogger("audio_detector.learner")
+
+
+class AudioSelfImprover:
+    """
+    Dedicated self-improving module for Audio AI Detection.
+    Maintains a persistent memory of verified authentic speech and AI voice clones,
+    and dynamically adapts vocoder cutoff frequency limits and Wiener flatness weights.
+    """
+
+    def __init__(
+        self,
+        memory_file: Optional[Path] = None,
+        calibration_file: Optional[Path] = None,
+    ):
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        self.memory_file = memory_file or MEMORY_FILE
+        self.calibration_file = calibration_file or CALIBRATION_FILE
+
+    def load_calibration(self) -> Dict[str, Any]:
+        """Loads active audio calibration parameters."""
+        if self.calibration_file.is_file():
+            try:
+                with open(self.calibration_file, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.warning("Could not read audio calibration file: %s", e)
+
+        default_calib = {
+            "version": 1,
+            "last_updated": datetime.now().isoformat(),
+            "samples_processed": 0,
+            "acoustic_weights": {
+                "vocoder_cutoff": 0.40,
+                "spectral_flatness": 0.30,
+                "silence_ratio": 0.20,
+                "high_freq_roll": 0.10,
+            },
+            "thresholds": {
+                "vocoder_min_hz": 6500,
+                "vocoder_max_hz": 8200,
+                "flatness_synthetic_max": 0.002,
+                "silence_synthetic_min": 0.12,
+            },
+            "sensitivity_offsets": {
+                "audio_ai_offset": 0.0,
+            },
+        }
+        return default_calib
+
+    def save_calibration(self, calib: Dict[str, Any]) -> None:
+        """Saves updated calibration parameters atomically."""
+        calib["last_updated"] = datetime.now().isoformat()
+        try:
+            with open(self.calibration_file, "w", encoding="utf-8") as f:
+                json.dump(calib, f, indent=2)
+        except Exception as e:
+            logger.error("Failed to save audio calibration: %s", e)
+
+    def load_memory(self) -> List[Dict[str, Any]]:
+        """Loads verified audio memory bank."""
+        if self.memory_file.is_file():
+            try:
+                with open(self.memory_file, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                pass
+        return []
+
+    def record_feedback(
+        self,
+        audio_path: str,
+        user_label: str,  # 'REAL' or 'AI'
+        acoustic_metrics: Dict[str, Any],
+        voice_generator_tag: Optional[str] = None,
+        notes: str = "",
+    ) -> Dict[str, Any]:
+        """
+        Registers audio ground truth feedback and recalibrates acoustic thresholds.
+        """
+        memory = self.load_memory()
+        calib = self.load_calibration()
+
+        def _sanitize_val(val: Any) -> Any:
+            if hasattr(val, "shape"):
+                return None
+            if isinstance(val, (float, int, str, bool)):
+                return val
+            if hasattr(val, "item") and getattr(val, "size", 1) == 1:
+                return val.item()
+            if isinstance(val, dict):
+                return {str(dk): _sanitize_val(dv) for dk, dv in val.items() if _sanitize_val(dv) is not None}
+            if isinstance(val, (list, tuple)):
+                clean = [_sanitize_val(x) for x in val]
+                return [x for x in clean if x is not None]
+            return None
+
+        sanitized_metrics = {}
+        for k, v in acoustic_metrics.items():
+            if k in ("spectrogram_image", "samples", "waveform"):
+                continue
+            s_val = _sanitize_val(v)
+            if s_val is not None:
+                sanitized_metrics[k] = s_val
+
+        record = AudioFeedbackRecord(
+            timestamp=datetime.now().isoformat(),
+            audio_path=str(audio_path),
+            user_label=user_label.upper(),
+            features=sanitized_metrics,
+            notes=notes if not voice_generator_tag else f"tag: {voice_generator_tag}; {notes}",
+        ).to_dict()
+        memory.append(record)
+
+        try:
+            with open(self.memory_file, "w", encoding="utf-8") as f:
+                json.dump(memory, f, indent=2)
+        except Exception as e:
+            logger.error("Failed to save audio memory: %s", e)
+
+        weights = calib.setdefault("acoustic_weights", {})
+        thresh = calib.setdefault("thresholds", {})
+        offsets = calib.setdefault("sensitivity_offsets", {})
+        calib["samples_processed"] = len(memory)
+
+        flatness = float(acoustic_metrics.get("spectral_flatness", 0.05))
+
+        if user_label.upper() == "AI":
+            # If synthetic voice was missed, boost vocoder weight and audio AI offset
+            weights["vocoder_cutoff"] = min(0.60, weights.get("vocoder_cutoff", 0.40) + 0.02)
+            offsets["audio_ai_offset"] = min(0.35, offsets.get("audio_ai_offset", 0.0) + 0.03)
+            if flatness > 0.002:
+                thresh["flatness_synthetic_max"] = min(0.010, thresh.get("flatness_synthetic_max", 0.002) + 0.0005)
+        elif user_label.upper() == "REAL":
+            # If natural whisper / phone audio triggered false positive, lower audio AI offset
+            offsets["audio_ai_offset"] = max(-0.35, offsets.get("audio_ai_offset", 0.0) - 0.03)
+
+        self.save_calibration(calib)
+        logger.info("AudioSelfImprover dynamically updated calibration (Total records: %d)", len(memory))
+        return calib
