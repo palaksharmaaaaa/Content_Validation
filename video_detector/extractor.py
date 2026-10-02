@@ -177,5 +177,9 @@ class VideoFrameExtractor:
                 timeout=120,
             )
             return res.returncode == 0 and Path(output_wav).is_file() and Path(output_wav).stat().st_size > 44
-        except Exception:
+        except FileNotFoundError:
+            logger.debug("FFmpeg executable not found in PATH; audio stream track extraction bypassed.")
+            return False
+        except Exception as exc:
+            logger.debug("Audio extraction failed for %s: %s", video_path, exc)
             return False

@@ -16,9 +16,13 @@ DEFAULT_CHECKPOINT = MODELS_DIR / "ai_detector.pt"
 MEMORY_FILE = DATA_DIR / "image_memory.json"
 CALIBRATION_FILE = DATA_DIR / "image_calibration.json"
 
-DATA_DIR.mkdir(parents=True, exist_ok=True)
-MODELS_DIR.mkdir(parents=True, exist_ok=True)
-DATASET_DIR.mkdir(parents=True, exist_ok=True)
+
+def ensure_directories() -> None:
+    """Safely creates runtime data directories when needed without import-time side effects."""
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    DATASET_DIR.mkdir(parents=True, exist_ok=True)
+
 
 # Image Resolution & Format Settings
 IMAGE_SIZE = 224

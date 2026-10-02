@@ -22,6 +22,7 @@ from video_detector.attribution import VideoModelAttributionEngine
 from video_detector.content import VideoContentAnalyzer
 from video_detector.cross_modal import CrossModalConsistencyEngine
 from video_detector.detector import VideoAIDetector
+from video_detector.explain import build_video_nine_dimensions_dossier, generate_video_newbie_explanation
 from video_detector.face import VideoFaceDeepfakeDetector
 from video_detector.profiler import VideoProfiler
 from video_detector.provenance import VideoProvenanceValidator
@@ -132,6 +133,31 @@ class VideoForensicPipeline:
         if attribution_res.get("attributed_model") != "Unknown":
             evidence_trail.append(f"Video Generator Fingerprint: {attribution_res.get('attributed_model')} ({attribution_res.get('confidence', 0)*100:.0f}% confidence)")
 
+        decision_payload = {
+            "final_status": final_label,
+            "authenticity_probabilities": {
+                "p_ai": ai_percentage,
+                "p_real": real_percentage,
+                "p_undecided": undecided_percentage,
+            },
+            "evidence_trail": evidence_trail,
+        }
+        nine_dims = build_video_nine_dimensions_dossier(
+            profile_data=profile_res,
+            video_result=ai_res,
+            content_inventory=content_res,
+            provenance_result=provenance_res,
+            attribution_result=attribution_res,
+            cross_modal_result=cross_modal_res,
+        )
+        newbie_expl = generate_video_newbie_explanation(
+            filename=path.name,
+            profile_data=profile_res,
+            content_inventory=content_res,
+            video_result=ai_res,
+            decision=decision_payload,
+        )
+
         return {
             "content_valid": True,
             "filename": path.name,
@@ -152,4 +178,6 @@ class VideoForensicPipeline:
             "cross_modal_consistency": cross_modal_res,
             "model_attribution": attribution_res,
             "evidence_trail": evidence_trail,
+            "nine_dimensions_dossier": nine_dims,
+            "newbie_explanation": newbie_expl,
         }

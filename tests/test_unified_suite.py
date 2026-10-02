@@ -138,6 +138,48 @@ class TestVideoLearnerAtomic(unittest.TestCase):
             self.assertEqual(loaded[-1]["user_label"], "AI_GENERATED")
 
 
+from audio_detector.validator import AudioValidator
+from video_detector.face import VideoFaceDeepfakeDetector
+from core.forensic_service import ForensicService
+import numpy as np
+
+
+class TestForensicServiceFacade(unittest.TestCase):
+    def setUp(self):
+        self.service = ForensicService()
+
+    def test_service_health_check(self):
+        health = self.service.health_check()
+        self.assertIsInstance(health, dict)
+        self.assertIn("status", health)
+        self.assertIn("components", health)
+        self.assertIn("security", health)
+        self.assertEqual(health["status"], "HEALTHY")
+
+
+    def test_pipelines_lazy_initialized(self):
+        self.assertIsNotNone(self.service.image_pipeline)
+        self.assertIsNotNone(self.service.video_pipeline)
+        self.assertIsNotNone(self.service.audio_pipeline)
+
+    def test_audio_validator_alias(self):
+        validator = AudioValidator()
+        self.assertTrue(hasattr(validator, "validate_audio"))
+        # Test with non-existent file
+        res = validator.validate_audio("non_existent_file.wav")
+        self.assertFalse(res.is_valid)
+        self.assertEqual(res.get("readable"), False)
+
+
+class TestVideoFaceGating(unittest.TestCase):
+    def test_empty_person_boxes_returns_empty_faces(self):
+        detector = VideoFaceDeepfakeDetector()
+        dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+        # Passing empty person boxes should immediately gate and return empty faces list
+        faces = detector.detect_faces(dummy_frame, person_boxes=[])
+        self.assertEqual(faces, [])
+
+
 def suite():
     loader = unittest.TestLoader()
     s = unittest.TestSuite()
@@ -145,6 +187,8 @@ def suite():
     s.addTests(loader.loadTestsFromTestCase(TestModalExplainers))
     s.addTests(loader.loadTestsFromTestCase(TestDownloaderSecurityDelegation))
     s.addTests(loader.loadTestsFromTestCase(TestVideoLearnerAtomic))
+    s.addTests(loader.loadTestsFromTestCase(TestForensicServiceFacade))
+    s.addTests(loader.loadTestsFromTestCase(TestVideoFaceGating))
     return s
 
 
@@ -152,3 +196,4 @@ if __name__ == "__main__":
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite())
     sys.exit(0 if result.wasSuccessful() else 1)
+

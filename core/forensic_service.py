@@ -17,6 +17,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from audio_detector.detector import AudioAIDetector
 from audio_detector.learner import AudioSelfImprover
+from audio_detector.pipeline import AudioForensicPipeline
 from audio_detector.validator import AudioValidator
 from image_detector.attribution import ImageModelAttributionEngine
 from image_detector.content import ImageContentAnalyzer
@@ -29,6 +30,7 @@ from image_detector.provenance import ImageProvenanceValidator
 from image_detector.validator import ImageValidator
 from video_detector.detector import VideoAIDetector
 from video_detector.learner import VideoSelfImprover
+from video_detector.pipeline import VideoForensicPipeline
 from video_detector.profiler import VideoProfiler
 
 logger = logging.getLogger("core.forensic_service")
@@ -49,6 +51,8 @@ class ForensicService:
 
         # Lazy components
         self._image_pipeline: Optional[ImageForensicPipeline] = None
+        self._video_pipeline: Optional[VideoForensicPipeline] = None
+        self._audio_pipeline: Optional[AudioForensicPipeline] = None
         self._image_detector: Optional[ImageAIDetector] = None
         self._video_detector: Optional[VideoAIDetector] = None
         self._audio_detector: Optional[AudioAIDetector] = None
@@ -141,6 +145,24 @@ class ForensicService:
             return self._audio_improver
 
     @property
+    def video_pipeline(self) -> VideoForensicPipeline:
+        with self._lock:
+            if self._video_pipeline is None:
+                self._video_pipeline = VideoForensicPipeline(
+                    detector=self.video_detector,
+                )
+            return self._video_pipeline
+
+    @property
+    def audio_pipeline(self) -> AudioForensicPipeline:
+        with self._lock:
+            if self._audio_pipeline is None:
+                self._audio_pipeline = AudioForensicPipeline(
+                    detector=self.audio_detector,
+                )
+            return self._audio_pipeline
+
+    @property
     def video_improver(self) -> VideoSelfImprover:
         with self._lock:
             if self._video_improver is None:
@@ -178,29 +200,41 @@ class ForensicService:
         audio_path: str | Path,
         sensitivity: str = "high",
     ) -> Dict[str, Any]:
-        """Runs acoustic vocoder and Wiener flatness forensic evaluation on an audio track."""
+        """Runs the linear acoustic forensic evaluation pipeline on an audio track."""
         try:
-            val_res = AudioValidator().validate_audio(str(audio_path))
-            if not val_res.get("valid"):
-                return {
-                    "content_valid": False,
-                    "filename": Path(audio_path).name,
-                    "error": val_res.get("error", "Corrupt audio stream"),
-                    "final_status": "INVALID_AUDIO",
-                }
-
-            result = self.audio_detector.predict(audio_path, sensitivity=sensitivity)
-            return {
-                "content_valid": True,
-                "filename": Path(audio_path).name,
-                "path": str(audio_path),
-                **result,
-            }
+            return self.audio_pipeline.analyze(
+                audio_path=audio_path,
+                sensitivity=sensitivity,
+            )
         except Exception as exc:
             logger.error("Audio analysis failed for %s: %s", audio_path, exc, exc_info=True)
             return {
                 "content_valid": False,
                 "filename": Path(audio_path).name,
+                "path": str(audio_path),
+                "error": str(exc),
+                "final_status": "PROCESSING_ERROR",
+            }
+
+    def analyze_video(
+        self,
+        video_path: str | Path,
+        sensitivity: str = "high",
+        audio_forensics: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Runs the multi-modal temporal forensic evaluation pipeline on a video file."""
+        try:
+            return self.video_pipeline.analyze(
+                video_path=video_path,
+                sensitivity=sensitivity,
+                audio_forensics=audio_forensics,
+            )
+        except Exception as exc:
+            logger.error("Video analysis failed for %s: %s", video_path, exc, exc_info=True)
+            return {
+                "content_valid": False,
+                "filename": Path(video_path).name,
+                "path": str(video_path),
                 "error": str(exc),
                 "final_status": "PROCESSING_ERROR",
             }
@@ -244,6 +278,9 @@ class ForensicService:
         return {
             "status": "HEALTHY",
             "components": {
+                "image_pipeline": "READY",
+                "video_pipeline": "READY",
+                "audio_pipeline": "READY",
                 "image_detector": "READY",
                 "video_detector": "READY",
                 "audio_detector": "READY",

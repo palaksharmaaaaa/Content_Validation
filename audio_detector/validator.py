@@ -120,6 +120,10 @@ class AudioValidator:
             extracted_samples=(samples, sr, dur),
         )
 
+    def validate_audio(self, audio_path: str | Path) -> AudioValidationResult:
+        """Alias for validate to ensure backwards compatibility across services and callers."""
+        return self.validate(audio_path)
+
     def extract_pcm_samples(
         self, audio_path: str | Path
     ) -> Tuple[Optional[np.ndarray], int, float]:

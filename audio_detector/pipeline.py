@@ -20,6 +20,7 @@ from typing import Any, Dict, Optional
 from audio_detector.attribution import AudioModelAttributionEngine
 from audio_detector.content import AudioContentAnalyzer
 from audio_detector.detector import AudioAIDetector
+from audio_detector.explain import build_audio_nine_dimensions_dossier, generate_audio_newbie_explanation
 from audio_detector.profiler import AudioProfiler
 from audio_detector.provenance import AudioProvenanceValidator
 from audio_detector.validator import AudioValidator
@@ -120,6 +121,30 @@ class AudioForensicPipeline:
         if attribution_res.get("attributed_model") != "Unknown":
             evidence_trail.append(f"Voice Synthesizer Fingerprint: {attribution_res.get('attributed_model')} ({attribution_res.get('confidence', 0)*100:.0f}% confidence)")
 
+        decision_payload = {
+            "final_status": final_label,
+            "authenticity_probabilities": {
+                "p_ai": ai_percentage,
+                "p_real": real_percentage,
+                "p_undecided": undecided_percentage,
+            },
+            "evidence_trail": evidence_trail,
+        }
+        nine_dims = build_audio_nine_dimensions_dossier(
+            profile_data=profile_res,
+            audio_result=ai_res,
+            content_inventory=scene_res,
+            provenance_result=provenance_res,
+            attribution_result=attribution_res,
+        )
+        newbie_expl = generate_audio_newbie_explanation(
+            filename=path.name,
+            profile_data=profile_res,
+            content_inventory=scene_res,
+            audio_result=ai_res,
+            decision=decision_payload,
+        )
+
         return {
             "content_valid": True,
             "filename": path.name,
@@ -139,4 +164,6 @@ class AudioForensicPipeline:
             "scene_and_tone": scene_res,
             "model_attribution": attribution_res,
             "evidence_trail": evidence_trail,
+            "nine_dimensions_dossier": nine_dims,
+            "newbie_explanation": newbie_expl,
         }

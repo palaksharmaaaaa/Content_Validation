@@ -1175,75 +1175,136 @@ def render_nine_dimensions_breakdown(nine_dims: Dict[str, Any], expanded: bool =
 
         with t1:
             st.markdown(f"#### {d1.get('title', 'Dimension 1')}")
-            st.write(f"• **Camera Hardware:** `{d1.get('camera_hardware')}` | Lens: `{d1.get('lens_model')}`")
-            st.write(f"• **IPTC Digital Source Type:** `{d1.get('iptc_digital_source_type')}`")
+            if d1.get("container_atoms"):
+                st.write(f"• **Container Atoms:** `{', '.join(str(a) for a in d1.get('container_atoms', []))}`")
+            if d1.get("container_format"):
+                st.write(f"• **Audio Stream Format:** `{d1.get('container_format')}`")
+            if d1.get("camera_hardware") or d1.get("hardware_origin"):
+                cam_name = d1.get("camera_hardware") or d1.get("hardware_origin")
+                lens = f" | Lens: `{d1.get('lens_model')}`" if d1.get("lens_model") else ""
+                st.write(f"• **Hardware Identity:** `{cam_name}`{lens}")
+            if d1.get("iptc_digital_source_type"):
+                st.write(f"• **IPTC Digital Source Type:** `{d1.get('iptc_digital_source_type')}`")
             st.write(f"• **C2PA Content Credentials:** `{d1.get('c2pa_status')}`")
-            st.write(f"• **Software Fingerprint:** `{d1.get('software_signature')}` | Date: `{d1.get('date_taken')}`")
-            st.write(f"• **GPS Location:** `{d1.get('gps_coordinates')}`")
+            if d1.get("software_signature"):
+                st.write(f"• **Software Fingerprint:** `{d1.get('software_signature')}` | Date: `{d1.get('date_taken')}`")
+            if d1.get("gps_coordinates"):
+                st.write(f"• **GPS Location:** `{d1.get('gps_coordinates')}`")
             st.info(f"Verdict: **{d1.get('provenance_verdict')}**")
 
         with t2:
             st.markdown(f"#### {d2.get('title', 'Dimension 2')}")
-            st.write(f"• **Geometry:** `{d2.get('geometry')}` ({d2.get('aspect_ratio')}, {d2.get('orientation')})")
-            st.write(f"• **DPI & Bit Depth:** `{d2.get('dpi')}` • `{d2.get('bit_depth')}` ({d2.get('color_space')})")
-            st.write(f"• **Shannon Entropy:** `{d2.get('shannon_entropy')}`")
-            st.write(f"• **Luminance Range:** `{d2.get('luminance_dynamic_range')}`")
-            st.write(f"• **Clipping Profile:** `{d2.get('clipping_profile')}`")
-            st.write(f"• **Unique Quantized Colors:** `{d2.get('unique_colors_quantized', 0):,}`")
+            if d2.get("geometry"):
+                st.write(f"• **Geometry:** `{d2.get('geometry')}` ({d2.get('aspect_ratio')}, {d2.get('orientation', 'Standard')})")
+            if d2.get("frame_rate_fps"):
+                st.write(f"• **Frame Rate & Duration:** `{d2.get('frame_rate_fps')}` • `{d2.get('duration')}` ({d2.get('total_frames')} frames)")
+            if d2.get("sample_rate"):
+                st.write(f"• **Acoustic Geometry:** `{d2.get('sample_rate')}` • `{d2.get('duration')}` • `{d2.get('channels')}` • `{d2.get('bit_depth')}`")
+            if d2.get("dpi"):
+                st.write(f"• **DPI & Bit Depth:** `{d2.get('dpi')}` • `{d2.get('bit_depth')}` ({d2.get('color_space')})")
+            if d2.get("shannon_entropy"):
+                st.write(f"• **Shannon Entropy:** `{d2.get('shannon_entropy')}`")
+            if d2.get("luminance_dynamic_range"):
+                st.write(f"• **Luminance Range:** `{d2.get('luminance_dynamic_range')}`")
+            if d2.get("clipping_profile"):
+                st.write(f"• **Clipping Profile:** `{d2.get('clipping_profile')}`")
+            if d2.get("unique_colors_quantized"):
+                st.write(f"• **Unique Quantized Colors:** `{d2.get('unique_colors_quantized', 0):,}`")
 
         with t3:
             st.markdown(f"#### {d3.get('title', 'Dimension 3')}")
-            st.write(f"• **PRNU Residual Mean:** `{d3.get('prnu_residual_mean', 0.0):.3f}` | Flat Region Noise: `{d3.get('flat_region_noise', 0.0):.3f}`")
-            st.write(f"• **Mathematical Formulation:** `{d3.get('mathematical_physics')}`")
-            if d3.get("is_natural_shot_noise"):
-                st.success(f"✅ {d3.get('diagnosis')}")
-            else:
-                st.error(f"🚨 {d3.get('diagnosis')}")
+            if d3.get("temporal_warping_variance") is not None:
+                st.write(f"• **Inter-Frame Motion Variance:** `{d3.get('temporal_warping_variance', 0.0):.2f}`")
+            if d3.get("vocoder_cutoff_hz") is not None:
+                st.write(f"• **Vocoder Brickwall Cutoff:** `{d3.get('vocoder_cutoff_hz', 0):,} Hz`")
+            if d3.get("prnu_residual_mean") is not None:
+                st.write(f"• **PRNU Residual Mean:** `{d3.get('prnu_residual_mean', 0.0):.3f}` | Flat Region Noise: `{d3.get('flat_region_noise', 0.0):.3f}`")
+            if d3.get("mathematical_physics"):
+                st.write(f"• **Mathematical Formulation:** `{d3.get('mathematical_physics')}`")
+            if d3.get("diagnosis"):
+                if d3.get("is_natural_shot_noise") or d3.get("temporal_warping_variance", 0.0) < 140.0:
+                    st.success(f"Diagnosis: {d3.get('diagnosis')}")
+                else:
+                    st.error(f"Diagnosis: {d3.get('diagnosis')}")
 
         with t4:
             st.markdown(f"#### {d4.get('title', 'Dimension 4')}")
-            st.write(f"• **Surface Smoothness Index:** `{d4.get('smoothness_index', 0.0):.3f}`")
-            st.write("• **Physical Principle:** Organic micro-textures and real skin pores maintain high local bilateral variance; neural diffusion models over-smooth.")
-            if d4.get("is_diffusion_smoothed"):
-                st.warning(f"⚠️ {d4.get('diagnosis')}")
-            else:
-                st.success(f"✅ {d4.get('diagnosis')}")
+            if d4.get("diffusion_flickering_ratio") is not None:
+                st.write(f"• **Diffusion Flickering Ratio:** `{d4.get('diffusion_flickering_ratio', 0.0):.3f}`")
+            if d4.get("spectral_flatness_wiener") is not None:
+                st.write(f"• **Wiener Spectral Flatness:** `{d4.get('spectral_flatness_wiener', 0.0):.4f}`")
+            if d4.get("smoothness_index") is not None:
+                st.write(f"• **Surface Smoothness Index:** `{d4.get('smoothness_index', 0.0):.3f}`")
+            st.write("• **Physical Principle:** Organic micro-textures maintain high local bilateral variance; neural generative models over-smooth.")
+            if d4.get("diagnosis"):
+                if d4.get("is_diffusion_smoothed") or d4.get("is_flickering_detected") or d4.get("is_synthetic_smoothness"):
+                    st.warning(f"⚠️ {d4.get('diagnosis')}")
+                else:
+                    st.success(f"✅ {d4.get('diagnosis')}")
 
         with t5:
             st.markdown(f"#### {d5.get('title', 'Dimension 5')}")
-            st.write(f"• **Spectral Decay Alpha:** `{d5.get('spectral_decay_alpha', 2.05):.3f}`")
-            st.write(f"• **Field Law:** `{d5.get('mathematical_physics')}`")
-            if d5.get("is_anomalous_decay"):
-                st.warning(f"⚠️ {d5.get('diagnosis')}")
-            else:
-                st.success(f"✅ {d5.get('diagnosis')}")
+            if d5.get("digital_silence_ratio") is not None:
+                st.write(f"• **Digital Zero Silence Ratio:** `{d5.get('digital_silence_ratio')}`")
+            if d5.get("keyframe_fft_alpha") is not None:
+                st.write(f"• **Keyframe Spectral Alpha:** `{d5.get('keyframe_fft_alpha', 2.05):.3f}`")
+            if d5.get("spectral_decay_alpha") is not None:
+                st.write(f"• **Spectral Decay Alpha:** `{d5.get('spectral_decay_alpha', 2.05):.3f}`")
+            if d5.get("mathematical_physics"):
+                st.write(f"• **Field Law:** `{d5.get('mathematical_physics')}`")
+            if d5.get("diagnosis"):
+                if d5.get("is_anomalous_decay") or d5.get("has_digital_zero_silence"):
+                    st.warning(f"⚠️ {d5.get('diagnosis')}")
+                else:
+                    st.success(f"✅ {d5.get('diagnosis')}")
 
         with t6:
             st.markdown(f"#### {d6.get('title', 'Dimension 6')}")
-            st.write(f"• **Primary Visual Genre:** `{d6.get('primary_genre')}`")
-            st.write(f"• **Living Entities:** `{d6.get('persons_count', 0)}` person(s), `{d6.get('faces_count', 0)}` face(s) (Stylized Character: `{d6.get('is_stylized_character')}`)")
-            st.write(f"• **Setting & Atmosphere:** `{d6.get('setting_and_environment')}` • `{d6.get('atmospheric_mood')}`")
-            st.write(f"• **Daytime & Lighting Quality:** `{d6.get('lighting_and_daytime')}`")
+            if d6.get("audio_type"):
+                st.write(f"• **Dominant Audio Type:** `{d6.get('audio_type')}` • `{d6.get('estimated_speakers')} speaker(s)`")
+                st.write(f"• **Acoustic Environment:** `{d6.get('acoustic_environment')}`")
+            else:
+                st.write(f"• **Primary Visual Genre:** `{d6.get('primary_genre')}`")
+                st.write(f"• **Living Entities:** `{d6.get('persons_count', 0)}` person(s), `{d6.get('faces_count', 0)}` face(s) (Stylized Character: `{d6.get('is_stylized_character')}`)")
+                st.write(f"• **Setting & Atmosphere:** `{d6.get('setting_and_environment')}` • `{d6.get('atmospheric_mood')}`")
+                st.write(f"• **Daytime & Lighting Quality:** `{d6.get('lighting_and_daytime')}`")
 
         with t7:
             st.markdown(f"#### {d7.get('title', 'Dimension 7')}")
-            st.write(f"• **Visual Medium:** `{d7.get('visual_medium')}`")
-            st.write(f"• **Digital Art / Painting Detected:** `{d7.get('is_digital_art')}`")
-            st.write(f"• **Canny Edge Density:** `{d7.get('canny_edge_density_pct', 0.0):.2f}%` | Dark Line Art: `{d7.get('dark_line_contours_pct', 0.0):.2f}%`")
-            st.write(f"• **Focus Sharpness:** `{d7.get('laplacian_focus_sharpness', 0.0):.1f}`")
+            if d7.get("acoustic_delivery_tone"):
+                st.write(f"• **Acoustic Delivery Tone:** `{d7.get('acoustic_delivery_tone')}`")
+            if d7.get("visual_medium"):
+                st.write(f"• **Visual Medium:** `{d7.get('visual_medium')}`")
+            if d7.get("synthesis_type"):
+                st.write(f"• **Temporal Synthesis Type:** `{d7.get('synthesis_type')}`")
+            if d7.get("is_digital_art") is not None:
+                st.write(f"• **Digital Art / Painting Detected:** `{d7.get('is_digital_art')}`")
+            if d7.get("canny_edge_density_pct") is not None:
+                st.write(f"• **Canny Edge Density:** `{d7.get('canny_edge_density_pct', 0.0):.2f}%` | Dark Line Art: `{d7.get('dark_line_contours_pct', 0.0):.2f}%`")
+            if d7.get("laplacian_focus_sharpness") is not None:
+                st.write(f"• **Focus Sharpness:** `{d7.get('laplacian_focus_sharpness', 0.0):.1f}`")
 
         with t8:
             st.markdown(f"#### {d8.get('title', 'Dimension 8')}")
-            st.write(f"• **Acquisition Spectrum:** `{d8.get('sensor_spectrum')}`")
-            st.write(f"• **Color Channels:** `{d8.get('color_channels', 3)}` channels")
-            st.write(f"• **Diagnostic:** {d8.get('diagnosis')}")
+            if d8.get("bandwidth_class"):
+                st.write(f"• **Acoustic Bandwidth:** `{d8.get('bandwidth_class')}` | Nyquist Ceiling: `{d8.get('nyquist_ceiling')}`")
+            if d8.get("sensor_spectrum") or d8.get("sensor_modality"):
+                st.write(f"• **Acquisition Modality:** `{d8.get('sensor_spectrum') or d8.get('sensor_modality')}`")
+            if d8.get("color_channels") is not None:
+                st.write(f"• **Color Channels:** `{d8.get('color_channels', 3)}` channels")
+            if d8.get("diagnosis"):
+                st.write(f"• **Diagnostic:** {d8.get('diagnosis')}")
 
         with t9:
             st.markdown(f"#### {d9.get('title', 'Dimension 9')}")
-            st.write(f"• **Attributed Generator:** `{d9.get('attributed_model')}` ({d9.get('region_of_origin')})")
-            st.write(f"• **Attribution Confidence:** `{int(d9.get('attribution_confidence', 0) * 100)}%`")
-            st.write(f"• **Watermark Detected:** `{'YES - ' + str(d9.get('watermark_details')) if d9.get('watermark_detected') else 'None'}`")
-            st.write(f"• **Spatial Manipulation Area:** `{d9.get('spatial_manipulated_area_pct', 0.0):.1f}%` of frame")
+            reg = f" ({d9.get('region_of_origin')})" if d9.get("region_of_origin") else ""
+            st.write(f"• **Attributed Generator:** `{d9.get('attributed_model')}`{reg}")
+            st.write(f"• **Attribution Confidence:** `{d9.get('confidence', '0%')}`")
+            st.write(f"• **Watermark Detected:** `{'YES' if d9.get('watermark_detected') else 'None'}`")
+            if d9.get("suspicious_duration_pct") is not None:
+                st.write(f"• **Suspicious Duration Fraction:** `{d9.get('suspicious_duration_pct')}`")
+            if d9.get("spatial_manipulated_area_pct") is not None:
+                st.write(f"• **Spatial Manipulation Area:** `{d9.get('spatial_manipulated_area_pct', 0.0):.1f}%` of frame")
 
 
 def render_image_type_and_category(
@@ -1431,6 +1492,222 @@ def render_linear_image_pipeline_results(item: Dict[str, Any]) -> None:
         decision=decision,
         unique_key=f"linear_img_{filename}",
     )
+
+
+def render_linear_video_pipeline_results(item: Dict[str, Any]) -> None:
+    """
+    Renders the completely linear end-to-end forensic flow for video media:
+    1. Pre-Analysis Feature & Stream Specifications (Resolution, FPS, Duration, Codec, Atoms, Hashes).
+    2. 9-Dimensions Video Forensic Taxonomy Dossier.
+    3. Video Scene, Living Entities & Content Intelligence.
+    4. Algorithmic Detection & Quantified Temporal Inventory.
+    5. Video Player, Sampled Keyframe & Spatial Heatmap Inspection.
+    6. Final Result & Beginner-Friendly Newbie Narrative Explanation.
+    7. Continuous Learning Feedback.
+    """
+    if not item or not item.get("success"):
+        st.error(f"❌ Failed to process `{item.get('filename', 'video')}`: {item.get('error', 'Unknown error')}")
+        return
+
+    profile_data = item.get("vid_profile") or item.get("file_profile") or {}
+    video_res = item.get("video_result") or item.get("temporal_forensics") or {}
+    content_res = item.get("content_res") or item.get("content_inventory") or {}
+    decision = item.get("decision") or {}
+    filename = item.get("filename", "video")
+
+    # 1. Stage 1: Pre-Analysis Feature & Stream Specifications
+    st.markdown("### 🔬 Stage 1: Pre-Analysis Video Stream Specifications")
+    st.caption("Low-level container headers, stream geometry, frame rates, codecs, and cryptographic hashes extracted before running detection.")
+    geom = profile_data.get("geometry", {})
+    codec = profile_data.get("codec_and_container", {})
+    hashes = profile_data.get("cryptographic_hashes", {})
+
+    c1, c2, c3, c4 = st.columns(4)
+    w_val = geom.get("width", 0)
+    h_val = geom.get("height", 0)
+    c1.metric("Dimensions", f"{w_val} × {h_val} px" if w_val else "N/A")
+    c2.metric("Frame Rate", f"{geom.get('fps', 0.0):.1f} fps")
+    c3.metric("Duration", f"{geom.get('duration_seconds', 0.0):.2f} s")
+    c4.metric("Total Frames", f"{geom.get('total_frames', 0):,}")
+
+    c5, c6, c7, c8 = st.columns(4)
+    c5.metric("Container / Codec", f"{codec.get('container', 'MP4')} • {codec.get('codec', 'AVC')}")
+    c6.metric("Aspect Ratio", geom.get("aspect_ratio", "N/A"))
+    c7.metric("Bitrate", f"{codec.get('bitrate_kbps', 0.0):.0f} kbps" if codec.get('bitrate_kbps') else "N/A")
+    sha_str = hashes.get("sha256", "")
+    c8.metric("SHA-256", f"{sha_str[:12]}..." if sha_str else "N/A")
+
+    st.markdown("---")
+
+    # 2. Stage 2: 9-Dimensions Forensic Taxonomy Analyzer
+    nine_dims = item.get("nine_dimensions_dossier")
+    if nine_dims:
+        render_nine_dimensions_breakdown(nine_dims, expanded=False)
+
+    st.markdown("---")
+
+    # 3. Stage 3: Scene, Living Entities & Content Intelligence
+    render_scene_and_content_intelligence(content_res, modality="video")
+
+    st.markdown("---")
+
+    # 4. Stage 4: Algorithmic Detection & Quantified Temporal Inventory
+    st.markdown("### 🔢 Stage 4: Algorithmic Detection & Temporal Timeline Attribution")
+    probs = decision.get("authenticity_probabilities", {})
+    col_p1, col_p2, col_p3 = st.columns(3)
+    col_p1.metric("🤖 AI Synthesis Probability", f"{probs.get('p_ai', 0.0):.1f}%")
+    col_p2.metric("📷 Authentic Capture Probability", f"{probs.get('p_real', 0.0):.1f}%")
+    col_p3.metric("❓ Undetermined / Epistemic Margin", f"{probs.get('p_undecided', 0.0):.1f}%")
+
+    segments = video_res.get("temporal_segments", [])
+    if segments:
+        st.markdown("##### ⏱️ Video Temporal Timeline Segments")
+        for s in segments:
+            badge = "🚨 AI GENERATED" if "AI" in s.get("label", "") else ("✅ REAL" if "REAL" in s.get("label", "") else "❓ UNCERTAIN")
+            st.write(f"• `{s.get('start_seconds', 0.0)}s ── {s.get('end_seconds', 0.0)}s` ({s.get('duration_seconds', 0.0)}s) : **{badge}**")
+
+    st.markdown("---")
+
+    # 5. Stage 5: Visual Inspection, Player & Keyframe Anomaly
+    st.markdown("### 🎥 Visual Inspection & Temporal Media Player")
+    col_vid, col_kf = st.columns([1.2, 1], gap="medium")
+    with col_vid:
+        st.video(item["path"])
+    with col_kf:
+        tmp_kf_path = item.get("tmp_kf_path")
+        kf_ai = item.get("kf_ai")
+        if tmp_kf_path and Path(tmp_kf_path).is_file():
+            if kf_ai and kf_ai.get("heatmap_rgb") is not None:
+                st.image(kf_ai["heatmap_rgb"], caption=f"Keyframe Heatmap ({kf_ai.get('ai_spatial_area_pct', 0)}% AI area)", width="stretch")
+            else:
+                st.image(tmp_kf_path, caption="Sampled Video Keyframe", width="stretch")
+        else:
+            st.info("Keyframe extraction completed.")
+
+    st.markdown("---")
+
+    # 6. Stage 6: Forensic Result & Beginner-Friendly Newbie Narrative Explanation
+    newbie_text = item.get("newbie_explanation")
+    render_newbie_narrative_result(newbie_text, filename)
+
+    # 7. Stage 7: Forensic Feedback & Retraining
+    render_bottom_feedback_panel(
+        media_path=item["path"],
+        modality="video",
+        forensic_data=video_res,
+        profile_data=profile_data,
+        decision=decision,
+        unique_key=f"linear_vid_{filename}",
+    )
+
+
+def render_linear_audio_pipeline_results(item: Dict[str, Any]) -> None:
+    """
+    Renders the completely linear end-to-end forensic flow for audio media:
+    1. Pre-Analysis Feature & Acoustic Specifications (Sample Rate, Duration, Channels, Bit Depth, Hashes).
+    2. 9-Dimensions Audio Forensic Taxonomy Dossier.
+    3. Acoustic Scene, Environment & Vocal Delivery Intelligence.
+    4. Algorithmic Detection & Speech Timeline Verification.
+    5. Audio Player & High-Resolution Spectrogram Inspection.
+    6. Final Result & Beginner-Friendly Newbie Narrative Explanation.
+    7. Continuous Learning Feedback.
+    """
+    if not item or not item.get("success"):
+        st.error(f"❌ Failed to process `{item.get('filename', 'audio')}`: {item.get('error', 'Unknown error')}")
+        return
+
+    profile_data = item.get("aud_profile") or item.get("file_profile") or {}
+    audio_res = item.get("audio_result") or item.get("acoustic_forensics") or {}
+    content_res = item.get("content_res") or item.get("scene_and_tone") or {}
+    decision = item.get("decision") or {}
+    filename = item.get("filename", "audio")
+
+    # 1. Stage 1: Pre-Analysis Feature & Acoustic Specifications
+    st.markdown("### 🔬 Stage 1: Pre-Analysis Audio Signal Specifications")
+    st.caption("Low-level container headers, sampling rates, bit depths, dynamic ranges, and cryptographic hashes extracted before running detection.")
+    sr_val = item.get("sr") or profile_data.get("sample_rate", 44100)
+    dur_val = item.get("duration") or profile_data.get("duration", 0.0)
+    ch_val = profile_data.get("channels", 1)
+    fmt_val = profile_data.get("format", "WAV")
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Sampling Rate", f"{sr_val:,} Hz")
+    c2.metric("Duration", f"{dur_val:.2f} s")
+    c3.metric("Channels", "Stereo (2 Ch)" if ch_val == 2 else "Mono (1 Ch)")
+    c4.metric("Format / Container", str(fmt_val).upper())
+
+    hashes = profile_data.get("cryptographic_hashes", {})
+    sha_str = hashes.get("sha256", "")
+    c5, c6, c7, c8 = st.columns(4)
+    c5.metric("Bit Depth", profile_data.get("bit_depth", "16-bit PCM"))
+    c6.metric("RMS Energy", f"{profile_data.get('rms_energy', 0.0):.4f}" if profile_data.get('rms_energy') else "Normal")
+    c7.metric("Dynamic Range", f"{profile_data.get('dynamic_range_db', 0.0):.1f} dB" if profile_data.get('dynamic_range_db') else "Standard")
+    c8.metric("SHA-256", f"{sha_str[:12]}..." if sha_str else "N/A")
+
+    st.markdown("---")
+
+    # 2. Stage 2: 9-Dimensions Forensic Taxonomy Analyzer
+    nine_dims = item.get("nine_dimensions_dossier")
+    if nine_dims:
+        render_nine_dimensions_breakdown(nine_dims, expanded=False)
+
+    st.markdown("---")
+
+    # 3. Stage 3: Acoustic Scene, Environment & Vocal Delivery Intelligence
+    render_scene_and_content_intelligence(content_res, modality="audio")
+
+    st.markdown("---")
+
+    # 4. Stage 4: Algorithmic Detection & Speech Timeline Verification
+    st.markdown("### 🔢 Stage 4: Algorithmic Detection & Speech Timeline Verification")
+    probs = decision.get("authenticity_probabilities", {})
+    col_p1, col_p2, col_p3 = st.columns(3)
+    col_p1.metric("🤖 AI Voice Synthesis Probability", f"{probs.get('p_ai', 0.0):.1f}%")
+    col_p2.metric("🎙️ Authentic Voice Probability", f"{probs.get('p_real', 0.0):.1f}%")
+    col_p3.metric("❓ Undetermined / Epistemic Margin", f"{probs.get('p_undecided', 0.0):.1f}%")
+
+    audio_segs = audio_res.get("temporal_segments", [])
+    if audio_segs:
+        st.markdown("##### ⏱️ Speech Timeline Segments")
+        for a_seg in audio_segs:
+            badge = "🚨 AI VOICE" if "AI" in a_seg.get("label", "") else ("✅ NATURAL SPEECH" if "REAL" in a_seg.get("label", "") else "❓ UNCERTAIN")
+            st.write(f"• `{a_seg.get('start_seconds', 0.0)}s ── {a_seg.get('end_seconds', 0.0)}s` ({a_seg.get('duration_seconds', 0.0)}s) : **{badge}**")
+
+    st.markdown("---")
+
+    # 5. Stage 5: Audio Player & Spectrogram Heatmap Inspection
+    st.markdown("### 🎙️ Audio Player & Spectral Inspection")
+    col_player, col_spec = st.columns([1, 1.2], gap="medium")
+    with col_player:
+        st.audio(item["path"])
+        st.caption("Acoustic analysis inspects for brick-wall vocoder cutoffs (e.g. 7.5kHz/16kHz in ElevenLabs/Suno/CosyVoice), Wiener spectral entropy, and synthetic silence dropouts.")
+    with col_spec:
+        spec_img = item.get("spec_img")
+        if spec_img is not None:
+            st.image(
+                spec_img,
+                caption="Spectral Heatmap (Frequency vs Time) — Exposing Vocoder Cutoff Lines & Harmonic Smoothing",
+                width="stretch",
+            )
+        else:
+            st.info("Spectrogram generated for this audio track.")
+
+    st.markdown("---")
+
+    # 6. Stage 6: Forensic Result & Beginner-Friendly Newbie Narrative Explanation
+    newbie_text = item.get("newbie_explanation")
+    render_newbie_narrative_result(newbie_text, filename)
+
+    # 7. Stage 7: Forensic Feedback & Retraining
+    render_bottom_feedback_panel(
+        media_path=item["path"],
+        modality="audio",
+        forensic_data=audio_res,
+        profile_data=profile_data,
+        decision=decision,
+        unique_key=f"linear_aud_{filename}",
+    )
+
 
 
 

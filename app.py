@@ -37,7 +37,9 @@ from ui.feedback_ui import (
     render_feedback_box,
     render_forensic_dossier,
     render_learning_dashboard,
+    render_linear_audio_pipeline_results,
     render_linear_image_pipeline_results,
+    render_linear_video_pipeline_results,
     render_media_specs,
     render_pre_analysis_specifications,
     render_scene_and_content_intelligence,
@@ -375,52 +377,7 @@ with tab_video:
             selected_vid = vid_results[0]
 
         if selected_vid and selected_vid.get("success"):
-            st.markdown("---")
-            col_vid_left, col_vid_right = st.columns([1, 1.2], gap="large")
-
-            with col_vid_left:
-                st.markdown(f"#### 🎥 Video Preview & Timeline: `{selected_vid['filename']}`")
-                st.video(selected_vid["path"])
-
-                tmp_kf_path = selected_vid.get("tmp_kf_path")
-                kf_ai = selected_vid.get("kf_ai")
-                if tmp_kf_path and Path(tmp_kf_path).is_file():
-                    st.markdown("##### 🖼️ Sampled Keyframe Spatial Anomaly")
-                    col_kf_orig, col_kf_heat = st.columns(2)
-                    with col_kf_orig:
-                        st.image(tmp_kf_path, caption="Sampled Video Keyframe", width="stretch")
-                    with col_kf_heat:
-                        if kf_ai and kf_ai.get("heatmap_rgb") is not None:
-                            st.image(
-                                kf_ai["heatmap_rgb"],
-                                caption=f"Keyframe Heatmap ({kf_ai.get('ai_spatial_area_pct', 0)}% AI area)",
-                                width="stretch",
-                            )
-
-                segments = selected_vid.get("video_result", {}).get("temporal_segments", [])
-                if segments:
-                    st.markdown("##### ⏱️ Video Temporal Timeline Attribution")
-                    for s in segments:
-                        badge = "🚨 AI GENERATED" if s["label"] == "LIKELY AI-GENERATED" else ("✅ REAL" if s["label"] == "LIKELY REAL" else "❓ UNCERTAIN")
-                        st.write(f"• `{s['start_seconds']}s ── {s['end_seconds']}s` ({s['duration_seconds']}s) : **{badge}**")
-                    st.caption("Temporal consistency checks analyze inter-frame motion vector continuity to expose diffusion flickering and warped object boundaries.")
-
-            with col_vid_right:
-                render_analysis_right_panel(
-                    selected_vid["decision"],
-                    selected_vid["content_res"],
-                    modality="video",
-                )
-
-            # Bottom single wide panel
-            render_bottom_feedback_panel(
-                media_path=selected_vid["path"],
-                modality="video",
-                forensic_data=selected_vid.get("video_result", {}),
-                profile_data=selected_vid.get("vid_profile", {}),
-                decision=selected_vid["decision"],
-                unique_key=f"vid_tab_{selected_vid['filename']}",
-            )
+            render_linear_video_pipeline_results(selected_vid)
         elif selected_vid and not selected_vid.get("success"):
             st.error(f"❌ Failed to process `{selected_vid['filename']}`: {selected_vid.get('error')}")
     else:
@@ -528,45 +485,7 @@ with tab_audio:
             selected_aud = aud_results[0]
 
         if selected_aud and selected_aud.get("success"):
-            st.markdown("---")
-            col_aud_left, col_aud_right = st.columns([1, 1.2], gap="large")
-
-            with col_aud_left:
-                st.markdown(f"#### 🎙️ Audio Player & Spectrogram: `{selected_aud['filename']}`")
-                st.audio(selected_aud["path"])
-
-                spec_img = selected_aud.get("spec_img")
-                if spec_img is not None:
-                    st.image(
-                        spec_img,
-                        caption="Spectral Heatmap (Frequency vs Time) — Exposing Vocoder Cutoff Lines & Harmonic Smoothing",
-                        width="stretch",
-                    )
-
-                audio_segs = selected_aud.get("audio_result", {}).get("temporal_segments", [])
-                if audio_segs:
-                    st.markdown("##### ⏱️ Speech Timeline Attribution")
-                    for a_seg in audio_segs:
-                        badge = "🚨 AI VOICE" if a_seg["label"] == "LIKELY AI-GENERATED" else ("✅ NATURAL SPEECH" if a_seg["label"] == "LIKELY REAL" else "❓ UNCERTAIN")
-                        st.write(f"• `{a_seg['start_seconds']}s ── {a_seg['end_seconds']}s` ({a_seg['duration_seconds']}s) : **{badge}**")
-                    st.caption("Acoustic analysis checks for brick-wall vocoder cutoffs (e.g. 7.5kHz/16kHz in ElevenLabs/Suno/CosyVoice), unnaturally flat Wiener entropy, and digital zero silence dropouts.")
-
-            with col_aud_right:
-                render_analysis_right_panel(
-                    selected_aud["decision"],
-                    selected_aud["content_res"],
-                    modality="audio",
-                )
-
-            # Bottom single wide panel
-            render_bottom_feedback_panel(
-                media_path=selected_aud["path"],
-                modality="audio",
-                forensic_data=selected_aud.get("audio_result", {}) or {},
-                profile_data=selected_aud.get("aud_profile", {}) or {},
-                decision=selected_aud["decision"],
-                unique_key=f"aud_tab_{selected_aud['filename']}",
-            )
+            render_linear_audio_pipeline_results(selected_aud)
         elif selected_aud and not selected_aud.get("success"):
             st.error(f"❌ Failed to process `{selected_aud['filename']}`: {selected_aud.get('error')}")
     else:

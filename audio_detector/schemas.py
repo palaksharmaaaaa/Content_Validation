@@ -127,9 +127,14 @@ class AudioValidationResult:
     error: Optional[str] = None
     extracted_samples: Optional[Any] = None
 
+    @property
+    def is_valid(self) -> bool:
+        return self.valid
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "valid": self.valid,
+            "readable": self.valid,
             "filename": self.filename,
             "file_size_mb": self.file_size_mb,
             "file_hash_sha256": self.file_hash_sha256,
@@ -141,6 +146,11 @@ class AudioValidationResult:
             "is_silent": self.is_silent,
             "error": self.error,
         }
+
+    def get(self, key: str, default: Any = None) -> Any:
+        d = self.to_dict()
+        return d.get(key, default)
+
 
 
 @dataclass

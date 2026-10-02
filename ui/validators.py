@@ -26,6 +26,8 @@ import requests
 logger = logging.getLogger("ui.validators")
 
 from audio_detector import AudioValidator
+from image_detector.validator import ImageValidator
+from video_detector.validator import VideoValidator
 from core.security import (
     SAFE_MAX_IMAGE_PIXELS,
     SecureUrlFetcher,
@@ -135,91 +137,63 @@ def detect_media_type(file_path: str | Path) -> str:
 
 
 def validate_image_file(file_path: str | Path) -> Dict[str, Any]:
-    result = {
-        "readable": False,
-        "format_valid": False,
-        "size_valid": False,
-        "error": None,
-    }
     try:
-        size_mb = get_file_size_mb(file_path)
-        if size_mb > MAX_FILE_SIZE_MB:
-            result["error"] = f"File size {size_mb:.2f} MB exceeds {MAX_FILE_SIZE_MB} MB limit."
-            return result
-        result["size_valid"] = True
-
-        with Image.open(file_path) as image:
-            image.verify()
-
-        result["readable"] = True
-        result["format_valid"] = True
+        val_res = ImageValidator(max_file_size_mb=MAX_FILE_SIZE_MB).validate(file_path)
+        return {
+            "readable": val_res.valid,
+            "format_valid": val_res.valid,
+            "size_valid": val_res.file_size_mb <= MAX_FILE_SIZE_MB,
+            "error": val_res.error,
+            "details": val_res.to_dict(),
+        }
     except Exception as exc:
-        result["error"] = str(exc)
-    return result
+        logger.debug("validate_image_file error: %s", exc)
+        return {
+            "readable": False,
+            "format_valid": False,
+            "size_valid": False,
+            "error": str(exc),
+        }
 
 
 def validate_video_file(file_path: str | Path) -> Dict[str, Any]:
-    result = {
-        "readable": False,
-        "format_valid": False,
-        "size_valid": False,
-        "error": None,
-    }
     try:
-        size_mb = get_file_size_mb(file_path)
-        if size_mb > MAX_FILE_SIZE_MB:
-            result["error"] = f"File size {size_mb:.2f} MB exceeds {MAX_FILE_SIZE_MB} MB limit."
-            return result
-        result["size_valid"] = True
-
-        cap = cv2.VideoCapture(str(file_path))
-        try:
-            if not cap.isOpened():
-                result["error"] = "Unable to open video."
-                return result
-
-            ret, frame = cap.read()
-            if not ret or frame is None:
-                result["error"] = "Video contains no readable frames."
-                return result
-        finally:
-            try:
-                cap.release()
-            except Exception:
-                pass
-
-        result["readable"] = True
-        result["format_valid"] = True
+        val_res = VideoValidator(max_file_size_mb=MAX_FILE_SIZE_MB).validate(file_path)
+        return {
+            "readable": val_res.valid,
+            "format_valid": val_res.valid,
+            "size_valid": val_res.file_size_mb <= MAX_FILE_SIZE_MB,
+            "error": val_res.error,
+            "details": val_res.to_dict(),
+        }
     except Exception as exc:
-        result["error"] = str(exc)
-    return result
+        logger.debug("validate_video_file error: %s", exc)
+        return {
+            "readable": False,
+            "format_valid": False,
+            "size_valid": False,
+            "error": str(exc),
+        }
 
 
 def validate_audio_file(file_path: str | Path) -> Dict[str, Any]:
-    result = {
-        "readable": False,
-        "format_valid": False,
-        "size_valid": False,
-        "error": None,
-    }
     try:
-        size_mb = get_file_size_mb(file_path)
-        if size_mb > MAX_FILE_SIZE_MB:
-            result["error"] = f"File size {size_mb:.2f} MB exceeds {MAX_FILE_SIZE_MB} MB limit."
-            return result
-        result["size_valid"] = True
-
-        audio_val = AudioValidator()
-        val_res = audio_val.validate_audio(str(file_path))
-        if not val_res.get("valid", False):
-            result["error"] = val_res.get("error", "Unable to decode audio.")
-            return result
-
-        result["readable"] = True
-        result["format_valid"] = True
+        val_res = AudioValidator(max_size_mb=MAX_FILE_SIZE_MB).validate(file_path)
+        return {
+            "readable": val_res.valid,
+            "format_valid": val_res.valid,
+            "size_valid": val_res.file_size_mb <= MAX_FILE_SIZE_MB,
+            "error": val_res.error,
+            "details": val_res.to_dict(),
+        }
     except Exception as exc:
-        result["error"] = str(exc)
-    return result
+        logger.debug("validate_audio_file error: %s", exc)
+        return {
+            "readable": False,
+            "format_valid": False,
+            "size_valid": False,
+            "error": str(exc),
+        }
 
 
 def validate_file(file_path: str | Path) -> Dict[str, Any]:
