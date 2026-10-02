@@ -23,7 +23,14 @@ from PIL.ExifTags import TAGS
 import requests
 
 from audio_detector import AudioValidator
+from core.security import (
+    SAFE_MAX_IMAGE_PIXELS,
+    SecureUrlFetcher,
+    sanitize_filename,
+    validate_secure_url,
+)
 
+Image.MAX_IMAGE_PIXELS = SAFE_MAX_IMAGE_PIXELS
 
 MAX_FILE_SIZE_MB = 100
 
@@ -437,6 +444,7 @@ def detect_platform(url: str) -> str:
 
 
 def validate_url(url: str) -> Dict[str, Any]:
+    """Validates URL using OWASP anti-SSRF protections and identifies platform domain."""
     result = {
         "valid_url": False,
         "platform": "Unknown",
@@ -446,42 +454,9 @@ def validate_url(url: str) -> Dict[str, Any]:
         result["message"] = "URL is empty."
         return result
 
-    url = url.strip()
-    try:
-        parsed = urlparse(url)
-        if parsed.scheme.lower() not in ("http", "https"):
-            result["message"] = "URL must start with http:// or https://."
-            return result
-        hostname = parsed.hostname
-        if not hostname:
-            result["message"] = "Invalid URL hostname."
-            return result
-
-        hostname_clean = hostname.strip().lower()
-        if hostname_clean in ("localhost", "127.0.0.1", "::1"):
-            result["message"] = "Access to localhost or loopback address is restricted."
-            return result
-
-        try:
-            addr_info = socket.getaddrinfo(hostname_clean, None)
-            for item in addr_info:
-                ip_str = item[4][0]
-                ip = ipaddress.ip_address(ip_str)
-                if (
-                    ip.is_private
-                    or ip.is_loopback
-                    or ip.is_link_local
-                    or ip.is_reserved
-                    or ip.is_multicast
-                    or ip.is_unspecified
-                ):
-                    result["message"] = f"Access to restricted network address ({ip_str}) is blocked."
-                    return result
-        except socket.gaierror:
-            result["message"] = f"Could not resolve hostname '{hostname}'."
-            return result
-    except Exception:
-        result["message"] = "Malformed URL structure."
+    valid, msg, _ = validate_secure_url(url)
+    if not valid:
+        result["message"] = msg
         return result
 
     platform = detect_platform(url)
@@ -516,78 +491,21 @@ def validate_expected_platform(url: str, expected_platform: str) -> Dict[str, An
 def fetch_media_from_url(
     url: str, expected_type: str = "image", max_mb: int = MAX_FILE_SIZE_MB
 ) -> Dict[str, Any]:
-    """Downloads remote media from direct URL, enforcing size limits and format checks."""
-    val_res = validate_url(url)
-    if not val_res["valid_url"]:
-        return {"success": False, "error": val_res["message"]}
+    """Downloads remote media via anti-SSRF SecureUrlFetcher, enforcing size limits and format checks."""
+    fetcher = SecureUrlFetcher(max_mb=max_mb, timeout_seconds=120)
+    fetch_res = fetcher.fetch(url, expected_type=expected_type)
+    if not fetch_res.get("success"):
+        return {"success": False, "error": fetch_res.get("error", "Download failed")}
 
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-            "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-        )
+    platform = detect_platform(url)
+    return {
+        "success": True,
+        "file_path": fetch_res["file_path"],
+        "filename": fetch_res["filename"],
+        "size_mb": fetch_res["size_mb"],
+        "content_type": fetch_res["content_type"],
+        "platform": platform if platform != "Unknown" else "Direct Link",
     }
-
-    parsed = urlparse(url)
-    path_suffix = Path(parsed.path).suffix.lower()
-
-    if expected_type == "image":
-        allowed_exts = SUPPORTED_IMAGE_EXTENSIONS
-        default_suffix = ".jpg"
-    elif expected_type == "video":
-        allowed_exts = SUPPORTED_VIDEO_EXTENSIONS
-        default_suffix = ".mp4"
-    else:
-        allowed_exts = SUPPORTED_AUDIO_EXTENSIONS
-        default_suffix = ".mp3"
-
-    suffix = path_suffix if path_suffix in allowed_exts else default_suffix
-
-    try:
-        response = requests.get(url, headers=headers, stream=True, timeout=(10, 120))
-        response.raise_for_status()
-
-        cl = response.headers.get("content-length")
-        if cl:
-            size_mb = int(cl) / (1024 * 1024)
-            if size_mb > max_mb:
-                return {
-                    "success": False,
-                    "error": f"File size ({size_mb:.1f} MB) exceeds maximum limit of {max_mb} MB.",
-                }
-
-        content_type = response.headers.get("content-type", "").lower()
-        if "text/html" in content_type or "application/json" in content_type:
-            return {
-                "success": False,
-                "error": f"URL returned HTML/text webpage ({content_type}) instead of {expected_type} media.",
-            }
-
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
-            temp_path = tmp_file.name
-            downloaded = 0
-            for chunk in response.iter_content(chunk_size=1024 * 64):
-                if chunk:
-                    tmp_file.write(chunk)
-                    downloaded += len(chunk)
-                    if (downloaded / (1024 * 1024)) > max_mb:
-                        Path(temp_path).unlink(missing_ok=True)
-                        return {
-                            "success": False,
-                            "error": f"Download aborted: size exceeded {max_mb} MB limit.",
-                        }
-
-        final_size_mb = Path(temp_path).stat().st_size / (1024 * 1024)
-        return {
-            "success": True,
-            "file_path": temp_path,
-            "filename": Path(parsed.path).name or f"downloaded_{expected_type}{suffix}",
-            "size_mb": round(final_size_mb, 2),
-            "content_type": content_type,
-            "platform": val_res.get("platform", "Direct Link"),
-        }
-    except Exception as exc:
-        return {"success": False, "error": f"Failed to download media: {str(exc)}"}
 
 
 def cleanup_url_download(file_path: str | Path | None) -> None:

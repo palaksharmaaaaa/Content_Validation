@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional
 
 from image_detector.config import CALIBRATION_FILE, DATA_DIR, MEMORY_FILE
 from image_detector.schemas import ImageFeedbackRecord
+from core.atomic_io import atomic_read_json, atomic_write_json
 
 logger = logging.getLogger("image_detector.learner")
 
@@ -37,13 +38,6 @@ class ImageSelfImprover:
 
     def load_calibration(self) -> Dict[str, Any]:
         """Loads active calibration parameters or initializes default NIST-tuned priors."""
-        if self.calibration_file.is_file():
-            try:
-                with open(self.calibration_file, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            except Exception as e:
-                logger.warning("Could not read image calibration file: %s", e)
-
         default_calib = {
             "version": 1,
             "last_updated": datetime.now().isoformat(),
@@ -61,26 +55,21 @@ class ImageSelfImprover:
                 "fft_decay_offset": 0.0,
             },
         }
-        return default_calib
+        loaded = atomic_read_json(self.calibration_file, default=None)
+        return loaded if isinstance(loaded, dict) else default_calib
 
     def save_calibration(self, calib: Dict[str, Any]) -> None:
         """Saves updated calibration parameters atomically."""
         calib["last_updated"] = datetime.now().isoformat()
         try:
-            with open(self.calibration_file, "w", encoding="utf-8") as f:
-                json.dump(calib, f, indent=2)
+            atomic_write_json(self.calibration_file, calib, indent=2)
         except Exception as e:
-            logger.error("Failed to save image calibration: %s", e)
+            logger.error("Failed to save image calibration atomically: %s", e)
 
     def load_memory(self) -> List[Dict[str, Any]]:
         """Loads verified image memory bank."""
-        if self.feedback_file.is_file():
-            try:
-                with open(self.feedback_file, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            except Exception:
-                pass
-        return []
+        loaded = atomic_read_json(self.feedback_file, default=[])
+        return loaded if isinstance(loaded, list) else []
 
     def record_feedback(
         self,
@@ -128,10 +117,9 @@ class ImageSelfImprover:
         memory.append(record.to_dict())
 
         try:
-            with open(self.feedback_file, "w", encoding="utf-8") as f:
-                json.dump(memory, f, indent=2)
+            atomic_write_json(self.feedback_file, memory, indent=2)
         except Exception as e:
-            logger.error("Failed to save image memory: %s", e)
+            logger.error("Failed to save image memory atomically: %s", e)
 
         # Dynamic recalibration based on new feedback
         weights = calib.setdefault("feature_weights", {})

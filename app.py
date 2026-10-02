@@ -2,11 +2,15 @@ import os
 from pathlib import Path
 import re
 
-from PIL import ImageFile
+from PIL import Image, ImageFile
 import streamlit as st
 
-ImageFile.LOAD_TRUNCATED_IMAGES = True
+# Enforce strict parsing and decompression bomb ceiling
+from core.security import SAFE_MAX_IMAGE_PIXELS
+Image.MAX_IMAGE_PIXELS = SAFE_MAX_IMAGE_PIXELS
+ImageFile.LOAD_TRUNCATED_IMAGES = False
 
+from core.forensic_service import ForensicService
 from audio_detector import AudioAIDetector
 from image_detector import (
     FaceDeepfakeDetector,
@@ -53,37 +57,38 @@ SESSION_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 
 @st.cache_resource
+def get_forensic_service() -> ForensicService:
+    return ForensicService.get_instance(checkpoint_path=DETECTOR_CHECKPOINT)
+
+
+@st.cache_resource
 def get_ai_detector():
-    detector = ImageAIDetector(checkpoint_path=DETECTOR_CHECKPOINT)
-    detector.load()
-    return detector
+    return get_forensic_service().image_detector
 
 
 @st.cache_resource
 def get_video_detector():
-    v_detector = VideoAIDetector(frame_detector=get_ai_detector())
-    v_detector.load()
-    return v_detector
+    return get_forensic_service().video_detector
 
 
 @st.cache_resource
 def get_face_detector():
-    return FaceDeepfakeDetector()
+    return get_forensic_service().face_detector
 
 
 @st.cache_resource
 def get_audio_detector():
-    return AudioAIDetector()
+    return get_forensic_service().audio_detector
 
 
 @st.cache_resource
 def get_content_analyzer():
-    return ContentAnalyzer()
+    return get_forensic_service().content_analyzer
 
 
 @st.cache_resource
 def get_attribution_engine():
-    return ModelAttributionEngine()
+    return get_forensic_service().attribution_engine
 
 
 st.set_page_config(

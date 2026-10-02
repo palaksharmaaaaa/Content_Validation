@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional
 
 from audio_detector.config import CALIBRATION_FILE, DATA_DIR, MEMORY_FILE
 from audio_detector.schemas import AudioFeedbackRecord
+from core.atomic_io import atomic_read_json, atomic_write_json
 
 logger = logging.getLogger("audio_detector.learner")
 
@@ -35,13 +36,6 @@ class AudioSelfImprover:
 
     def load_calibration(self) -> Dict[str, Any]:
         """Loads active audio calibration parameters."""
-        if self.calibration_file.is_file():
-            try:
-                with open(self.calibration_file, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            except Exception as e:
-                logger.warning("Could not read audio calibration file: %s", e)
-
         default_calib = {
             "version": 1,
             "last_updated": datetime.now().isoformat(),
@@ -62,26 +56,21 @@ class AudioSelfImprover:
                 "audio_ai_offset": 0.0,
             },
         }
-        return default_calib
+        loaded = atomic_read_json(self.calibration_file, default=None)
+        return loaded if isinstance(loaded, dict) else default_calib
 
     def save_calibration(self, calib: Dict[str, Any]) -> None:
         """Saves updated calibration parameters atomically."""
         calib["last_updated"] = datetime.now().isoformat()
         try:
-            with open(self.calibration_file, "w", encoding="utf-8") as f:
-                json.dump(calib, f, indent=2)
+            atomic_write_json(self.calibration_file, calib, indent=2)
         except Exception as e:
-            logger.error("Failed to save audio calibration: %s", e)
+            logger.error("Failed to save audio calibration atomically: %s", e)
 
     def load_memory(self) -> List[Dict[str, Any]]:
         """Loads verified audio memory bank."""
-        if self.memory_file.is_file():
-            try:
-                with open(self.memory_file, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            except Exception:
-                pass
-        return []
+        loaded = atomic_read_json(self.memory_file, default=[])
+        return loaded if isinstance(loaded, list) else []
 
     def record_feedback(
         self,
@@ -129,10 +118,9 @@ class AudioSelfImprover:
         memory.append(record)
 
         try:
-            with open(self.memory_file, "w", encoding="utf-8") as f:
-                json.dump(memory, f, indent=2)
+            atomic_write_json(self.memory_file, memory, indent=2)
         except Exception as e:
-            logger.error("Failed to save audio memory: %s", e)
+            logger.error("Failed to save audio memory atomically: %s", e)
 
         weights = calib.setdefault("acoustic_weights", {})
         thresh = calib.setdefault("thresholds", {})
