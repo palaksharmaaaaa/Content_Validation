@@ -479,6 +479,68 @@ class TestImageDetector(unittest.TestCase):
         self.assertEqual(label, "Fully AI Generated")
 
 
+class TestImageDetectorRealSamples(unittest.TestCase):
+    """
+    End-to-end regression tests against real sample images, not synthetic/mocked inputs --
+    the gap flagged in the project's code review: every other test in this file exercises
+    either np.random noise or evaluate_taxonomy_classification() called directly with
+    hand-fed arguments, bypassing the actual forensic pipeline (attribution, face, feature
+    extraction) that would normally produce those inputs from a real image.
+
+    Scope: only image_detector/dataset/train/{real,ai_generated} have real sample data
+    checked in (binary real-vs-AI-generated). There is currently no real sample data
+    anywhere in the repo for the edited/composite/screenshot taxonomy states, so those
+    remain untested here -- that gap is real and should be closed by adding fixture
+    images for those categories, not by fabricating a test that doesn't actually exercise
+    them. Skips gracefully if the dataset isn't present (e.g. a sparse checkout).
+    """
+
+    DATASET_ROOT = Path(__file__).resolve().parent.parent / "dataset" / "train"
+    SAMPLE_COUNT = 10  # bounded subset per class to keep runtime reasonable
+
+    @classmethod
+    def setUpClass(cls):
+        if not cls.DATASET_ROOT.is_dir():
+            raise unittest.SkipTest(f"Dataset not found at {cls.DATASET_ROOT}")
+        cls.pipeline = ImageForensicPipeline()
+
+    def _sample_files(self, subdir: str):
+        folder = self.DATASET_ROOT / subdir
+        if not folder.is_dir():
+            self.skipTest(f"{folder} not found")
+        files = sorted(p for p in folder.iterdir() if p.is_file())
+        if not files:
+            self.skipTest(f"No files in {folder}")
+        return files[: self.SAMPLE_COUNT]
+
+    def test_real_photos_classify_as_authentic(self):
+        files = self._sample_files("real")
+        misclassified = []
+        for f in files:
+            res = self.pipeline.analyze(f)
+            # A real camera/phone photo should never be routed to a fully/heavily-synthetic
+            # state. AUTHENTIC_* and UNDETERMINED/inconclusive-leaning outcomes are all
+            # acceptable; FULLY_AI_GENERATED or AI_ENHANCED_COMPOSITE are not.
+            if res["taxonomy_state"] in ("FULLY_AI_GENERATED", "AI_ENHANCED_COMPOSITE", "PROCEDURAL_CGI_SYNTHETIC"):
+                misclassified.append((f.name, res["taxonomy_state"], res["authenticity_probabilities"]["p_ai"]))
+        self.assertEqual(
+            misclassified, [],
+            f"{len(misclassified)}/{len(files)} real photos misclassified as synthetic: {misclassified}",
+        )
+
+    def test_ai_generated_images_classify_as_synthetic(self):
+        files = self._sample_files("ai_generated")
+        misclassified = []
+        for f in files:
+            res = self.pipeline.analyze(f)
+            if res["taxonomy_state"] not in ("FULLY_AI_GENERATED", "AI_ENHANCED_COMPOSITE", "PROCEDURAL_CGI_SYNTHETIC"):
+                misclassified.append((f.name, res["taxonomy_state"], res["authenticity_probabilities"]["p_ai"]))
+        self.assertEqual(
+            misclassified, [],
+            f"{len(misclassified)}/{len(files)} AI-generated images misclassified as authentic: {misclassified}",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
 

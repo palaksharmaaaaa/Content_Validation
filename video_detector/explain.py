@@ -91,7 +91,9 @@ def build_video_nine_dimensions_dossier(
         "warping_risk": warping_risk,
         "diagnosis": (
             f"Anomalous inter-frame warping detected ({warping_risk}). Surfaces exhibit non-Euclidean morphing."
-            if warping_risk in ("HIGH", "CRITICAL")
+            if warping_risk in ("HIGH_WARPING_DETECTED", "SUSPICIOUS_FLICKER")
+            else f"Unnatural frame-to-frame stillness detected ({warping_risk}); inconsistent with live motion capture."
+            if warping_risk == "UNNATURAL_FREEZE"
             else "Natural Newtonian motion dynamics and smooth inter-frame optical flow."
         ),
     }

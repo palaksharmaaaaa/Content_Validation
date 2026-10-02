@@ -24,18 +24,39 @@ def normalize_percentages(
     decimals: int = 1,
 ) -> Tuple[float, float, float]:
     """
-    Guarantees ai_pct + real_pct + undecided_pct == 100.0,
-    all >= 0.0, and undecided >= min_undecided without negative artifacts.
+    Single source of truth for percentage normalization, used by audio_detector,
+    image_detector, video_detector, and this module's own generate_final_decision.
+    Guarantees ai_pct + real_pct + undecided_pct == 100.0 and all values >= 0.0.
+
+    Two call conventions, matching the two real use cases in this codebase:
+
+    - undecided_val given (per-modality detectors, which already derived their own
+      undecided margin from Shannon epistemic uncertainty): all three values are
+      scaled together by a single factor so they sum to 100, preserving their
+      relative proportions. This is the exact algorithm the per-modality scoring
+      modules used before being consolidated here -- do not change it without
+      re-validating every detector.py threshold that was calibrated against it.
+    - undecided_val omitted (the cross-modal fusion path below, which has no
+      precomputed entropy margin to work with): undecided is instead derived from
+      how close ai/real are to each other (a wide gap -> low undecided), then
+      ai/real are rescaled into whatever percentage remains.
     """
     ai = max(0.0, float(ai_val))
     real = max(0.0, float(real_val))
 
     if undecided_val is not None:
         undecided = max(float(min_undecided), float(undecided_val))
-    else:
-        gap = abs(ai - real)
-        undecided = max(float(min_undecided), (1.0 - min(1.0, gap)) * 20.0)
+        total = ai + real + undecided
+        if total <= 0.0:
+            return 0.0, 0.0, 100.0
+        scale = 100.0 / total
+        ai_pct = round(ai * scale, decimals)
+        real_pct = round(real * scale, decimals)
+        undecided_pct = round(max(0.0, 100.0 - (ai_pct + real_pct)), decimals)
+        return ai_pct, real_pct, undecided_pct
 
+    gap = abs(ai - real)
+    undecided = max(float(min_undecided), (1.0 - min(1.0, gap)) * 20.0)
     remaining = max(0.0, 100.0 - undecided)
     denom = ai + real
     if denom > 0:

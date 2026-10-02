@@ -56,7 +56,7 @@ class VideoForensicPipeline:
     def analyze(
         self,
         video_path: str | Path,
-        sensitivity: str = "high",
+        sensitivity: str = "balanced",
         audio_forensics: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Runs the entire end-to-end video forensic analysis pipeline."""

@@ -155,7 +155,7 @@ class AudioValidationResult:
 
 @dataclass
 class AudioFeedbackRecord:
-    """Feedback record for audio continual learning."""
+    """Feedback record for audio calibration (not model training -- see learner.py)."""
     timestamp: str
     audio_path: str
     user_label: str

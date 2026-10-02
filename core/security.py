@@ -15,6 +15,7 @@ from pathlib import Path
 import re
 import socket
 import tempfile
+import threading
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
@@ -154,6 +155,55 @@ def generate_secure_cache_name(prefix: str, seed: str, extension: str) -> str:
     return f"{prefix}_{h}{ext}"
 
 
+class _PinnedResolver:
+    """
+    Closes the DNS-rebinding TOCTOU gap: `validate_secure_url` resolves a hostname and
+    checks every IP it currently returns, but the HTTP client re-resolves DNS independently
+    at connect time. A short-TTL record can legitimately answer "public IP" at validation
+    and "internal IP" a few hundred milliseconds later at connection, bypassing the check
+    entirely. This pins `socket.getaddrinfo` to only the already-validated IP set for the
+    exact hostname being fetched, for the lifetime of a single request, so the socket that
+    actually opens is guaranteed to be one of the addresses that was checked.
+
+    Hostname/Host header/TLS SNI are untouched (the URL still carries the hostname) --
+    only the acceptable resolution set is constrained, so certificate validation behaves
+    normally.
+    """
+
+    _lock = threading.Lock()
+
+    def __init__(self, hostname: str, allowed_ips: List[str]):
+        self._hostname = hostname.lower()
+        self._allowed_ips = set(allowed_ips)
+        self._orig_getaddrinfo = None
+
+    def __enter__(self) -> "_PinnedResolver":
+        self._lock.acquire()
+        self._orig_getaddrinfo = socket.getaddrinfo
+        orig = self._orig_getaddrinfo
+        hostname = self._hostname
+        allowed_ips = self._allowed_ips
+
+        def _pinned_getaddrinfo(host, *args, **kwargs):
+            result = orig(host, *args, **kwargs)
+            if host and str(host).lower() == hostname:
+                filtered = [r for r in result if r[4][0] in allowed_ips]
+                if not filtered:
+                    raise socket.gaierror(
+                        f"DNS rebinding blocked: '{host}' no longer resolves to a "
+                        f"previously-validated address (possible rebinding attack)."
+                    )
+                return filtered
+            return result
+
+        socket.getaddrinfo = _pinned_getaddrinfo
+        return self
+
+    def __exit__(self, *exc_info) -> None:
+        socket.getaddrinfo = self._orig_getaddrinfo
+        self._lock.release()
+
+
 class SecureUrlFetcher:
     """
     DNS-rebinding and SSRF-hardened media downloader.
@@ -179,6 +229,7 @@ class SecureUrlFetcher:
             return {"success": False, "error": f"Security validation rejected URL: {msg}"}
 
         parsed = urlparse(url)
+        hostname_clean = (parsed.hostname or "").strip().lower()
         path_suffix = Path(parsed.path).suffix.lower()
 
         default_suffixes = {
@@ -214,27 +265,32 @@ class SecureUrlFetcher:
         try:
             # We enforce allow_redirects=False initially or validate target before following
             curr_url = url
+            curr_hostname = hostname_clean
+            curr_resolved_ips = resolved_ips
             resp = None
             max_redirects = 3
 
             for _ in range(max_redirects):
-                resp = session.get(
-                    curr_url,
-                    headers=headers,
-                    stream=True,
-                    timeout=(5.0, float(self.timeout)),
-                    allow_redirects=False,
-                )
-                if resp.is_redirect or resp.is_permanent_redirect:
-                    redirect_target = resp.headers.get("Location")
-                    if not redirect_target:
-                        break
-                    # Re-validate redirect target to prevent open-redirect SSRF pivot
-                    r_valid, r_msg, _ = validate_secure_url(redirect_target)
-                    if not r_valid:
-                        return {"success": False, "error": f"SSRF blocked malicious redirect: {r_msg}"}
-                    curr_url = redirect_target
-                else:
+                with _PinnedResolver(curr_hostname, curr_resolved_ips):
+                    resp = session.get(
+                        curr_url,
+                        headers=headers,
+                        stream=True,
+                        timeout=(5.0, float(self.timeout)),
+                        allow_redirects=False,
+                    )
+                    if resp.is_redirect or resp.is_permanent_redirect:
+                        redirect_target = resp.headers.get("Location")
+                        if not redirect_target:
+                            break
+                        # Re-validate redirect target to prevent open-redirect SSRF pivot
+                        r_valid, r_msg, r_ips = validate_secure_url(redirect_target)
+                        if not r_valid:
+                            return {"success": False, "error": f"SSRF blocked malicious redirect: {r_msg}"}
+                        curr_url = redirect_target
+                        curr_hostname = (urlparse(redirect_target).hostname or "").strip().lower()
+                        curr_resolved_ips = r_ips
+                        continue
                     break
 
             if resp is None:

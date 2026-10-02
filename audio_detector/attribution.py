@@ -6,8 +6,23 @@ Profiles audio characteristics against major speech and music synthesis models:
 - 2Noise ChatTTS
 - Suno AI (v3 / v3.5)
 - Udio Music Generation
-- OpenAI Voice Engine
+- OpenAI (Voice Engine / Realtime API / Advanced Voice Mode)
+- Google Gemini native audio / Lyria
+- Meta AudioCraft (MusicGen / Voicebox)
+- Hume AI (Octave)
+- Cartesia (Sonic)
+- PlayHT
+- Resemble AI
+- Coqui XTTS-v2 (open source)
 Completely self-contained with zero outside dependencies.
+
+NOTE on scoring confidence per entry: only ElevenLabs, CosyVoice, ChatTTS, Suno, Udio, and
+OpenAI have dedicated spectral/vocoder-cutoff signatures below (calibrated against observed
+acoustic characteristics). The 2025/2026 additions (Gemini/Lyria, AudioCraft, Hume, Cartesia,
+PlayHT, Resemble, Coqui) are currently metadata-signature-only -- matched when a tool name
+literally appears in file metadata, with no acoustic/spectral fingerprint yet. Do not assume
+these can be identified from audio content alone the way the original six can; add real
+spectral calibration for them only once backed by actual sample analysis, not guessed numbers.
 """
 from __future__ import annotations
 
@@ -44,9 +59,44 @@ KNOWN_AUDIO_GENERATORS = {
         "telltales": ["High dynamic range synthetic diffusion music stems", "vocal formant stereo artifacting"],
     },
     "openai_voice": {
-        "name": "OpenAI Voice Engine",
+        "name": "OpenAI Voice Engine / Realtime API / Advanced Voice Mode",
         "provider": "OpenAI",
         "telltales": ["Consistent natural room tone emulation", "smooth pitch intonation curve"],
+    },
+    "google_gemini_audio": {
+        "name": "Google Gemini Native Audio / Lyria",
+        "provider": "Google DeepMind",
+        "telltales": ["Metadata-signature match only (no spectral fingerprint calibrated yet)"],
+    },
+    "meta_audiocraft": {
+        "name": "Meta AudioCraft (MusicGen / Voicebox)",
+        "provider": "Meta AI",
+        "telltales": ["Metadata-signature match only (no spectral fingerprint calibrated yet)"],
+    },
+    "hume_ai": {
+        "name": "Hume AI (Octave)",
+        "provider": "Hume AI",
+        "telltales": ["Metadata-signature match only (no spectral fingerprint calibrated yet)"],
+    },
+    "cartesia": {
+        "name": "Cartesia (Sonic)",
+        "provider": "Cartesia",
+        "telltales": ["Metadata-signature match only (no spectral fingerprint calibrated yet)"],
+    },
+    "playht": {
+        "name": "PlayHT",
+        "provider": "Play.ht",
+        "telltales": ["Metadata-signature match only (no spectral fingerprint calibrated yet)"],
+    },
+    "resemble_ai": {
+        "name": "Resemble AI",
+        "provider": "Resemble AI",
+        "telltales": ["Metadata-signature match only (no spectral fingerprint calibrated yet)"],
+    },
+    "coqui_xtts": {
+        "name": "Coqui XTTS-v2",
+        "provider": "Open Source",
+        "telltales": ["Metadata-signature match only (no spectral fingerprint calibrated yet)"],
     },
 }
 
@@ -86,6 +136,30 @@ class AudioModelAttributionEngine:
                 elif "udio" in val_str:
                     scores["udio"] += 0.85
                     cues.append("Metadata declares Udio generation")
+                elif "lyria" in val_str or ("gemini" in val_str and "audio" in val_str):
+                    scores["google_gemini_audio"] += 0.85
+                    cues.append("Metadata declares Google Gemini/Lyria audio generation")
+                elif "audiocraft" in val_str or "musicgen" in val_str or "voicebox" in val_str:
+                    scores["meta_audiocraft"] += 0.85
+                    cues.append("Metadata declares Meta AudioCraft generation")
+                elif "hume" in val_str:
+                    scores["hume_ai"] += 0.85
+                    cues.append("Metadata declares Hume AI (Octave) generation")
+                elif "cartesia" in val_str or "sonic" in val_str:
+                    scores["cartesia"] += 0.85
+                    cues.append("Metadata declares Cartesia (Sonic) generation")
+                elif "play.ht" in val_str or "playht" in val_str:
+                    scores["playht"] += 0.85
+                    cues.append("Metadata declares PlayHT generation")
+                elif "resemble" in val_str:
+                    scores["resemble_ai"] += 0.85
+                    cues.append("Metadata declares Resemble AI generation")
+                elif "coqui" in val_str or "xtts" in val_str:
+                    scores["coqui_xtts"] += 0.85
+                    cues.append("Metadata declares Coqui XTTS generation")
+                elif "realtime api" in val_str or "advanced voice mode" in val_str or ("gpt-4o" in val_str and "voice" in val_str):
+                    scores["openai_voice"] += 0.85
+                    cues.append("Metadata declares OpenAI Realtime API / Advanced Voice Mode generation")
 
         # 2. Spectral & Vocoder Cutoff signatures
         if acoustic_data:
@@ -131,7 +205,15 @@ class AudioModelAttributionEngine:
 
         best_info = KNOWN_AUDIO_GENERATORS[best_key]
         conf = round(best_score, 2)
-        region = "China" if best_key in ("cosyvoice", "chat_tts") else ("United States" if best_key in ("elevenlabs", "suno_ai", "suno", "udio", "openai_voice") else "Global")
+        region = (
+            "China" if best_key in ("cosyvoice", "chat_tts")
+            else "United States" if best_key in (
+                "elevenlabs", "suno_ai", "suno", "udio", "openai_voice",
+                "google_gemini_audio", "meta_audiocraft", "hume_ai", "cartesia",
+                "playht", "resemble_ai",
+            )
+            else "Global"
+        )
         return {
             "attributed_model": best_info["name"],
             "model_key": best_key,

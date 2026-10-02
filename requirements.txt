@@ -1,9 +1,14 @@
+# SYSTEM DEPENDENCY (not pip-installable): ffmpeg must be installed separately and on PATH.
+# audio_detector (validator.py) and video_detector (extractor.py) both shell out to the
+# ffmpeg CLI for format transcoding / audio-track extraction and will silently skip that
+# functionality (with a logged warning) if it is missing. Install from
+# https://ffmpeg.org/download.html -- there is no pip package that provides it.
+
 # Core Web & UI Framework
 streamlit>=1.30.0
 
 # Scientific & Array Computing
 numpy>=1.24.0
-scipy>=1.10.0
 pandas>=2.0.0
 
 # Deep Learning Vision Backbones

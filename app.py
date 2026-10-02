@@ -29,8 +29,8 @@ from ui.batch_ui import (
     render_batch_summary_dashboard,
     run_batch_pipeline,
 )
+from core.decision import generate_final_decision
 from ui.feedback_ui import (
-    generate_final_decision,
     profile_media,
     render_analysis_right_panel,
     render_bottom_feedback_panel,
@@ -54,7 +54,11 @@ from ui.validators import (
 
 
 DETECTOR_CHECKPOINT = Path(__file__).resolve().parent / "image_detector" / "models" / "ai_detector.pt"
-SESSION_CACHE_DIR = Path(__file__).resolve().parent / "image_detector" / "data" / "session_cache"
+# App-owned scratch space for transient uploaded-file copies across all three modalities.
+# Deliberately NOT nested under image_detector/, audio_detector/, or video_detector/'s own
+# data/ directories -- those are each package's own persistent calibration/feedback store,
+# not a shared dumping ground for the orchestration layer's temp files.
+SESSION_CACHE_DIR = Path(__file__).resolve().parent / "data" / "session_cache"
 SESSION_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -104,8 +108,8 @@ st.sidebar.header("⚙️ Forensic Engine Settings")
 sensitivity_option = st.sidebar.selectbox(
     "Detection Sensitivity Mode",
     [
-        "High Sensitivity (Recommended for Modern AI)",
-        "Balanced (Standard)",
+        "Balanced (Recommended -- neutral prior, no AI/real bias before evidence)",
+        "High Sensitivity (For Modern AI -- biases toward flagging AI)",
         "Aggressive (Maximum Forensic Scrutiny)",
     ],
     index=0,
@@ -120,9 +124,9 @@ else:
 
 st.sidebar.info(
     f"Active Mode: **{sensitivity_key.upper()}**\n\n"
-    "• High: Tightens PRNU, spectral slope, and vocoder cutoff thresholds to detect modern subtle generators (Gemini, Midjourney, Flux, Sora, ElevenLabs).\n"
-    "• Aggressive: Maximizes scrutiny against compressed social media reposts.\n"
-    "• Balanced: Recommended for scanned albums and studio portrait photography with shallow depth of field."
+    "• Balanced (default): No built-in prior toward AI or real before any evidence is evaluated -- the honest starting point for general use.\n"
+    "• High: Shifts the prior toward AI, tightening PRNU, spectral slope, and vocoder cutoff thresholds to catch subtle modern generators (Gemini, Midjourney, Flux, Sora, ElevenLabs) at the cost of more false positives on ambiguous real images.\n"
+    "• Aggressive: Maximizes scrutiny against compressed social media reposts; highest false-positive risk."
 )
 
 st.title("🔍 OmniForensics: Multi-Modal Media Authenticity Engine")

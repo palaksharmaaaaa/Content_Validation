@@ -4,7 +4,7 @@ Decouples core analytical capabilities from presentation frameworks (Streamlit/F
 Provides:
 1. Unified lifecycle management for image, video, and audio forensic engines.
 2. Headless execution interface for single and batch forensic analyses.
-3. Thread-safe self-improving feedback registration and Bayesian weight updates.
+3. Thread-safe feedback registration and scoring-constant recalibration (not model training -- see each package's learner.py).
 4. Comprehensive health checks, metrics, and diagnostics.
 """
 from __future__ import annotations
@@ -175,7 +175,7 @@ class ForensicService:
     def analyze_image(
         self,
         image_path: str | Path,
-        sensitivity: str = "high",
+        sensitivity: str = "balanced",
         source: str = "User Upload",
     ) -> Dict[str, Any]:
         """Runs the linear 5-stage forensic evaluation on a single image."""
@@ -198,7 +198,7 @@ class ForensicService:
     def analyze_audio(
         self,
         audio_path: str | Path,
-        sensitivity: str = "high",
+        sensitivity: str = "balanced",
     ) -> Dict[str, Any]:
         """Runs the linear acoustic forensic evaluation pipeline on an audio track."""
         try:
@@ -219,7 +219,7 @@ class ForensicService:
     def analyze_video(
         self,
         video_path: str | Path,
-        sensitivity: str = "high",
+        sensitivity: str = "balanced",
         audio_forensics: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Runs the multi-modal temporal forensic evaluation pipeline on a video file."""

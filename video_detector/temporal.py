@@ -9,14 +9,22 @@ Analyzes:
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import cv2
 import numpy as np
 
+from video_detector.config import (
+    MOTION_VAR_HIGH_WARPING,
+    MOTION_VAR_SUSPICIOUS_FLICKER,
+    MOTION_VAR_UNNATURAL_FREEZE,
+)
+
 
 def compute_interframe_motion_variance(
-    frames: List[np.ndarray], temporal_step: int = 1
+    frames: List[np.ndarray],
+    temporal_step: int = 1,
+    motion_thresholds: Optional[Dict[str, float]] = None,
 ) -> Dict[str, Any]:
     """
     Computes inter-frame motion delta variance.
@@ -60,14 +68,22 @@ def compute_interframe_motion_variance(
     mean_delta = float(np.mean(deltas))
     var_delta = float(np.var(deltas))
 
-    # Warping risk classification
-    if var_delta > 140.0 or (mean_delta > 32.0 and var_delta > 80.0):
+    # Warping risk classification. Variance cutoffs come from motion_thresholds when the
+    # caller supplies calibration data (VideoSelfImprover.load_calibration()'s
+    # "motion_thresholds" block, adjusted over time by record_feedback); otherwise fall
+    # back to the same defaults as config.py's MOTION_VAR_* constants.
+    th = motion_thresholds or {}
+    high_warping_var = float(th.get("high_warping_var", MOTION_VAR_HIGH_WARPING))
+    suspicious_flicker_var = float(th.get("suspicious_flicker_var", MOTION_VAR_SUSPICIOUS_FLICKER))
+    unnatural_freeze_var = float(th.get("unnatural_freeze_var", MOTION_VAR_UNNATURAL_FREEZE))
+
+    if var_delta > high_warping_var or (mean_delta > 32.0 and var_delta > high_warping_var * (4.0 / 7.0)):
         warping_risk = "HIGH_WARPING_DETECTED"
         is_anomalous = True
-    elif var_delta > 75.0 or mean_delta > 22.0:
+    elif var_delta > suspicious_flicker_var or mean_delta > 22.0:
         warping_risk = "SUSPICIOUS_FLICKER"
         is_anomalous = True
-    elif var_delta < 0.8 and mean_delta < 1.2:
+    elif var_delta < unnatural_freeze_var and mean_delta < 1.2:
         warping_risk = "UNNATURAL_FREEZE"
         is_anomalous = True
     else:

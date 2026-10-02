@@ -13,6 +13,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 
+from core.decision import normalize_percentages
 from audio_detector.config import (
     AI_THRESHOLD_BALANCED,
     AI_THRESHOLD_HIGH,
@@ -25,35 +26,6 @@ from audio_detector.config import (
     SYNTHETIC_FLATNESS_HIGH_THRESHOLD,
     SYNTHETIC_FLATNESS_LOW_THRESHOLD,
 )
-
-
-def normalize_percentages(
-    ai_val: float,
-    real_val: float,
-    undecided_val: float,
-    min_undecided: float = 4.0,
-    decimals: int = 1,
-) -> Tuple[float, float, float]:
-    """
-    Normalizes audio percentages to sum exactly to 100.0%.
-    """
-    ai_clamped = max(0.0, float(ai_val))
-    real_clamped = max(0.0, float(real_val))
-    u_clamped = max(float(min_undecided), float(undecided_val))
-
-    total = ai_clamped + real_clamped + u_clamped
-    if total <= 0.0:
-        return 0.0, 0.0, 100.0
-
-    scale = 100.0 / total
-    ai_norm = ai_clamped * scale
-    real_norm = real_clamped * scale
-
-    ai_pct = round(ai_norm, decimals)
-    real_pct = round(real_norm, decimals)
-    u_pct = round(max(0.0, 100.0 - (ai_pct + real_pct)), decimals)
-
-    return ai_pct, real_pct, u_pct
 
 
 def calculate_audio_epistemic_uncertainty(prob_ai: float) -> float:
@@ -72,6 +44,14 @@ def pool_acoustic_evidence(
 ) -> Tuple[float, float]:
     """
     Pools acoustic forensic features with neural synthesizer probability.
+
+    NOTE: this is a linear weighted average of hand-assigned heuristic scores, not a
+    Bayesian log-odds combination -- distinct from `image_detector.scoring.
+    pool_bayesian_log_odds` (additive log-LR summation) and `video_detector.scoring.
+    pool_video_temporal_score` (its own weighted average over different signals).
+    Each modality's evidence model operates on different physical signals and is
+    intentionally not unified into one shared function; do not assume their outputs
+    or internal math are comparable term-for-term.
     Returns:
         prob_ai: float in [0.01, 0.99]
         prob_real: float in [0.01, 0.99]
@@ -137,7 +117,7 @@ def pool_acoustic_evidence(
 
 
 def evaluate_audio_decision(
-    ai_pct: float, real_pct: float, sensitivity: str = "high"
+    ai_pct: float, real_pct: float, sensitivity: str = "balanced"
 ) -> str:
     """Classifies final decision label based on calibrated thresholds."""
     thresh = AI_THRESHOLD_HIGH if sensitivity.lower() in ("high", "aggressive") else AI_THRESHOLD_BALANCED

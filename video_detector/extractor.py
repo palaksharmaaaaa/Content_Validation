@@ -19,6 +19,8 @@ import numpy as np
 
 from video_detector.config import DEFAULT_MAX_FRAMES
 
+_FFMPEG_MISSING_WARNED = False
+
 logger = logging.getLogger("video_detector.extractor")
 
 
@@ -178,7 +180,15 @@ class VideoFrameExtractor:
             )
             return res.returncode == 0 and Path(output_wav).is_file() and Path(output_wav).stat().st_size > 44
         except FileNotFoundError:
-            logger.debug("FFmpeg executable not found in PATH; audio stream track extraction bypassed.")
+            global _FFMPEG_MISSING_WARNED
+            if not _FFMPEG_MISSING_WARNED:
+                logger.warning(
+                    "ffmpeg executable not found in PATH. video_detector requires the "
+                    "ffmpeg system binary (not a pip package) to extract embedded audio "
+                    "tracks -- install it from https://ffmpeg.org/download.html and "
+                    "ensure it's on PATH. Audio-in-video analysis will be skipped."
+                )
+                _FFMPEG_MISSING_WARNED = True
             return False
         except Exception as exc:
             logger.debug("Audio extraction failed for %s: %s", video_path, exc)

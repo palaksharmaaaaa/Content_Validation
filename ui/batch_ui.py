@@ -38,7 +38,8 @@ from video_detector import (
     evaluate_cross_modal_consistency,
     generate_video_newbie_explanation,
 )
-from ui.feedback_ui import generate_final_decision, profile_media
+from core.decision import generate_final_decision
+from ui.feedback_ui import profile_media
 from ui.validators import analyze_provenance, validate_file
 
 
@@ -48,7 +49,7 @@ def process_single_image(
     detector: ImageAIDetector,
     content_analyzer: ContentAnalyzer,
     attribution_engine: ModelAttributionEngine,
-    sensitivity: str = "high",
+    sensitivity: str = "balanced",
     source: str = "User Upload",
 ) -> Dict[str, Any]:
     """Runs end-to-end NIST-aligned forensic pipeline on a single image."""
@@ -139,7 +140,7 @@ def process_single_video(
     content_analyzer: ContentAnalyzer,
     audio_detector: AudioAIDetector,
     attribution_engine: ModelAttributionEngine,
-    sensitivity: str = "high",
+    sensitivity: str = "balanced",
     cache_dir: Optional[Path] = None,
     video_detector: Optional[VideoAIDetector] = None,
 ) -> Dict[str, Any]:
@@ -252,7 +253,7 @@ def process_single_audio(
     audio_detector: AudioAIDetector,
     content_analyzer: Any,
     attribution_engine: Any,
-    sensitivity: str = "high",
+    sensitivity: str = "balanced",
 ) -> Dict[str, Any]:
     """Runs end-to-end NIST-aligned forensic pipeline on a single audio file."""
     file_res = validate_file(aud_path)
@@ -332,7 +333,7 @@ def run_batch_pipeline(
     items: List[Dict[str, str]],
     modality: str,
     detectors: Dict[str, Any],
-    sensitivity: str = "high",
+    sensitivity: str = "balanced",
     cache_dir: Optional[Path] = None,
     progress_callback: Optional[Callable[[int, int, str], None]] = None,
 ) -> List[Dict[str, Any]]:

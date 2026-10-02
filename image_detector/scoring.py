@@ -9,49 +9,15 @@ Contains:
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
-from image_detector.config import (
-    AI_THRESHOLD_BALANCED,
-    AI_THRESHOLD_HIGH,
-    REAL_THRESHOLD,
-    SENSITIVITY_PRIORS,
-)
+from core.decision import normalize_percentages
+from image_detector.config import SENSITIVITY_PRIORS
 
 
-def normalize_percentages(
-    ai_val: float,
-    real_val: float,
-    undecided_val: float,
-    min_undecided: float = 3.0,
-    decimals: int = 1,
-) -> Tuple[float, float, float]:
-    """
-    Normalizes three percentage values to sum exactly to 100.0%.
-    Guarantees non-negative bounds and a minimum epistemic margin.
-    """
-    ai_clamped = max(0.0, float(ai_val))
-    real_clamped = max(0.0, float(real_val))
-    u_clamped = max(float(min_undecided), float(undecided_val))
-
-    total = ai_clamped + real_clamped + u_clamped
-    if total <= 0.0:
-        return 0.0, 0.0, 100.0
-
-    scale = 100.0 / total
-    ai_norm = ai_clamped * scale
-    real_norm = real_clamped * scale
-
-    ai_pct = round(ai_norm, decimals)
-    real_pct = round(real_norm, decimals)
-    u_pct = round(max(0.0, 100.0 - (ai_pct + real_pct)), decimals)
-
-    return ai_pct, real_pct, u_pct
-
-
-def calculate_epistemic_uncertainty(prob_ai: float) -> float:
+def calculate_image_epistemic_uncertainty(prob_ai: float) -> float:
     """
     Calculates epistemic uncertainty from binary probability using Shannon entropy.
     Entropy is maximal (1.0) when P(AI) = 0.5, and approaches 0 when P is near 0 or 1.
@@ -67,8 +33,22 @@ def pool_bayesian_log_odds(
     """
     Pools evidence using Bayesian log-likelihood ratio summation with cue correlation discounting:
     Posterior Log-Odds = Prior Log-Odds + sum(w_i * Log_LR_i)
+
+    NOTE: this posterior is expressed in base-10 log-odds (odds = 10**posterior below),
+    not base-e. `audio_detector.scoring.pool_acoustic_evidence`, `video_detector.scoring.
+    pool_video_temporal_score`, and `core.decision.generate_final_decision`'s cross-modal
+    fusion are each their own independent evidence model operating on different physical
+    signals (vocoder/flatness for audio, motion/flicker for video, PRNU/FFT for image) --
+    they are not interchangeable and intentionally are not unified into one shared
+    function. `core.decision` additionally uses natural-log (base-e) odds for its own
+    fusion step. Do not compare a raw posterior_log_odds value from this function against
+    one from core.decision or assume they're on the same scale -- convert through
+    probability (prob_ai/prob_real) instead, which is base-independent. Every threshold in
+    this module's evaluate_taxonomy_classification (e.g. the 62.0/48.0 ai_pct cutoffs) and
+    SENSITIVITY_PRIORS below are calibrated specifically against this function's base-10
+    probability mapping; changing the base here requires re-deriving all of them.
     Returns:
-        posterior_log_odds: float
+        posterior_log_odds: float (base-10; see note above)
         prob_ai: float in [0.0, 1.0]
         prob_real: float in [0.0, 1.0]
     """
@@ -77,15 +57,12 @@ def pool_bayesian_log_odds(
     # Correlation discounting: when both bilateral smoothness and PRNU flatness fire together,
     # discount the second cue by 0.70x to account for physical redundancy
     weighted_sum = 0.0
-    has_noise = "prnu_sensor_noise" in log_lrs
-    has_smooth = "surface_texture_smoothness" in log_lrs
+    has_noise = "sensor_noise" in log_lrs
 
     for k, v in log_lrs.items():
         weight = 1.0
-        if k == "surface_texture_smoothness" and has_noise:
+        if k == "surface_smoothness" and has_noise:
             weight = 0.70
-        elif k == "square_aspect_ratio" and "canonical_ai_resolution" in log_lrs:
-            weight = 0.50
         weighted_sum += v * weight
 
     total_posterior = prior_log_odds + weighted_sum
@@ -97,19 +74,6 @@ def pool_bayesian_log_odds(
     p_real = 1.0 - p_ai
 
     return round(total_posterior, 3), p_ai, p_real
-
-
-def evaluate_image_decision(
-    ai_pct: float, real_pct: float, sensitivity: str = "high"
-) -> str:
-    """Applies calibrated thresholds to produce definitive primary label."""
-    thresh = AI_THRESHOLD_HIGH if sensitivity.lower() in ("high", "aggressive") else AI_THRESHOLD_BALANCED
-    if ai_pct >= thresh:
-        return "LIKELY AI-GENERATED"
-    elif real_pct >= REAL_THRESHOLD:
-        return "LIKELY REAL"
-    else:
-        return "UNDECIDED"
 
 
 def evaluate_taxonomy_classification(
@@ -284,10 +248,37 @@ def evaluate_taxonomy_classification(
                 reasons.append(f"Original base capture from camera hardware: {metadata.get('camera_make')} {metadata.get('camera_model') or ''}".strip())
         return state, ImageTaxonomyState.get_label(state), ImageTaxonomyState.get_description(state), reasons
 
+    # 3b. AI-ENHANCED / COMPOSITE -- score-band fallback for a genuine camera base with
+    # overwhelming synthetic-leaning pixel evidence but no explicit enhancer/face-swap/
+    # inpainting signature (e.g. a generic AI upscaler/denoiser that leaves no metadata
+    # footprint). Without this, such an image had no reachable path into this category at
+    # all: branch 3 above requires an explicit discrete signal, and branch 4 below requires
+    # the ABSENCE of camera hardware -- so a real photo this heavily altered would previously
+    # fall through all the way to AUTHENTIC_REAL_PHOTOGRAPH.
+    if has_camera_hardware and not is_scanned_print and ai_pct >= 62.0:
+        state = ImageTaxonomyState.AI_ENHANCED_COMPOSITE
+        cam_str = f"{metadata.get('camera_make', '') or ''} {metadata.get('camera_model', '') or ''}".strip()
+        reasons.append(f"Genuine camera hardware base capture ({cam_str})")
+        reasons.append(
+            f"Overwhelming synthetic-leaning pixel evidence despite authentic base ({ai_pct:.1f}% AI) -- "
+            "consistent with an AI upscaler/denoiser/generative-fill pass that left no metadata footprint"
+        )
+        return state, ImageTaxonomyState.get_label(state), ImageTaxonomyState.get_description(state), reasons
+
     # 4. HIGH-CONFIDENCE GENERATIVE SYNTHESIS (without explicit watermark)
     if (ai_pct >= 58.0 or (ai_pct >= 48.0 and (is_square_gen or is_canonical_gen))) and not has_camera_hardware and not scanned_data.get("is_scanned"):
         has_real_noise = noise_mean > 1.85 and smoothness > 1.60
-        if not has_real_noise:
+        # Corroboration gate: when there is no camera hardware, AI/enhancer signature, OR
+        # C2PA manifest (metadata_absent -- the common case for downloaded/re-shared/
+        # screenshotted images), the blended ai_pct score alone is not enough to route this
+        # image to FULLY_AI_GENERATED. Require at least 2 independently-synthetic-leaning
+        # pixel signals (noise, smoothness, FFT anomaly, neural backbone) as corroboration.
+        # metadata_absent/synthetic_signal_count default to "no gate" (False/high) so direct
+        # callers that don't pass them (e.g. existing unit tests) see no behavior change.
+        metadata_absent = bool(kwargs.get("metadata_absent"))
+        synthetic_signal_count = int(kwargs.get("synthetic_signal_count", 99))
+        lacks_corroboration = metadata_absent and synthetic_signal_count < 2
+        if not has_real_noise and not lacks_corroboration:
             state = ImageTaxonomyState.FULLY_AI_GENERATED
             reasons.append(f"High posterior probability of generative synthesis ({ai_pct:.1f}% AI)")
             reasons.append("Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise")

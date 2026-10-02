@@ -21,6 +21,18 @@ C2PA_VIDEO_SIGNATURES = [
 
 KNOWN_VIDEO_ATOMS = [b"ftyp", b"moov", b"mdat", b"udta", b"meta", b"mvhd", b"trak"]
 
+# Vendor/generator name fragments that AI video tools commonly embed in container metadata
+# (encoder/comment/title atoms, XMP, or similar) -- distinct from KNOWN_VIDEO_ATOMS above,
+# which only identifies generic MP4 box *types*, never vendor identity. attribution.py's
+# container-signature matching reads this field, not container_atoms.
+KNOWN_VIDEO_GENERATOR_SIGNATURES = [
+    "bytedance", "jimeng", "kling", "kuaishou", "runway", "gen-2", "gen-3",
+    "sora", "openai", "veo", "deepmind", "luma", "dream machine", "pika labs",
+    "hailuo", "minimax",
+    "tongyi", "wanxiang", "hunyuan", "vidu", "shengshu", "pixverse",
+    "movie gen", "moviegen", "firefly", "nova reel", "novareel",
+]
+
 
 class VideoProvenanceValidator:
     """Validator for video container integrity, metadata atoms, and C2PA Content Credentials."""
@@ -70,14 +82,27 @@ class VideoProvenanceValidator:
 
         c2pa_res = self.scan_c2pa(path)
 
-        # Container inspection for atoms
+        # Container inspection for atoms, and separately for vendor/generator name strings
+        # that may appear in encoder/comment/title metadata atoms (never in the atom type
+        # names themselves, which are the generic box headers in KNOWN_VIDEO_ATOMS).
         atoms_found = []
+        vendor_signatures_found = []
         try:
             with open(path, "rb") as f:
                 head = f.read(65536)
                 for atom in KNOWN_VIDEO_ATOMS:
                     if atom in head:
                         atoms_found.append(atom.decode("ascii", errors="ignore"))
+
+                file_size = path.stat().st_size
+                tail_len = min(file_size, 128 * 1024)
+                f.seek(max(0, file_size - tail_len))
+                tail = f.read(tail_len)
+
+            text_blob = (head + tail).lower()
+            for sig in KNOWN_VIDEO_GENERATOR_SIGNATURES:
+                if sig.encode("ascii") in text_blob:
+                    vendor_signatures_found.append(sig)
         except Exception as exc:
             logger.debug("Container atom inspection bypassed for %s: %s", path, exc)
 
@@ -96,5 +121,6 @@ class VideoProvenanceValidator:
             "c2pa_present": c2pa_res["c2pa_present"],
             "provenance_status": status,
             "container_atoms": atoms_found,
+            "vendor_signatures_found": vendor_signatures_found,
             "cues": cues,
         }

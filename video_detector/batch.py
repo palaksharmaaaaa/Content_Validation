@@ -25,7 +25,7 @@ class VideoBatchProcessor:
     def process_files(
         self,
         file_paths: List[str | Path],
-        sensitivity: str = "high",
+        sensitivity: str = "balanced",
         progress_callback: Optional[Callable[[int, int, Dict[str, Any]], None]] = None,
     ) -> Dict[str, Any]:
         """Processes a sequence of video files."""
@@ -42,12 +42,18 @@ class VideoBatchProcessor:
             res = self.pipeline.analyze(p, sensitivity=sensitivity)
             results.append(res)
 
-            status = res.get("final_status")
-            if status == "LIKELY AI-GENERATED":
+            # Case-insensitive substring matching (not exact equality) so this stays
+            # correct if the taxonomy ever grows beyond the current three live states --
+            # mirrors image_detector.batch's matching style rather than silently bucketing
+            # any new/renamed status string into "errors".
+            status = str(res.get("final_status", "")).upper()
+            if not res.get("content_valid", True) or res.get("error"):
+                error_count += 1
+            elif "AI-GENERATED" in status:
                 ai_count += 1
-            elif status == "LIKELY REAL":
+            elif "REAL" in status:
                 real_count += 1
-            elif status == "UNDECIDED":
+            elif "UNDECIDED" in status:
                 undecided_count += 1
             else:
                 error_count += 1
@@ -74,7 +80,7 @@ class VideoBatchProcessor:
         self,
         directory_path: str | Path,
         recursive: bool = True,
-        sensitivity: str = "high",
+        sensitivity: str = "balanced",
         progress_callback: Optional[Callable[[int, int, Dict[str, Any]], None]] = None,
     ) -> Dict[str, Any]:
         """Scans and evaluates all supported video files in a directory."""

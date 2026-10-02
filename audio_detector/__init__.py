@@ -1,5 +1,5 @@
 """
-audio_detector: Completely independent, self-contained, and self-improving Audio AI Detection package.
+audio_detector: Completely independent, self-contained, feedback-calibrated Audio AI Detection package (see learner.py for exactly what the calibration does and does not do).
 Contains its own:
 - Configurations & acoustic thresholds (audio_detector.config)
 - Schemas & data structures (audio_detector.schemas)

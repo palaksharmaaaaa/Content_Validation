@@ -1,5 +1,5 @@
 """
-image_detector: Completely independent, self-contained, and self-improving Image AI Detection package.
+image_detector: Completely independent, self-contained, feedback-calibrated Image AI Detection package (see learner.py for exactly what the calibration does and does not do).
 Contains its own:
 - Configurations & thresholds (image_detector.config)
 - Schemas & data structures (image_detector.schemas)
@@ -58,8 +58,7 @@ from image_detector.schemas import (
     ImageValidationResult,
 )
 from image_detector.scoring import (
-    calculate_epistemic_uncertainty,
-    evaluate_image_decision,
+    calculate_image_epistemic_uncertainty,
     normalize_percentages,
     pool_bayesian_log_odds,
 )
@@ -101,8 +100,7 @@ __all__ = [
     # Scoring
     "pool_bayesian_log_odds",
     "normalize_percentages",
-    "calculate_epistemic_uncertainty",
-    "evaluate_image_decision",
+    "calculate_image_epistemic_uncertainty",
     # Models
     "build_image_classifier",
     # Schemas

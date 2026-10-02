@@ -2,12 +2,25 @@
 image_detector.attribution: Generative AI Image Model Attribution & Fingerprinting Engine.
 Profiles image characteristics against major commercial & open-source image synthesis models:
 - Midjourney (v5, v6)
-- OpenAI DALL-E 3
+- OpenAI DALL-E 3 / GPT Image 1
 - Black Forest Labs Flux.1 (Schnell, Dev, Pro)
-- Google Gemini / Imagen 3
+- Google Gemini / Imagen 3, Gemini 2.5 Flash Image ("Nano Banana")
 - Stability AI Stable Diffusion (SD 1.5, SDXL, SD 3)
 - Adobe Firefly
+- Leonardo.Ai
+- xAI Grok Imagine / Aurora
+- ByteDance Seedream
+- Tencent Hunyuan Image
+- Alibaba Qwen-Image
+- Kuaishou Kolors
+- Remini (enhancer)
 Completely self-contained with zero outside dependencies.
+
+NOTE on scoring confidence per entry: the original entries (through Canva/face-swap) have
+dedicated resolution-table and spectral-decay signals in addition to metadata matching. The
+2025/2026 additions (Leonardo.Ai, Grok Imagine, Seedream, Hunyuan Image, Qwen-Image, Kolors,
+Remini, Nano Banana) are currently metadata-signature-only -- no resolution table or spectral
+calibration yet. Add real calibration for them only once backed by actual sample analysis.
 """
 from __future__ import annotations
 
@@ -103,6 +116,60 @@ KNOWN_IMAGE_GENERATORS = {
         "provider": "Open-Source Neural Synthesis",
         "telltales": ["Neural face graft", "CodeFormer / GFPGAN airbrushed skin", "jawline feather seam"],
         "resolutions": [(512, 512), (768, 768), (1024, 1024)],
+    },
+    "leonardo_ai": {
+        "name": "Leonardo.Ai",
+        "provider": "Leonardo AI",
+        "telltales": ["Metadata-signature match only (no resolution/spectral fingerprint calibrated yet)"],
+        "resolutions": [],
+    },
+    "grok_imagine": {
+        "name": "xAI Grok Imagine / Aurora",
+        "provider": "xAI",
+        "telltales": ["Metadata-signature match only (no resolution/spectral fingerprint calibrated yet)"],
+        "resolutions": [],
+    },
+    "google_nano_banana": {
+        "name": "Google Gemini 2.5 Flash Image (\"Nano Banana\")",
+        "provider": "Google DeepMind",
+        "telltales": ["Metadata-signature match only (no resolution/spectral fingerprint calibrated yet)"],
+        "resolutions": [],
+    },
+    "bytedance_seedream": {
+        "name": "ByteDance Seedream",
+        "provider": "ByteDance",
+        "telltales": ["Metadata-signature match only (no resolution/spectral fingerprint calibrated yet)"],
+        "resolutions": [],
+    },
+    "tencent_hunyuan_image": {
+        "name": "Tencent Hunyuan Image",
+        "provider": "Tencent",
+        "telltales": ["Metadata-signature match only (no resolution/spectral fingerprint calibrated yet)"],
+        "resolutions": [],
+    },
+    "alibaba_qwen_image": {
+        "name": "Alibaba Qwen-Image",
+        "provider": "Alibaba",
+        "telltales": ["Metadata-signature match only (no resolution/spectral fingerprint calibrated yet)"],
+        "resolutions": [],
+    },
+    "kuaishou_kolors": {
+        "name": "Kuaishou Kolors",
+        "provider": "Kuaishou Technology",
+        "telltales": ["Metadata-signature match only (no resolution/spectral fingerprint calibrated yet)"],
+        "resolutions": [],
+    },
+    "openai_gpt_image": {
+        "name": "OpenAI GPT Image 1",
+        "provider": "OpenAI",
+        "telltales": ["Metadata-signature match only (no resolution/spectral fingerprint calibrated yet)"],
+        "resolutions": [],
+    },
+    "remini": {
+        "name": "Remini (Neural Photo Enhancer)",
+        "provider": "Bending Spoons",
+        "telltales": ["Metadata-signature match only (no resolution/spectral fingerprint calibrated yet)"],
+        "resolutions": [],
     },
 }
 
@@ -216,6 +283,33 @@ class ImageModelAttributionEngine:
             elif "firefly" in software:
                 scores["adobe_firefly"] += 1.5
                 cues.append(f"Metadata declares Adobe Firefly ({software})")
+            elif "leonardo" in software:
+                scores["leonardo_ai"] += 1.5
+                cues.append(f"Metadata declares Leonardo.Ai ({software})")
+            elif "grok" in software or "xai" in software:
+                scores["grok_imagine"] += 1.5
+                cues.append(f"Metadata declares xAI Grok Imagine ({software})")
+            elif "nano banana" in software or "gemini 2.5 flash image" in software:
+                scores["google_nano_banana"] += 1.5
+                cues.append(f"Metadata declares Google Gemini 2.5 Flash Image / Nano Banana ({software})")
+            elif "seedream" in software:
+                scores["bytedance_seedream"] += 1.5
+                cues.append(f"Metadata declares ByteDance Seedream ({software})")
+            elif "hunyuan" in software:
+                scores["tencent_hunyuan_image"] += 1.5
+                cues.append(f"Metadata declares Tencent Hunyuan Image ({software})")
+            elif "qwen" in software:
+                scores["alibaba_qwen_image"] += 1.5
+                cues.append(f"Metadata declares Alibaba Qwen-Image ({software})")
+            elif "kolors" in software:
+                scores["kuaishou_kolors"] += 1.5
+                cues.append(f"Metadata declares Kuaishou Kolors ({software})")
+            elif "gpt-image" in software or "gpt image" in software:
+                scores["openai_gpt_image"] += 1.5
+                cues.append(f"Metadata declares OpenAI GPT Image 1 ({software})")
+            elif "remini" in software:
+                scores["remini"] += 1.5
+                cues.append(f"Metadata declares Remini enhancement ({software})")
 
             if provenance_data.get("c2pa_present"):
                 scores["openai_dalle3"] += 0.35
@@ -274,11 +368,18 @@ class ImageModelAttributionEngine:
         best_info = KNOWN_IMAGE_GENERATORS[best_key]
         conf = round(best_score, 2)
         region = (
-            "United States" if best_key in ("openai_dalle3", "midjourney", "google_imagen", "topaz_photo_ai")
-            else ("Australia" if best_key == "canva"
-            else ("Germany / EU" if best_key == "flux1"
-            else ("United Kingdom" if best_key == "stable_diffusion"
-            else "Global / Open-Source")))
+            "United States" if best_key in (
+                "openai_dalle3", "midjourney", "google_imagen", "topaz_photo_ai",
+                "leonardo_ai", "grok_imagine", "google_nano_banana", "openai_gpt_image",
+            )
+            else "Australia" if best_key == "canva"
+            else "Germany / EU" if best_key == "flux1"
+            else "United Kingdom" if best_key == "stable_diffusion"
+            else "Italy / EU" if best_key == "remini"
+            else "China" if best_key in (
+                "bytedance_seedream", "tencent_hunyuan_image", "alibaba_qwen_image", "kuaishou_kolors",
+            )
+            else "Global / Open-Source"
         )
         return {
             "attributed_model": best_info["name"],

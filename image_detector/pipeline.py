@@ -58,7 +58,7 @@ class ImageForensicPipeline:
     def analyze(
         self,
         image_path: str | Path,
-        sensitivity: str = "high",
+        sensitivity: str = "balanced",
         source: str = "User Upload",
     ) -> Dict[str, Any]:
         """Runs the entire end-to-end linear image forensic analysis pipeline."""
@@ -92,7 +92,7 @@ class ImageForensicPipeline:
         provenance_res = self.provenance.analyze_provenance(path)
 
         # 4. Deep Learning & Statistical Sensor Noise AI Detection
-        ai_res = self.detector.predict(path, sensitivity=sensitivity)
+        ai_res = self.detector.predict(path, sensitivity=sensitivity, provenance=provenance_res)
 
         # 5. Scene & Content Intelligence (Living entities, objects, text regions)
         content_res = self.content_analyzer.analyze_image_content(path)

@@ -33,7 +33,7 @@ class AudioBenchmarkSuite:
         self.detector.load()
 
     def evaluate_dataset(
-        self, dataset_dir: Path | str, sensitivity: str = "high"
+        self, dataset_dir: Path | str, sensitivity: str = "balanced"
     ) -> Dict[str, Any]:
         """
         Evaluates detector against dataset folder containing 'ai_generated' and 'real' subfolders.

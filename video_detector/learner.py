@@ -1,6 +1,18 @@
 """
-video_detector.learner: Self-improving online learning & dynamic calibration engine for video forensics.
-Maintains dedicated video memory bank, adapts motion delta thresholds, and optimizes temporal segmentation.
+video_detector.learner: Heuristic feedback-driven calibration engine for video forensics.
+
+IMPORTANT -- what this module does NOT do: despite the "self-improving" language used
+elsewhere in this project, record_feedback() below never touches the neural network's
+weights and never retrains or fine-tunes anything (and in this project's current state,
+no trained checkpoint even exists on disk -- see trainer.py). It only nudges scalar
+constants (motion_thresholds, temporal_weights, sensitivity_offsets) stored in
+data/video_calibration.json by small fixed deltas per feedback event, read by
+scoring.pool_video_temporal_score() and temporal.compute_interframe_motion_variance(). This
+is a legitimate technique -- rule-based calibration drift correction -- but it is not
+machine learning.
+
+Maintains a dedicated video feedback memory bank, adapts motion delta thresholds, and
+optimizes the temporal scoring weights used by video_detector.scoring.
 Completely self-contained with zero outside dependencies.
 """
 from __future__ import annotations
@@ -20,7 +32,7 @@ logger = logging.getLogger("video_detector.learner")
 
 class VideoSelfImprover:
     """
-    Dedicated self-improving module for Video AI Detection.
+    Dedicated feedback-calibration module for Video AI Detection (adjusts scoring constants only -- see module docstring above; not model training).
     Maintains a persistent memory of verified authentic and AI-generated video fingerprints,
     and dynamically adapts temporal motion variance thresholds and frame scoring weights.
     """

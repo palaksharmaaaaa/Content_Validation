@@ -47,7 +47,6 @@ def build_nine_dimensions_dossier(
     phys = profile_data.get("raw_physical_signals") or {}
     f_metrics = ai_result.get("forensic_metrics", {})
     prov = provenance_result or {}
-    c2pa = prov.get("c2pa", {})
     attr = attribution_result or ai_result.get("model_attribution") or {}
     inv = content_inventory or {}
     entities = inv.get("living_entities") or inv.get("entities") or {}
@@ -79,7 +78,11 @@ def build_nine_dimensions_dossier(
         },
         "date_taken": exif.get("date_time") or prov.get("date_time") or "Unknown / Stripped",
         "gps_coordinates": exif.get("gps_details", {}).get("coordinates_str", "Not Embedded"),
-        "c2pa_status": c2pa.get("c2pa_status", prov.get("c2pa_status", "Absent (Neutral)")),
+        "c2pa_status": (
+            "Present (Content Credentials Verified)"
+            if prov.get("c2pa_present")
+            else "Absent (Neutral)"
+        ),
         "software_signature": exif.get("software") or prov.get("software") or "None (Clean)",
         "iptc_digital_source_type": iptc_type,
         "provenance_verdict": "Authentic Hardware EXIF Verified" if has_cam else "Web Container / Metadata Stripped",

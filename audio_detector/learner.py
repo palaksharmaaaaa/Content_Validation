@@ -1,6 +1,17 @@
 """
-audio_detector.learner: Self-improving online learning & dynamic calibration engine for audio forensics.
-Maintains dedicated audio memory bank, tunes vocoder cutoff thresholds, and adapts acoustic weights.
+audio_detector.learner: Heuristic feedback-driven calibration engine for audio forensics.
+
+IMPORTANT -- what this module does NOT do: despite the "self-improving" language used
+elsewhere in this project, record_feedback() below never touches the neural network's
+weights and never retrains or fine-tunes anything (and in this project's current state,
+no trained checkpoint even exists on disk -- see trainer.py). It only nudges scalar
+constants (acoustic_weights, thresholds, sensitivity_offsets) stored in
+data/audio_calibration.json by small fixed deltas per feedback event, read by
+scoring.pool_acoustic_evidence(). This is a legitimate technique -- rule-based calibration
+drift correction -- but it is not machine learning.
+
+Maintains a dedicated audio feedback memory bank, tunes vocoder cutoff thresholds, and
+adapts the acoustic scoring weights used by audio_detector.scoring.
 Completely self-contained with zero outside dependencies.
 """
 from __future__ import annotations
@@ -20,7 +31,7 @@ logger = logging.getLogger("audio_detector.learner")
 
 class AudioSelfImprover:
     """
-    Dedicated self-improving module for Audio AI Detection.
+    Dedicated feedback-calibration module for Audio AI Detection (adjusts scoring constants only -- see module docstring above; not model training).
     Maintains a persistent memory of verified authentic speech and AI voice clones,
     and dynamically adapts vocoder cutoff frequency limits and Wiener flatness weights.
     """

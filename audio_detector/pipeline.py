@@ -51,7 +51,7 @@ class AudioForensicPipeline:
     def analyze(
         self,
         audio_path: str | Path,
-        sensitivity: str = "high",
+        sensitivity: str = "balanced",
     ) -> Dict[str, Any]:
         """Runs the entire end-to-end audio forensic analysis pipeline."""
         path = Path(audio_path)

@@ -25,7 +25,7 @@ class ImageBatchProcessor:
     def process_files(
         self,
         file_paths: List[str | Path],
-        sensitivity: str = "high",
+        sensitivity: str = "balanced",
         progress_callback: Optional[Callable[[int, int, Dict[str, Any]], None]] = None,
     ) -> Dict[str, Any]:
         """Processes a sequence of image files."""
@@ -78,7 +78,7 @@ class ImageBatchProcessor:
         self,
         directory_path: str | Path,
         recursive: bool = True,
-        sensitivity: str = "high",
+        sensitivity: str = "balanced",
         progress_callback: Optional[Callable[[int, int, Dict[str, Any]], None]] = None,
     ) -> Dict[str, Any]:
         """Scans and evaluates all supported image files in a directory."""

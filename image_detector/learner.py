@@ -1,6 +1,19 @@
 """
-image_detector.learner: Self-improving online learning & dynamic calibration engine for image forensics.
-Maintains dedicated memory bank and calibrates Bayesian feature weights based on verification feedback.
+image_detector.learner: Heuristic feedback-driven calibration engine for image forensics.
+
+IMPORTANT -- what this module does NOT do: despite the "self-improving" language used
+elsewhere in this project, record_feedback() below never touches the neural network's
+weights (models/ai_detector.pt) and never retrains or fine-tunes anything. It only nudges
+a handful of scalar constants (feature_weights, sensitivity_offsets) stored in
+data/image_calibration.json by small fixed deltas per feedback event, which are then read
+by scoring.pool_bayesian_log_odds(). This is a legitimate technique -- rule-based
+calibration drift correction -- but it is not machine learning and has no mechanism to
+improve classification for taxonomy states the underlying CNN was never trained to
+distinguish (see trainer.py / models/backbone.py: the CNN is a binary real-vs-ai_generated
+classifier only).
+
+Maintains a dedicated feedback memory bank and calibrates the Bayesian scoring weights used
+by image_detector.scoring based on user-verification feedback.
 Completely self-contained with zero outside dependencies.
 """
 from __future__ import annotations
@@ -20,7 +33,7 @@ logger = logging.getLogger("image_detector.learner")
 
 class ImageSelfImprover:
     """
-    Dedicated self-improving module for Image AI Detection.
+    Dedicated feedback-calibration module for Image AI Detection (adjusts scoring constants only -- see module docstring above; not model training).
     Maintains a persistent memory of verified authentic and AI-generated image fingerprints,
     and dynamically optimizes Bayesian likelihood ratio weights and sensitivity offsets.
     """

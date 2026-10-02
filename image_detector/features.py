@@ -19,30 +19,9 @@ import numpy as np
 from PIL import Image, ImageChops, ImageEnhance, ImageFile
 from PIL.ExifTags import TAGS
 
-from image_detector.config import CANONICAL_SCREEN_RESOLUTIONS
+from image_detector.config import CANONICAL_SCREEN_RESOLUTIONS, KNOWN_AI_SOFTWARE_SIGNATURES
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-
-KNOWN_AI_SOFTWARE_SIGNATURES = [
-    "midjourney",
-    "stable diffusion",
-    "dall-e",
-    "novelai",
-    "adobe firefly",
-    "comfyui",
-    "civitai",
-    "automatic1111",
-    "invokeai",
-    "bing image creator",
-    "imagen",
-    "gemini",
-    "flux",
-    "runway",
-    "kling",
-    "sora",
-    "pika",
-    "luma",
-]
 
 KNOWN_SCREENSHOT_SOFTWARE_SIGNATURES = [
     "snipping tool",
@@ -808,13 +787,20 @@ def detect_screenshot(
     is_tablet_aspect = 1.30 <= aspect_ratio <= 1.65
     is_desktop_aspect = (1.25 <= aspect_ratio <= 1.85) or (2.30 <= aspect_ratio <= 2.45)
 
+    # is_tablet_aspect (1.30-1.65) is a strict subset of is_desktop_aspect's first range
+    # (1.25-1.85) -- checking tablet before desktop would make every landscape screenshot
+    # in that overlap (a very common laptop aspect ratio, e.g. 4:3/3:2 displays) always
+    # resolve to "Tablet" and desktop unreachable for that band. Desktop/laptop screens are
+    # essentially always landscape, while tablet screenshots are commonly portrait, so check
+    # the more specific landscape+desktop-aspect combination first; tablet then only wins in
+    # portrait orientation or outside the desktop band.
     if not matched_device:
         if is_mobile_aspect and orientation == "Portrait":
             device_type = "Mobile Phone"
-        elif is_tablet_aspect:
-            device_type = "Tablet"
         elif is_desktop_aspect and orientation == "Landscape":
             device_type = "Laptop / Desktop"
+        elif is_tablet_aspect:
+            device_type = "Tablet"
 
     # 5. Visual UI Structure Analysis
     gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)

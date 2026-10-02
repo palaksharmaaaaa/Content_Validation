@@ -18,6 +18,8 @@ import wave
 
 import numpy as np
 
+_FFMPEG_MISSING_WARNED = False
+
 from audio_detector.config import (
     MAX_DURATION_SECONDS,
     MAX_FILE_SIZE_MB,
@@ -173,6 +175,16 @@ class AudioValidator:
 
                     dur = float(len(samples)) / max(1, fr)
                     return samples, fr, dur
+        except FileNotFoundError:
+            global _FFMPEG_MISSING_WARNED
+            if not _FFMPEG_MISSING_WARNED:
+                logger.warning(
+                    "ffmpeg executable not found in PATH. audio_detector requires the "
+                    "ffmpeg system binary (not a pip package) to decode non-WAV audio -- "
+                    "install it from https://ffmpeg.org/download.html and ensure it's on "
+                    "PATH. Falling back to native wave decoding, which only supports WAV."
+                )
+                _FFMPEG_MISSING_WARNED = True
         except Exception as e:
             logger.debug("FFmpeg decoding failed: %s", e)
         finally:

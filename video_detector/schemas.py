@@ -146,7 +146,7 @@ class VideoValidationResult:
 
 @dataclass
 class VideoFeedbackRecord:
-    """Feedback record for video continual learning."""
+    """Feedback record for video calibration (not model training -- see learner.py)."""
     timestamp: str
     video_path: str
     user_label: str

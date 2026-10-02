@@ -1,5 +1,5 @@
 """
-video_detector: Completely independent, self-contained, and self-improving Video AI Detection package.
+video_detector: Completely independent, self-contained, feedback-calibrated Video AI Detection package (see learner.py for exactly what the calibration does and does not do).
 Contains its own:
 - Configurations & temporal baselines (video_detector.config)
 - Schemas & data structures (video_detector.schemas)

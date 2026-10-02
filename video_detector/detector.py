@@ -6,7 +6,7 @@ Combines:
 3. Diffusion flickering & high-frequency frame jitter analysis.
 4. Per-frame spatial forensic evaluation and aggregation.
 5. Contiguous temporal timeline segmentation with exact bounds.
-6. Adaptive online self-improver feedback calibration.
+6. Rule-based feedback calibration (see learner.py -- adjusts scoring constants, not model weights).
 Completely self-contained with zero outside dependencies.
 """
 from __future__ import annotations
@@ -45,7 +45,7 @@ logger = logging.getLogger("video_detector.detector")
 
 class VideoAIDetector:
     """
-    Completely independent, self-contained, and self-improving Video AI Detector.
+    Completely independent, self-contained Video AI Detector with rule-based feedback calibration (see learner.py).
     Evaluates temporal continuity, motion variance, boundary warping, diffusion flicker,
     and frame-level spatial synthesis to provide holistic video verification.
     """
@@ -113,7 +113,7 @@ class VideoAIDetector:
     def analyze_video(
         self,
         video_path: str | Path,
-        sensitivity: str = "high",
+        sensitivity: str = "balanced",
         progress_callback: Optional[Callable[[int, int, str], None]] = None,
     ) -> Dict[str, Any]:
         """
@@ -141,14 +141,17 @@ class VideoAIDetector:
                 error="No frames could be extracted from video.",
             ).to_dict()
 
-        # 2. Temporal Consistency & Warping
-        temporal_res = compute_interframe_motion_variance(frames, temporal_step=temporal_step)
-        flicker_res = detect_diffusion_flickering(frames)
-
-        # 3. Dynamic Calibration from VideoSelfImprover
+        # 2. Dynamic Calibration from VideoSelfImprover
         calib = self.self_improver.load_calibration()
         offsets = calib.get("sensitivity_offsets", {})
         t_weights = calib.get("temporal_weights", {})
+        motion_thresholds = calib.get("motion_thresholds", {})
+
+        # 3. Temporal Consistency & Warping
+        temporal_res = compute_interframe_motion_variance(
+            frames, temporal_step=temporal_step, motion_thresholds=motion_thresholds
+        )
+        flicker_res = detect_diffusion_flickering(frames)
 
         # 4. Frame-level Spatial Analysis
         analyzed_frames: List[Dict[str, Any]] = []
@@ -247,6 +250,8 @@ class VideoAIDetector:
             cues.append(f"Neural temporal discriminator transition AI probability: {neural_transition_ai * 100:.1f}%")
         if temporal_res["temporal_warping_risk"] in ("HIGH_WARPING_DETECTED", "SUSPICIOUS_FLICKER"):
             cues.append(f"Temporal warping detected (motion variance: {temporal_res['motion_variance']})")
+        elif temporal_res["temporal_warping_risk"] == "UNNATURAL_FREEZE":
+            cues.append(f"Unnatural frame-to-frame stillness detected (motion variance: {temporal_res['motion_variance']})")
         if flicker_res["has_diffusion_flicker"]:
             cues.append(f"Diffusion generation flicker detected across frames (flicker score: {flicker_res['flicker_score']})")
         if mean_frame_ai > 0.60:

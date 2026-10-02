@@ -7,7 +7,7 @@ Combines:
 4. Digital zero silence analysis for absent room tone.
 5. Speech temporal timeline attribution.
 6. Neural acoustic classifier inference (if checkpoint exists).
-7. Adaptive online self-improver feedback calibration.
+7. Rule-based feedback calibration (see learner.py -- adjusts scoring constants, not model weights).
 Completely self-contained with zero outside dependencies.
 """
 from __future__ import annotations
@@ -44,7 +44,7 @@ logger = logging.getLogger("audio_detector")
 
 class AudioAIDetector:
     """
-    Completely independent, self-contained, and self-improving Audio AI Detector.
+    Completely independent, self-contained Audio AI Detector with rule-based feedback calibration (see learner.py).
     Evaluates acoustic spectral anomalies, vocoder cutoffs, digital silence gaps,
     and voice clone signatures.
     """
@@ -80,7 +80,7 @@ class AudioAIDetector:
     def analyze_audio_file(
         self,
         file_path: str | Path,
-        sensitivity: str = "high",
+        sensitivity: str = "balanced",
         pre_extracted: Optional[Tuple[Optional[np.ndarray], int, float]] = None,
         generate_spectrogram: bool = False,
     ) -> Dict[str, Any]:

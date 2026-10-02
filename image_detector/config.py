@@ -119,7 +119,9 @@ CANONICAL_SCREEN_RESOLUTIONS = {
     (3440, 1440): ("Desktop", "21:9 UltraWide QHD Display"),
 }
 
-# Known AI Software Fingerprints in Metadata
+# Known AI Software Fingerprints in Metadata (EXIF/XMP Software, Creator, or Processing tags).
+# Single source of truth: features.py and provenance.py both import this list rather than
+# keeping their own copies, so there is exactly one place to update as new tools ship.
 KNOWN_AI_SOFTWARE_SIGNATURES = [
     "midjourney",
     "stable diffusion",
@@ -130,6 +132,7 @@ KNOWN_AI_SOFTWARE_SIGNATURES = [
     "civitai",
     "automatic1111",
     "invokeai",
+    "fooocus",
     "bing image creator",
     "imagen",
     "gemini",

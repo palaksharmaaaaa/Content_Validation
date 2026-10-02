@@ -125,6 +125,10 @@ class VideoValidator:
             codec=meta.get("codec", "UNKNOWN"),
         )
 
+    def validate_video(self, video_path: str | Path) -> VideoValidationResult:
+        """Alias for validate to ensure backwards compatibility across services and callers."""
+        return self.validate(video_path)
+
 
 def analyze_video(video_path: str | Path, **kwargs) -> Dict[str, Any]:
     """Inspects video stream validity and dimensions, returning flat dictionary."""

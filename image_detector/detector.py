@@ -7,7 +7,7 @@ Combines:
 4. 2D FFT Radial Power Spectrum decay (1/f^alpha field law).
 5. Error Level Analysis (ELA) compression footprint discrepancy.
 6. Localized spatial manipulation heatmaps.
-7. Adaptive online self-improver feedback calibration.
+7. Rule-based feedback calibration (see learner.py -- adjusts scoring constants, not model weights).
 Completely self-contained with zero outside dependencies.
 """
 from __future__ import annotations
@@ -58,8 +58,7 @@ from image_detector.learner import ImageSelfImprover
 from image_detector.models.backbone import build_image_classifier
 from image_detector.schemas import ImageForensicResult, ImageTaxonomyState
 from image_detector.scoring import (
-    calculate_epistemic_uncertainty,
-    evaluate_image_decision,
+    calculate_image_epistemic_uncertainty,
     evaluate_taxonomy_classification,
     normalize_percentages,
     pool_bayesian_log_odds,
@@ -70,7 +69,7 @@ logger = logging.getLogger("image_detector.detector")
 
 class ImageAIDetector:
     """
-    Completely independent, self-contained, and self-improving Image AI Detector.
+    Completely independent, self-contained Image AI Detector with rule-based feedback calibration (see learner.py).
     Evaluates physical sensor noise, bilateral smoothness, FFT spectral decay,
     and neural latent fingerprints within a calibrated Bayesian log-odds framework.
     """
@@ -134,8 +133,9 @@ class ImageAIDetector:
     def predict(
         self,
         image_path: str | Path,
-        sensitivity: str = "high",
+        sensitivity: str = "balanced",
         face_boxes: Optional[List[Dict[str, int]]] = None,
+        provenance: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Deep forensic evaluation across physical, spectral, and neural modalities.
@@ -210,6 +210,36 @@ class ImageAIDetector:
 
         if meta.get("graphic_editor_signature_found"):
             cues_detected.append(meta.get("signature_details", "Graphic editing tool detected"))
+
+        # (a2) C2PA Content Credentials (if provenance was supplied by the pipeline). A
+        # cryptographically-verified C2PA manifest is treated as protective evidence here --
+        # previously this signal was only ever surfaced in the human-readable evidence trail
+        # and never reached the actual Bayesian decision at all.
+        c2pa_present = bool(provenance and provenance.get("c2pa_present"))
+        if c2pa_present:
+            log_lrs["c2pa_verified"] = -1.8
+            cues_detected.append("Cryptographic C2PA Content Credentials manifest verified in file.")
+
+        # Explicit, visible neutrality for the single most common real-world case: no camera
+        # hardware tags, no AI/enhancer signature, no C2PA manifest (downloaded, re-shared,
+        # platform-recompressed, or screenshotted images all look like this). This contributes
+        # zero weight to the posterior -- its purpose is to make the "we simply don't know"
+        # state legible in the evidence trail, and to flag metadata_absent for the taxonomy
+        # classifier below, which uses it to require corroborating pixel evidence before an
+        # EXIF-absent image can be routed to FULLY_AI_GENERATED (see scoring.py branch 4).
+        metadata_absent = (
+            not has_camera_hardware
+            and not meta.get("ai_signature_found")
+            and not meta.get("ai_enhancer_signature_found")
+            and not c2pa_present
+        )
+        if metadata_absent:
+            log_lrs["metadata_absent"] = 0.0
+            cues_detected.append(
+                "No camera hardware tags, AI/enhancer signature, or C2PA manifest found -- "
+                "metadata is absent or stripped. Treated as neutral, not as evidence of synthesis "
+                "(this is the normal state for downloaded, re-shared, or platform-processed images)."
+            )
 
         # (b) Watermark & Emblem Detection (Gemini sparkle, etc.)
         if watermark_res.get("watermark_detected"):
@@ -308,6 +338,7 @@ class ImageAIDetector:
             cues_detected.append(f"Canonical AI generative canvas geometry: {w}x{h}")
 
         # (j) Neural Model Inference (if available)
+        lr_neural: Optional[float] = None
         if self.model is not None and self.transform is not None:
             try:
                 with Image.open(path) as p_img:
@@ -321,9 +352,21 @@ class ImageAIDetector:
             except Exception as e:
                 logger.debug("Neural inference bypassed: %s", e)
 
+        # Count how many *independent* pixel signals individually lean synthetic (not just
+        # whether the final blended ai_pct crosses a threshold). Used by the taxonomy
+        # classifier's corroboration gate for metadata_absent images (see scoring.py
+        # branch 4) -- a single ambiguous signal should not be enough to route an
+        # EXIF-stripped real photo into FULLY_AI_GENERATED.
+        synthetic_signal_count = sum([
+            lr_noise > 0.3,
+            lr_smooth > 0.3,
+            is_anomaly,
+            bool(lr_neural is not None and lr_neural > 0.3),
+        ])
+
         # 3. Bayesian Evidence Pooling & Uncertainty
         total_log_odds, prob_ai_raw, prob_real_raw = pool_bayesian_log_odds(sensitivity, log_lrs)
-        uncertainty = calculate_epistemic_uncertainty(prob_ai_raw)
+        uncertainty = calculate_image_epistemic_uncertainty(prob_ai_raw)
         target_undecided = max(3.0, min(24.0, uncertainty * 20.0))
 
         ai_pct, real_pct, undecided_pct = normalize_percentages(
@@ -351,6 +394,8 @@ class ImageAIDetector:
             smoothness=smoothness,
             is_square_gen=is_square_gen,
             is_canonical_gen=is_canonical_gen,
+            metadata_absent=metadata_absent,
+            synthetic_signal_count=synthetic_signal_count,
         )
 
         # Align primary decision prediction
@@ -436,7 +481,7 @@ class ImageAIDetector:
 
     predict_image = predict
 
-    def predict_frame(self, frame_bgr: np.ndarray, sensitivity: str = "high") -> Dict[str, Any]:
+    def predict_frame(self, frame_bgr: np.ndarray, sensitivity: str = "balanced") -> Dict[str, Any]:
         """Fast frame-level inference for video frames."""
         try:
             gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)

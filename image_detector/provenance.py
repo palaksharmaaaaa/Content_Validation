@@ -12,6 +12,8 @@ from typing import Any, Dict, List, Optional
 from PIL import Image
 from PIL.ExifTags import TAGS
 
+from image_detector.config import KNOWN_AI_SOFTWARE_SIGNATURES
+
 logger = logging.getLogger("image_detector.provenance")
 
 C2PA_JUMBF_SIGNATURES = [
@@ -24,12 +26,6 @@ C2PA_JUMBF_SIGNATURES = [
     b"http://c2pa.org",
     b"c2pa.claim",
     b"c2pa.assertion",
-]
-
-KNOWN_AI_SOFTWARE_SIGNATURES = [
-    "midjourney", "stable diffusion", "dall-e", "comfyui", "automatic1111",
-    "novelai", "invokeai", "fooocus", "adobe firefly", "bing image creator",
-    "ideogram", "recraft", "magnific", "topaz photo ai", "liveportrait", "ic-light", "flux",
 ]
 
 

@@ -15,6 +15,7 @@ import numpy as np
 import streamlit as st
 
 from audio_detector import AudioProfiler, AudioSelfImprover
+from core.decision import generate_final_decision, normalize_percentages
 from image_detector import ImageProfiler, ImageSelfImprover
 from image_detector.explain import build_nine_dimensions_dossier, generate_newbie_explanation
 from video_detector import VideoProfiler, VideoSelfImprover
@@ -961,10 +962,6 @@ def render_bottom_feedback_panel(
             mime="application/json",
             key=f"{unique_key}_dl_btn",
         )
-
-
-# Core Bayesian decision intelligence and percentage invariants decoupled into core.decision
-from core.decision import generate_final_decision, normalize_percentages
 
 
 def render_pre_analysis_specifications(
