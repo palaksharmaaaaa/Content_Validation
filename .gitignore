@@ -107,4 +107,4 @@ scratch/
 
 # Local diagnostic & scratch evaluation scripts with personal paths
 scripts/
-image_detector_update_implementation_plan.md
+image_detector_update_implementation_plan.md**/models/*.candidate.pt
