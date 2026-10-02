@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import io
 import ipaddress
+import logging
 from pathlib import Path
 import re
 import socket
@@ -21,6 +22,8 @@ import cv2
 from PIL import Image
 from PIL.ExifTags import TAGS
 import requests
+
+logger = logging.getLogger("ui.validators")
 
 from audio_detector import AudioValidator
 from core.security import (
@@ -365,8 +368,8 @@ def extract_exif_metadata(file_path: str | Path) -> Dict[str, Any]:
                     result["signature_details"] = f"Known AI software footprint detected: '{sig}'"
                     break
 
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("EXIF parsing bypassed for %s: %s", file_path, exc)
     return result
 
 

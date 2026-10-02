@@ -25,6 +25,7 @@ from audio_detector.benchmarks import AudioBenchmarkSuite
 from audio_detector.content import AudioContentAnalyzer
 from audio_detector.detector import AudioAIDetector
 from audio_detector.downloader import AudioDownloader
+from audio_detector.explain import build_audio_nine_dimensions_dossier, generate_audio_newbie_explanation
 from audio_detector.features import (
     compute_spectral_features,
     generate_spectrogram_image,
@@ -68,6 +69,9 @@ __all__ = [
     "AudioSelfImprover",
     "AudioValidator",
     "AudioBenchmarkSuite",
+    # Explainability & Taxonomy
+    "build_audio_nine_dimensions_dossier",
+    "generate_audio_newbie_explanation",
     # Features & Signal Processing
     "compute_spectral_features",
     "generate_spectrogram_image",

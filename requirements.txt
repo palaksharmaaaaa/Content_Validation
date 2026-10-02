@@ -1,12 +1,19 @@
+# Core Web & UI Framework
 streamlit>=1.30.0
-opencv-python>=4.8.0
-pillow>=10.0.0
+
+# Scientific & Array Computing
 numpy>=1.24.0
+scipy>=1.10.0
+pandas>=2.0.0
+
+# Deep Learning Vision Backbones
 torch>=2.0.0
 torchvision>=0.15.0
-transformers>=4.35.0
-huggingface-hub>=0.19.0
-safetensors>=0.4.0
+
+# Computer Vision & Image Processing
+# Note: For headless cloud/Docker deployments, use opencv-python-headless instead
+opencv-python>=4.8.0
+pillow>=10.0.0
+
+# HTTP Networking & Anti-SSRF Ingestion
 requests>=2.31.0
-pandas>=2.0.0
-scipy>=1.10.0

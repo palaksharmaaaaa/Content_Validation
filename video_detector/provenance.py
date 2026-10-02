@@ -78,8 +78,8 @@ class VideoProvenanceValidator:
                 for atom in KNOWN_VIDEO_ATOMS:
                     if atom in head:
                         atoms_found.append(atom.decode("ascii", errors="ignore"))
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Container atom inspection bypassed for %s: %s", path, exc)
 
         cues = []
         if c2pa_res["c2pa_present"]:

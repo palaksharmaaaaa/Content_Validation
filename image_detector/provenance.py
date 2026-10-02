@@ -155,5 +155,6 @@ class ImageProvenanceValidator:
                     "datetime": str(res.get("datetime", "")).strip(),
                     "all_tags": res,
                 }
-        except Exception:
+        except Exception as exc:
+            logger.debug("EXIF parsing bypassed for %s: %s", path, exc)
             return {}

@@ -16,7 +16,13 @@ import cv2
 import pandas as pd
 import streamlit as st
 
-from audio_detector import AudioAIDetector, AudioValidator, generate_spectrogram_image
+from audio_detector import (
+    AudioAIDetector,
+    AudioValidator,
+    build_audio_nine_dimensions_dossier,
+    generate_audio_newbie_explanation,
+    generate_spectrogram_image,
+)
 from image_detector import (
     ImageAIDetector,
     ImageContentAnalyzer as ContentAnalyzer,
@@ -25,7 +31,13 @@ from image_detector import (
     build_nine_dimensions_dossier,
     generate_newbie_explanation,
 )
-from video_detector import VideoAIDetector, analyze_video, evaluate_cross_modal_consistency
+from video_detector import (
+    VideoAIDetector,
+    analyze_video,
+    build_video_nine_dimensions_dossier,
+    evaluate_cross_modal_consistency,
+    generate_video_newbie_explanation,
+)
 from ui.feedback_ui import generate_final_decision, profile_media
 from ui.validators import analyze_provenance, validate_file
 
@@ -198,6 +210,22 @@ def process_single_video(
         attribution_result=attribution_res,
     )
 
+    nine_dims = build_video_nine_dimensions_dossier(
+        profile_data=vid_profile,
+        video_result=video_result,
+        content_inventory=content_res,
+        provenance_result=provenance_res,
+        attribution_result=attribution_res,
+        cross_modal_result=cross_modal_res,
+    )
+    newbie_expl = generate_video_newbie_explanation(
+        filename=filename,
+        profile_data=vid_profile,
+        content_inventory=content_res,
+        video_result=video_result,
+        decision=decision,
+    )
+
     return {
         "filename": filename,
         "path": vid_path,
@@ -213,6 +241,8 @@ def process_single_video(
         "vid_profile": vid_profile,
         "tmp_kf_path": tmp_kf_path,
         "kf_ai": kf_ai,
+        "nine_dimensions_dossier": nine_dims,
+        "newbie_explanation": newbie_expl,
     }
 
 
@@ -264,6 +294,21 @@ def process_single_audio(
     if samples is not None and len(samples) > 0:
         spec_img = generate_spectrogram_image(samples, sr)
 
+    nine_dims = build_audio_nine_dimensions_dossier(
+        profile_data=aud_profile,
+        audio_result=audio_result,
+        content_inventory=content_res,
+        provenance_result=provenance_res,
+        attribution_result=attribution_res,
+    )
+    newbie_expl = generate_audio_newbie_explanation(
+        filename=filename,
+        profile_data=aud_profile,
+        content_inventory=content_res,
+        audio_result=audio_result,
+        decision=decision,
+    )
+
     return {
         "filename": filename,
         "path": aud_path,
@@ -278,6 +323,8 @@ def process_single_audio(
         "attribution_res": attribution_res,
         "decision": decision,
         "spec_img": spec_img,
+        "nine_dimensions_dossier": nine_dims,
+        "newbie_explanation": newbie_expl,
     }
 
 

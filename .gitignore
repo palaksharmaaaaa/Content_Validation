@@ -104,15 +104,5 @@ tmp*
 scratch/
 
 # Local diagnostic & scratch evaluation scripts with personal paths
-analyze_android_dataset.py
-compare_profiles.py
-diagnose_camera_pic.py
-evaluate_family_images.py
-evaluate_wedding_ai.py
-test_all_domains.py
-test_android_photos.py
-test_sony_camera.py
-train_and_learn_wedding.py
-train_on_android_dataset.py
-train_on_camera_dataset.py
+scripts/
 image_detector_update_implementation_plan.md

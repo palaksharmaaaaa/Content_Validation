@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional
 
 from video_detector.config import CALIBRATION_FILE, DATA_DIR, MEMORY_FILE
 from video_detector.schemas import VideoFeedbackRecord
+from core.atomic_io import atomic_read_json, atomic_write_json
 
 logger = logging.getLogger("video_detector.learner")
 
@@ -37,13 +38,6 @@ class VideoSelfImprover:
 
     def load_calibration(self) -> Dict[str, Any]:
         """Loads active video calibration parameters."""
-        if self.calibration_file.is_file():
-            try:
-                with open(self.calibration_file, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            except Exception as e:
-                logger.warning("Could not read video calibration file: %s", e)
-
         default_calib = {
             "version": 1,
             "last_updated": datetime.now().isoformat(),
@@ -62,26 +56,21 @@ class VideoSelfImprover:
                 "video_ai_offset": 0.0,
             },
         }
-        return default_calib
+        loaded = atomic_read_json(self.calibration_file, default=None)
+        return loaded if isinstance(loaded, dict) else default_calib
 
     def save_calibration(self, calib: Dict[str, Any]) -> None:
         """Saves updated calibration parameters atomically."""
         calib["last_updated"] = datetime.now().isoformat()
         try:
-            with open(self.calibration_file, "w", encoding="utf-8") as f:
-                json.dump(calib, f, indent=2)
+            atomic_write_json(self.calibration_file, calib, indent=2)
         except Exception as e:
-            logger.error("Failed to save video calibration: %s", e)
+            logger.error("Failed to save video calibration atomically: %s", e)
 
     def load_memory(self) -> List[Dict[str, Any]]:
         """Loads verified video memory bank."""
-        if self.feedback_file.is_file():
-            try:
-                with open(self.feedback_file, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            except Exception:
-                pass
-        return []
+        loaded = atomic_read_json(self.feedback_file, default=[])
+        return loaded if isinstance(loaded, list) else []
 
     def record_feedback(
         self,
@@ -131,10 +120,9 @@ class VideoSelfImprover:
         memory.append(record.to_dict())
 
         try:
-            with open(self.feedback_file, "w", encoding="utf-8") as f:
-                json.dump(memory, f, indent=2)
+            atomic_write_json(self.feedback_file, memory, indent=2)
         except Exception as e:
-            logger.error("Failed to save video memory: %s", e)
+            logger.error("Failed to save video memory atomically: %s", e)
 
         m_thresh = calib.setdefault("motion_thresholds", {})
         t_weights = calib.setdefault("temporal_weights", {})

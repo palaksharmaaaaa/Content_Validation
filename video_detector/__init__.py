@@ -29,6 +29,7 @@ from video_detector.content import VideoContentAnalyzer
 from video_detector.cross_modal import CrossModalConsistencyEngine, evaluate_cross_modal_consistency
 from video_detector.detector import VideoAIDetector
 from video_detector.downloader import VideoDownloader
+from video_detector.explain import build_video_nine_dimensions_dossier, generate_video_newbie_explanation
 from video_detector.extractor import VideoFrameExtractor
 from video_detector.face import VideoFaceDeepfakeDetector
 from video_detector.learner import VideoSelfImprover
@@ -77,6 +78,9 @@ __all__ = [
     "VideoValidator",
     "VideoFrameExtractor",
     "VideoBenchmarkSuite",
+    # Explainability & Taxonomy
+    "build_video_nine_dimensions_dossier",
+    "generate_video_newbie_explanation",
     # Temporal Analysis
     "compute_interframe_motion_variance",
     "detect_diffusion_flickering",
