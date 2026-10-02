@@ -19,6 +19,7 @@ A multi-modal (image / video / audio) content-authenticity forensics engine with
 - [`ui/` — Streamlit presentation layer](#ui--streamlit-presentation-layer)
 - [`app.py` — the Streamlit entry point](#apppy--the-streamlit-entry-point)
 - [Testing](#testing)
+- [Train on your own media, in place](#train-on-your-own-media-in-place-no-copies-no-uploads)
 - [Data, models, and what's actually on disk vs. git](#data-models-and-whats-actually-on-disk-vs-git)
 - [What this project actually is (and isn't)](#what-this-project-actually-is-and-isnt)
 - [`scripts/` (local, gitignored, not part of the product)](#scripts-local-gitignored-not-part-of-the-product)
@@ -57,20 +58,20 @@ pytest
 project-content-validation/
 ├── app.py                      # Streamlit entry point — the only thing you launch
 ├── core/                       # Shared, presentation-independent orchestration layer
-│   ├── atomic_io.py            #   crash-safe JSON read/write with per-path locking
+│   ├── atomic_io.py            #   crash-safe JSON I/O, OS temp cache management, and memory wiping
 │   ├── decision.py             #   cross-modal Bayesian fusion + the one normalize_percentages()
 │   ├── security.py             #   anti-SSRF / DNS-rebinding-safe URL fetching, decompression-bomb guard
 │   ├── forensic_service.py     #   lazy singleton facade wrapping all three detector packages
 │   └── tests/test_enterprise_hardening.py
-├── image_detector/              # Full image forensic pipeline (see dedicated section below)
+├── image_detector/              # Full image forensic pipeline (zero-media feature store, see below)
 ├── audio_detector/               # Full audio forensic pipeline (see dedicated section below)
 ├── video_detector/               # Full video forensic pipeline (see dedicated section below)
 ├── ui/                          # Streamlit rendering + per-modality orchestration glue
 │   ├── batch_ui.py              #   process_single_image/video/audio + batch dashboard/table/selector
 │   ├── feedback_ui.py           #   every "render_*" results page + the feedback/rating widgets
 │   └── validators.py            #   file/C2PA/EXIF validation, URL platform detection, media fetch
-├── data/session_cache/           # App-owned scratch space for uploaded-file copies (created at runtime)
 ├── tests/test_unified_suite.py   # Cross-package integration tests (core.decision, SSRF delegation, etc.)
+├── tests/test_feature_store.py   # Zero-disk feature store extraction and training tests
 ├── test_pipeline.py              # Root-level smoke test (NOT in pytest.ini's testpaths)
 ├── requirements.txt
 ├── pytest.ini
@@ -91,7 +92,8 @@ Each of `image_detector/`, `audio_detector/`, `video_detector/` follows the same
 ├── profiler.py          # low-level technical signal extraction (hashes, noise, geometry, ...)
 ├── provenance.py        # C2PA manifest scan + EXIF/container metadata signature detection
 ├── features.py / temporal.py + extractor.py (video only)   # forensic signal computation
-├── detector.py          # the actual AI-vs-real scoring engine for this modality
+├── feature_store.py     # optional content-hash-keyed .npz feature cache & training head (image)
+├── detector.py          # the actual AI-vs-real scoring engine for this modality (in-memory ingestion)
 ├── content.py (+ face.py)   # scene/object/human/face intelligence
 ├── attribution.py        # "which specific generator made this" guesser
 ├── scoring.py            # evidence pooling + the taxonomy/decision logic
@@ -101,10 +103,10 @@ Each of `image_detector/`, `audio_detector/`, `video_detector/` follows the same
 ├── benchmarks.py         # accuracy/precision/recall/F1/ROC-AUC against a labeled dataset
 ├── downloader.py         # thin wrapper around core.security.SecureUrlFetcher
 ├── learner.py            # feedback-driven scalar-constant recalibration (NOT model training)
-├── trainer.py            # the actual PyTorch training harness for the neural component
+├── trainer.py            # the actual PyTorch training harness (in-place samples, .npz feature banks)
 ├── models/backbone.py    # the neural network architecture definition
-├── data/                 # calibration.json + feedback/memory.json (gitignored)
-├── dataset/              # train/val {ai_generated,real} folders for trainer.py / benchmarks.py
+├── data/                 # calibration.json, feedback/memory.json, library.json (local media registry), .npz caches
+├── dataset/              # optional ai_generated/ + real/ folders for the legacy directory-based training path
 └── tests/test_*_detector.py
 ```
 
@@ -150,7 +152,7 @@ Inside `ImageAIDetector.predict()` itself (the single most important function in
 
 ## `image_detector/` workspace
 
-**203 real sample images on disk** (`dataset/train/{real: 119, ai_generated: 41}`, `dataset/val/{real: 33, ai_generated: 10}`), and a trained checkpoint (`models/ai_detector.pt`, ~42.8 MB ResNet18) actually exists and loads at runtime — this is the only one of the three modalities where the neural-network code path is live rather than dormant.
+No raw dataset is stored in the repo; training reads your media in place via the media library (see above). A trained checkpoint (`models/ai_detector.pt`, ~42.8 MB ResNet18) exists and loads at runtime — this is the only one of the three modalities where the neural-network code path is live rather than dormant.
 
 ### File-by-file
 
@@ -162,7 +164,8 @@ Inside `ImageAIDetector.predict()` itself (the single most important function in
 | `profiler.py` | `ImageProfiler.profile_image()` — hashes, DPI/ICC/EXIF (including GPS, exposure, lens), geometry, per-channel stats, Shannon entropy, dominant-color palette, and its own independent PRNU/smoothness/FFT-decay computation (duplicated from, not shared with, `features.py`'s versions). Runs before any AI prediction, as "Stage 1." |
 | `provenance.py` | C2PA JUMBF byte-signature scan (head + tail, 512KB each) plus EXIF/XMP signature classification, producing one of 7 `provenance_status` values. Its output is passed into `detector.predict()` so the C2PA/camera-hardware signal actually reaches the Bayesian posterior, not just the UI evidence trail. |
 | `features.py` (1119 lines — the largest module) | Every pixel-level forensic function: `calculate_sensor_noise_profile`, `calculate_surface_smoothness`, `analyze_fft_radial_power_spectrum`, `compute_ela`, `detect_ai_watermark` (Gemini-sparkle contour geometry), `detect_background_cutout`, `detect_scanned_photo`, `detect_face_swap_artifacts` (filename-signature only), `detect_digital_art_and_painting`, `detect_screenshot` (multi-signal: resolution table, filename, software tag, aspect-ratio device-type inference, UI-structure edge-density analysis), `detect_inpainting_and_manipulation`, `detect_screen_rephotography_moire`, `detect_spectral_modality`, `generate_spatial_manipulation_heatmap`, `extract_image_metadata`. |
-| `detector.py` | `ImageAIDetector` — the scoring engine. `predict()` runs every `features.py` function, pulls the current feedback-calibrated weights from `learner.py`, assembles a dict of log-likelihood-ratio terms (camera hardware, C2PA, watermark, scanned-print, face-swap, inpainting, digital-art, PRNU noise, surface smoothness, FFT decay, canonical dimensions, and — if the checkpoint loaded — the neural backbone's own log-odds), pools them via `scoring.pool_bayesian_log_odds`, converts to percentages via `core.decision.normalize_percentages`, and classifies the result via `scoring.evaluate_taxonomy_classification`. |
+| `feature_store.py` | Optional rebuildable feature cache: `FeatureStore` (512-dim embedding + 12-dim forensic vector per image, keyed by content hash + backbone fingerprint, no file names, never deletes sources), `FeatureBankDataset`, and `FeatureClassifierHead`. |
+| `detector.py` | `ImageAIDetector` — the scoring engine. `predict()` accepts file paths, raw bytes, BytesIO, or numpy arrays (pure in-memory ingestion). Runs every `features.py` function, pulls the current feedback-calibrated weights from `learner.py`, assembles a dict of log-likelihood-ratio terms (camera hardware, C2PA, watermark, scanned-print, face-swap, inpainting, digital-art, PRNU noise, surface smoothness, FFT decay, canonical dimensions, and — if the checkpoint loaded — the neural backbone's own log-odds), pools them via `scoring.pool_bayesian_log_odds`, converts to percentages via `core.decision.normalize_percentages`, and classifies the result via `scoring.evaluate_taxonomy_classification`. |
 | `content.py` / `face.py` | `ImageContentAnalyzer` (SSDLite-MobileNetV3 object detection, lighting/tone/environment heuristics, text-region detection, genre inference) and `FaceDeepfakeDetector` (YCrCb skin-chrominance face localization + bilateral-filter texture/noise deepfake-risk scoring — no trained face-detection model is used). |
 | `attribution.py` | `ImageModelAttributionEngine` — scores an image against 21 known generator profiles (Midjourney, DALL-E 3/GPT Image 1, Flux.1, Google Imagen/Gemini/Nano Banana, Stable Diffusion, Adobe Firefly, Topaz Photo AI, Ideogram, Recraft, Magnific, Canva, neural face-swap pipelines, Leonardo.Ai, Grok Imagine, ByteDance Seedream, Tencent Hunyuan Image, Alibaba Qwen-Image, Kuaishou Kolors, Remini) via watermark/metadata/filename/canonical-resolution/spectral-slope signals, returning the best match with a region-of-origin guess and up to 3 alternate candidates. |
 | `scoring.py` | `pool_bayesian_log_odds` (base-10 additive log-likelihood-ratio Bayesian pooling, with a correlation discount when both PRNU-noise and surface-smoothness fire together) and `evaluate_taxonomy_classification` — the full 7-branch decision tree (screenshot categorization → fully-AI-explicit-signature → AI-enhanced/composite-explicit-signature → AI-enhanced/composite-score-fallback → high-confidence-synthesis-by-score → screen-recapture → authentic-edited → default-authentic-real). |
@@ -171,7 +174,7 @@ Inside `ImageAIDetector.predict()` itself (the single most important function in
 | `batch.py` | `ImageBatchProcessor.process_files()`/`process_directory()` — runs the pipeline over many files, tallying `ai_generated`/`composite`/`real`/`undecided`/`errors` counts. |
 | `benchmarks.py` | `ImageBenchmarkSuite.evaluate_dataset()` — accuracy/precision/recall/F1/ROC-AUC/confusion-matrix against a labeled `ai_generated/`+`real/` folder; this is a **binary** evaluation only (it cannot measure accuracy on the other 8 taxonomy states). |
 | `learner.py` | `ImageSelfImprover` — persists feedback records and nudges 5 scalar feature-weights + sensitivity offsets by small fixed deltas per feedback event. **Does not retrain or touch the neural network's weights.** |
-| `trainer.py` | `ImageDetectorTrainer` — the actual PyTorch training harness (ResNet18/50/MobileNetV3, `CrossEntropyLoss` + `AdamW`) that produces `models/ai_detector.pt`. Binary classifier only: `{ai_generated: 0, real: 1}`. |
+| `trainer.py` | `ImageDetectorTrainer` — the actual PyTorch training harness (ResNet18/50/MobileNetV3, `CrossEntropyLoss` + `AdamW`) that produces `models/ai_detector.pt`. Supports directory loading, in-place sample loaders (`loaders_from_samples`), and training from `.npz` feature caches (`prepare_feature_bank`, `train_from_feature_bank`). Binary classifier only: `{ai_generated: 0, real: 1}`. |
 | `downloader.py` | `ImageDownloader` — thin wrapper delegating to `core.security.SecureUrlFetcher`. |
 
 ### What it can and can't actually distinguish
@@ -280,14 +283,54 @@ pytest.ini testpaths:
 
 ---
 
+## Train on your own media, in place (no copies, no uploads)
+
+Your images/videos/audio stay exactly where they are. A local, gitignored registry (`<modality>_detector/data/library.json`, class `core.media_library.MediaLibrary`) records only, per file: its **SHA-256 content hash** (the identity), its **label** (`ai_generated` / `real`), and a **path hint** used to find the bytes again. Nothing is copied or deleted, and file names are never a training signal — rename or move a file and it is still the same sample (`rescan` re-links it by content).
+
+```bash
+# 1. register labeled media by reference (files or whole folders; recursive)
+python -m core.media_library image add --label real "<dir>/camera" "<dir>/edited"
+python -m core.media_library image add --label ai_generated "<dir>/midjourney"
+python -m core.media_library video add --label real "E:/Clips"
+python -m core.media_library audio stats
+
+# 2. after moving/renaming folders, re-link by content hash
+python -m core.media_library image rescan "<dir>"
+```
+
+```python
+# 3. fine-tune on what is new (+ a replay sample of already-trained files), validate, promote or roll back
+from image_detector.retrain import count_pending_corrections, run_retrain   # same API in audio_detector / video_detector
+print(count_pending_corrections())
+result = run_retrain(min_new=15, epochs=5)    # -> core.checkpoint_log.RetrainResult
+print(result.promoted, result.new_accuracy, result.message)
+```
+
+How it behaves:
+- **Feedback loop:** `*SelfImprover.record_feedback(path, "AI"|"REAL", ...)` also registers that file in the library by reference (`AI` → `ai_generated`, anything else → `real`). The next `run_retrain()` trains on it. Relabeling a file re-queues it.
+- **Deterministic split:** `core.media_library.partition(sha256)` puts ~20% of files (by hash) in validation, always the same ones — validation files are never trained on, and adding files never reshuffles existing ones.
+- **Promote or roll back** (`core.retrain_engine.run_retrain`): the candidate checkpoint is written next to the live one; it replaces it only if its validation accuracy is ≥ the last promoted value in `models/CHECKPOINT_LOG.md` (or if none exists yet). Otherwise it is deleted, the live checkpoint is untouched, and the labels stay queued. The log records only version, date, train loss, validation accuracy and sample counts — no paths or names.
+- **Exact duplicates only:** identity is the exact bytes. A re-saved/resized copy of an image has a different hash and could land on the other side of the train/val split. Near-duplicate (perceptual-hash) detection is not implemented.
+- **Same results for everyone** comes from sharing the *checkpoint* (`models/*.pt`, tracked through Git LFS — run `git lfs install` once), not the data. Library manifests and media never leave your machine.
+
+### Optional feature cache (`image_detector/feature_store.py`)
+`FeatureStore` can cache each image's 512-dim embedding + 12-dim forensic vector in a compressed `.npz`, keyed by **content hash** and a **fingerprint of the backbone** (`ckpt:<sha prefix>` or `imagenet-resnet18`) that produced the embeddings. `build_feature_bank(samples, output_npz_path)` reuses rows whose hash and fingerprint still match and recomputes the rest, so the cache is always safe to delete and rebuild; it never deletes or copies sources and stores no file names. `ImageDetectorTrainer.prepare_feature_bank(dataset_dir, output_npz_path)` builds one from an `ai_generated/` + `real/` folder pair; `train_from_feature_bank(feature_npz_path, ...)` trains `FeatureClassifierHead` (`Dropout → Linear(512 or 524, 64) → ReLU → Linear(64, 2)`, the same layout as the backbone's `fc`) and splices it onto the existing checkpoint's backbone. Audio/video trainers have analogous `export_feature_dataset` / `train_from_feature_bank`.
+
+### In-memory prediction and the upload scratch cache
+- `ImageAIDetector.predict()` accepts a path, raw `bytes`, an `io.BytesIO`, a decoded `numpy.ndarray` or a PIL image.
+- Streamlit uploads are written to the OS temp directory (`core.atomic_io.get_ephemeral_cache_dir()` → `<tmp>/omni_forensics_ephemeral_cache`). The sidebar **"Wipe Transient Media Cache"** button (or `core.atomic_io.purge_ephemeral_cache()`) clears it. This only affects temporary upload copies, never your library files.
+
+---
+
 ## Data, models, and what's actually on disk vs. git
 
-- `image_detector/models/ai_detector.pt` (~42.8MB trained ResNet18 checkpoint) exists on disk and is loaded by `ImageAIDetector.load()`, but `.gitignore` excludes `*.pt` files — it is **not tracked in git**. If you clone this repo fresh, this file will be missing and the image detector will silently fall back to pure heuristic/statistical mode (the `load()` method catches the exception and logs a warning rather than failing).
+- `image_detector/models/ai_detector.pt` (~42.8MB trained ResNet18 checkpoint) is loaded by `ImageAIDetector.load()`. `.gitattributes` routes `*.pt` through **Git LFS** and `.gitignore` un-ignores `**/models/*.pt`, so once committed everyone who clones (after `git lfs install`) gets identical weights. It has **not been committed yet** — until it is, a fresh clone has no checkpoint and the image detector falls back to heuristic/statistical mode.
 - `audio_detector/models/` and `video_detector/models/` contain only `backbone.py`/`__init__.py` — no checkpoint exists for either modality in this repo at all, trained or otherwise.
-- `image_detector/dataset/{train,val}/{real,ai_generated}/` contains 203 real images used by `trainer.py` and `benchmarks.py`. `audio_detector/dataset/` and `video_detector/dataset/` exist as empty directories (created lazily by each package's `ensure_directories()`) — nothing populates them in this repo.
-- Each package's `data/` directory holds its own `*_calibration.json` (feedback-adjusted scoring weights) and `*_feedback.json`/`*_memory.json` (raw feedback records) — all gitignored.
-- `data/session_cache/` at the repository root is `app.py`'s own scratch space for uploaded-file copies across all three modalities — deliberately kept separate from each detector package's own `data/` directory so the orchestration layer doesn't write into a package's persistent calibration store.
-- `.gitignore` also excludes every image/video/audio file extension project-wide (explicitly commented "prevent personal photo/video/audio uploads"), and the entire `scripts/` directory plus `image_detector_update_implementation_plan.md` as personal/local-only files.
+- `image_detector/dataset/`, `audio_detector/dataset/`, `video_detector/dataset/` are empty; personal media is registered in place in each package's local `data/library.json` (gitignored) instead of being copied here.
+- Each package's `data/` directory holds its own `*_calibration.json` (feedback-adjusted scoring weights), `*_feedback.json`/`*_memory.json` (raw feedback records), and `.npz` feature archives — all gitignored.
+- Transient session uploads are directed to OS temporary swap space (`tempfile.gettempdir()/omni_forensics_ephemeral_cache`) rather than the repository root.
+- Total repository disk size (excluding `.venv`) is kept lean at approximately **52 MB** (primarily the 42.8 MB PyTorch model checkpoint and git history).
+- `.gitignore` excludes all media formats (`*.jpg`, `*.jpeg`, `*.png`, `*.mp4`, `*.wav`, `*.mp3`, etc.) project-wide, the entire `scripts/` directory, and local implementation scratch files.
 
 ---
 

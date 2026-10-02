@@ -54,12 +54,12 @@ from ui.validators import (
 
 
 DETECTOR_CHECKPOINT = Path(__file__).resolve().parent / "image_detector" / "models" / "ai_detector.pt"
-# App-owned scratch space for transient uploaded-file copies across all three modalities.
-# Deliberately NOT nested under image_detector/, audio_detector/, or video_detector/'s own
-# data/ directories -- those are each package's own persistent calibration/feedback store,
-# not a shared dumping ground for the orchestration layer's temp files.
-SESSION_CACHE_DIR = Path(__file__).resolve().parent / "data" / "session_cache"
-SESSION_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+from core.atomic_io import get_ephemeral_cache_dir, purge_ephemeral_cache
+
+# Cross-platform ephemeral scratch space in OS temporary swap (e.g. %TEMP% or /tmp).
+# Guarantees ZERO media retention inside the project repository directory.
+SESSION_CACHE_DIR = get_ephemeral_cache_dir()
 
 
 @st.cache_resource
@@ -128,6 +128,12 @@ st.sidebar.info(
     "• High: Shifts the prior toward AI, tightening PRNU, spectral slope, and vocoder cutoff thresholds to catch subtle modern generators (Gemini, Midjourney, Flux, Sora, ElevenLabs) at the cost of more false positives on ambiguous real images.\n"
     "• Aggressive: Maximizes scrutiny against compressed social media reposts; highest false-positive risk."
 )
+
+st.sidebar.markdown("---")
+st.sidebar.subheader("💾 Zero-Disk Storage Manager")
+if st.sidebar.button("🧹 Wipe Transient Media Cache"):
+    purged = purge_ephemeral_cache()
+    st.sidebar.success(f"Wiped {purged} transient media file(s) (0 bytes on disk)!")
 
 st.title("🔍 OmniForensics: Multi-Modal Media Authenticity Engine")
 st.write(

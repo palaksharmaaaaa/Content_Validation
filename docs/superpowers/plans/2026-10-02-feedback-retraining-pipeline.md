@@ -1,3 +1,5 @@
+> **SUPERSEDED (2026-10-02):** this describes the earlier copy-into-a-queue design. The implemented design reads media in place by content hash; see `core/media_library.py`, `core/retrain_engine.py`, `<modality>_detector/retrain.py` and the README section "Train on your own media, in place".
+
 # Feedback-Driven Retraining Pipeline Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

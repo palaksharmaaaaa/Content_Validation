@@ -1,3 +1,5 @@
+> **SUPERSEDED (2026-10-02):** this describes the earlier copy-into-a-queue design. The implemented design reads media in place by content hash; see `core/media_library.py`, `core/retrain_engine.py`, `<modality>_detector/retrain.py` and the README section "Train on your own media, in place".
+
 # Execution Runbook: Feedback-Driven Retraining Pipeline (Subagent-Driven Development)
 
 **Status:** Not yet executed. This document is the complete, ready-to-run dispatch sequence for implementing `docs/superpowers/plans/2026-10-02-feedback-retraining-pipeline.md` via `superpowers:subagent-driven-development`. Nothing in this document has been run — it's the plan for *how* to run the plan, written out in full per the user's explicit request before any subagent is dispatched.

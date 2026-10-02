@@ -27,6 +27,7 @@ from typing import Any, Dict, List, Optional
 from image_detector.config import CALIBRATION_FILE, DATA_DIR, MEMORY_FILE
 from image_detector.schemas import ImageFeedbackRecord
 from core.atomic_io import atomic_read_json, atomic_write_json
+from core.media_library import MediaLibrary, library_for, register_feedback
 
 logger = logging.getLogger("image_detector.learner")
 
@@ -43,11 +44,15 @@ class ImageSelfImprover:
         memory_dir: Optional[Path] = None,
         memory_file: Optional[Path] = None,
         calibration_file: Optional[Path] = None,
+        library: Optional[MediaLibrary] = None,
     ):
         self.memory_dir = memory_dir or DATA_DIR
         self.memory_dir.mkdir(parents=True, exist_ok=True)
         self.feedback_file = Path(memory_file) if memory_file else (self.memory_dir / "image_feedback.json")
         self.calibration_file = Path(calibration_file) if calibration_file else (self.memory_dir / "image_calibration.json")
+        # Verified files are queued for retraining by reference (no copy). When a test isolates
+        # storage via memory_file, don't touch the real library unless one is passed in.
+        self.library = library if library is not None else (None if memory_file else library_for("image"))
 
     def load_calibration(self) -> Dict[str, Any]:
         """Loads active calibration parameters or initializes default NIST-tuned priors."""
@@ -97,6 +102,7 @@ class ImageSelfImprover:
         """
         memory = self.load_memory()
         calib = self.load_calibration()
+        register_feedback(self.library, image_path, user_label)
 
         def _sanitize_val(val: Any) -> Any:
             if hasattr(val, "shape"):

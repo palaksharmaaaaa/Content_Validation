@@ -62,6 +62,11 @@ from image_detector.scoring import (
     normalize_percentages,
     pool_bayesian_log_odds,
 )
+from image_detector.feature_store import (
+    FeatureBankDataset,
+    FeatureClassifierHead,
+    FeatureStore,
+)
 from image_detector.trainer import ImageDetectorTrainer
 from image_detector.validator import ImageValidator, analyze_image
 
@@ -70,6 +75,9 @@ __all__ = [
     "ImageAIDetector",
     "ImageForensicPipeline",
     "ImageBatchProcessor",
+    "FeatureStore",
+    "FeatureBankDataset",
+    "FeatureClassifierHead",
     # Auxiliary Analysis Engines
     "FaceDeepfakeDetector",
     "ImageContentAnalyzer",

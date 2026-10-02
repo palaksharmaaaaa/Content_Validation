@@ -508,9 +508,9 @@ class TestImageDetectorRealSamples(unittest.TestCase):
         folder = self.DATASET_ROOT / subdir
         if not folder.is_dir():
             self.skipTest(f"{folder} not found")
-        files = sorted(p for p in folder.iterdir() if p.is_file())
+        files = sorted(p for p in folder.iterdir() if p.is_file() and p.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp", ".bmp"))
         if not files:
-            self.skipTest(f"No files in {folder}")
+            self.skipTest(f"No image files in {folder}")
         return files[: self.SAMPLE_COUNT]
 
     def test_real_photos_classify_as_authentic(self):

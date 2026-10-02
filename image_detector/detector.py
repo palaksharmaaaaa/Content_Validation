@@ -12,9 +12,10 @@ Completely self-contained with zero outside dependencies.
 """
 from __future__ import annotations
 
+import io
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import cv2
 import numpy as np
@@ -132,19 +133,49 @@ class ImageAIDetector:
 
     def predict(
         self,
-        image_path: str | Path,
+        image_path: Union[str, Path, bytes, bytearray, io.BytesIO, np.ndarray, Image.Image],
         sensitivity: str = "balanced",
         face_boxes: Optional[List[Dict[str, int]]] = None,
         provenance: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Deep forensic evaluation across physical, spectral, and neural modalities.
+        Natively accepts file paths, raw bytes, io.BytesIO, numpy arrays, or PIL Images in RAM.
         """
         self.load()
-        path = Path(image_path)
 
-        img_bgr = cv2.imread(str(path))
-        if img_bgr is None:
+        img_bgr: Optional[np.ndarray] = None
+        path: Path = Path("in_memory.png")
+        raw_meta_source: Any = None
+
+        if isinstance(image_path, np.ndarray):
+            if image_path.ndim == 2:
+                img_bgr = cv2.cvtColor(image_path, cv2.COLOR_GRAY2BGR)
+            elif image_path.shape[2] == 4:
+                img_bgr = cv2.cvtColor(image_path, cv2.COLOR_BGRA2BGR)
+            else:
+                img_bgr = image_path.copy()
+            raw_meta_source = img_bgr
+        elif isinstance(image_path, Image.Image):
+            rgb = np.array(image_path.convert("RGB"))
+            img_bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+            raw_meta_source = image_path
+        elif isinstance(image_path, (bytes, bytearray)):
+            nparr = np.frombuffer(image_path, np.uint8)
+            img_bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            raw_meta_source = io.BytesIO(image_path)
+        elif hasattr(image_path, "read"):
+            content = image_path.read()
+            nparr = np.frombuffer(content, np.uint8)
+            img_bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            path = Path(getattr(image_path, "name", "in_memory.png"))
+            raw_meta_source = io.BytesIO(content)
+        else:
+            path = Path(image_path)
+            img_bgr = cv2.imread(str(path))
+            raw_meta_source = path
+
+        if img_bgr is None or img_bgr.size == 0:
             return ImageForensicResult(
                 is_available=False,
                 backend=self.backend,
@@ -154,7 +185,7 @@ class ImageAIDetector:
                 ai_percentage=0.0,
                 real_percentage=0.0,
                 undecided_percentage=100.0,
-                error="Could not read image file.",
+                error="Could not read image file or in-memory stream.",
             ).to_dict()
 
         h, w = img_bgr.shape[:2]
@@ -164,8 +195,8 @@ class ImageAIDetector:
         noise_mean, noise_std = calculate_sensor_noise_profile(gray)
         smoothness = calculate_surface_smoothness(gray)
         fft_res = analyze_fft_radial_power_spectrum(gray)
-        ela_mean, ela_map = compute_ela(path)
-        meta = extract_image_metadata(path)
+        ela_mean, ela_map = compute_ela(img_bgr)
+        meta = extract_image_metadata(raw_meta_source)
         watermark_res = detect_ai_watermark(path, img_bgr)
         cutout_res = detect_background_cutout(path, img_bgr)
         scanned_res = detect_scanned_photo(path, img_bgr, meta)
@@ -341,8 +372,8 @@ class ImageAIDetector:
         lr_neural: Optional[float] = None
         if self.model is not None and self.transform is not None:
             try:
-                with Image.open(path) as p_img:
-                    tensor = self.transform(p_img.convert("RGB")).unsqueeze(0).to(self.device)
+                p_img = Image.fromarray(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB))
+                tensor = self.transform(p_img).unsqueeze(0).to(self.device)
                 with torch.no_grad():
                     logits = self.model(tensor)
                     probs = torch.softmax(logits, dim=1)[0]

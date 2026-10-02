@@ -38,12 +38,19 @@ class ImageDataset(Dataset):
         return len(self.samples)
 
     def __getitem__(self, idx):
-        path, label = self.samples[idx]
-        with Image.open(path) as img:
-            img = img.convert("RGB")
-            if self.transform:
-                img = self.transform(img)
-            return img, label
+        # A truncated/corrupt file in a large in-place library must not abort a whole training run:
+        # fall through to the next sample (bounded so an all-bad dataset still fails loudly).
+        for offset in range(len(self.samples)):
+            path, label = self.samples[(idx + offset) % len(self.samples)]
+            try:
+                with Image.open(path) as img:
+                    img = img.convert("RGB")
+                    if self.transform:
+                        img = self.transform(img)
+                    return img, label
+            except Exception as exc:
+                logger.warning("Skipping unreadable training image %s: %s", path.name, exc)
+        raise RuntimeError("No readable images in dataset.")
 
 
 class ImageDetectorTrainer:
@@ -191,6 +198,30 @@ class ImageDetectorTrainer:
         self.save_checkpoint()
         return history
 
+    def loaders_from_samples(
+        self,
+        train_samples: List[Tuple[Path, int]],
+        val_samples: List[Tuple[Path, int]],
+        batch_size: int = 16,
+    ) -> Tuple[Optional[DataLoader], Optional[DataLoader]]:
+        """
+        Builds loaders that read images IN PLACE from their original locations (label 0=ai_generated,
+        1=real) -- no dataset copy, no files written. Used with core.media_library's content-hash
+        train/val partition so validation images can never be trained on.
+        """
+        norm = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        train_tf = transforms.Compose([
+            transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+            transforms.RandomHorizontalFlip(),
+            transforms.ColorJitter(brightness=0.1, contrast=0.1),
+            transforms.ToTensor(),
+            norm,
+        ])
+        val_tf = transforms.Compose([transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)), transforms.ToTensor(), norm])
+        train_loader = DataLoader(ImageDataset(train_samples, train_tf), batch_size=batch_size, shuffle=True) if train_samples else None
+        val_loader = DataLoader(ImageDataset(val_samples, val_tf), batch_size=batch_size, shuffle=False) if val_samples else None
+        return train_loader, val_loader
+
     def save_checkpoint(self, path: Optional[Path] = None) -> None:
         """Serializes trained weights and metadata."""
         save_path = path or self.checkpoint_path
@@ -202,6 +233,132 @@ class ImageDetectorTrainer:
         }
         torch.save(checkpoint, save_path)
         logger.info("Saved trained Image AI detector checkpoint to %s", save_path)
+
+    def prepare_feature_bank(
+        self,
+        dataset_dir: Path | str,
+        output_npz_path: Path | str,
+        max_samples_per_class: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """
+        Extracts compact 512-dim embeddings + 12-dim forensic vectors from an image dataset folder
+        into a rebuildable .npz cache keyed by content hash. Source images are only read, never
+        modified or deleted.
+        """
+        from image_detector.feature_store import FeatureStore
+
+        dataset_path = Path(dataset_dir)
+        ai_dir = dataset_path / "ai_generated"
+        real_dir = dataset_path / "real"
+
+        ai_files = [p for p in ai_dir.rglob("*") if p.suffix.lower() in SUPPORTED_EXTENSIONS] if ai_dir.exists() else []
+        real_files = [p for p in real_dir.rglob("*") if p.suffix.lower() in SUPPORTED_EXTENSIONS] if real_dir.exists() else []
+
+        if max_samples_per_class:
+            ai_files = ai_files[:max_samples_per_class]
+            real_files = real_files[:max_samples_per_class]
+
+        samples: List[Tuple[Any, int]] = [(p, 0) for p in ai_files] + [(p, 1) for p in real_files]
+        if not samples:
+            raise ValueError(f"No valid image files found in {dataset_path}")
+
+        store = FeatureStore(checkpoint_path=self.checkpoint_path, device=str(self.device))
+        return store.build_feature_bank(
+            samples=samples,
+            output_npz_path=output_npz_path,
+        )
+
+    def train_from_feature_bank(
+        self,
+        feature_npz_path: Path | str,
+        epochs: int = 15,
+        lr: float = 1e-3,
+        batch_size: int = 32,
+        val_split: float = 0.2,
+        combine_forensics: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Ultra-fast zero-retention training directly on precomputed .npz feature archives.
+        Trains without reading any image files from disk.
+        """
+        from image_detector.feature_store import FeatureBankDataset, FeatureClassifierHead
+
+        dataset = FeatureBankDataset(feature_npz_path, combine_forensics=combine_forensics)
+        total_samples = len(dataset)
+        if total_samples < 2:
+            raise ValueError(f"Feature bank in {feature_npz_path} must contain at least 2 samples.")
+
+        indices = list(range(total_samples))
+        random.seed(42)
+        random.shuffle(indices)
+
+        split = int(total_samples * (1.0 - val_split))
+        train_indices = indices[:split]
+        val_indices = indices[split:]
+
+        train_set = torch.utils.data.Subset(dataset, train_indices)
+        val_set = torch.utils.data.Subset(dataset, val_indices) if val_indices else None
+
+        train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
+        val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False) if val_set else None
+
+        in_dim = 524 if combine_forensics else 512
+        hidden = self.model.fc[1].out_features if hasattr(self.model, "fc") else 64
+        head = FeatureClassifierHead(in_features=in_dim, hidden_dim=hidden, num_classes=2).to(self.device)
+
+        criterion = nn.CrossEntropyLoss()
+        optimizer = optim.AdamW(head.parameters(), lr=lr, weight_decay=1e-3)
+
+        history: Dict[str, List[float]] = {"train_loss": [], "val_acc": []}
+
+        for epoch in range(epochs):
+            head.train()
+            total_loss = 0.0
+            total_count = 0
+
+            for feats, labels in train_loader:
+                feats, labels = feats.to(self.device), labels.to(self.device)
+                optimizer.zero_grad()
+                outputs = head(feats)
+                loss = criterion(outputs, labels)
+                loss.backward()
+                optimizer.step()
+
+                total_loss += loss.item() * len(labels)
+                total_count += len(labels)
+
+            avg_loss = total_loss / max(1, total_count)
+            history["train_loss"].append(avg_loss)
+
+            val_acc = 0.0
+            if val_loader:
+                head.eval()
+                correct = 0
+                val_total = 0
+                with torch.no_grad():
+                    for feats, labels in val_loader:
+                        feats, labels = feats.to(self.device), labels.to(self.device)
+                        preds = torch.argmax(head(feats), dim=1)
+                        correct += (preds == labels).sum().item()
+                        val_total += len(labels)
+                val_acc = correct / max(1, val_total)
+                history["val_acc"].append(val_acc)
+
+            logger.info(
+                "FeatureBank Epoch [%d/%d] - Loss: %.4f | Val Acc: %.2f%%",
+                epoch + 1, epochs, avg_loss, val_acc * 100.0
+            )
+
+        # Splice the trained head onto the SAME backbone that produced the cached embeddings
+        # (the existing checkpoint, if any) -- otherwise the head would sit on mismatched features.
+        if not combine_forensics and hasattr(self.model, "fc"):
+            if self.checkpoint_path.is_file():
+                state = torch.load(self.checkpoint_path, map_location=self.device, weights_only=True)
+                self.model.load_state_dict(state["model_state_dict"])
+            self.model.fc.load_state_dict(head.head.state_dict())
+            self.save_checkpoint()
+
+        return history
 
 
 def main():

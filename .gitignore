@@ -47,6 +47,8 @@ desktop.ini
 *.h5
 *.pt
 *.pth
+# Trained detector checkpoints ARE tracked (via Git LFS, see .gitattributes); other weights stay ignored.
+!**/models/*.pt
 *.onnx
 *.bin
 *.weights

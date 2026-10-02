@@ -13,6 +13,8 @@ MODELS_DIR = MODULE_DIR / "models"
 DATASET_DIR = MODULE_DIR / "dataset"
 
 DEFAULT_CHECKPOINT = MODELS_DIR / "ai_detector.pt"
+CHECKPOINT_LOG_FILE = MODELS_DIR / "CHECKPOINT_LOG.md"
+RETRAIN_SUGGEST_THRESHOLD = 15  # queued corrections before the UI suggests a retrain
 MEMORY_FILE = DATA_DIR / "image_memory.json"
 CALIBRATION_FILE = DATA_DIR / "image_calibration.json"
 

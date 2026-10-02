@@ -25,6 +25,7 @@ from typing import Any, Dict, List, Optional
 from audio_detector.config import CALIBRATION_FILE, DATA_DIR, MEMORY_FILE
 from audio_detector.schemas import AudioFeedbackRecord
 from core.atomic_io import atomic_read_json, atomic_write_json
+from core.media_library import MediaLibrary, library_for, register_feedback
 
 logger = logging.getLogger("audio_detector.learner")
 
@@ -40,10 +41,14 @@ class AudioSelfImprover:
         self,
         memory_file: Optional[Path] = None,
         calibration_file: Optional[Path] = None,
+        library: Optional[MediaLibrary] = None,
     ):
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         self.memory_file = memory_file or MEMORY_FILE
         self.calibration_file = calibration_file or CALIBRATION_FILE
+        # Verified files are queued for retraining by reference (no copy). When a test isolates
+        # storage via memory_file, don't touch the real library unless one is passed in.
+        self.library = library if library is not None else (None if memory_file else library_for("audio"))
 
     def load_calibration(self) -> Dict[str, Any]:
         """Loads active audio calibration parameters."""
@@ -96,6 +101,7 @@ class AudioSelfImprover:
         """
         memory = self.load_memory()
         calib = self.load_calibration()
+        register_feedback(self.library, audio_path, user_label)
 
         def _sanitize_val(val: Any) -> Any:
             if hasattr(val, "shape"):

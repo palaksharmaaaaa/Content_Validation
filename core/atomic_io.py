@@ -114,3 +114,31 @@ def atomic_update_json(
         updated = updater(current)
         atomic_write_json(target, updated)
         return updated
+
+
+def get_ephemeral_cache_dir() -> Path:
+    """
+    Returns cross-platform ephemeral scratch space in OS temporary swap (e.g. %TEMP% or /tmp).
+    Guarantees zero persistent media storage inside the project repository directory.
+    """
+    cache_dir = Path(tempfile.gettempdir()) / "omni_forensics_ephemeral_cache"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    return cache_dir
+
+
+def purge_ephemeral_cache(cache_dir: Optional[Path] = None) -> int:
+    """Purges all transient media files from OS temp cache with zero disk leak."""
+    target_dir = cache_dir or get_ephemeral_cache_dir()
+    purged = 0
+    try:
+        if target_dir.exists():
+            for f in target_dir.iterdir():
+                if f.is_file():
+                    try:
+                        f.unlink(missing_ok=True)
+                        purged += 1
+                    except Exception:
+                        pass
+    except Exception:
+        pass
+    return purged

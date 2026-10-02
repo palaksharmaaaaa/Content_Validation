@@ -355,6 +355,34 @@ def render_feedback_box(
                     st.info(f"🧠 **Learned Calibration Updates:** Processed {calib.get('samples_processed', 1)} verified samples.")
 
 
+def render_retrain_panel() -> None:
+    """Per-modality "Retrain Now": fine-tunes on files registered in place and promotes only if validation holds."""
+    import importlib
+
+    from audio_detector.config import RETRAIN_SUGGEST_THRESHOLD as _T  # same value in all three configs
+    st.subheader("🔁 Retrain on Verified Feedback")
+    st.caption(
+        "Verified files are queued by reference (never copied). Retraining validates on held-out files and "
+        "keeps the previous checkpoint if accuracy would drop."
+    )
+    cols = st.columns(3)
+    for col, (label, mod) in zip(cols, (("Image", "image"), ("Video", "video"), ("Audio", "audio"))):
+        with col:
+            retrain = importlib.import_module(f"{mod}_detector.retrain")
+            pending = retrain.count_pending_corrections()
+            st.metric(f"{label}: queued", pending)
+            if pending >= _T:
+                st.info(f"{pending} new verified files — a retrain is suggested.")
+            if st.button(f"Retrain Now ({label})", key=f"retrain_now_{mod}", disabled=pending == 0):
+                with st.spinner(f"Retraining {label.lower()} model..."):
+                    try:
+                        result = retrain.run_retrain(min_new=1)
+                    except Exception as exc:  # surface, don't crash the page
+                        st.error(f"Retrain failed: {exc}")
+                    else:
+                        (st.success if result.promoted else st.warning)(result.message)
+
+
 def render_learning_dashboard() -> None:
     """Renders the Forensic Memory Bank & Continuous Learning dashboard."""
     st.subheader("🧠 Forensic Memory Bank & Dynamic Learning Dashboard")
@@ -399,6 +427,8 @@ def render_learning_dashboard() -> None:
     m3.metric("Verified AI Samples", ai_count)
     m4.metric("Verified Real Samples", real_count)
 
+    st.markdown("---")
+    render_retrain_panel()
     st.markdown("---")
 
     # Dynamic Weights and Calibration Offsets
