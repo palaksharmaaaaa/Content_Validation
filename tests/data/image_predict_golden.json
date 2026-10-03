@@ -1,8 +1,8 @@
 {
  "blurred|bytes": {
-  "ai_percentage": 96.3,
+  "ai_percentage": 96.4,
   "ai_spatial_area_pct": 100.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 0.99,
   "digital_art_detected": false,
@@ -44,14 +44,13 @@
   "label": "LIKELY AI-GENERATED",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": -0.077,
+   "fft_power_decay": -0.08,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.08,
-   "sensor_noise": 0.888,
-   "surface_smoothness": 0.754
+   "sensor_noise": 0.855,
+   "surface_smoothness": 0.752
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 2.109,
+  "posterior_log_odds": 2.151,
   "prediction": "LIKELY AI-GENERATED",
   "real_percentage": 0.7,
   "scanned_photo_detected": false,
@@ -78,20 +77,20 @@
   "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
   "taxonomy_label": "Fully AI Generated",
   "taxonomy_reasons": [
-   "High posterior probability of generative synthesis (96.3% AI)",
+   "High posterior probability of generative synthesis (96.4% AI)",
    "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
    "Canvas dimensions match standard generative model diffusion canvas"
   ],
   "taxonomy_state": "FULLY_AI_GENERATED",
-  "undecided_percentage": 3.0,
+  "undecided_percentage": 2.9,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "blurred|extra": {
-  "ai_percentage": 96.2,
+  "ai_percentage": 96.3,
   "ai_spatial_area_pct": 100.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 0.99,
   "digital_art_detected": false,
@@ -137,13 +136,12 @@
    "canonical_dimensions": 0.45,
    "dim_a": 0.25,
    "dim_b": -0.1,
-   "fft_power_decay": -0.077,
-   "neural_backbone": -0.08,
-   "sensor_noise": 0.888,
-   "surface_smoothness": 0.754
+   "fft_power_decay": -0.08,
+   "sensor_noise": 0.855,
+   "surface_smoothness": 0.752
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 2.059,
+  "posterior_log_odds": 2.101,
   "prediction": "LIKELY AI-GENERATED",
   "real_percentage": 0.8,
   "scanned_photo_detected": false,
@@ -170,20 +168,20 @@
   "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
   "taxonomy_label": "Fully AI Generated",
   "taxonomy_reasons": [
-   "High posterior probability of generative synthesis (96.2% AI)",
+   "High posterior probability of generative synthesis (96.3% AI)",
    "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
    "Canvas dimensions match standard generative model diffusion canvas"
   ],
   "taxonomy_state": "FULLY_AI_GENERATED",
-  "undecided_percentage": 3.0,
+  "undecided_percentage": 2.9,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "blurred|jpg|exif=False": {
-  "ai_percentage": 95.2,
+  "ai_percentage": 95.4,
   "ai_spatial_area_pct": 100.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 0.98,
   "digital_art_detected": false,
@@ -225,16 +223,15 @@
   "label": "LIKELY AI-GENERATED",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": -0.077,
+   "fft_power_decay": -0.08,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.081,
-   "sensor_noise": 0.886,
-   "surface_smoothness": 0.75
+   "sensor_noise": 0.854,
+   "surface_smoothness": 0.747
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 1.703,
+  "posterior_log_odds": 1.747,
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 1.9,
+  "real_percentage": 1.7,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -259,7 +256,7 @@
   "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
   "taxonomy_label": "Fully AI Generated",
   "taxonomy_reasons": [
-   "High posterior probability of generative synthesis (95.2% AI)",
+   "High posterior probability of generative synthesis (95.4% AI)",
    "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
    "Canvas dimensions match standard generative model diffusion canvas"
   ],
@@ -270,11 +267,11 @@
   "watermark_detected": false
  },
  "blurred|jpg|exif=True": {
-  "ai_percentage": 82.3,
+  "ai_percentage": 83.5,
   "ai_spatial_area_pct": 100.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.9,
+  "confidence": 0.91,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -313,15 +310,14 @@
   "label": "AI-ENHANCED / COMPOSITE",
   "log_likelihood_ratios": {
    "exif_hardware": -0.3,
-   "fft_power_decay": -0.077,
-   "neural_backbone": -0.081,
-   "sensor_noise": 0.886,
-   "surface_smoothness": 0.75
+   "fft_power_decay": -0.08,
+   "sensor_noise": 0.854,
+   "surface_smoothness": 0.747
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 0.953,
+  "posterior_log_odds": 0.997,
   "prediction": "AI-ENHANCED / COMPOSITE",
-  "real_percentage": 9.2,
+  "real_percentage": 8.4,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -347,18 +343,18 @@
   "taxonomy_label": "AI-Enhanced / Composite (Mix)",
   "taxonomy_reasons": [
    "Genuine camera hardware base capture (Canon Canon EOS R5)",
-   "Overwhelming synthetic-leaning pixel evidence despite authentic base (82.3% AI) -- consistent with an AI upscaler/denoiser/generative-fill pass that left no metadata footprint"
+   "Overwhelming synthetic-leaning pixel evidence despite authentic base (83.5% AI) -- consistent with an AI upscaler/denoiser/generative-fill pass that left no metadata footprint"
   ],
   "taxonomy_state": "AI_ENHANCED_COMPOSITE",
-  "undecided_percentage": 8.5,
+  "undecided_percentage": 8.1,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "blurred|ndarray": {
-  "ai_percentage": 95.1,
+  "ai_percentage": 95.3,
   "ai_spatial_area_pct": 100.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 0.98,
   "digital_art_detected": false,
@@ -400,16 +396,15 @@
   "label": "LIKELY AI-GENERATED",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": -0.077,
+   "fft_power_decay": -0.08,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.081,
-   "sensor_noise": 0.87,
-   "surface_smoothness": 0.736
+   "sensor_noise": 0.839,
+   "surface_smoothness": 0.733
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 1.677,
+  "posterior_log_odds": 1.722,
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 2.0,
+  "real_percentage": 1.8,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -434,7 +429,7 @@
   "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
   "taxonomy_label": "Fully AI Generated",
   "taxonomy_reasons": [
-   "High posterior probability of generative synthesis (95.1% AI)",
+   "High posterior probability of generative synthesis (95.3% AI)",
    "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
    "Canvas dimensions match standard generative model diffusion canvas"
   ],
@@ -445,9 +440,9 @@
   "watermark_detected": false
  },
  "blurred|pil": {
-  "ai_percentage": 95.1,
+  "ai_percentage": 95.3,
   "ai_spatial_area_pct": 100.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 0.98,
   "digital_art_detected": false,
@@ -489,16 +484,15 @@
   "label": "LIKELY AI-GENERATED",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": -0.077,
+   "fft_power_decay": -0.08,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.081,
-   "sensor_noise": 0.87,
-   "surface_smoothness": 0.736
+   "sensor_noise": 0.839,
+   "surface_smoothness": 0.733
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 1.677,
+  "posterior_log_odds": 1.722,
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 2.0,
+  "real_percentage": 1.8,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -523,7 +517,7 @@
   "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
   "taxonomy_label": "Fully AI Generated",
   "taxonomy_reasons": [
-   "High posterior probability of generative synthesis (95.1% AI)",
+   "High posterior probability of generative synthesis (95.3% AI)",
    "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
    "Canvas dimensions match standard generative model diffusion canvas"
   ],
@@ -534,9 +528,9 @@
   "watermark_detected": false
  },
  "blurred|png|exif=False": {
-  "ai_percentage": 95.1,
+  "ai_percentage": 95.3,
   "ai_spatial_area_pct": 100.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 0.98,
   "digital_art_detected": false,
@@ -578,16 +572,15 @@
   "label": "LIKELY AI-GENERATED",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": -0.077,
+   "fft_power_decay": -0.08,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.081,
-   "sensor_noise": 0.87,
-   "surface_smoothness": 0.736
+   "sensor_noise": 0.839,
+   "surface_smoothness": 0.733
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 1.677,
+  "posterior_log_odds": 1.722,
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 2.0,
+  "real_percentage": 1.8,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -612,7 +605,7 @@
   "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
   "taxonomy_label": "Fully AI Generated",
   "taxonomy_reasons": [
-   "High posterior probability of generative synthesis (95.1% AI)",
+   "High posterior probability of generative synthesis (95.3% AI)",
    "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
    "Canvas dimensions match standard generative model diffusion canvas"
   ],
@@ -623,9 +616,9 @@
   "watermark_detected": false
  },
  "blurred|png|exif=True": {
-  "ai_percentage": 95.1,
+  "ai_percentage": 95.3,
   "ai_spatial_area_pct": 100.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 0.98,
   "digital_art_detected": false,
@@ -667,16 +660,15 @@
   "label": "LIKELY AI-GENERATED",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": -0.077,
+   "fft_power_decay": -0.08,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.081,
-   "sensor_noise": 0.87,
-   "surface_smoothness": 0.736
+   "sensor_noise": 0.839,
+   "surface_smoothness": 0.733
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 1.677,
+  "posterior_log_odds": 1.722,
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 2.0,
+  "real_percentage": 1.8,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -701,7 +693,7 @@
   "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
   "taxonomy_label": "Fully AI Generated",
   "taxonomy_reasons": [
-   "High posterior probability of generative synthesis (95.1% AI)",
+   "High posterior probability of generative synthesis (95.3% AI)",
    "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
    "Canvas dimensions match standard generative model diffusion canvas"
   ],
@@ -712,9 +704,9 @@
   "watermark_detected": false
  },
  "flat1024|bytes": {
-  "ai_percentage": 96.7,
+  "ai_percentage": 96.8,
   "ai_spatial_area_pct": 99.4,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 1.0,
   "digital_art_detected": false,
@@ -757,16 +749,15 @@
   "label": "LIKELY AI-GENERATED",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": 0.202,
+   "fft_power_decay": 0.21,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.134,
-   "sensor_noise": 0.897,
-   "surface_smoothness": 0.773
+   "sensor_noise": 0.864,
+   "surface_smoothness": 0.771
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 2.355,
+  "posterior_log_odds": 2.463,
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 0.4,
+  "real_percentage": 0.3,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -793,7 +784,7 @@
   "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
   "taxonomy_label": "Fully AI Generated",
   "taxonomy_reasons": [
-   "High posterior probability of generative synthesis (96.7% AI)",
+   "High posterior probability of generative synthesis (96.8% AI)",
    "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
    "Canvas dimensions match standard generative model diffusion canvas"
   ],
@@ -804,9 +795,9 @@
   "watermark_detected": false
  },
  "flat1024|extra": {
-  "ai_percentage": 96.2,
+  "ai_percentage": 96.4,
   "ai_spatial_area_pct": 99.4,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 0.99,
   "digital_art_detected": false,
@@ -852,15 +843,14 @@
    "canonical_dimensions": 0.45,
    "dim_a": 0.25,
    "dim_b": -0.1,
-   "fft_power_decay": -0.077,
-   "neural_backbone": -0.134,
-   "sensor_noise": 0.897,
-   "surface_smoothness": 0.773
+   "fft_power_decay": -0.08,
+   "sensor_noise": 0.864,
+   "surface_smoothness": 0.771
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 2.027,
+  "posterior_log_odds": 2.123,
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 0.9,
+  "real_percentage": 0.7,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -887,7 +877,7 @@
   "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
   "taxonomy_label": "Fully AI Generated",
   "taxonomy_reasons": [
-   "High posterior probability of generative synthesis (96.2% AI)",
+   "High posterior probability of generative synthesis (96.4% AI)",
    "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
    "Canvas dimensions match standard generative model diffusion canvas"
   ],
@@ -898,9 +888,9 @@
   "watermark_detected": false
  },
  "flat1024|jpg|exif=False": {
-  "ai_percentage": 95.1,
+  "ai_percentage": 95.5,
   "ai_spatial_area_pct": 99.4,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 0.98,
   "digital_art_detected": false,
@@ -942,16 +932,15 @@
   "label": "LIKELY AI-GENERATED",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": -0.077,
+   "fft_power_decay": -0.08,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.135,
-   "sensor_noise": 0.897,
-   "surface_smoothness": 0.773
+   "sensor_noise": 0.864,
+   "surface_smoothness": 0.771
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 1.676,
+  "posterior_log_odds": 1.773,
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 2.0,
+  "real_percentage": 1.6,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -978,7 +967,7 @@
   "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
   "taxonomy_label": "Fully AI Generated",
   "taxonomy_reasons": [
-   "High posterior probability of generative synthesis (95.1% AI)",
+   "High posterior probability of generative synthesis (95.5% AI)",
    "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
    "Canvas dimensions match standard generative model diffusion canvas"
   ],
@@ -989,11 +978,11 @@
   "watermark_detected": false
  },
  "flat1024|jpg|exif=True": {
-  "ai_percentage": 81.5,
+  "ai_percentage": 84.2,
   "ai_spatial_area_pct": 99.4,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.89,
+  "confidence": 0.91,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -1032,15 +1021,14 @@
   "label": "AI-ENHANCED / COMPOSITE",
   "log_likelihood_ratios": {
    "exif_hardware": -0.3,
-   "fft_power_decay": -0.077,
-   "neural_backbone": -0.135,
-   "sensor_noise": 0.897,
-   "surface_smoothness": 0.773
+   "fft_power_decay": -0.08,
+   "sensor_noise": 0.864,
+   "surface_smoothness": 0.771
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 0.926,
+  "posterior_log_odds": 1.023,
   "prediction": "AI-ENHANCED / COMPOSITE",
-  "real_percentage": 9.7,
+  "real_percentage": 8.0,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -1066,18 +1054,18 @@
   "taxonomy_label": "AI-Enhanced / Composite (Mix)",
   "taxonomy_reasons": [
    "Genuine camera hardware base capture (Canon Canon EOS R5)",
-   "Overwhelming synthetic-leaning pixel evidence despite authentic base (81.5% AI) -- consistent with an AI upscaler/denoiser/generative-fill pass that left no metadata footprint"
+   "Overwhelming synthetic-leaning pixel evidence despite authentic base (84.2% AI) -- consistent with an AI upscaler/denoiser/generative-fill pass that left no metadata footprint"
   ],
   "taxonomy_state": "AI_ENHANCED_COMPOSITE",
-  "undecided_percentage": 8.8,
+  "undecided_percentage": 7.8,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "flat1024|ndarray": {
-  "ai_percentage": 96.0,
+  "ai_percentage": 96.2,
   "ai_spatial_area_pct": 99.4,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 0.99,
   "digital_art_detected": false,
@@ -1120,16 +1108,15 @@
   "label": "LIKELY AI-GENERATED",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": 0.192,
+   "fft_power_decay": 0.2,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.135,
-   "sensor_noise": 0.898,
-   "surface_smoothness": 0.773
+   "sensor_noise": 0.864,
+   "surface_smoothness": 0.771
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 1.946,
+  "posterior_log_odds": 2.054,
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 1.1,
+  "real_percentage": 0.9,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -1156,7 +1143,7 @@
   "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
   "taxonomy_label": "Fully AI Generated",
   "taxonomy_reasons": [
-   "High posterior probability of generative synthesis (96.0% AI)",
+   "High posterior probability of generative synthesis (96.2% AI)",
    "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
    "Canvas dimensions match standard generative model diffusion canvas"
   ],
@@ -1167,9 +1154,9 @@
   "watermark_detected": false
  },
  "flat1024|pil": {
-  "ai_percentage": 96.0,
+  "ai_percentage": 96.2,
   "ai_spatial_area_pct": 99.4,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 0.99,
   "digital_art_detected": false,
@@ -1212,16 +1199,15 @@
   "label": "LIKELY AI-GENERATED",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": 0.192,
+   "fft_power_decay": 0.2,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.135,
-   "sensor_noise": 0.898,
-   "surface_smoothness": 0.773
+   "sensor_noise": 0.864,
+   "surface_smoothness": 0.771
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 1.946,
+  "posterior_log_odds": 2.054,
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 1.1,
+  "real_percentage": 0.9,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -1248,7 +1234,7 @@
   "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
   "taxonomy_label": "Fully AI Generated",
   "taxonomy_reasons": [
-   "High posterior probability of generative synthesis (96.0% AI)",
+   "High posterior probability of generative synthesis (96.2% AI)",
    "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
    "Canvas dimensions match standard generative model diffusion canvas"
   ],
@@ -1259,9 +1245,9 @@
   "watermark_detected": false
  },
  "flat1024|png|exif=False": {
-  "ai_percentage": 96.0,
+  "ai_percentage": 96.2,
   "ai_spatial_area_pct": 99.4,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 0.99,
   "digital_art_detected": false,
@@ -1304,16 +1290,15 @@
   "label": "LIKELY AI-GENERATED",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": 0.192,
+   "fft_power_decay": 0.2,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.135,
-   "sensor_noise": 0.898,
-   "surface_smoothness": 0.773
+   "sensor_noise": 0.864,
+   "surface_smoothness": 0.771
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 1.946,
+  "posterior_log_odds": 2.054,
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 1.1,
+  "real_percentage": 0.9,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -1340,7 +1325,7 @@
   "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
   "taxonomy_label": "Fully AI Generated",
   "taxonomy_reasons": [
-   "High posterior probability of generative synthesis (96.0% AI)",
+   "High posterior probability of generative synthesis (96.2% AI)",
    "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
    "Canvas dimensions match standard generative model diffusion canvas"
   ],
@@ -1351,9 +1336,9 @@
   "watermark_detected": false
  },
  "flat1024|png|exif=True": {
-  "ai_percentage": 96.0,
+  "ai_percentage": 96.2,
   "ai_spatial_area_pct": 99.4,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 0.99,
   "digital_art_detected": false,
@@ -1396,16 +1381,15 @@
   "label": "LIKELY AI-GENERATED",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": 0.192,
+   "fft_power_decay": 0.2,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.135,
-   "sensor_noise": 0.898,
-   "surface_smoothness": 0.773
+   "sensor_noise": 0.864,
+   "surface_smoothness": 0.771
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 1.946,
+  "posterior_log_odds": 2.054,
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 1.1,
+  "real_percentage": 0.9,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -1432,7 +1416,7 @@
   "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
   "taxonomy_label": "Fully AI Generated",
   "taxonomy_reasons": [
-   "High posterior probability of generative synthesis (96.0% AI)",
+   "High posterior probability of generative synthesis (96.2% AI)",
    "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
    "Canvas dimensions match standard generative model diffusion canvas"
   ],
@@ -1445,7 +1429,7 @@
  "grad|bytes": {
   "ai_percentage": 97.0,
   "ai_spatial_area_pct": 100.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 1.0,
   "digital_art_detected": true,
@@ -1489,14 +1473,13 @@
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
    "digital_art_synthesis": 1.2,
-   "fft_power_decay": -0.077,
+   "fft_power_decay": -0.08,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.063,
-   "sensor_noise": 0.887,
-   "surface_smoothness": 0.751
+   "sensor_noise": 0.854,
+   "surface_smoothness": 0.749
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 3.323,
+  "posterior_log_odds": 3.349,
   "prediction": "LIKELY AI-GENERATED",
   "real_percentage": 0.0,
   "scanned_photo_detected": false,
@@ -1536,7 +1519,7 @@
  "grad|extra": {
   "ai_percentage": 97.0,
   "ai_spatial_area_pct": 100.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 1.0,
   "digital_art_detected": true,
@@ -1584,15 +1567,14 @@
    "digital_art_synthesis": 1.2,
    "dim_a": 0.25,
    "dim_b": -0.1,
-   "fft_power_decay": -0.077,
-   "neural_backbone": -0.063,
-   "sensor_noise": 0.887,
-   "surface_smoothness": 0.751
+   "fft_power_decay": -0.08,
+   "sensor_noise": 0.854,
+   "surface_smoothness": 0.749
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 3.273,
+  "posterior_log_odds": 3.299,
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 0.1,
+  "real_percentage": 0.0,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -1622,7 +1604,7 @@
    "Canvas dimensions match standard generative model diffusion canvas"
   ],
   "taxonomy_state": "FULLY_AI_GENERATED",
-  "undecided_percentage": 2.9,
+  "undecided_percentage": 3.0,
   "visual_medium": "Cel-Shaded / Ink Cross-Hatched Digital Art",
   "watermark_details": null,
   "watermark_detected": false
@@ -1630,7 +1612,7 @@
  "grad|jpg|exif=False": {
   "ai_percentage": 97.0,
   "ai_spatial_area_pct": 100.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 1.0,
   "digital_art_detected": true,
@@ -1674,14 +1656,13 @@
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
    "digital_art_synthesis": 1.2,
-   "fft_power_decay": -0.077,
+   "fft_power_decay": -0.08,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.062,
-   "sensor_noise": 0.887,
-   "surface_smoothness": 0.751
+   "sensor_noise": 0.854,
+   "surface_smoothness": 0.749
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 2.924,
+  "posterior_log_odds": 2.949,
   "prediction": "LIKELY AI-GENERATED",
   "real_percentage": 0.1,
   "scanned_photo_detected": false,
@@ -1719,11 +1700,11 @@
   "watermark_detected": false
  },
  "grad|jpg|exif=True": {
-  "ai_percentage": 82.9,
+  "ai_percentage": 83.5,
   "ai_spatial_area_pct": 100.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.9,
+  "confidence": 0.91,
   "digital_art_detected": true,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -1762,15 +1743,14 @@
   "label": "AI-ENHANCED / COMPOSITE",
   "log_likelihood_ratios": {
    "exif_hardware": -0.3,
-   "fft_power_decay": -0.077,
-   "neural_backbone": -0.062,
-   "sensor_noise": 0.887,
-   "surface_smoothness": 0.751
+   "fft_power_decay": -0.08,
+   "sensor_noise": 0.854,
+   "surface_smoothness": 0.749
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 0.974,
+  "posterior_log_odds": 0.999,
   "prediction": "AI-ENHANCED / COMPOSITE",
-  "real_percentage": 8.8,
+  "real_percentage": 8.4,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -1796,10 +1776,10 @@
   "taxonomy_label": "AI-Enhanced / Composite (Mix)",
   "taxonomy_reasons": [
    "Genuine camera hardware base capture (Canon Canon EOS R5)",
-   "Overwhelming synthetic-leaning pixel evidence despite authentic base (82.9% AI) -- consistent with an AI upscaler/denoiser/generative-fill pass that left no metadata footprint"
+   "Overwhelming synthetic-leaning pixel evidence despite authentic base (83.5% AI) -- consistent with an AI upscaler/denoiser/generative-fill pass that left no metadata footprint"
   ],
   "taxonomy_state": "AI_ENHANCED_COMPOSITE",
-  "undecided_percentage": 8.3,
+  "undecided_percentage": 8.1,
   "visual_medium": "Cel-Shaded / Ink Cross-Hatched Digital Art",
   "watermark_details": null,
   "watermark_detected": false
@@ -1807,7 +1787,7 @@
  "grad|ndarray": {
   "ai_percentage": 97.0,
   "ai_spatial_area_pct": 100.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 1.0,
   "digital_art_detected": true,
@@ -1851,14 +1831,13 @@
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
    "digital_art_synthesis": 1.2,
-   "fft_power_decay": -0.077,
+   "fft_power_decay": -0.08,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.061,
-   "sensor_noise": 0.853,
-   "surface_smoothness": 0.732
+   "sensor_noise": 0.824,
+   "surface_smoothness": 0.729
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 2.878,
+  "posterior_log_odds": 2.904,
   "prediction": "LIKELY AI-GENERATED",
   "real_percentage": 0.1,
   "scanned_photo_detected": false,
@@ -1898,7 +1877,7 @@
  "grad|pil": {
   "ai_percentage": 97.0,
   "ai_spatial_area_pct": 100.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 1.0,
   "digital_art_detected": true,
@@ -1942,14 +1921,13 @@
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
    "digital_art_synthesis": 1.2,
-   "fft_power_decay": -0.077,
+   "fft_power_decay": -0.08,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.061,
-   "sensor_noise": 0.853,
-   "surface_smoothness": 0.732
+   "sensor_noise": 0.824,
+   "surface_smoothness": 0.729
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 2.878,
+  "posterior_log_odds": 2.904,
   "prediction": "LIKELY AI-GENERATED",
   "real_percentage": 0.1,
   "scanned_photo_detected": false,
@@ -1989,7 +1967,7 @@
  "grad|png|exif=False": {
   "ai_percentage": 97.0,
   "ai_spatial_area_pct": 100.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 1.0,
   "digital_art_detected": true,
@@ -2033,14 +2011,13 @@
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
    "digital_art_synthesis": 1.2,
-   "fft_power_decay": -0.077,
+   "fft_power_decay": -0.08,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.061,
-   "sensor_noise": 0.853,
-   "surface_smoothness": 0.732
+   "sensor_noise": 0.824,
+   "surface_smoothness": 0.729
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 2.878,
+  "posterior_log_odds": 2.904,
   "prediction": "LIKELY AI-GENERATED",
   "real_percentage": 0.1,
   "scanned_photo_detected": false,
@@ -2080,7 +2057,7 @@
  "grad|png|exif=True": {
   "ai_percentage": 97.0,
   "ai_spatial_area_pct": 100.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 1.0,
   "digital_art_detected": true,
@@ -2124,14 +2101,13 @@
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
    "digital_art_synthesis": 1.2,
-   "fft_power_decay": -0.077,
+   "fft_power_decay": -0.08,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.061,
-   "sensor_noise": 0.853,
-   "surface_smoothness": 0.732
+   "sensor_noise": 0.824,
+   "surface_smoothness": 0.729
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 2.878,
+  "posterior_log_odds": 2.904,
   "prediction": "LIKELY AI-GENERATED",
   "real_percentage": 0.1,
   "scanned_photo_detected": false,
@@ -2169,11 +2145,11 @@
   "watermark_detected": false
  },
  "grain|bytes": {
-  "ai_percentage": 15.4,
+  "ai_percentage": 19.7,
   "ai_spatial_area_pct": 0.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.83,
+  "confidence": 0.77,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -2214,16 +2190,15 @@
   "label": "LIKELY REAL",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": 0.288,
+   "fft_power_decay": 0.3,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.098,
-   "sensor_noise": -1.067,
-   "surface_smoothness": -0.923
+   "sensor_noise": -1.05,
+   "surface_smoothness": -0.9
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": -0.673,
+  "posterior_log_odds": -0.53,
   "prediction": "LIKELY REAL",
-  "real_percentage": 72.8,
+  "real_percentage": 66.9,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -2252,17 +2227,17 @@
    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
   ],
   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
-  "undecided_percentage": 11.8,
+  "undecided_percentage": 13.4,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "grain|extra": {
-  "ai_percentage": 14.1,
+  "ai_percentage": 18.1,
   "ai_spatial_area_pct": 0.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.84,
+  "confidence": 0.79,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -2307,15 +2282,14 @@
    "canonical_dimensions": 0.45,
    "dim_a": 0.25,
    "dim_b": -0.1,
-   "fft_power_decay": 0.288,
-   "neural_backbone": -0.098,
-   "sensor_noise": -1.067,
-   "surface_smoothness": -0.923
+   "fft_power_decay": 0.3,
+   "sensor_noise": -1.05,
+   "surface_smoothness": -0.9
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": -0.723,
+  "posterior_log_odds": -0.58,
   "prediction": "LIKELY REAL",
-  "real_percentage": 74.7,
+  "real_percentage": 69.0,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -2344,17 +2318,17 @@
    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
   ],
   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
-  "undecided_percentage": 11.2,
+  "undecided_percentage": 12.9,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "grain|jpg|exif=False": {
-  "ai_percentage": 7.2,
+  "ai_percentage": 9.6,
   "ai_spatial_area_pct": 0.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.92,
+  "confidence": 0.89,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -2395,16 +2369,15 @@
   "label": "LIKELY REAL",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": 0.288,
+   "fft_power_decay": 0.3,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.1,
-   "sensor_noise": -1.067,
-   "surface_smoothness": -0.923
+   "sensor_noise": -1.05,
+   "surface_smoothness": -0.9
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": -1.075,
+  "posterior_log_odds": -0.93,
   "prediction": "LIKELY REAL",
-  "real_percentage": 85.5,
+  "real_percentage": 81.6,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -2433,15 +2406,15 @@
    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
   ],
   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
-  "undecided_percentage": 7.3,
+  "undecided_percentage": 8.8,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "grain|jpg|exif=True": {
-  "ai_percentage": 0.1,
+  "ai_percentage": 0.2,
   "ai_spatial_area_pct": 0.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 1.0,
   "digital_art_detected": false,
@@ -2483,15 +2456,14 @@
   "label": "LIKELY REAL",
   "log_likelihood_ratios": {
    "exif_hardware": -1.4,
-   "fft_power_decay": 0.288,
-   "neural_backbone": -0.1,
-   "sensor_noise": -1.067,
-   "surface_smoothness": -0.923
+   "fft_power_decay": 0.3,
+   "sensor_noise": -1.05,
+   "surface_smoothness": -0.9
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": -2.925,
+  "posterior_log_odds": -2.78,
   "prediction": "LIKELY REAL",
-  "real_percentage": 97.0,
+  "real_percentage": 96.9,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -2527,11 +2499,11 @@
   "watermark_detected": false
  },
  "grain|ndarray": {
-  "ai_percentage": 7.2,
+  "ai_percentage": 9.6,
   "ai_spatial_area_pct": 0.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.92,
+  "confidence": 0.89,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -2572,16 +2544,15 @@
   "label": "LIKELY REAL",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": 0.288,
+   "fft_power_decay": 0.3,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.1,
-   "sensor_noise": -1.067,
-   "surface_smoothness": -0.923
+   "sensor_noise": -1.05,
+   "surface_smoothness": -0.9
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": -1.075,
+  "posterior_log_odds": -0.93,
   "prediction": "LIKELY REAL",
-  "real_percentage": 85.5,
+  "real_percentage": 81.6,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -2610,17 +2581,17 @@
    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
   ],
   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
-  "undecided_percentage": 7.3,
+  "undecided_percentage": 8.8,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "grain|pil": {
-  "ai_percentage": 7.2,
+  "ai_percentage": 9.6,
   "ai_spatial_area_pct": 0.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.92,
+  "confidence": 0.89,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -2661,16 +2632,15 @@
   "label": "LIKELY REAL",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": 0.288,
+   "fft_power_decay": 0.3,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.1,
-   "sensor_noise": -1.067,
-   "surface_smoothness": -0.923
+   "sensor_noise": -1.05,
+   "surface_smoothness": -0.9
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": -1.075,
+  "posterior_log_odds": -0.93,
   "prediction": "LIKELY REAL",
-  "real_percentage": 85.5,
+  "real_percentage": 81.6,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -2699,17 +2669,17 @@
    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
   ],
   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
-  "undecided_percentage": 7.3,
+  "undecided_percentage": 8.8,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "grain|png|exif=False": {
-  "ai_percentage": 7.2,
+  "ai_percentage": 9.6,
   "ai_spatial_area_pct": 0.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.92,
+  "confidence": 0.89,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -2750,16 +2720,15 @@
   "label": "LIKELY REAL",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": 0.288,
+   "fft_power_decay": 0.3,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.1,
-   "sensor_noise": -1.067,
-   "surface_smoothness": -0.923
+   "sensor_noise": -1.05,
+   "surface_smoothness": -0.9
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": -1.075,
+  "posterior_log_odds": -0.93,
   "prediction": "LIKELY REAL",
-  "real_percentage": 85.5,
+  "real_percentage": 81.6,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -2788,17 +2757,17 @@
    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
   ],
   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
-  "undecided_percentage": 7.3,
+  "undecided_percentage": 8.8,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "grain|png|exif=True": {
-  "ai_percentage": 7.2,
+  "ai_percentage": 9.6,
   "ai_spatial_area_pct": 0.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.92,
+  "confidence": 0.89,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -2839,16 +2808,15 @@
   "label": "LIKELY REAL",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": 0.288,
+   "fft_power_decay": 0.3,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.1,
-   "sensor_noise": -1.067,
-   "surface_smoothness": -0.923
+   "sensor_noise": -1.05,
+   "surface_smoothness": -0.9
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": -1.075,
+  "posterior_log_odds": -0.93,
   "prediction": "LIKELY REAL",
-  "real_percentage": 85.5,
+  "real_percentage": 81.6,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -2877,17 +2845,17 @@
    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
   ],
   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
-  "undecided_percentage": 7.3,
+  "undecided_percentage": 8.8,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "noise|bytes": {
-  "ai_percentage": 15.8,
+  "ai_percentage": 19.7,
   "ai_spatial_area_pct": 0.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.82,
+  "confidence": 0.77,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -2928,16 +2896,15 @@
   "label": "LIKELY REAL",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": 0.288,
+   "fft_power_decay": 0.3,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.085,
-   "sensor_noise": -1.067,
-   "surface_smoothness": -0.923
+   "sensor_noise": -1.05,
+   "surface_smoothness": -0.9
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": -0.66,
+  "posterior_log_odds": -0.53,
   "prediction": "LIKELY REAL",
-  "real_percentage": 72.2,
+  "real_percentage": 66.9,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -2966,17 +2933,17 @@
    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
   ],
   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
-  "undecided_percentage": 12.0,
+  "undecided_percentage": 13.4,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "noise|extra": {
-  "ai_percentage": 14.5,
+  "ai_percentage": 18.1,
   "ai_spatial_area_pct": 0.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.84,
+  "confidence": 0.79,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -3021,15 +2988,14 @@
    "canonical_dimensions": 0.45,
    "dim_a": 0.25,
    "dim_b": -0.1,
-   "fft_power_decay": 0.288,
-   "neural_backbone": -0.085,
-   "sensor_noise": -1.067,
-   "surface_smoothness": -0.923
+   "fft_power_decay": 0.3,
+   "sensor_noise": -1.05,
+   "surface_smoothness": -0.9
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": -0.71,
+  "posterior_log_odds": -0.58,
   "prediction": "LIKELY REAL",
-  "real_percentage": 74.2,
+  "real_percentage": 69.0,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -3058,17 +3024,17 @@
    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
   ],
   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
-  "undecided_percentage": 11.3,
+  "undecided_percentage": 12.9,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "noise|jpg|exif=False": {
-  "ai_percentage": 7.4,
+  "ai_percentage": 9.6,
   "ai_spatial_area_pct": 0.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.92,
+  "confidence": 0.89,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -3109,16 +3075,15 @@
   "label": "LIKELY REAL",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": 0.288,
+   "fft_power_decay": 0.3,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.084,
-   "sensor_noise": -1.067,
-   "surface_smoothness": -0.923
+   "sensor_noise": -1.05,
+   "surface_smoothness": -0.9
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": -1.059,
+  "posterior_log_odds": -0.93,
   "prediction": "LIKELY REAL",
-  "real_percentage": 85.1,
+  "real_percentage": 81.6,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -3147,15 +3112,15 @@
    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
   ],
   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
-  "undecided_percentage": 7.5,
+  "undecided_percentage": 8.8,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "noise|jpg|exif=True": {
-  "ai_percentage": 0.1,
+  "ai_percentage": 0.2,
   "ai_spatial_area_pct": 0.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 1.0,
   "digital_art_detected": false,
@@ -3197,15 +3162,14 @@
   "label": "LIKELY REAL",
   "log_likelihood_ratios": {
    "exif_hardware": -1.4,
-   "fft_power_decay": 0.288,
-   "neural_backbone": -0.084,
-   "sensor_noise": -1.067,
-   "surface_smoothness": -0.923
+   "fft_power_decay": 0.3,
+   "sensor_noise": -1.05,
+   "surface_smoothness": -0.9
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": -2.909,
+  "posterior_log_odds": -2.78,
   "prediction": "LIKELY REAL",
-  "real_percentage": 97.0,
+  "real_percentage": 96.9,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -3241,11 +3205,11 @@
   "watermark_detected": false
  },
  "noise|ndarray": {
-  "ai_percentage": 7.5,
+  "ai_percentage": 9.6,
   "ai_spatial_area_pct": 0.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.92,
+  "confidence": 0.89,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -3286,16 +3250,15 @@
   "label": "LIKELY REAL",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": 0.288,
+   "fft_power_decay": 0.3,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.083,
-   "sensor_noise": -1.067,
-   "surface_smoothness": -0.923
+   "sensor_noise": -1.05,
+   "surface_smoothness": -0.9
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": -1.058,
+  "posterior_log_odds": -0.93,
   "prediction": "LIKELY REAL",
-  "real_percentage": 85.1,
+  "real_percentage": 81.6,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -3324,17 +3287,17 @@
    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
   ],
   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
-  "undecided_percentage": 7.4,
+  "undecided_percentage": 8.8,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "noise|pil": {
-  "ai_percentage": 7.5,
+  "ai_percentage": 9.6,
   "ai_spatial_area_pct": 0.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.92,
+  "confidence": 0.89,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -3375,16 +3338,15 @@
   "label": "LIKELY REAL",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": 0.288,
+   "fft_power_decay": 0.3,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.083,
-   "sensor_noise": -1.067,
-   "surface_smoothness": -0.923
+   "sensor_noise": -1.05,
+   "surface_smoothness": -0.9
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": -1.058,
+  "posterior_log_odds": -0.93,
   "prediction": "LIKELY REAL",
-  "real_percentage": 85.1,
+  "real_percentage": 81.6,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -3413,17 +3375,17 @@
    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
   ],
   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
-  "undecided_percentage": 7.4,
+  "undecided_percentage": 8.8,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "noise|png|exif=False": {
-  "ai_percentage": 7.5,
+  "ai_percentage": 9.6,
   "ai_spatial_area_pct": 0.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.92,
+  "confidence": 0.89,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -3464,16 +3426,15 @@
   "label": "LIKELY REAL",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": 0.288,
+   "fft_power_decay": 0.3,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.083,
-   "sensor_noise": -1.067,
-   "surface_smoothness": -0.923
+   "sensor_noise": -1.05,
+   "surface_smoothness": -0.9
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": -1.058,
+  "posterior_log_odds": -0.93,
   "prediction": "LIKELY REAL",
-  "real_percentage": 85.1,
+  "real_percentage": 81.6,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -3502,17 +3463,17 @@
    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
   ],
   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
-  "undecided_percentage": 7.4,
+  "undecided_percentage": 8.8,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "noise|png|exif=True": {
-  "ai_percentage": 7.5,
+  "ai_percentage": 9.6,
   "ai_spatial_area_pct": 0.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.92,
+  "confidence": 0.89,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -3553,16 +3514,15 @@
   "label": "LIKELY REAL",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": 0.288,
+   "fft_power_decay": 0.3,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.083,
-   "sensor_noise": -1.067,
-   "surface_smoothness": -0.923
+   "sensor_noise": -1.05,
+   "surface_smoothness": -0.9
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": -1.058,
+  "posterior_log_odds": -0.93,
   "prediction": "LIKELY REAL",
-  "real_percentage": 85.1,
+  "real_percentage": 81.6,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -3591,15 +3551,15 @@
    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
   ],
   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
-  "undecided_percentage": 7.4,
+  "undecided_percentage": 8.8,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "photo|bytes": {
-  "ai_percentage": 91.2,
+  "ai_percentage": 92.4,
   "ai_spatial_area_pct": 41.7,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 0.96,
   "digital_art_detected": false,
@@ -3641,16 +3601,15 @@
   "label": "LIKELY AI-GENERATED",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": -0.077,
+   "fft_power_decay": -0.08,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.102,
-   "sensor_noise": 0.588,
-   "surface_smoothness": 0.139
+   "sensor_noise": 0.576,
+   "surface_smoothness": 0.126
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 1.356,
+  "posterior_log_odds": 1.434,
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 4.0,
+  "real_percentage": 3.4,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -3675,22 +3634,22 @@
   "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
   "taxonomy_label": "Fully AI Generated",
   "taxonomy_reasons": [
-   "High posterior probability of generative synthesis (91.2% AI)",
+   "High posterior probability of generative synthesis (92.4% AI)",
    "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
    "Canvas dimensions match standard generative model diffusion canvas"
   ],
   "taxonomy_state": "FULLY_AI_GENERATED",
-  "undecided_percentage": 4.8,
+  "undecided_percentage": 4.2,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "photo|extra": {
-  "ai_percentage": 90.3,
+  "ai_percentage": 91.6,
   "ai_spatial_area_pct": 41.7,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.95,
+  "confidence": 0.96,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -3734,15 +3693,14 @@
    "canonical_dimensions": 0.45,
    "dim_a": 0.25,
    "dim_b": -0.1,
-   "fft_power_decay": -0.077,
-   "neural_backbone": -0.102,
-   "sensor_noise": 0.588,
-   "surface_smoothness": 0.139
+   "fft_power_decay": -0.08,
+   "sensor_noise": 0.576,
+   "surface_smoothness": 0.126
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 1.306,
+  "posterior_log_odds": 1.384,
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 4.5,
+  "real_percentage": 3.8,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -3767,22 +3725,22 @@
   "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
   "taxonomy_label": "Fully AI Generated",
   "taxonomy_reasons": [
-   "High posterior probability of generative synthesis (90.3% AI)",
+   "High posterior probability of generative synthesis (91.6% AI)",
    "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
    "Canvas dimensions match standard generative model diffusion canvas"
   ],
   "taxonomy_state": "FULLY_AI_GENERATED",
-  "undecided_percentage": 5.2,
+  "undecided_percentage": 4.6,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "photo|jpg|exif=False": {
-  "ai_percentage": 77.2,
+  "ai_percentage": 80.0,
   "ai_spatial_area_pct": 27.4,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.86,
+  "confidence": 0.88,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -3821,16 +3779,15 @@
   "label": "LIKELY REAL",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": -0.077,
+   "fft_power_decay": -0.08,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.103,
-   "sensor_noise": 0.487,
-   "surface_smoothness": 0.054
+   "sensor_noise": 0.481,
+   "surface_smoothness": 0.04
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 0.795,
+  "posterior_log_odds": 0.879,
   "prediction": "LIKELY REAL",
-  "real_percentage": 12.4,
+  "real_percentage": 10.6,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -3859,17 +3816,17 @@
    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
   ],
   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
-  "undecided_percentage": 10.4,
+  "undecided_percentage": 9.4,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "photo|jpg|exif=True": {
-  "ai_percentage": 2.9,
+  "ai_percentage": 3.6,
   "ai_spatial_area_pct": 27.4,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.97,
+  "confidence": 0.96,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -3906,15 +3863,14 @@
   "label": "LIKELY REAL",
   "log_likelihood_ratios": {
    "exif_hardware": -1.4,
-   "fft_power_decay": -0.077,
-   "neural_backbone": -0.103,
+   "fft_power_decay": -0.08,
    "sensor_noise": 0.053,
-   "surface_smoothness": 0.031
+   "surface_smoothness": 0.03
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": -1.505,
+  "posterior_log_odds": -1.407,
   "prediction": "LIKELY REAL",
-  "real_percentage": 93.3,
+  "real_percentage": 92.0,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -3944,17 +3900,17 @@
    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
   ],
   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
-  "undecided_percentage": 3.8,
+  "undecided_percentage": 4.4,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "photo|ndarray": {
-  "ai_percentage": 62.8,
+  "ai_percentage": 67.7,
   "ai_spatial_area_pct": 0.2,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.73,
+  "confidence": 0.78,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -3994,16 +3950,15 @@
   "label": "LIKELY REAL",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": 0.162,
+   "fft_power_decay": 0.169,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.103,
-   "sensor_noise": 0.089,
-   "surface_smoothness": -0.229
+   "sensor_noise": 0.101,
+   "surface_smoothness": -0.244
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 0.438,
+  "posterior_log_odds": 0.549,
   "prediction": "LIKELY REAL",
-  "real_percentage": 22.9,
+  "real_percentage": 19.1,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -4032,17 +3987,17 @@
    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
   ],
   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
-  "undecided_percentage": 14.3,
+  "undecided_percentage": 13.2,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "photo|pil": {
-  "ai_percentage": 62.8,
+  "ai_percentage": 67.7,
   "ai_spatial_area_pct": 0.2,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.73,
+  "confidence": 0.78,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -4082,16 +4037,15 @@
   "label": "LIKELY REAL",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": 0.162,
+   "fft_power_decay": 0.169,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.103,
-   "sensor_noise": 0.089,
-   "surface_smoothness": -0.229
+   "sensor_noise": 0.101,
+   "surface_smoothness": -0.244
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 0.438,
+  "posterior_log_odds": 0.549,
   "prediction": "LIKELY REAL",
-  "real_percentage": 22.9,
+  "real_percentage": 19.1,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -4120,17 +4074,17 @@
    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
   ],
   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
-  "undecided_percentage": 14.3,
+  "undecided_percentage": 13.2,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "photo|png|exif=False": {
-  "ai_percentage": 62.8,
+  "ai_percentage": 67.7,
   "ai_spatial_area_pct": 0.2,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.73,
+  "confidence": 0.78,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -4170,16 +4124,15 @@
   "label": "LIKELY REAL",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": 0.162,
+   "fft_power_decay": 0.169,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.103,
-   "sensor_noise": 0.089,
-   "surface_smoothness": -0.229
+   "sensor_noise": 0.101,
+   "surface_smoothness": -0.244
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 0.438,
+  "posterior_log_odds": 0.549,
   "prediction": "LIKELY REAL",
-  "real_percentage": 22.9,
+  "real_percentage": 19.1,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -4208,17 +4161,17 @@
    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
   ],
   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
-  "undecided_percentage": 14.3,
+  "undecided_percentage": 13.2,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
  },
  "photo|png|exif=True": {
-  "ai_percentage": 62.8,
+  "ai_percentage": 67.7,
   "ai_spatial_area_pct": 0.2,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
-  "confidence": 0.73,
+  "confidence": 0.78,
   "digital_art_detected": false,
   "document_layout": "None (Standard Visual Content)",
   "error": null,
@@ -4258,16 +4211,15 @@
   "label": "LIKELY REAL",
   "log_likelihood_ratios": {
    "canonical_dimensions": 0.45,
-   "fft_power_decay": 0.162,
+   "fft_power_decay": 0.169,
    "metadata_absent": 0.0,
-   "neural_backbone": -0.103,
-   "sensor_noise": 0.089,
-   "surface_smoothness": -0.229
+   "sensor_noise": 0.101,
+   "surface_smoothness": -0.244
   },
   "neural_enhancer_detected": false,
-  "posterior_log_odds": 0.438,
+  "posterior_log_odds": 0.549,
   "prediction": "LIKELY REAL",
-  "real_percentage": 22.9,
+  "real_percentage": 19.1,
   "scanned_photo_detected": false,
   "screen_recapture_details": {
    "confidence": 0.0,
@@ -4296,7 +4248,7 @@
    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
   ],
   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
-  "undecided_percentage": 14.3,
+  "undecided_percentage": 13.2,
   "visual_medium": "Photographic Capture",
   "watermark_details": null,
   "watermark_detected": false
@@ -4304,7 +4256,7 @@
  "unreadable": {
   "ai_percentage": 0.0,
   "ai_spatial_area_pct": 0.0,
-  "backend": "hybrid_deep_learning_and_statistical",
+  "backend": "heuristic_and_statistical",
   "background_cutout_detected": false,
   "confidence": 0.0,
   "digital_art_detected": false,

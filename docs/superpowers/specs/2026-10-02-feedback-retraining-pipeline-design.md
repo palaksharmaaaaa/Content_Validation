@@ -16,7 +16,7 @@ Today, `record_feedback()` only nudges a handful of hand-tuned scoring-weight co
 
 These two constraints are reconciled by a standard ML-engineering separation: raw training data stays local and gitignored; only the *trained artifact* (the checkpoint) and its *provenance metadata* (version history, accuracy, sample counts — never filenames) are shared, via Git LFS.
 
-`image_detector` currently has 203 real training images and a trained checkpoint (`models/ai_detector.pt`, binary real-vs-ai_generated, ResNet18). `audio_detector` and `video_detector` currently have empty `dataset/` directories and no checkpoint at all — their neural-inference code paths are dead until a checkpoint exists. This pipeline is built once, identically, for all three; for audio/video it will initially behave as "build the first-ever checkpoint from scratch" rather than "fine-tune," which is a direct and accepted consequence of their current zero-data state, not a special case in the code.
+The project starts with no checkpoint and no data for any modality; neural-inference code paths stay inactive until a first checkpoint is trained. This pipeline is built once, identically, for all three; for audio/video it will initially behave as "build the first-ever checkpoint from scratch" rather than "fine-tune," which is a direct and accepted consequence of their current zero-data state, not a special case in the code.
 
 ## Decisions made during brainstorming
 
@@ -69,8 +69,8 @@ A plain Markdown table, append-only, committed normally (small, text-only, no pe
 ```markdown
 | Version | Date | Train Acc | Val Acc | New Samples | Cumulative Samples |
 |---|---|---|---|---|---|
-| 1 | 2026-10-02 | 0.97 | 0.94 | 203 | 203 |
-| 2 | 2026-10-15 | 0.98 | 0.96 | 18 | 221 |
+| 1 | (date) | (train acc) | (val acc) | (n) | (n) |
+| 2 | (date) | (train acc) | (val acc) | (n) | (cumulative) |
 ```
 
 "Version" is a simple incrementing integer per modality, stored alongside the log. No filenames, no paths, no image content — just the numbers needed to audit how the live checkpoint got to where it is.

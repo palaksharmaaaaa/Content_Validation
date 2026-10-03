@@ -14,14 +14,14 @@ class TestCheckpointLog(unittest.TestCase):
             self.assertEqual(next_version(log), 1)
             self.assertEqual(read_cumulative_samples(log), 0)
 
-            append_row(log, 1, "2026-10-02", 0.3, 0.94, 203, 203)
+            append_row(log, 1, "2026-10-02", 0.3, 0.94, 100, 100)
             self.assertAlmostEqual(read_last_accuracy(log), 0.94)
             self.assertEqual(next_version(log), 2)
 
-            append_row(log, 2, "2026-10-15", 0.2, 0.96, 18, 221)
+            append_row(log, 2, "2026-10-15", 0.2, 0.96, 18, 118)
             self.assertAlmostEqual(read_last_accuracy(log), 0.96)
             self.assertEqual(next_version(log), 3)
-            self.assertEqual(read_cumulative_samples(log), 221)
+            self.assertEqual(read_cumulative_samples(log), 118)
 
     def test_log_contains_no_paths_or_names(self):
         with tempfile.TemporaryDirectory() as tmp:

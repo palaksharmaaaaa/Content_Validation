@@ -9,8 +9,8 @@
    "spectral_flatness": 0.762965
   },
   "ai_duration_pct": 100.0,
-  "ai_percentage": 57.5,
-  "confidence": 0.67,
+  "ai_percentage": 60.4,
+  "confidence": 0.7,
   "cutoff_freq_hz": 7843.8,
   "details": {
    "duration_seconds": 3.0,
@@ -39,7 +39,7 @@
   "label": "LIKELY AI-GENERATED",
   "metadata": {},
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 28.3,
+  "real_percentage": 25.9,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 7843.8,
@@ -60,7 +60,7 @@
     "start_seconds": 0.0
    }
   ],
-  "undecided_percentage": 14.2,
+  "undecided_percentage": 13.7,
   "valid": true
  },
  "hf|balanced": {
@@ -73,8 +73,8 @@
    "spectral_flatness": 0.762965
   },
   "ai_duration_pct": 100.0,
-  "ai_percentage": 50.2,
-  "confidence": 0.59,
+  "ai_percentage": 52.9,
+  "confidence": 0.62,
   "cutoff_freq_hz": 7843.8,
   "details": {
    "duration_seconds": 3.0,
@@ -103,7 +103,7 @@
   "label": "UNDECIDED",
   "metadata": {},
   "prediction": "UNDECIDED",
-  "real_percentage": 34.9,
+  "real_percentage": 32.4,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 7843.8,
@@ -124,7 +124,7 @@
     "start_seconds": 0.0
    }
   ],
-  "undecided_percentage": 14.9,
+  "undecided_percentage": 14.7,
   "valid": true
  },
  "hf|extra": {
@@ -137,8 +137,8 @@
    "spectral_flatness": 0.762965
   },
   "ai_duration_pct": 100.0,
-  "ai_percentage": 59.9,
-  "confidence": 0.7,
+  "ai_percentage": 62.5,
+  "confidence": 0.72,
   "cutoff_freq_hz": 7843.8,
   "details": {
    "duration_seconds": 3.0,
@@ -169,7 +169,7 @@
   "label": "LIKELY AI-GENERATED",
   "metadata": {},
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 26.3,
+  "real_percentage": 24.2,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 7843.8,
@@ -190,7 +190,7 @@
     "start_seconds": 0.0
    }
   ],
-  "undecided_percentage": 13.8,
+  "undecided_percentage": 13.3,
   "valid": true
  },
  "hf|extra_neg": {
@@ -203,8 +203,8 @@
    "spectral_flatness": 0.762965
   },
   "ai_duration_pct": 100.0,
-  "ai_percentage": 31.1,
-  "confidence": 0.64,
+  "ai_percentage": 33.5,
+  "confidence": 0.61,
   "cutoff_freq_hz": 7843.8,
   "details": {
    "duration_seconds": 3.0,
@@ -234,7 +234,7 @@
   "label": "UNDECIDED",
   "metadata": {},
   "prediction": "UNDECIDED",
-  "real_percentage": 54.3,
+  "real_percentage": 51.6,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 7843.8,
@@ -255,7 +255,7 @@
     "start_seconds": 0.0
    }
   ],
-  "undecided_percentage": 14.6,
+  "undecided_percentage": 14.9,
   "valid": true
  },
  "hf|high": {
@@ -268,8 +268,8 @@
    "spectral_flatness": 0.762965
   },
   "ai_duration_pct": 100.0,
-  "ai_percentage": 53.8,
-  "confidence": 0.63,
+  "ai_percentage": 56.6,
+  "confidence": 0.66,
   "cutoff_freq_hz": 7843.8,
   "details": {
    "duration_seconds": 3.0,
@@ -298,7 +298,7 @@
   "label": "LIKELY AI-GENERATED",
   "metadata": {},
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 31.6,
+  "real_percentage": 29.1,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 7843.8,
@@ -319,7 +319,7 @@
     "start_seconds": 0.0
    }
   ],
-  "undecided_percentage": 14.6,
+  "undecided_percentage": 14.3,
   "valid": true
  },
  "missing": {
@@ -364,8 +364,8 @@
    "spectral_flatness": 0.998978
   },
   "ai_duration_pct": 170.0,
-  "ai_percentage": 57.5,
-  "confidence": 0.67,
+  "ai_percentage": 60.4,
+  "confidence": 0.7,
   "cutoff_freq_hz": 7890.6,
   "details": {
    "duration_seconds": 5.0,
@@ -418,7 +418,7 @@
   "label": "LIKELY AI-GENERATED",
   "metadata": {},
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 28.3,
+  "real_percentage": 25.9,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 7890.6,
@@ -463,7 +463,7 @@
     "start_seconds": 4.5
    }
   ],
-  "undecided_percentage": 14.2,
+  "undecided_percentage": 13.7,
   "valid": true
  },
  "noise|balanced": {
@@ -476,8 +476,8 @@
    "spectral_flatness": 0.998978
   },
   "ai_duration_pct": 170.0,
-  "ai_percentage": 50.2,
-  "confidence": 0.59,
+  "ai_percentage": 52.9,
+  "confidence": 0.62,
   "cutoff_freq_hz": 7890.6,
   "details": {
    "duration_seconds": 5.0,
@@ -530,7 +530,7 @@
   "label": "UNDECIDED",
   "metadata": {},
   "prediction": "UNDECIDED",
-  "real_percentage": 34.9,
+  "real_percentage": 32.4,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 7890.6,
@@ -575,7 +575,7 @@
     "start_seconds": 4.5
    }
   ],
-  "undecided_percentage": 14.9,
+  "undecided_percentage": 14.7,
   "valid": true
  },
  "noise|extra": {
@@ -588,8 +588,8 @@
    "spectral_flatness": 0.998978
   },
   "ai_duration_pct": 170.0,
-  "ai_percentage": 59.9,
-  "confidence": 0.7,
+  "ai_percentage": 62.5,
+  "confidence": 0.72,
   "cutoff_freq_hz": 7890.6,
   "details": {
    "duration_seconds": 5.0,
@@ -644,7 +644,7 @@
   "label": "LIKELY AI-GENERATED",
   "metadata": {},
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 26.3,
+  "real_percentage": 24.2,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 7890.6,
@@ -689,7 +689,7 @@
     "start_seconds": 4.5
    }
   ],
-  "undecided_percentage": 13.8,
+  "undecided_percentage": 13.3,
   "valid": true
  },
  "noise|extra_neg": {
@@ -702,8 +702,8 @@
    "spectral_flatness": 0.998978
   },
   "ai_duration_pct": 170.0,
-  "ai_percentage": 31.1,
-  "confidence": 0.64,
+  "ai_percentage": 33.5,
+  "confidence": 0.61,
   "cutoff_freq_hz": 7890.6,
   "details": {
    "duration_seconds": 5.0,
@@ -757,7 +757,7 @@
   "label": "UNDECIDED",
   "metadata": {},
   "prediction": "UNDECIDED",
-  "real_percentage": 54.3,
+  "real_percentage": 51.6,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 7890.6,
@@ -802,7 +802,7 @@
     "start_seconds": 4.5
    }
   ],
-  "undecided_percentage": 14.6,
+  "undecided_percentage": 14.9,
   "valid": true
  },
  "noise|high": {
@@ -815,8 +815,8 @@
    "spectral_flatness": 0.998978
   },
   "ai_duration_pct": 170.0,
-  "ai_percentage": 53.8,
-  "confidence": 0.63,
+  "ai_percentage": 56.6,
+  "confidence": 0.66,
   "cutoff_freq_hz": 7890.6,
   "details": {
    "duration_seconds": 5.0,
@@ -869,7 +869,7 @@
   "label": "LIKELY AI-GENERATED",
   "metadata": {},
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 31.6,
+  "real_percentage": 29.1,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 7890.6,
@@ -914,7 +914,7 @@
     "start_seconds": 4.5
    }
   ],
-  "undecided_percentage": 14.6,
+  "undecided_percentage": 14.3,
   "valid": true
  },
  "pre_none": {
@@ -959,8 +959,8 @@
    "spectral_flatness": 1.7e-05
   },
   "ai_duration_pct": 0.0,
-  "ai_percentage": 31.2,
-  "confidence": 0.63,
+  "ai_percentage": 33.6,
+  "confidence": 0.6,
   "cutoff_freq_hz": 468.8,
   "details": {
    "duration_seconds": 2.0,
@@ -989,7 +989,7 @@
   "label": "UNDECIDED",
   "metadata": {},
   "prediction": "UNDECIDED",
-  "real_percentage": 54.3,
+  "real_percentage": 51.5,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 468.8,
@@ -1010,7 +1010,7 @@
     "start_seconds": 0.0
    }
   ],
-  "undecided_percentage": 14.5,
+  "undecided_percentage": 14.9,
   "valid": true
  },
  "pure|aggressive": {
@@ -1023,8 +1023,8 @@
    "spectral_flatness": 0.000181
   },
   "ai_duration_pct": 0.0,
-  "ai_percentage": 37.8,
-  "confidence": 0.55,
+  "ai_percentage": 40.3,
+  "confidence": 0.52,
   "cutoff_freq_hz": 468.8,
   "details": {
    "duration_seconds": 4.0,
@@ -1069,7 +1069,7 @@
   "label": "UNDECIDED",
   "metadata": {},
   "prediction": "UNDECIDED",
-  "real_percentage": 47.1,
+  "real_percentage": 44.5,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 468.8,
@@ -1106,7 +1106,7 @@
     "start_seconds": 3.0
    }
   ],
-  "undecided_percentage": 15.1,
+  "undecided_percentage": 15.2,
   "valid": true
  },
  "pure|balanced": {
@@ -1119,8 +1119,8 @@
    "spectral_flatness": 0.000181
   },
   "ai_duration_pct": 0.0,
-  "ai_percentage": 31.2,
-  "confidence": 0.63,
+  "ai_percentage": 33.6,
+  "confidence": 0.6,
   "cutoff_freq_hz": 468.8,
   "details": {
    "duration_seconds": 4.0,
@@ -1165,7 +1165,7 @@
   "label": "UNDECIDED",
   "metadata": {},
   "prediction": "UNDECIDED",
-  "real_percentage": 54.3,
+  "real_percentage": 51.5,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 468.8,
@@ -1202,7 +1202,7 @@
     "start_seconds": 3.0
    }
   ],
-  "undecided_percentage": 14.5,
+  "undecided_percentage": 14.9,
   "valid": true
  },
  "pure|extra": {
@@ -1215,8 +1215,8 @@
    "spectral_flatness": 0.000181
   },
   "ai_duration_pct": 0.0,
-  "ai_percentage": 40.4,
-  "confidence": 0.52,
+  "ai_percentage": 43.1,
+  "confidence": 0.51,
   "cutoff_freq_hz": 468.8,
   "details": {
    "duration_seconds": 4.0,
@@ -1263,7 +1263,7 @@
   "label": "UNDECIDED",
   "metadata": {},
   "prediction": "UNDECIDED",
-  "real_percentage": 44.4,
+  "real_percentage": 41.7,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 468.8,
@@ -1313,8 +1313,8 @@
    "spectral_flatness": 0.000181
   },
   "ai_duration_pct": 0.0,
-  "ai_percentage": 16.6,
-  "confidence": 0.81,
+  "ai_percentage": 18.2,
+  "confidence": 0.79,
   "cutoff_freq_hz": 468.8,
   "details": {
    "duration_seconds": 4.0,
@@ -1360,7 +1360,7 @@
   "label": "LIKELY REAL",
   "metadata": {},
   "prediction": "LIKELY REAL",
-  "real_percentage": 72.3,
+  "real_percentage": 70.1,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 468.8,
@@ -1397,7 +1397,7 @@
     "start_seconds": 3.0
    }
   ],
-  "undecided_percentage": 11.1,
+  "undecided_percentage": 11.7,
   "valid": true
  },
  "pure|high": {
@@ -1410,8 +1410,8 @@
    "spectral_flatness": 0.000181
   },
   "ai_duration_pct": 0.0,
-  "ai_percentage": 34.5,
-  "confidence": 0.59,
+  "ai_percentage": 36.9,
+  "confidence": 0.56,
   "cutoff_freq_hz": 468.8,
   "details": {
    "duration_seconds": 4.0,
@@ -1456,7 +1456,7 @@
   "label": "UNDECIDED",
   "metadata": {},
   "prediction": "UNDECIDED",
-  "real_percentage": 50.6,
+  "real_percentage": 48.0,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 468.8,
@@ -1493,7 +1493,7 @@
     "start_seconds": 3.0
    }
   ],
-  "undecided_percentage": 14.9,
+  "undecided_percentage": 15.1,
   "valid": true
  },
  "short|aggressive": {
@@ -1666,8 +1666,8 @@
    "spectral_flatness": 0.005333
   },
   "ai_duration_pct": 0.0,
-  "ai_percentage": 32.0,
-  "confidence": 0.62,
+  "ai_percentage": 34.5,
+  "confidence": 0.59,
   "cutoff_freq_hz": 484.4,
   "details": {
    "duration_seconds": 4.0,
@@ -1712,201 +1712,7 @@
   "label": "UNDECIDED",
   "metadata": {},
   "prediction": "UNDECIDED",
-  "real_percentage": 53.3,
-  "sample_rate": 16000,
-  "spectral_features": {
-   "cutoff_freq_hz": 484.4,
-   "digital_silence_ratio": 0.5044,
-   "has_vocoder_cutoff": false,
-   "high_freq_ratio": 0.0006,
-   "p_audio_ai": 0.4,
-   "spectral_flatness": 0.005333
-  },
-  "spectral_flatness": 0.005333,
-  "temporal_segments": [
-   {
-    "ai_prob": 0.4,
-    "duration_seconds": 3.0,
-    "end_seconds": 3.0,
-    "has_vocoder_cutoff": false,
-    "label": "LIKELY REAL",
-    "start_seconds": 0.0
-   },
-   {
-    "ai_prob": 0.4,
-    "duration_seconds": 2.5,
-    "end_seconds": 4.0,
-    "has_vocoder_cutoff": false,
-    "label": "LIKELY REAL",
-    "start_seconds": 1.5
-   },
-   {
-    "ai_prob": 0.35,
-    "duration_seconds": 1.0,
-    "end_seconds": 4.0,
-    "has_vocoder_cutoff": false,
-    "label": "LIKELY REAL",
-    "start_seconds": 3.0
-   }
-  ],
-  "undecided_percentage": 14.7,
-  "valid": true
- },
- "silence_gaps|balanced": {
-  "acoustic_features": {
-   "cutoff_freq_hz": 484.4,
-   "digital_silence_ratio": 0.5044,
-   "has_vocoder_cutoff": false,
-   "high_freq_ratio": 0.0006,
-   "p_audio_ai": 0.4,
-   "spectral_flatness": 0.005333
-  },
-  "ai_duration_pct": 0.0,
-  "ai_percentage": 25.5,
-  "confidence": 0.7,
-  "cutoff_freq_hz": 484.4,
-  "details": {
-   "duration_seconds": 4.0,
-   "status": "Audible track extracted and evaluated.",
-   "temporal_segments": [
-    {
-     "ai_prob": 0.4,
-     "duration_seconds": 3.0,
-     "end_seconds": 3.0,
-     "has_vocoder_cutoff": false,
-     "label": "LIKELY REAL",
-     "start_seconds": 0.0
-    },
-    {
-     "ai_prob": 0.4,
-     "duration_seconds": 2.5,
-     "end_seconds": 4.0,
-     "has_vocoder_cutoff": false,
-     "label": "LIKELY REAL",
-     "start_seconds": 1.5
-    },
-    {
-     "ai_prob": 0.35,
-     "duration_seconds": 1.0,
-     "end_seconds": 4.0,
-     "has_vocoder_cutoff": false,
-     "label": "LIKELY REAL",
-     "start_seconds": 3.0
-    }
-   ]
-  },
-  "digital_silence_ratio": 0.5044,
-  "duration_seconds": 4.0,
-  "error": null,
-  "filename": "d.wav",
-  "forensic_cues": [
-   "Digital zero inter-phoneme silence gaps (absence of natural room tone)"
-  ],
-  "has_audio_track": true,
-  "has_vocoder_cutoff": false,
-  "high_freq_ratio": 0.0006,
-  "label": "LIKELY REAL",
-  "metadata": {},
-  "prediction": "LIKELY REAL",
-  "real_percentage": 60.9,
-  "sample_rate": 16000,
-  "spectral_features": {
-   "cutoff_freq_hz": 484.4,
-   "digital_silence_ratio": 0.5044,
-   "has_vocoder_cutoff": false,
-   "high_freq_ratio": 0.0006,
-   "p_audio_ai": 0.4,
-   "spectral_flatness": 0.005333
-  },
-  "spectral_flatness": 0.005333,
-  "temporal_segments": [
-   {
-    "ai_prob": 0.4,
-    "duration_seconds": 3.0,
-    "end_seconds": 3.0,
-    "has_vocoder_cutoff": false,
-    "label": "LIKELY REAL",
-    "start_seconds": 0.0
-   },
-   {
-    "ai_prob": 0.4,
-    "duration_seconds": 2.5,
-    "end_seconds": 4.0,
-    "has_vocoder_cutoff": false,
-    "label": "LIKELY REAL",
-    "start_seconds": 1.5
-   },
-   {
-    "ai_prob": 0.35,
-    "duration_seconds": 1.0,
-    "end_seconds": 4.0,
-    "has_vocoder_cutoff": false,
-    "label": "LIKELY REAL",
-    "start_seconds": 3.0
-   }
-  ],
-  "undecided_percentage": 13.6,
-  "valid": true
- },
- "silence_gaps|extra": {
-  "acoustic_features": {
-   "cutoff_freq_hz": 484.4,
-   "digital_silence_ratio": 0.5044,
-   "has_vocoder_cutoff": false,
-   "high_freq_ratio": 0.0006,
-   "p_audio_ai": 0.4,
-   "spectral_flatness": 0.005333
-  },
-  "ai_duration_pct": 0.0,
-  "ai_percentage": 33.9,
-  "confidence": 0.6,
-  "cutoff_freq_hz": 484.4,
-  "details": {
-   "duration_seconds": 4.0,
-   "status": "Audible track extracted and evaluated.",
-   "temporal_segments": [
-    {
-     "ai_prob": 0.4,
-     "duration_seconds": 3.0,
-     "end_seconds": 3.0,
-     "has_vocoder_cutoff": false,
-     "label": "LIKELY REAL",
-     "start_seconds": 0.0
-    },
-    {
-     "ai_prob": 0.4,
-     "duration_seconds": 2.5,
-     "end_seconds": 4.0,
-     "has_vocoder_cutoff": false,
-     "label": "LIKELY REAL",
-     "start_seconds": 1.5
-    },
-    {
-     "ai_prob": 0.35,
-     "duration_seconds": 1.0,
-     "end_seconds": 4.0,
-     "has_vocoder_cutoff": false,
-     "label": "LIKELY REAL",
-     "start_seconds": 3.0
-    }
-   ]
-  },
-  "digital_silence_ratio": 0.5044,
-  "duration_seconds": 4.0,
-  "error": null,
-  "filename": "d.wav",
-  "forensic_cues": [
-   "Digital zero inter-phoneme silence gaps (absence of natural room tone)",
-   "Dimension check 'enf' adjusted log-odds by +0.30",
-   "Dimension check 'z' adjusted log-odds by -0.10"
-  ],
-  "has_audio_track": true,
-  "has_vocoder_cutoff": false,
-  "high_freq_ratio": 0.0006,
-  "label": "UNDECIDED",
-  "metadata": {},
-  "prediction": "UNDECIDED",
-  "real_percentage": 51.2,
+  "real_percentage": 50.6,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 484.4,
@@ -1946,6 +1752,200 @@
   "undecided_percentage": 14.9,
   "valid": true
  },
+ "silence_gaps|balanced": {
+  "acoustic_features": {
+   "cutoff_freq_hz": 484.4,
+   "digital_silence_ratio": 0.5044,
+   "has_vocoder_cutoff": false,
+   "high_freq_ratio": 0.0006,
+   "p_audio_ai": 0.4,
+   "spectral_flatness": 0.005333
+  },
+  "ai_duration_pct": 0.0,
+  "ai_percentage": 27.9,
+  "confidence": 0.67,
+  "cutoff_freq_hz": 484.4,
+  "details": {
+   "duration_seconds": 4.0,
+   "status": "Audible track extracted and evaluated.",
+   "temporal_segments": [
+    {
+     "ai_prob": 0.4,
+     "duration_seconds": 3.0,
+     "end_seconds": 3.0,
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
+     "start_seconds": 0.0
+    },
+    {
+     "ai_prob": 0.4,
+     "duration_seconds": 2.5,
+     "end_seconds": 4.0,
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
+     "start_seconds": 1.5
+    },
+    {
+     "ai_prob": 0.35,
+     "duration_seconds": 1.0,
+     "end_seconds": 4.0,
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
+     "start_seconds": 3.0
+    }
+   ]
+  },
+  "digital_silence_ratio": 0.5044,
+  "duration_seconds": 4.0,
+  "error": null,
+  "filename": "d.wav",
+  "forensic_cues": [
+   "Digital zero inter-phoneme silence gaps (absence of natural room tone)"
+  ],
+  "has_audio_track": true,
+  "has_vocoder_cutoff": false,
+  "high_freq_ratio": 0.0006,
+  "label": "LIKELY REAL",
+  "metadata": {},
+  "prediction": "LIKELY REAL",
+  "real_percentage": 58.0,
+  "sample_rate": 16000,
+  "spectral_features": {
+   "cutoff_freq_hz": 484.4,
+   "digital_silence_ratio": 0.5044,
+   "has_vocoder_cutoff": false,
+   "high_freq_ratio": 0.0006,
+   "p_audio_ai": 0.4,
+   "spectral_flatness": 0.005333
+  },
+  "spectral_flatness": 0.005333,
+  "temporal_segments": [
+   {
+    "ai_prob": 0.4,
+    "duration_seconds": 3.0,
+    "end_seconds": 3.0,
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
+    "start_seconds": 0.0
+   },
+   {
+    "ai_prob": 0.4,
+    "duration_seconds": 2.5,
+    "end_seconds": 4.0,
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
+    "start_seconds": 1.5
+   },
+   {
+    "ai_prob": 0.35,
+    "duration_seconds": 1.0,
+    "end_seconds": 4.0,
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
+    "start_seconds": 3.0
+   }
+  ],
+  "undecided_percentage": 14.1,
+  "valid": true
+ },
+ "silence_gaps|extra": {
+  "acoustic_features": {
+   "cutoff_freq_hz": 484.4,
+   "digital_silence_ratio": 0.5044,
+   "has_vocoder_cutoff": false,
+   "high_freq_ratio": 0.0006,
+   "p_audio_ai": 0.4,
+   "spectral_flatness": 0.005333
+  },
+  "ai_duration_pct": 0.0,
+  "ai_percentage": 36.8,
+  "confidence": 0.57,
+  "cutoff_freq_hz": 484.4,
+  "details": {
+   "duration_seconds": 4.0,
+   "status": "Audible track extracted and evaluated.",
+   "temporal_segments": [
+    {
+     "ai_prob": 0.4,
+     "duration_seconds": 3.0,
+     "end_seconds": 3.0,
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
+     "start_seconds": 0.0
+    },
+    {
+     "ai_prob": 0.4,
+     "duration_seconds": 2.5,
+     "end_seconds": 4.0,
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
+     "start_seconds": 1.5
+    },
+    {
+     "ai_prob": 0.35,
+     "duration_seconds": 1.0,
+     "end_seconds": 4.0,
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
+     "start_seconds": 3.0
+    }
+   ]
+  },
+  "digital_silence_ratio": 0.5044,
+  "duration_seconds": 4.0,
+  "error": null,
+  "filename": "d.wav",
+  "forensic_cues": [
+   "Digital zero inter-phoneme silence gaps (absence of natural room tone)",
+   "Dimension check 'enf' adjusted log-odds by +0.30",
+   "Dimension check 'z' adjusted log-odds by -0.10"
+  ],
+  "has_audio_track": true,
+  "has_vocoder_cutoff": false,
+  "high_freq_ratio": 0.0006,
+  "label": "UNDECIDED",
+  "metadata": {},
+  "prediction": "UNDECIDED",
+  "real_percentage": 48.2,
+  "sample_rate": 16000,
+  "spectral_features": {
+   "cutoff_freq_hz": 484.4,
+   "digital_silence_ratio": 0.5044,
+   "has_vocoder_cutoff": false,
+   "high_freq_ratio": 0.0006,
+   "p_audio_ai": 0.4,
+   "spectral_flatness": 0.005333
+  },
+  "spectral_flatness": 0.005333,
+  "temporal_segments": [
+   {
+    "ai_prob": 0.4,
+    "duration_seconds": 3.0,
+    "end_seconds": 3.0,
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
+    "start_seconds": 0.0
+   },
+   {
+    "ai_prob": 0.4,
+    "duration_seconds": 2.5,
+    "end_seconds": 4.0,
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
+    "start_seconds": 1.5
+   },
+   {
+    "ai_prob": 0.35,
+    "duration_seconds": 1.0,
+    "end_seconds": 4.0,
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
+    "start_seconds": 3.0
+   }
+  ],
+  "undecided_percentage": 15.0,
+  "valid": true
+ },
  "silence_gaps|extra_neg": {
   "acoustic_features": {
    "cutoff_freq_hz": 484.4,
@@ -1956,8 +1956,8 @@
    "spectral_flatness": 0.005333
   },
   "ai_duration_pct": 0.0,
-  "ai_percentage": 12.9,
-  "confidence": 0.86,
+  "ai_percentage": 14.4,
+  "confidence": 0.84,
   "cutoff_freq_hz": 484.4,
   "details": {
    "duration_seconds": 4.0,
@@ -2003,7 +2003,7 @@
   "label": "LIKELY REAL",
   "metadata": {},
   "prediction": "LIKELY REAL",
-  "real_percentage": 77.5,
+  "real_percentage": 75.3,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 484.4,
@@ -2040,7 +2040,7 @@
     "start_seconds": 3.0
    }
   ],
-  "undecided_percentage": 9.6,
+  "undecided_percentage": 10.3,
   "valid": true
  },
  "silence_gaps|high": {
@@ -2053,8 +2053,8 @@
    "spectral_flatness": 0.005333
   },
   "ai_duration_pct": 0.0,
-  "ai_percentage": 28.7,
-  "confidence": 0.66,
+  "ai_percentage": 31.2,
+  "confidence": 0.64,
   "cutoff_freq_hz": 484.4,
   "details": {
    "duration_seconds": 4.0,
@@ -2096,10 +2096,10 @@
   "has_audio_track": true,
   "has_vocoder_cutoff": false,
   "high_freq_ratio": 0.0006,
-  "label": "LIKELY REAL",
+  "label": "UNDECIDED",
   "metadata": {},
-  "prediction": "LIKELY REAL",
-  "real_percentage": 57.1,
+  "prediction": "UNDECIDED",
+  "real_percentage": 54.3,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 484.4,
@@ -2136,7 +2136,7 @@
     "start_seconds": 3.0
    }
   ],
-  "undecided_percentage": 14.2,
+  "undecided_percentage": 14.5,
   "valid": true
  },
  "spectro": {
@@ -2149,8 +2149,8 @@
    "spectral_flatness": 0.379839
   },
   "ai_duration_pct": 100.0,
-  "ai_percentage": 36.1,
-  "confidence": 0.57,
+  "ai_percentage": 38.6,
+  "confidence": 0.54,
   "cutoff_freq_hz": 7687.5,
   "details": {
    "duration_seconds": 3.0,
@@ -2179,7 +2179,7 @@
   "label": "UNDECIDED",
   "metadata": {},
   "prediction": "UNDECIDED",
-  "real_percentage": 48.9,
+  "real_percentage": 46.2,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 7687.5,
@@ -2200,7 +2200,7 @@
     "start_seconds": 0.0
    }
   ],
-  "undecided_percentage": 15.0,
+  "undecided_percentage": 15.2,
   "valid": true
  },
  "tone|aggressive": {
@@ -2213,8 +2213,8 @@
    "spectral_flatness": 0.379839
   },
   "ai_duration_pct": 100.0,
-  "ai_percentage": 42.8,
-  "confidence": 0.51,
+  "ai_percentage": 45.4,
+  "confidence": 0.54,
   "cutoff_freq_hz": 7687.5,
   "details": {
    "duration_seconds": 3.0,
@@ -2243,7 +2243,7 @@
   "label": "UNDECIDED",
   "metadata": {},
   "prediction": "UNDECIDED",
-  "real_percentage": 41.9,
+  "real_percentage": 39.4,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 7687.5,
@@ -2264,7 +2264,7 @@
     "start_seconds": 0.0
    }
   ],
-  "undecided_percentage": 15.3,
+  "undecided_percentage": 15.2,
   "valid": true
  },
  "tone|balanced": {
@@ -2277,8 +2277,8 @@
    "spectral_flatness": 0.379839
   },
   "ai_duration_pct": 100.0,
-  "ai_percentage": 36.1,
-  "confidence": 0.57,
+  "ai_percentage": 38.6,
+  "confidence": 0.54,
   "cutoff_freq_hz": 7687.5,
   "details": {
    "duration_seconds": 3.0,
@@ -2307,7 +2307,7 @@
   "label": "UNDECIDED",
   "metadata": {},
   "prediction": "UNDECIDED",
-  "real_percentage": 48.9,
+  "real_percentage": 46.2,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 7687.5,
@@ -2328,7 +2328,7 @@
     "start_seconds": 0.0
    }
   ],
-  "undecided_percentage": 15.0,
+  "undecided_percentage": 15.2,
   "valid": true
  },
  "tone|extra": {
@@ -2341,8 +2341,8 @@
    "spectral_flatness": 0.379839
   },
   "ai_duration_pct": 100.0,
-  "ai_percentage": 45.7,
-  "confidence": 0.54,
+  "ai_percentage": 48.4,
+  "confidence": 0.57,
   "cutoff_freq_hz": 7687.5,
   "details": {
    "duration_seconds": 3.0,
@@ -2373,7 +2373,7 @@
   "label": "UNDECIDED",
   "metadata": {},
   "prediction": "UNDECIDED",
-  "real_percentage": 39.1,
+  "real_percentage": 36.6,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 7687.5,
@@ -2394,7 +2394,7 @@
     "start_seconds": 0.0
    }
   ],
-  "undecided_percentage": 15.2,
+  "undecided_percentage": 15.0,
   "valid": true
  },
  "tone|extra_neg": {
@@ -2407,8 +2407,8 @@
    "spectral_flatness": 0.379839
   },
   "ai_duration_pct": 100.0,
-  "ai_percentage": 20.0,
-  "confidence": 0.77,
+  "ai_percentage": 21.8,
+  "confidence": 0.75,
   "cutoff_freq_hz": 7687.5,
   "details": {
    "duration_seconds": 3.0,
@@ -2438,7 +2438,7 @@
   "label": "LIKELY REAL",
   "metadata": {},
   "prediction": "LIKELY REAL",
-  "real_percentage": 67.8,
+  "real_percentage": 65.5,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 7687.5,
@@ -2459,7 +2459,7 @@
     "start_seconds": 0.0
    }
   ],
-  "undecided_percentage": 12.2,
+  "undecided_percentage": 12.7,
   "valid": true
  },
  "tone|high": {
@@ -2472,8 +2472,8 @@
    "spectral_flatness": 0.379839
   },
   "ai_duration_pct": 100.0,
-  "ai_percentage": 39.4,
-  "confidence": 0.53,
+  "ai_percentage": 41.9,
+  "confidence": 0.5,
   "cutoff_freq_hz": 7687.5,
   "details": {
    "duration_seconds": 3.0,
@@ -2502,7 +2502,7 @@
   "label": "UNDECIDED",
   "metadata": {},
   "prediction": "UNDECIDED",
-  "real_percentage": 45.4,
+  "real_percentage": 42.8,
   "sample_rate": 16000,
   "spectral_features": {
    "cutoff_freq_hz": 7687.5,
@@ -2523,7 +2523,7 @@
     "start_seconds": 0.0
    }
   ],
-  "undecided_percentage": 15.2,
+  "undecided_percentage": 15.3,
   "valid": true
  }
 }

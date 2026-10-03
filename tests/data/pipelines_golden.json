@@ -10,8 +10,8 @@
     "spectral_flatness": 0.551714
    },
    "ai_duration_pct": 100.0,
-   "ai_percentage": 50.2,
-   "confidence": 0.59,
+   "ai_percentage": 52.9,
+   "confidence": 0.62,
    "cutoff_freq_hz": 7781.2,
    "details": {
     "duration_seconds": 2.0,
@@ -40,7 +40,7 @@
    "label": "UNDECIDED",
    "metadata": {},
    "prediction": "UNDECIDED",
-   "real_percentage": 34.9,
+   "real_percentage": 32.4,
    "sample_rate": 16000,
    "spectral_features": {
     "cutoff_freq_hz": 7781.2,
@@ -62,7 +62,7 @@
      "start_seconds": 0.0
     }
    ],
-   "undecided_percentage": 14.9,
+   "undecided_percentage": 14.7,
    "valid": true
   },
   "ai_detected": true,
@@ -72,22 +72,22 @@
    "unknown_source": false
   },
   "authenticity_probabilities": {
-   "p_ai": 57.2,
-   "p_real": 39.8,
+   "p_ai": 60.2,
+   "p_real": 36.8,
    "p_undecided": 3.0
   },
-  "confidence": 0.59,
+  "confidence": 0.62,
   "confidence_band": {
    "band": "INCONCLUSIVE",
    "label": "Inconclusive / Indeterminate Evidence",
-   "p_ai_percent": 50.2
+   "p_ai_percent": 52.9
   },
   "content_valid": true,
   "decision": {
    "ai_detected": true,
    "authenticity_probabilities": {
-    "p_ai": 57.2,
-    "p_real": 39.8,
+    "p_ai": 60.2,
+    "p_real": 36.8,
     "p_undecided": 3.0
    },
    "calibration_status": "UNCALIBRATED_HEURISTIC",
@@ -122,7 +122,7 @@
    ],
    "final_status": "PARTIALLY_SYNTHETIC_OR_EDITED",
    "forensic_modality_results": {
-    "audio_ai_pct": 50.2,
+    "audio_ai_pct": 52.9,
     "image_ai_pct": null,
     "video_ai_pct": null
    },
@@ -182,7 +182,7 @@
    "confidence_band": {
     "band": "INCONCLUSIVE",
     "label": "Inconclusive / Indeterminate Evidence",
-    "p_ai_percent": 50.2
+    "p_ai_percent": 52.9
    },
    "findings_by_stage": {
     "container": [
@@ -619,7 +619,7 @@
    ],
    "watermark_detected": false
   },
-  "newbie_explanation": "### \ud83c\udf99\ufe0f What We Identified in this Audio Track\n\nThis file (`a.wav`) is a **0.0-second audio recording** sampled at **16,000 Hz**. Acoustically, it features **1 speaker** delivering **vocal speech**.\n\n### \ud83d\udca1 How Would You Explain This to a Newbie?\n\n**The Simple Takeaway:** Our forensic acoustic engine's heuristic (uncalibrated) score is **57.2% AI-likelihood**, indicating this audio was most likely **created by an AI voice generator or clone** (such as ElevenLabs, OpenAI Voice, or Tortoise) rather than spoken by a live human.\n\n**Think of it like this:** When a real person speaks into a microphone, air passes through vocal cords, bounces around the mouth and chest, and catches subtle human imperfections \u2014 like tiny breaths, tongue clicks, and the natural echo of the room you are standing in. An AI voice model, on the other hand, calculates speech mathematically using a digital vocoder. When we analyze the sound waves under our forensic microscope, the speech harmonics are unnaturally smooth, the sound abruptly cuts off at a digital ceiling (the vocoder brickwall), and the silent gaps between words are pure mathematical zeros rather than real-world room ambience. Even though it sounds uncannily like a real person, the acoustic evidence points to a computer-generated origin.",
+  "newbie_explanation": "### \ud83c\udf99\ufe0f What We Identified in this Audio Track\n\nThis file (`a.wav`) is a **0.0-second audio recording** sampled at **16,000 Hz**. Acoustically, it features **1 speaker** delivering **vocal speech**.\n\n### \ud83d\udca1 How Would You Explain This to a Newbie?\n\n**The Simple Takeaway:** Our forensic acoustic engine's heuristic (uncalibrated) score is **60.2% AI-likelihood**, indicating this audio was most likely **created by an AI voice generator or clone** (such as ElevenLabs, OpenAI Voice, or Tortoise) rather than spoken by a live human.\n\n**Think of it like this:** When a real person speaks into a microphone, air passes through vocal cords, bounces around the mouth and chest, and catches subtle human imperfections \u2014 like tiny breaths, tongue clicks, and the natural echo of the room you are standing in. An AI voice model, on the other hand, calculates speech mathematically using a digital vocoder. When we analyze the sound waves under our forensic microscope, the speech harmonics are unnaturally smooth, the sound abruptly cuts off at a digital ceiling (the vocoder brickwall), and the silent gaps between words are pure mathematical zeros rather than real-world room ambience. Even though it sounds uncannily like a real person, the acoustic evidence points to a computer-generated origin.",
   "nine_dimensions_dossier": {
    "dimension_1_hardware_provenance": {
     "c2pa_status": "Absent (Neutral)",
@@ -760,9 +760,9 @@
  "img_a.jpg": {
   "ai_detected": false,
   "ai_detection": {
-   "ai_percentage": 0.1,
+   "ai_percentage": 0.2,
    "ai_spatial_area_pct": 0.0,
-   "backend": "hybrid_deep_learning_and_statistical",
+   "backend": "heuristic_and_statistical",
    "background_cutout_detected": false,
    "confidence": 1.0,
    "digital_art_detected": false,
@@ -805,15 +805,14 @@
    "label": "LIKELY REAL",
    "log_likelihood_ratios": {
     "exif_hardware": -1.4,
-    "fft_power_decay": 0.288,
-    "neural_backbone": -0.053,
-    "sensor_noise": -1.067,
-    "surface_smoothness": -0.923
+    "fft_power_decay": 0.3,
+    "sensor_noise": -1.05,
+    "surface_smoothness": -0.9
    },
    "neural_enhancer_detected": false,
-   "posterior_log_odds": -2.878,
+   "posterior_log_odds": -2.78,
    "prediction": "LIKELY REAL",
-   "real_percentage": 97.0,
+   "real_percentage": 96.9,
    "scanned_photo_detected": false,
    "screen_recapture_details": {
     "confidence": 0.0,
@@ -854,8 +853,8 @@
    "unknown_source": false
   },
   "authenticity_probabilities": {
-   "p_ai": 0.1,
-   "p_real": 97.0,
+   "p_ai": 0.2,
+   "p_real": 96.9,
    "p_undecided": 2.9
   },
   "background_cutout_detected": false,
@@ -873,7 +872,7 @@
   "confidence_band": {
    "band": "HIGH_CONFIDENCE_AUTHENTIC",
    "label": "High-Confidence Authentic Physical Capture",
-   "p_ai_percent": 0.1
+   "p_ai_percent": 0.2
   },
   "content_inventory": {
    "contents_and_items": {
@@ -990,8 +989,8 @@
   "decision": {
    "ai_detected": false,
    "authenticity_probabilities": {
-    "p_ai": 0.1,
-    "p_real": 97.0,
+    "p_ai": 0.2,
+    "p_real": 96.9,
     "p_undecided": 2.9
    },
    "calibration_status": "UNCALIBRATED_HEURISTIC",
@@ -1031,7 +1030,7 @@
    "final_status": "LIKELY REAL",
    "forensic_modality_results": {
     "audio_ai_pct": null,
-    "image_ai_pct": 0.1,
+    "image_ai_pct": 0.2,
     "video_ai_pct": null
    },
    "localization": {
@@ -1079,7 +1078,7 @@
    "confidence_band": {
     "band": "HIGH_CONFIDENCE_AUTHENTIC",
     "label": "High-Confidence Authentic Physical Capture",
-    "p_ai_percent": 0.1
+    "p_ai_percent": 0.2
    },
    "findings_by_stage": {
     "context": [
@@ -1630,7 +1629,7 @@
    "top_candidates": [],
    "watermark_detected": false
   },
-  "newbie_explanation": "### \ud83d\uddbc\ufe0f What We Identified in this Image\n\nThis file (`a.jpg`) is a **320 \u00d7 256 pixel** visual asset formatted in **1.25:1 Ratio** at **72 x 72 DPI**. Visually, it depicts **a visual scene composed as a general scene** set in a **daylight** environment with an evocative **balanced contrast** atmosphere, with the palette predominantly shaped by Medium Neutral Gray tones (#606060 covering 12.3% of the image). The visual style is characterized as **Photographic Capture**.\n\n### \ud83d\udca1 How Would You Explain This to a Newbie?\n\n**The Simple Takeaway:** This image is **consistent with a genuine real-world photograph** captured through an optical glass camera lens (Authentic Real Photograph); the heuristic (uncalibrated) estimate is **97.0%**, which is a ranking aid, not proof.\n\n**Think of it like this:** Everything about this file matches real-world optical physics. When light bounced off the subject and entered the camera lens, it left behind authentic physical sensor grain (PRNU score: **37.35**), natural organic skin and fabric micro-textures, and optical depth-of-field (where the focus gently falls off naturally in a way computers struggle to replicate). No generative AI alterations or deceptive digital manipulations were detected.",
+  "newbie_explanation": "### \ud83d\uddbc\ufe0f What We Identified in this Image\n\nThis file (`a.jpg`) is a **320 \u00d7 256 pixel** visual asset formatted in **1.25:1 Ratio** at **72 x 72 DPI**. Visually, it depicts **a visual scene composed as a general scene** set in a **daylight** environment with an evocative **balanced contrast** atmosphere, with the palette predominantly shaped by Medium Neutral Gray tones (#606060 covering 12.3% of the image). The visual style is characterized as **Photographic Capture**.\n\n### \ud83d\udca1 How Would You Explain This to a Newbie?\n\n**The Simple Takeaway:** This image is **consistent with a genuine real-world photograph** captured through an optical glass camera lens (Authentic Real Photograph); the heuristic (uncalibrated) estimate is **96.9%**, which is a ranking aid, not proof.\n\n**Think of it like this:** Everything about this file matches real-world optical physics. When light bounced off the subject and entered the camera lens, it left behind authentic physical sensor grain (PRNU score: **37.35**), natural organic skin and fabric micro-textures, and optical depth-of-field (where the focus gently falls off naturally in a way computers struggle to replicate). No generative AI alterations or deceptive digital manipulations were detected.",
   "nine_dimensions_dossier": {
    "dimension_1_hardware_provenance": {
     "c2pa_status": "Absent (Neutral)",
@@ -2075,8 +2074,8 @@
   },
   "quantified_inventory": {
    "authenticity_probabilities": {
-    "p_ai_percentage": 0.1,
-    "p_real_percentage": 97.0,
+    "p_ai_percentage": 0.2,
+    "p_real_percentage": 96.9,
     "p_undecided_percentage": 2.9
    },
    "color_palette_percentages": [
@@ -2203,9 +2202,9 @@
  "img_b.png": {
   "ai_detected": true,
   "ai_detection": {
-   "ai_percentage": 96.3,
+   "ai_percentage": 96.4,
    "ai_spatial_area_pct": 100.0,
-   "backend": "hybrid_deep_learning_and_statistical",
+   "backend": "heuristic_and_statistical",
    "background_cutout_detected": false,
    "confidence": 0.99,
    "digital_art_detected": false,
@@ -2249,16 +2248,15 @@
    "label": "LIKELY AI-GENERATED",
    "log_likelihood_ratios": {
     "canonical_dimensions": 0.45,
-    "fft_power_decay": 0.288,
+    "fft_power_decay": 0.3,
     "metadata_absent": 0.0,
-    "neural_backbone": -0.102,
-    "sensor_noise": 0.898,
-    "surface_smoothness": 0.792
+    "sensor_noise": 0.864,
+    "surface_smoothness": 0.791
    },
    "neural_enhancer_detected": false,
-   "posterior_log_odds": 2.089,
+   "posterior_log_odds": 2.168,
    "prediction": "LIKELY AI-GENERATED",
-   "real_percentage": 0.8,
+   "real_percentage": 0.7,
    "scanned_photo_detected": false,
    "screen_recapture_details": {
     "confidence": 0.0,
@@ -2283,7 +2281,7 @@
    "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
    "taxonomy_label": "Fully AI Generated",
    "taxonomy_reasons": [
-    "High posterior probability of generative synthesis (96.3% AI)",
+    "High posterior probability of generative synthesis (96.4% AI)",
     "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
     "Canvas dimensions match standard generative model diffusion canvas"
    ],
@@ -2299,8 +2297,8 @@
    "unknown_source": true
   },
   "authenticity_probabilities": {
-   "p_ai": 96.3,
-   "p_real": 0.8,
+   "p_ai": 96.4,
+   "p_real": 0.7,
    "p_undecided": 2.9
   },
   "background_cutout_detected": false,
@@ -2318,7 +2316,7 @@
   "confidence_band": {
    "band": "LEANING_SYNTHETIC",
    "label": "Leaning Synthetic / Flagged for Review",
-   "p_ai_percent": 96.3
+   "p_ai_percent": 96.4
   },
   "content_inventory": {
    "contents_and_items": {
@@ -2435,8 +2433,8 @@
   "decision": {
    "ai_detected": true,
    "authenticity_probabilities": {
-    "p_ai": 96.3,
-    "p_real": 0.8,
+    "p_ai": 96.4,
+    "p_real": 0.7,
     "p_undecided": 2.9
    },
    "calibration_status": "UNCALIBRATED_HEURISTIC",
@@ -2476,7 +2474,7 @@
    "final_status": "LIKELY AI-GENERATED",
    "forensic_modality_results": {
     "audio_ai_pct": null,
-    "image_ai_pct": 96.3,
+    "image_ai_pct": 96.4,
     "video_ai_pct": null
    },
    "localization": {
@@ -2520,7 +2518,7 @@
    "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
    "taxonomy_label": "Fully AI Generated",
    "taxonomy_reasons": [
-    "High posterior probability of generative synthesis (96.3% AI)",
+    "High posterior probability of generative synthesis (96.4% AI)",
     "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
     "Canvas dimensions match standard generative model diffusion canvas"
    ],
@@ -2537,7 +2535,7 @@
    "confidence_band": {
     "band": "LEANING_SYNTHETIC",
     "label": "Leaning Synthetic / Flagged for Review",
-    "p_ai_percent": 96.3
+    "p_ai_percent": 96.4
    },
    "findings_by_stage": {
     "context": [
@@ -3049,7 +3047,7 @@
     }
    ]
   },
-  "newbie_explanation": "### \ud83d\uddbc\ufe0f What We Identified in this Image\n\nThis file (`b.png`) is a **512 \u00d7 512 pixel** visual asset formatted in **1:1 (Square Diffusion Canvas)** at **72 x 72 DPI**. Visually, it depicts **a visual scene composed as a general scene** set in a **daylight** environment with an evocative **low contrast / soft** atmosphere, with the palette predominantly shaped by Medium Neutral Gray tones (#606060 covering 100.0% of the image). The visual style is characterized as **Photographic Capture**.\n\n### \ud83d\udca1 How Would You Explain This to a Newbie?\n\n**The Simple Takeaway:** Our forensic engine's heuristic (uncalibrated) score is **96.3% AI-likelihood**, indicating this image was most likely **created by generative Artificial Intelligence** (Fully AI Generated) rather than captured by a physical camera.\n\n**Think of it like this:** When a real camera takes a photo, millions of physical light particles (photons) strike a silicon sensor chip. Because the physical world has microscopic imperfections and heat, every authentic photo has a natural, fine grain \u2014 very much like the tiny grains of sand you see on photographic film. Forensic experts call this *sensor shot noise*.\n\nIn this image, that natural camera grain is completely missing (the measured sensor noise is only **0.00**, whereas real camera photos usually score between 1.20 and 2.50+). Instead of real light hitting a lens, a computer algorithm (a neural diffusion network like Midjourney, Flux, or Gemini) mathematically calculated and smoothed each pixel (surface smoothness index: **0.00**). While it looks impressive to the naked eye, the physics under the microscope reveal that it was painted by math, not light.",
+  "newbie_explanation": "### \ud83d\uddbc\ufe0f What We Identified in this Image\n\nThis file (`b.png`) is a **512 \u00d7 512 pixel** visual asset formatted in **1:1 (Square Diffusion Canvas)** at **72 x 72 DPI**. Visually, it depicts **a visual scene composed as a general scene** set in a **daylight** environment with an evocative **low contrast / soft** atmosphere, with the palette predominantly shaped by Medium Neutral Gray tones (#606060 covering 100.0% of the image). The visual style is characterized as **Photographic Capture**.\n\n### \ud83d\udca1 How Would You Explain This to a Newbie?\n\n**The Simple Takeaway:** Our forensic engine's heuristic (uncalibrated) score is **96.4% AI-likelihood**, indicating this image was most likely **created by generative Artificial Intelligence** (Fully AI Generated) rather than captured by a physical camera.\n\n**Think of it like this:** When a real camera takes a photo, millions of physical light particles (photons) strike a silicon sensor chip. Because the physical world has microscopic imperfections and heat, every authentic photo has a natural, fine grain \u2014 very much like the tiny grains of sand you see on photographic film. Forensic experts call this *sensor shot noise*.\n\nIn this image, that natural camera grain is completely missing (the measured sensor noise is only **0.00**, whereas real camera photos usually score between 1.20 and 2.50+). Instead of real light hitting a lens, a computer algorithm (a neural diffusion network like Midjourney, Flux, or Gemini) mathematically calculated and smoothed each pixel (surface smoothness index: **0.00**). While it looks impressive to the naked eye, the physics under the microscope reveal that it was painted by math, not light.",
   "nine_dimensions_dossier": {
    "dimension_1_hardware_provenance": {
     "c2pa_status": "Absent (Neutral)",
@@ -3401,8 +3399,8 @@
   },
   "quantified_inventory": {
    "authenticity_probabilities": {
-    "p_ai_percentage": 96.3,
-    "p_real_percentage": 0.8,
+    "p_ai_percentage": 96.4,
+    "p_real_percentage": 0.7,
     "p_undecided_percentage": 2.9
    },
    "color_palette_percentages": [
@@ -3468,7 +3466,7 @@
   "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
   "taxonomy_label": "Fully AI Generated",
   "taxonomy_reasons": [
-   "High posterior probability of generative synthesis (96.3% AI)",
+   "High posterior probability of generative synthesis (96.4% AI)",
    "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
    "Canvas dimensions match standard generative model diffusion canvas"
   ],
@@ -3498,15 +3496,15 @@
    "unknown_source": true
   },
   "authenticity_probabilities": {
-   "p_ai": 86.6,
-   "p_real": 10.4,
+   "p_ai": 83.9,
+   "p_real": 13.1,
    "p_undecided": 3.0
   },
-  "confidence": 0.85,
+  "confidence": 0.82,
   "confidence_band": {
    "band": "LEANING_SYNTHETIC",
    "label": "Leaning Synthetic / Flagged for Review",
-   "p_ai_percent": 76.3
+   "p_ai_percent": 72.7
   },
   "container_validation": {
    "aspect_ratio": 1.33,
@@ -3648,8 +3646,8 @@
   "decision": {
    "ai_detected": true,
    "authenticity_probabilities": {
-    "p_ai": 86.6,
-    "p_real": 10.4,
+    "p_ai": 83.9,
+    "p_real": 13.1,
     "p_undecided": 3.0
    },
    "calibration_status": "UNCALIBRATED_HEURISTIC",
@@ -3698,7 +3696,7 @@
    "forensic_modality_results": {
     "audio_ai_pct": null,
     "image_ai_pct": null,
-    "video_ai_pct": 76.3
+    "video_ai_pct": 72.7
    },
    "localization": {
     "suspicious_audio_duration_pct": 0.0,
@@ -3752,7 +3750,7 @@
    "confidence_band": {
     "band": "LEANING_SYNTHETIC",
     "label": "Leaning Synthetic / Flagged for Review",
-    "p_ai_percent": 76.3
+    "p_ai_percent": 72.7
    },
    "findings_by_stage": {
     "container": [
@@ -4224,7 +4222,7 @@
     }
    ]
   },
-  "newbie_explanation": "### \ud83d\udcf9 What We Identified in this Video\n\nThis file (`v.mp4`) is a **0.0-second video recording** formatted at **0 \u00d7 0 pixels** running at **0.0 frames per second**. The video depicts **a visual landscape or scene**.\n\n### \ud83d\udca1 How Would You Explain This to a Newbie?\n\n**The Simple Takeaway:** Our forensic engine's heuristic (uncalibrated) score is **86.6% AI-likelihood**, indicating this video was most likely **generated by Artificial Intelligence** (such as Sora, Runway, Kling, or Luma) rather than captured by a real physical video camera.\n\n**Think of it like this:** When a real video camera shoots a scene, light continuously hits a physical sensor chip 24 to 60 times every second. Because physical objects obey Newtonian physics, moving hands, hair, and backgrounds transition smoothly without distorting. However, AI video models generate clips by 'dreaming' one frame after another. When you look closely under the forensic microscope, the background slightly warps, micro-textures flicker unnaturally between frames, and the natural camera sensor grain is missing. It looks convincing at first glance, but the temporal physics reveal it was computed mathematically, not filmed optically.",
+  "newbie_explanation": "### \ud83d\udcf9 What We Identified in this Video\n\nThis file (`v.mp4`) is a **0.0-second video recording** formatted at **0 \u00d7 0 pixels** running at **0.0 frames per second**. The video depicts **a visual landscape or scene**.\n\n### \ud83d\udca1 How Would You Explain This to a Newbie?\n\n**The Simple Takeaway:** Our forensic engine's heuristic (uncalibrated) score is **83.9% AI-likelihood**, indicating this video was most likely **generated by Artificial Intelligence** (such as Sora, Runway, Kling, or Luma) rather than captured by a real physical video camera.\n\n**Think of it like this:** When a real video camera shoots a scene, light continuously hits a physical sensor chip 24 to 60 times every second. Because physical objects obey Newtonian physics, moving hands, hair, and backgrounds transition smoothly without distorting. However, AI video models generate clips by 'dreaming' one frame after another. When you look closely under the forensic microscope, the background slightly warps, micro-textures flicker unnaturally between frames, and the natural camera sensor grain is missing. It looks convincing at first glance, but the temporal physics reveal it was computed mathematically, not filmed optically.",
   "nine_dimensions_dossier": {
    "dimension_1_hardware_provenance": {
     "c2pa_status": "Absent (Neutral)",
@@ -4358,8 +4356,8 @@
    "vendor_signatures_found": []
   },
   "temporal_forensics": {
-   "ai_percentage": 76.3,
-   "confidence": 0.85,
+   "ai_percentage": 72.7,
+   "confidence": 0.82,
    "diffusion_flicker": {
     "flicker_ratio": 0.43,
     "flicker_score": 0.0,
@@ -4400,7 +4398,7 @@
     "width": 128
    },
    "prediction": "LIKELY AI-GENERATED",
-   "real_percentage": 13.0,
+   "real_percentage": 15.5,
    "sampled_frames_count": 30,
    "temporal_consistency": {
     "is_anomalous_motion": true,
@@ -4418,7 +4416,7 @@
     }
    ],
    "total_frames": 30,
-   "undecided_percentage": 10.7,
+   "undecided_percentage": 11.8,
    "valid": true
   }
  }

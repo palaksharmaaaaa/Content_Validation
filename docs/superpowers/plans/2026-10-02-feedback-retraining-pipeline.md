@@ -119,10 +119,10 @@ class TestCorrectionsStore(unittest.TestCase):
         self.assertEqual(next_checkpoint_version(log_path), 1)
         self.assertEqual(read_cumulative_samples(log_path), 0)
 
-        append_checkpoint_log(log_path, version=1, date="2026-10-02", train_loss=0.3, val_acc=0.94, new_samples=203, cumulative_samples=203)
+        append_checkpoint_log(log_path, version=1, date="2026-10-02", train_loss=0.3, val_acc=0.94, new_samples=100, cumulative_samples=100)
         self.assertAlmostEqual(read_last_checkpoint_accuracy(log_path), 0.94)
         self.assertEqual(next_checkpoint_version(log_path), 2)
-        self.assertEqual(read_cumulative_samples(log_path), 203)
+        self.assertEqual(read_cumulative_samples(log_path), 100)
 
         append_checkpoint_log(log_path, version=2, date="2026-10-15", train_loss=0.2, val_acc=0.96, new_samples=18, cumulative_samples=221)
         self.assertAlmostEqual(read_last_checkpoint_accuracy(log_path), 0.96)

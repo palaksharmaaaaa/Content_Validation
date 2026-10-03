@@ -23,7 +23,6 @@ A multi-modal (image / video / audio) content-authenticity forensics engine with
 - [Train on your own media, in place](#train-on-your-own-media-in-place-no-copies-no-uploads)
 - [Data, models, and what's actually on disk vs. git](#data-models-and-whats-actually-on-disk-vs-git)
 - [What this project actually is (and isn't)](#what-this-project-actually-is-and-isnt)
-- [`scripts/` (local, gitignored, not part of the product)](#scripts-local-gitignored-not-part-of-the-product)
 
 ---
 
@@ -85,8 +84,6 @@ project-content-validation/
 ├── pytest.ini
 ├── .gitignore
 ├── GLOBAL_IMAGE_TAXONOMY_AND_FORENSIC_RESEARCH_REPORT.md   # Governing taxonomy/physics research doc
-├── image_detector_update_implementation_plan.md             # File-by-file upgrade plan (gitignored)
-└── scripts/                      # Personal local dev/eval scripts (gitignored, not part of the product)
 ```
 
 Each of `image_detector/`, `audio_detector/`, `video_detector/` follows the same internal shape (file names are intentionally mirrored across all three so the same mental model applies everywhere — see the per-workspace sections for the real behavioral differences hiding behind that symmetry):
@@ -114,7 +111,7 @@ Each of `image_detector/`, `audio_detector/`, `video_detector/` follows the same
 ├── trainer.py            # the actual PyTorch training harness (in-place samples, .npz feature banks)
 ├── models/backbone.py    # the neural network architecture definition
 ├── data/                 # calibration.json, feedback/memory.json, library.json (local media registry), .npz caches
-├── dataset/              # optional ai_generated/ + real/ folders for the legacy directory-based training path
+
 └── tests/test_*_detector.py
 ```
 
@@ -234,13 +231,13 @@ No raw dataset is stored in the repo; training reads your media in place via the
 
 ### What it can and can't actually distinguish
 
-The CNN checkpoint is a **binary** real-vs-ai_generated classifier (203 training images, both classes). Everything beyond that binary signal — edited/graphic-design, AI-enhanced/composite, every screenshot sub-state — is produced entirely by the hand-written decision tree in `scoring.py` operating on heuristic pixel/metadata signals, not by anything the network was trained to recognize. There is currently no training or test data in this repo for edited/composite/screenshot categories; `tests/test_image_detector.py`'s `TestImageDetectorRealSamples` class (added as part of this project's own code-review remediation) runs real end-to-end regression tests against the real/ai_generated dataset but explicitly documents that gap rather than papering over it.
+The optional CNN checkpoint (`models/ai_detector.pt`, not shipped) is a **binary** real-vs-ai_generated classifier once you train one. Everything beyond that binary signal — edited/graphic-design, AI-enhanced/composite, every screenshot sub-state — is produced entirely by the hand-written decision tree in `scoring.py` operating on heuristic pixel/metadata signals, not by anything a network was trained to recognize. With no checkpoint present the detector runs in pure statistical/heuristic mode (the default for a fresh project).
 
 ---
 
 ## `audio_detector/` workspace
 
-**No training data and no trained checkpoint exist for this modality** (`dataset/` is present but empty; `models/` holds only the architecture file). The neural-inference branch in `detector.py` is therefore dead code in this repo's current state — every analysis runs in pure statistical/heuristic mode.
+**No training data and no trained checkpoint ship for this modality.** The neural-inference branch in `detector.py` stays inactive until you train one, so every analysis runs in pure statistical/heuristic mode.
 
 ### File-by-file
 
@@ -264,7 +261,7 @@ The CNN checkpoint is a **binary** real-vs-ai_generated classifier (203 training
 
 ## `video_detector/` workspace
 
-Also **no trained checkpoint and an empty `dataset/`**, same as audio — the neural temporal-transition model never loads in this repo's current state.
+Also **no trained checkpoint ships**, same as audio — the neural temporal-transition model does not load until you train one.
 
 ### File-by-file
 
@@ -334,7 +331,7 @@ pytest.ini testpaths:
 
 **Golden regression tests.** Every refactored decision path is pinned by a seeded golden under `tests/data/` (decision fusion, image `predict`, taxonomy fuzz, attribution, dossiers, narratives, metadata, faces, screenshots, digital art, audio/video analysis, headless pipelines, and the rendered Streamlit element trees). Goldens that depend on learned state (`*_calibration.json`, the checkpoint) skip themselves with an explanation if that state changed (e.g. after feedback/retraining). To change behaviour on purpose, regenerate the affected golden and review the diff.
 
-**Honest coverage gap:** only `image_detector` has real-sample end-to-end tests (against the checked-in `dataset/` images) — `audio_detector` and `video_detector` have no real sample media checked into this repo, so their test suites exercise the code paths with synthetic sine-wave/noise fixtures rather than validating actual detection accuracy against real recordings. This is a known, documented limitation, not an oversight hidden from users of this README.
+**Honest coverage gap:** no real media is checked into this repo for any modality, so every suite exercises the code paths with synthetic fixtures (tones, noise, drawn shapes) rather than validating actual detection accuracy against real content. This is a known, documented limitation.
 
 `manual_pipeline_smoke.py` at the repository root is a smoke test but is **not** listed in `pytest.ini`'s `testpaths`, so a plain `pytest` invocation will not run it — invoke it directly with `python manual_pipeline_smoke.py` if you need it.
 
@@ -383,11 +380,10 @@ How it behaves:
 
 - `image_detector/models/ai_detector.pt` (~42.8MB trained ResNet18 checkpoint) is loaded by `ImageAIDetector.load()`. `.gitattributes` routes `*.pt` through **Git LFS** and `.gitignore` un-ignores `**/models/*.pt`, so once committed everyone who clones (after `git lfs install`) gets identical weights. It has **not been committed yet** — until it is, a fresh clone has no checkpoint and the image detector falls back to heuristic/statistical mode.
 - `audio_detector/models/` and `video_detector/models/` contain only `backbone.py`/`__init__.py` — no checkpoint exists for either modality in this repo at all, trained or otherwise.
-- `image_detector/dataset/`, `audio_detector/dataset/`, `video_detector/dataset/` are empty; personal media is registered in place in each package's local `data/library.json` (gitignored) instead of being copied here.
+- There are no checked-in datasets. Your own media is registered in place in each package's local `data/library.json` (gitignored) instead of being copied into the repo.
 - Each package's `data/` directory holds its own `*_calibration.json` (feedback-adjusted scoring weights), `*_feedback.json`/`*_memory.json` (raw feedback records), and `.npz` feature archives — all gitignored.
 - Transient session uploads are directed to OS temporary swap space (`tempfile.gettempdir()/omni_forensics_ephemeral_cache`) rather than the repository root.
-- Total repository disk size (excluding `.venv`) is kept lean at approximately **52 MB** (primarily the 42.8 MB PyTorch model checkpoint and git history).
-- `.gitignore` excludes all media formats (`*.jpg`, `*.jpeg`, `*.png`, `*.mp4`, `*.wav`, `*.mp3`, etc.) project-wide, the entire `scripts/` directory, and local implementation scratch files.
+- `.gitignore` excludes all media formats (`*.jpg`, `*.jpeg`, `*.png`, `*.mp4`, `*.wav`, `*.mp3`, etc.) project-wide and local scratch files.
 
 ---
 
@@ -397,13 +393,9 @@ Read this before trusting a verdict from this tool:
 
 - **The AI-vs-real distinction is a hand-tuned statistical/heuristic scoring system**, not a trained multi-class model, for everything except image's binary real/ai_generated backbone. Every other taxonomy distinction (edited, composite, screenshot sub-states, generator attribution) is produced by threshold logic over pixel/metadata signals written by hand — not learned from labeled examples of those categories, because no such labeled data exists anywhere in this repo.
 - **"Self-improving" / "feedback-driven learning" does not mean model training.** Every package's `learner.py` module docstring says this explicitly: `record_feedback()` only nudges a handful of scalar scoring-weight constants by small fixed deltas per feedback event, persisted to a JSON calibration file. It never touches a neural network's weights and never retrains anything. The actual PyTorch training code lives separately in each package's `trainer.py` and must be run manually.
-- **Only `image_detector` has a trained neural checkpoint on disk in this repo, and it's a binary classifier** (real vs. ai_generated, 203 training images). `audio_detector` and `video_detector` have no checkpoint at all — every "neural inference" code path in their `detector.py` files is unreachable until someone runs `trainer.py` against real labeled data and the resulting checkpoint is placed under `models/`.
+- **This project ships blank: no trained checkpoint, no calibration history, no feedback memory and no datasets for any modality.** Every analysis runs in heuristic mode until you register labeled media and run a retrain (`trainer.py` / the Retrain panel). Calibration starts from default priors and only changes when you submit feedback.
 - **Generator-attribution lists are honestly marked for calibration confidence.** Each package's `attribution.py` module docstring states exactly which generator entries have real spectral/vendor-signature calibration versus which are metadata-signature-match-only placeholders for 2025/2026-era tools (added without real sample data to calibrate against).
 - **Sensitivity defaults to `balanced`** (a neutral 50/50 prior before any evidence is evaluated) rather than `high`, specifically because a `high`/`aggressive` prior biases ambiguous low-signal real images toward a false "AI" verdict by design. You can still choose `high`/`aggressive` explicitly in the sidebar if you want more aggressive scrutiny at the cost of more false positives.
 - **`video_detector`'s cross-modal consistency check requires an externally-supplied audio result** — `video_detector` never calls `audio_detector` itself; whatever caller wants cross-modal checking has to run both pipelines and pass the audio result into `VideoForensicPipeline.analyze(audio_forensics=...)`.
 
 ---
-
-## `scripts/` (local, gitignored, not part of the product)
-
-A directory of personal diagnostic/evaluation scripts the project author used during development — hardcoded personal file paths, not part of the shipped application, and excluded from git via `.gitignore`. They exist on the local disk this README was written from but will not be present in a fresh clone. They include dataset-folder accuracy spot-checkers (`analyze_android_dataset.py`, `compare_profiles.py`, `diagnose_camera_pic.py`, `test_all_domains.py`, `test_android_photos.py`, `test_sony_camera.py`, `evaluate_family_images.py`, `evaluate_wedding_ai.py`) and manual training-data ingestion/fine-tuning scripts (`train_and_learn_wedding.py`, `train_on_android_dataset.py`, `train_on_camera_dataset.py`). All of them import directly from `image_detector` and `ui.batch_ui`, exercising the same production code paths as `app.py` itself, just headlessly against personal local datasets outside the repository.

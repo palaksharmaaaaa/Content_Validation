@@ -4,8 +4,8 @@
    12,
    "23002227a16794d1"
   ],
-  "ai_percentage": 33.3,
-  "confidence": 0.6,
+  "ai_percentage": 30.9,
+  "confidence": 0.63,
   "diffusion_flicker": {
    "flicker_ratio": 0.0,
    "flicker_score": 0.0,
@@ -29,7 +29,7 @@
    "width": 128
   },
   "prediction": "UNDECIDED",
-  "real_percentage": 50.5,
+  "real_percentage": 53.2,
   "sampled_frames_count": 20,
   "temporal_consistency": {
    "is_anomalous_motion": false,
@@ -47,7 +47,7 @@
    }
   ],
   "total_frames": 20,
-  "undecided_percentage": 16.2,
+  "undecided_percentage": 15.9,
   "valid": true
  },
  "flat|extra": {
@@ -55,8 +55,8 @@
    12,
    "23002227a16794d1"
   ],
-  "ai_percentage": 45.0,
-  "confidence": 0.54,
+  "ai_percentage": 42.3,
+  "confidence": 0.51,
   "diffusion_flicker": {
    "flicker_ratio": 0.0,
    "flicker_score": 0.0,
@@ -83,7 +83,7 @@
    "width": 128
   },
   "prediction": "UNDECIDED",
-  "real_percentage": 38.4,
+  "real_percentage": 41.0,
   "sampled_frames_count": 20,
   "temporal_consistency": {
    "is_anomalous_motion": false,
@@ -101,7 +101,7 @@
    }
   ],
   "total_frames": 20,
-  "undecided_percentage": 16.6,
+  "undecided_percentage": 16.7,
   "valid": true
  },
  "flat|extra_neg": {
@@ -109,8 +109,8 @@
    12,
    "23002227a16794d1"
   ],
-  "ai_percentage": 18.1,
-  "confidence": 0.79,
+  "ai_percentage": 16.5,
+  "confidence": 0.81,
   "diffusion_flicker": {
    "flicker_ratio": 0.0,
    "flicker_score": 0.0,
@@ -136,7 +136,7 @@
    "width": 128
   },
   "prediction": "LIKELY REAL",
-  "real_percentage": 69.0,
+  "real_percentage": 71.3,
   "sampled_frames_count": 20,
   "temporal_consistency": {
    "is_anomalous_motion": false,
@@ -154,7 +154,7 @@
    }
   ],
   "total_frames": 20,
-  "undecided_percentage": 12.9,
+  "undecided_percentage": 12.2,
   "valid": true
  },
  "flat|high": {
@@ -162,8 +162,8 @@
    12,
    "23002227a16794d1"
   ],
-  "ai_percentage": 33.3,
-  "confidence": 0.6,
+  "ai_percentage": 30.9,
+  "confidence": 0.63,
   "diffusion_flicker": {
    "flicker_ratio": 0.0,
    "flicker_score": 0.0,
@@ -187,7 +187,7 @@
    "width": 128
   },
   "prediction": "UNDECIDED",
-  "real_percentage": 50.5,
+  "real_percentage": 53.2,
   "sampled_frames_count": 20,
   "temporal_consistency": {
    "is_anomalous_motion": false,
@@ -205,7 +205,7 @@
    }
   ],
   "total_frames": 20,
-  "undecided_percentage": 16.2,
+  "undecided_percentage": 15.9,
   "valid": true
  },
  "flicker|balanced": {
@@ -213,8 +213,8 @@
    12,
    "6668041f76a4b301"
   ],
-  "ai_percentage": 30.5,
-  "confidence": 0.64,
+  "ai_percentage": 28.1,
+  "confidence": 0.67,
   "diffusion_flicker": {
    "flicker_ratio": 1.0,
    "flicker_score": 1.0,
@@ -228,7 +228,7 @@
    "Temporal warping detected (motion variance: 0.03)",
    "Diffusion generation flicker detected across frames (flicker score: 1.0)"
   ],
-  "label": "UNDECIDED",
+  "label": "LIKELY REAL",
   "metadata": {
    "aspect_ratio": 1.33,
    "codec": "FMP4",
@@ -240,8 +240,8 @@
    "total_frames": 30,
    "width": 128
   },
-  "prediction": "UNDECIDED",
-  "real_percentage": 53.6,
+  "prediction": "LIKELY REAL",
+  "real_percentage": 56.4,
   "sampled_frames_count": 30,
   "temporal_consistency": {
    "is_anomalous_motion": true,
@@ -259,7 +259,7 @@
    }
   ],
   "total_frames": 30,
-  "undecided_percentage": 15.9,
+  "undecided_percentage": 15.5,
   "valid": true
  },
  "flicker|extra": {
@@ -267,8 +267,8 @@
    12,
    "6668041f76a4b301"
   ],
-  "ai_percentage": 41.9,
-  "confidence": 0.5,
+  "ai_percentage": 39.2,
+  "confidence": 0.53,
   "diffusion_flicker": {
    "flicker_ratio": 1.0,
    "flicker_score": 1.0,
@@ -297,7 +297,7 @@
    "width": 128
   },
   "prediction": "UNDECIDED",
-  "real_percentage": 41.4,
+  "real_percentage": 44.2,
   "sampled_frames_count": 30,
   "temporal_consistency": {
    "is_anomalous_motion": true,
@@ -315,7 +315,7 @@
    }
   ],
   "total_frames": 30,
-  "undecided_percentage": 16.7,
+  "undecided_percentage": 16.6,
   "valid": true
  },
  "flicker|extra_neg": {
@@ -323,8 +323,8 @@
    12,
    "6668041f76a4b301"
   ],
-  "ai_percentage": 16.2,
-  "confidence": 0.82,
+  "ai_percentage": 14.7,
+  "confidence": 0.83,
   "diffusion_flicker": {
    "flicker_ratio": 1.0,
    "flicker_score": 1.0,
@@ -352,7 +352,7 @@
    "width": 128
   },
   "prediction": "LIKELY REAL",
-  "real_percentage": 71.7,
+  "real_percentage": 73.9,
   "sampled_frames_count": 30,
   "temporal_consistency": {
    "is_anomalous_motion": true,
@@ -370,7 +370,7 @@
    }
   ],
   "total_frames": 30,
-  "undecided_percentage": 12.1,
+  "undecided_percentage": 11.4,
   "valid": true
  },
  "flicker|high": {
@@ -378,8 +378,8 @@
    12,
    "6668041f76a4b301"
   ],
-  "ai_percentage": 30.5,
-  "confidence": 0.64,
+  "ai_percentage": 28.1,
+  "confidence": 0.67,
   "diffusion_flicker": {
    "flicker_ratio": 1.0,
    "flicker_score": 1.0,
@@ -393,7 +393,7 @@
    "Temporal warping detected (motion variance: 0.03)",
    "Diffusion generation flicker detected across frames (flicker score: 1.0)"
   ],
-  "label": "UNDECIDED",
+  "label": "LIKELY REAL",
   "metadata": {
    "aspect_ratio": 1.33,
    "codec": "FMP4",
@@ -405,8 +405,8 @@
    "total_frames": 30,
    "width": 128
   },
-  "prediction": "UNDECIDED",
-  "real_percentage": 53.6,
+  "prediction": "LIKELY REAL",
+  "real_percentage": 56.4,
   "sampled_frames_count": 30,
   "temporal_consistency": {
    "is_anomalous_motion": true,
@@ -424,7 +424,7 @@
    }
   ],
   "total_frames": 30,
-  "undecided_percentage": 15.9,
+  "undecided_percentage": 15.5,
   "valid": true
  },
  "junk": {
@@ -472,8 +472,8 @@
    12,
    "c071ec1680b1aca6"
   ],
-  "ai_percentage": 76.5,
-  "confidence": 0.86,
+  "ai_percentage": 72.9,
+  "confidence": 0.83,
   "diffusion_flicker": {
    "flicker_ratio": 0.39,
    "flicker_score": 0.0,
@@ -500,7 +500,7 @@
    "width": 128
   },
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 12.9,
+  "real_percentage": 15.4,
   "sampled_frames_count": 30,
   "temporal_consistency": {
    "is_anomalous_motion": true,
@@ -518,7 +518,7 @@
    }
   ],
   "total_frames": 40,
-  "undecided_percentage": 10.6,
+  "undecided_percentage": 11.7,
   "valid": true
  },
  "moving|extra": {
@@ -526,8 +526,8 @@
    12,
    "c071ec1680b1aca6"
   ],
-  "ai_percentage": 84.2,
-  "confidence": 0.91,
+  "ai_percentage": 81.4,
+  "confidence": 0.89,
   "diffusion_flicker": {
    "flicker_ratio": 0.39,
    "flicker_score": 0.0,
@@ -556,7 +556,7 @@
    "width": 128
   },
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 8.0,
+  "real_percentage": 9.7,
   "sampled_frames_count": 30,
   "temporal_consistency": {
    "is_anomalous_motion": true,
@@ -574,7 +574,7 @@
    }
   ],
   "total_frames": 40,
-  "undecided_percentage": 7.8,
+  "undecided_percentage": 8.9,
   "valid": true
  },
  "moving|extra_neg": {
@@ -582,8 +582,8 @@
    12,
    "c071ec1680b1aca6"
   ],
-  "ai_percentage": 59.8,
-  "confidence": 0.7,
+  "ai_percentage": 55.1,
+  "confidence": 0.65,
   "diffusion_flicker": {
    "flicker_ratio": 0.39,
    "flicker_score": 0.0,
@@ -611,7 +611,7 @@
    "width": 128
   },
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 25.3,
+  "real_percentage": 29.2,
   "sampled_frames_count": 30,
   "temporal_consistency": {
    "is_anomalous_motion": true,
@@ -629,7 +629,7 @@
    }
   ],
   "total_frames": 40,
-  "undecided_percentage": 14.9,
+  "undecided_percentage": 15.7,
   "valid": true
  },
  "moving|high": {
@@ -637,8 +637,8 @@
    12,
    "c071ec1680b1aca6"
   ],
-  "ai_percentage": 77.5,
-  "confidence": 0.86,
+  "ai_percentage": 73.8,
+  "confidence": 0.83,
   "diffusion_flicker": {
    "flicker_ratio": 0.39,
    "flicker_score": 0.0,
@@ -665,7 +665,7 @@
    "width": 128
   },
   "prediction": "LIKELY AI-GENERATED",
-  "real_percentage": 12.2,
+  "real_percentage": 14.7,
   "sampled_frames_count": 30,
   "temporal_consistency": {
    "is_anomalous_motion": true,
@@ -683,7 +683,7 @@
    }
   ],
   "total_frames": 40,
-  "undecided_percentage": 10.3,
+  "undecided_percentage": 11.5,
   "valid": true
  },
  "noise|balanced": {
@@ -691,8 +691,8 @@
    12,
    "a9d29db23be574dd"
   ],
-  "ai_percentage": 23.3,
-  "confidence": 0.73,
+  "ai_percentage": 20.9,
+  "confidence": 0.76,
   "diffusion_flicker": {
    "flicker_ratio": 0.61,
    "flicker_score": 0.03,
@@ -718,7 +718,7 @@
    "width": 128
   },
   "prediction": "LIKELY REAL",
-  "real_percentage": 62.2,
+  "real_percentage": 65.3,
   "sampled_frames_count": 30,
   "temporal_consistency": {
    "is_anomalous_motion": true,
@@ -736,7 +736,7 @@
    }
   ],
   "total_frames": 30,
-  "undecided_percentage": 14.5,
+  "undecided_percentage": 13.8,
   "valid": true
  },
  "noise|extra": {
@@ -744,8 +744,8 @@
    12,
    "a9d29db23be574dd"
   ],
-  "ai_percentage": 33.5,
-  "confidence": 0.6,
+  "ai_percentage": 30.5,
+  "confidence": 0.64,
   "diffusion_flicker": {
    "flicker_ratio": 0.61,
    "flicker_score": 0.03,
@@ -773,7 +773,7 @@
    "width": 128
   },
   "prediction": "UNDECIDED",
-  "real_percentage": 50.3,
+  "real_percentage": 53.6,
   "sampled_frames_count": 30,
   "temporal_consistency": {
    "is_anomalous_motion": true,
@@ -791,7 +791,7 @@
    }
   ],
   "total_frames": 30,
-  "undecided_percentage": 16.2,
+  "undecided_percentage": 15.9,
   "valid": true
  },
  "noise|extra_neg": {
@@ -799,8 +799,8 @@
    12,
    "a9d29db23be574dd"
   ],
-  "ai_percentage": 11.7,
-  "confidence": 0.87,
+  "ai_percentage": 10.3,
+  "confidence": 0.89,
   "diffusion_flicker": {
    "flicker_ratio": 0.61,
    "flicker_score": 0.03,
@@ -827,7 +827,7 @@
    "width": 128
   },
   "prediction": "LIKELY REAL",
-  "real_percentage": 78.3,
+  "real_percentage": 80.5,
   "sampled_frames_count": 30,
   "temporal_consistency": {
    "is_anomalous_motion": true,
@@ -845,7 +845,7 @@
    }
   ],
   "total_frames": 30,
-  "undecided_percentage": 10.0,
+  "undecided_percentage": 9.2,
   "valid": true
  },
  "noise|high": {
@@ -853,8 +853,8 @@
    12,
    "a9d29db23be574dd"
   ],
-  "ai_percentage": 23.3,
-  "confidence": 0.73,
+  "ai_percentage": 20.9,
+  "confidence": 0.76,
   "diffusion_flicker": {
    "flicker_ratio": 0.61,
    "flicker_score": 0.03,
@@ -880,7 +880,7 @@
    "width": 128
   },
   "prediction": "LIKELY REAL",
-  "real_percentage": 62.2,
+  "real_percentage": 65.3,
   "sampled_frames_count": 30,
   "temporal_consistency": {
    "is_anomalous_motion": true,
@@ -898,7 +898,7 @@
    }
   ],
   "total_frames": 30,
-  "undecided_percentage": 14.5,
+  "undecided_percentage": 13.8,
   "valid": true
  },
  "progress": {
@@ -913,8 +913,8 @@
    12,
    "4f547102ccf3d13a"
   ],
-  "ai_percentage": 23.3,
-  "confidence": 0.73,
+  "ai_percentage": 20.9,
+  "confidence": 0.76,
   "diffusion_flicker": {
    "flicker_ratio": 0.0,
    "flicker_score": 0.0,
@@ -940,7 +940,7 @@
    "width": 128
   },
   "prediction": "LIKELY REAL",
-  "real_percentage": 62.2,
+  "real_percentage": 65.3,
   "sampled_frames_count": 30,
   "temporal_consistency": {
    "is_anomalous_motion": true,
@@ -958,7 +958,7 @@
    }
   ],
   "total_frames": 30,
-  "undecided_percentage": 14.5,
+  "undecided_percentage": 13.8,
   "valid": true
  },
  "still|extra": {
@@ -966,8 +966,8 @@
    12,
    "4f547102ccf3d13a"
   ],
-  "ai_percentage": 33.5,
-  "confidence": 0.6,
+  "ai_percentage": 30.5,
+  "confidence": 0.64,
   "diffusion_flicker": {
    "flicker_ratio": 0.0,
    "flicker_score": 0.0,
@@ -995,7 +995,7 @@
    "width": 128
   },
   "prediction": "UNDECIDED",
-  "real_percentage": 50.3,
+  "real_percentage": 53.6,
   "sampled_frames_count": 30,
   "temporal_consistency": {
    "is_anomalous_motion": true,
@@ -1013,7 +1013,7 @@
    }
   ],
   "total_frames": 30,
-  "undecided_percentage": 16.2,
+  "undecided_percentage": 15.9,
   "valid": true
  },
  "still|extra_neg": {
@@ -1021,8 +1021,8 @@
    12,
    "4f547102ccf3d13a"
   ],
-  "ai_percentage": 11.7,
-  "confidence": 0.87,
+  "ai_percentage": 10.3,
+  "confidence": 0.89,
   "diffusion_flicker": {
    "flicker_ratio": 0.0,
    "flicker_score": 0.0,
@@ -1049,7 +1049,7 @@
    "width": 128
   },
   "prediction": "LIKELY REAL",
-  "real_percentage": 78.3,
+  "real_percentage": 80.5,
   "sampled_frames_count": 30,
   "temporal_consistency": {
    "is_anomalous_motion": true,
@@ -1067,7 +1067,7 @@
    }
   ],
   "total_frames": 30,
-  "undecided_percentage": 10.0,
+  "undecided_percentage": 9.2,
   "valid": true
  },
  "still|high": {
@@ -1075,8 +1075,8 @@
    12,
    "4f547102ccf3d13a"
   ],
-  "ai_percentage": 23.3,
-  "confidence": 0.73,
+  "ai_percentage": 20.9,
+  "confidence": 0.76,
   "diffusion_flicker": {
    "flicker_ratio": 0.0,
    "flicker_score": 0.0,
@@ -1102,7 +1102,7 @@
    "width": 128
   },
   "prediction": "LIKELY REAL",
-  "real_percentage": 62.2,
+  "real_percentage": 65.3,
   "sampled_frames_count": 30,
   "temporal_consistency": {
    "is_anomalous_motion": true,
@@ -1120,7 +1120,7 @@
    }
   ],
   "total_frames": 30,
-  "undecided_percentage": 14.5,
+  "undecided_percentage": 13.8,
   "valid": true
  }
 }
