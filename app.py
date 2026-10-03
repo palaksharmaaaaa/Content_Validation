@@ -5,6 +5,10 @@ import re
 from PIL import Image, ImageFile
 import streamlit as st
 
+from core.logging_filters import install_benign_reset_filter
+
+install_benign_reset_filter()  # hides the harmless Windows 'connection forcibly closed' asyncio traceback
+
 # Enforce strict parsing and decompression bomb ceiling
 from core.security import SAFE_MAX_IMAGE_PIXELS
 Image.MAX_IMAGE_PIXELS = SAFE_MAX_IMAGE_PIXELS
