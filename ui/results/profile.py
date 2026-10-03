@@ -215,6 +215,7 @@ def render_pre_analysis_specifications(
 
 
 def render_video_stream_specs(profile_data: Dict[str, Any]) -> None:
+    """Show the video stream profile (codec, resolution, frame rate, duration)."""
     st.markdown("#### Stream profile")
     st.caption("Low-level container headers, stream geometry, frame rates, codecs, and cryptographic hashes extracted before running detection.")
     geom = profile_data.get("geometry", {})
@@ -240,6 +241,7 @@ def render_video_stream_specs(profile_data: Dict[str, Any]) -> None:
 
 
 def render_audio_signal_specs(item: Dict[str, Any], profile_data: Dict[str, Any]) -> None:
+    """Show the audio signal profile (format, sample rate, levels, dynamics)."""
     st.markdown("#### Signal profile")
     st.caption("Low-level container headers, sampling rates, bit depths, dynamic ranges, and cryptographic hashes extracted before running detection.")
     sr_val = item.get("sr") or profile_data.get("sample_rate", 44100)

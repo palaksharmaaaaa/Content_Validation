@@ -16,6 +16,7 @@ PROVENANCE_RULE = (
 
 
 def build_c2pa_block(present: bool, manifests_found: Iterable[str], ai_declaration: bool = False) -> Dict[str, Any]:
+    """The single C2PA block shape shared by all modalities. Reports marker presence only; never 'verified'."""
     manifests = list(manifests_found)
     is_signed = present and any(m in ("c2pa.claim", "c2pa.signature", "c2pa.assertion") for m in manifests)
     if not present:
@@ -49,6 +50,7 @@ def build_exif_block(
     raw_tags: Optional[Dict[str, Any]] = None,
     has_exif: Optional[bool] = None,
 ) -> Dict[str, Any]:
+    """The single EXIF/camera block shape shared by all modalities (unauthenticated metadata)."""
     return {
         "has_exif": bool(has_exif if has_exif is not None else (camera_make or camera_model or software or raw_tags)),
         "camera_make": camera_make or None,

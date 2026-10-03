@@ -30,6 +30,7 @@ def _scorer(modality: str) -> Callable[[Path], float]:
 
 
 def collect_pairs(modality: str, split: str, limit: int, scorer: Callable[[Path], float]) -> List[Tuple[str, float]]:
+    """Score the library's files and return (true label, AI percentage) pairs; unreadable files are skipped with a message."""
     lib = library_for(modality)
     samples = lib.samples(split=None if split == "all" else split)
     pairs: List[Tuple[str, float]] = []
@@ -42,6 +43,7 @@ def collect_pairs(modality: str, split: str, limit: int, scorer: Callable[[Path]
 
 
 def main(argv=None) -> Dict:
+    """Entry point: ``python -m services.calibration_cli --modality image|audio|video``."""
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
     ap.add_argument("--modality", choices=("image", "audio", "video"), required=True)
     ap.add_argument("--split", choices=("val", "train", "all"), default="val")

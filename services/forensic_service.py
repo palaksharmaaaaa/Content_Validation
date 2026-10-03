@@ -81,6 +81,7 @@ class ForensicService:
     # -------------------------------------------------------------------------
     @property
     def image_detector(self) -> ImageAIDetector:
+        """The image detector (built on first use)."""
         with self._lock_for("image_detector"):
             if self._image_detector is None:
                 self._image_detector = ImageAIDetector(checkpoint_path=self.checkpoint_path)
@@ -89,6 +90,7 @@ class ForensicService:
 
     @property
     def image_pipeline(self) -> ImageForensicPipeline:
+        """The image pipeline (built on first use)."""
         with self._lock_for("image_pipeline"):
             if self._image_pipeline is None:
                 self._image_pipeline = ImageForensicPipeline(
@@ -100,6 +102,7 @@ class ForensicService:
 
     @property
     def content_analyzer(self) -> ImageContentAnalyzer:
+        """The image content analyser (built on first use)."""
         with self._lock_for("content_analyzer"):
             if self._content_analyzer is None:
                 self._content_analyzer = ImageContentAnalyzer()
@@ -107,6 +110,7 @@ class ForensicService:
 
     @property
     def attribution_engine(self) -> ImageModelAttributionEngine:
+        """The image attribution engine (built on first use)."""
         with self._lock_for("attribution_engine"):
             if self._attribution_engine is None:
                 self._attribution_engine = ImageModelAttributionEngine()
@@ -114,6 +118,7 @@ class ForensicService:
 
     @property
     def audio_content_analyzer(self) -> AudioContentAnalyzer:
+        """The audio content analyser (built on first use)."""
         with self._lock_for("audio_content_analyzer"):
             if self._audio_content_analyzer is None:
                 self._audio_content_analyzer = AudioContentAnalyzer()
@@ -121,6 +126,7 @@ class ForensicService:
 
     @property
     def audio_attribution_engine(self) -> AudioModelAttributionEngine:
+        """The audio attribution engine (built on first use)."""
         with self._lock_for("audio_attribution_engine"):
             if self._audio_attribution_engine is None:
                 self._audio_attribution_engine = AudioModelAttributionEngine()
@@ -128,6 +134,7 @@ class ForensicService:
 
     @property
     def video_detector(self) -> VideoAIDetector:
+        """The video detector (built on first use)."""
         with self._lock_for("video_detector"):
             if self._video_detector is None:
                 self._video_detector = VideoAIDetector(frame_detector=self.image_detector)
@@ -136,6 +143,7 @@ class ForensicService:
 
     @property
     def audio_detector(self) -> AudioAIDetector:
+        """The audio detector (built on first use)."""
         with self._lock_for("audio_detector"):
             if self._audio_detector is None:
                 self._audio_detector = AudioAIDetector()
@@ -144,6 +152,7 @@ class ForensicService:
 
     @property
     def face_detector(self) -> FaceDeepfakeDetector:
+        """The face-risk heuristic shared by image and video (built on first use)."""
         with self._lock_for("face_detector"):
             if self._face_detector is None:
                 self._face_detector = FaceDeepfakeDetector()
@@ -151,6 +160,7 @@ class ForensicService:
 
     @property
     def image_improver(self) -> ImageSelfImprover:
+        """The image feedback learner (built on first use)."""
         with self._lock_for("image_improver"):
             if self._image_improver is None:
                 self._image_improver = ImageSelfImprover()
@@ -158,6 +168,7 @@ class ForensicService:
 
     @property
     def audio_improver(self) -> AudioSelfImprover:
+        """The audio feedback learner (built on first use)."""
         with self._lock_for("audio_improver"):
             if self._audio_improver is None:
                 self._audio_improver = AudioSelfImprover()
@@ -165,6 +176,7 @@ class ForensicService:
 
     @property
     def video_pipeline(self) -> VideoForensicPipeline:
+        """The video pipeline (built on first use)."""
         with self._lock_for("video_pipeline"):
             if self._video_pipeline is None:
                 self._video_pipeline = VideoForensicPipeline(
@@ -176,6 +188,7 @@ class ForensicService:
 
     @property
     def audio_pipeline(self) -> AudioForensicPipeline:
+        """The audio pipeline (built on first use)."""
         with self._lock_for("audio_pipeline"):
             if self._audio_pipeline is None:
                 self._audio_pipeline = AudioForensicPipeline(
@@ -185,6 +198,7 @@ class ForensicService:
 
     @property
     def video_improver(self) -> VideoSelfImprover:
+        """The video feedback learner (built on first use)."""
         with self._lock_for("video_improver"):
             if self._video_improver is None:
                 self._video_improver = VideoSelfImprover()

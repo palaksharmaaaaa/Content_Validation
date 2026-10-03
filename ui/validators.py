@@ -83,10 +83,12 @@ PLATFORM_DOMAINS = {
 
 
 def get_file_extension(filename: str | Path) -> str:
+    """Lower-case extension including the dot."""
     return Path(filename).suffix.lower()
 
 
 def get_file_size_mb(file_path: str | Path) -> float:
+    """File size in megabytes."""
     try:
         p = Path(file_path)
         if not p.is_file():
@@ -98,6 +100,7 @@ def get_file_size_mb(file_path: str | Path) -> float:
 
 
 def detect_media_type(file_path: str | Path) -> str:
+    """'image', 'video' or 'audio' from the extension, or None."""
     extension = get_file_extension(file_path)
     if extension in SUPPORTED_IMAGE_EXTENSIONS:
         return "image"
@@ -109,6 +112,7 @@ def detect_media_type(file_path: str | Path) -> str:
 
 
 def validate_image_file(file_path: str | Path) -> Dict[str, Any]:
+    """Check an image file with the image validator."""
     try:
         val_res = ImageValidator(max_file_size_mb=MAX_FILE_SIZE_MB).validate(file_path)
         return {
@@ -129,6 +133,7 @@ def validate_image_file(file_path: str | Path) -> Dict[str, Any]:
 
 
 def validate_video_file(file_path: str | Path) -> Dict[str, Any]:
+    """Check a video file with the video validator."""
     try:
         val_res = VideoValidator(max_file_size_mb=MAX_FILE_SIZE_MB).validate(file_path)
         return {
@@ -149,6 +154,7 @@ def validate_video_file(file_path: str | Path) -> Dict[str, Any]:
 
 
 def validate_audio_file(file_path: str | Path) -> Dict[str, Any]:
+    """Check an audio file with the audio validator."""
     try:
         val_res = AudioValidator(max_size_mb=MAX_FILE_SIZE_MB).validate(file_path)
         return {
@@ -169,6 +175,7 @@ def validate_audio_file(file_path: str | Path) -> Dict[str, Any]:
 
 
 def validate_file(file_path: str | Path) -> Dict[str, Any]:
+    """Detect the media type and validate with the matching package validator."""
     media_type = detect_media_type(file_path)
     if media_type == "image":
         result = validate_image_file(file_path)
@@ -204,6 +211,7 @@ def analyze_provenance(file_path: str | Path) -> Dict[str, Any]:
 
 
 def normalize_domain(domain: str) -> str:
+    """Lower-case host without a leading ``www.``."""
     domain = domain.lower().strip()
     if domain.startswith("www."):
         domain = domain[4:]
@@ -211,6 +219,7 @@ def normalize_domain(domain: str) -> str:
 
 
 def detect_platform(url: str) -> str:
+    """Which social platform a link belongs to (Instagram, YouTube, Facebook, TikTok, X) or None."""
     try:
         parsed = urlparse(url)
         domain = normalize_domain(parsed.netloc)
@@ -250,6 +259,7 @@ def validate_url(url: str) -> Dict[str, Any]:
 
 
 def validate_expected_platform(url: str, expected_platform: str) -> Dict[str, Any]:
+    """Check that a link is well formed and, if a platform is expected, that it matches."""
     result = validate_url(url)
     if not result["valid_url"]:
         return {**result, "platform_match": False}

@@ -58,6 +58,7 @@ def _recent_table(records: Dict[str, List[Dict[str, Any]]], limit: int = 15) -> 
 
 
 def render_learning_dashboard() -> None:
+    """Draw the Learning tab: calibration state per modality and the retrain panel."""
     st.subheader("Learning")
     st.write("Everything the app has learned from your corrections. It starts blank and only changes when you give feedback.")
 

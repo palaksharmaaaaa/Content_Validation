@@ -22,6 +22,7 @@ from ui.validators import fetch_media_from_url
 
 @dataclass(frozen=True)
 class MediaTabSpec:
+    """Everything that differs between the image, video and audio tabs: labels, accepted types, hint and result renderer."""
     key: str                       # "img" | "vid" | "aud": prefix for widget keys and session-state entries
     modality: str                  # "image" | "video" | "audio"
     noun: str                      # "Image" | "Video" | "Audio"
@@ -101,6 +102,7 @@ def _analyse(spec: MediaTabSpec, items: List[Dict[str, Any]], detectors: Dict[st
 
 
 def render_media_tab(spec: MediaTabSpec, detectors: Dict[str, Any], sensitivity_key: str, session_dir: Path) -> None:
+    """Draw one tab: uploader and optional links, analyse (cached by file content), then show the result or a comparison table."""
     items = _ingest_uploads(spec, session_dir) + _ingest_urls(spec, session_dir)
     results = _analyse(spec, items, detectors, sensitivity_key, session_dir)
     if not results:

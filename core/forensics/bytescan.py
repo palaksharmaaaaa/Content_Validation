@@ -67,6 +67,7 @@ INJECTION_PATTERNS = [
 
 
 def find_injection(fields: Dict[str, str]) -> List[Dict[str, str]]:
+    """Return the metadata fields that contain instruction-like text aimed at AI readers (prompt-injection patterns)."""
     matches: List[Dict[str, str]] = []
     for key, text in fields.items():
         for rx in INJECTION_PATTERNS:

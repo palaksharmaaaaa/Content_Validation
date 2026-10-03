@@ -10,6 +10,7 @@ from enum import Enum
 
 
 class Band(str, Enum):
+    """The five probability bands a score maps to; prefer these over a bare percentage."""
     HIGH_CONFIDENCE_SYNTHETIC = "HIGH_CONFIDENCE_SYNTHETIC"
     LEANING_SYNTHETIC = "LEANING_SYNTHETIC"
     INCONCLUSIVE = "INCONCLUSIVE"
@@ -18,6 +19,7 @@ class Band(str, Enum):
 
     @property
     def label(self) -> str:
+        """Human-readable name of the band."""
         return _LABELS[self]
 
 

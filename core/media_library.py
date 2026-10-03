@@ -186,6 +186,7 @@ class MediaLibrary:
 
     # ------------------------------------------------------------------ queries
     def entries(self) -> List[Dict[str, Any]]:
+        """Every registered entry, as a list of dicts (sha256, label, path hint)."""
         return [dict(e, sha256=sha) for sha, e in self._entries.items()]
 
     def samples(
@@ -227,6 +228,7 @@ class MediaLibrary:
         return new_train + replay, self.samples(split="val")
 
     def counts(self) -> Dict[str, int]:
+        """Number of registered files per label."""
         ai = sum(1 for e in self._entries.values() if e["label"] == "ai_generated")
         real = sum(1 for e in self._entries.values() if e["label"] == "real")
         new = sum(1 for e in self._entries.values() if e.get("status") == "new")
@@ -274,6 +276,7 @@ def _extensions_for(modality: str) -> Set[str]:
 
 
 def main() -> None:
+    """Command-line entry point: ``python -m core.media_library <modality> add|stats|rescan``."""
     parser = argparse.ArgumentParser(
         description="Register labeled media IN PLACE (no copies) for training, by content hash."
     )

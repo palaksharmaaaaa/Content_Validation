@@ -38,6 +38,7 @@ def run_retrain(
     replay_ratio: int = 4,
     min_replay: int = 50,
 ) -> RetrainResult:
+    """Fine-tune on newly labelled media plus a replay sample, then promote the candidate only if its validation accuracy is not worse than the last promoted one; otherwise discard it and leave the live checkpoint untouched."""
     log_path, live_checkpoint = Path(log_path), Path(live_checkpoint)
     old_acc = read_last_accuracy(log_path)
     cumulative = read_cumulative_samples(log_path)

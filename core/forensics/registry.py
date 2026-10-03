@@ -28,6 +28,7 @@ logger = logging.getLogger("core.forensics.registry")
 
 @dataclass
 class CheckContext:
+    """Everything a check may read: file path, modality and the profile, provenance, content and detector results so far."""
     path: Path
     modality: str
     profile: Dict[str, Any] = field(default_factory=dict)
@@ -44,10 +45,12 @@ CheckFn = Callable[[CheckContext], Any]
 
 
 class CheckRegistry:
+    """Holds the dimension checks per modality and phase and runs each one in isolation."""
     def __init__(self) -> None:
         self._checks: Dict[Tuple[str, str], List[Tuple[str, CheckFn]]] = {}
 
     def register(self, modality: str, check_id: str, phase: str = "pre") -> Callable[[CheckFn], CheckFn]:
+        """Decorator that registers a check under ``check_id``. Re-registering replaces the old one."""
         def deco(fn: CheckFn) -> CheckFn:
             bucket = self._checks.setdefault((modality, phase), [])
             # Idempotent re-registration (module reloads in tests / Streamlit reruns).
@@ -58,6 +61,7 @@ class CheckRegistry:
         return deco
 
     def run(self, modality: str, ctx: CheckContext, phase: str = "pre") -> List[Finding]:
+        """Run every check for a modality and phase. A check that raises becomes an ``ERROR`` finding; the rest still run."""
         out: List[Finding] = []
         for check_id, fn in list(self._checks.get((modality, phase), [])):
             try:
@@ -90,6 +94,7 @@ registry = CheckRegistry()
 
 
 def run_checks(modality: str, ctx: CheckContext, phase: str = "pre") -> List[Finding]:
+    """Run the default registry's checks for a modality and phase."""
     return registry.run(modality, ctx, phase)
 
 

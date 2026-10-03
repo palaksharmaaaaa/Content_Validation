@@ -40,6 +40,7 @@ def add_ui_profile_blocks(modality: str, res: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def profile_media(file_path: str | Path, modality: str = "auto", source: str = "User Upload") -> Dict[str, Any]:
+    """Profile a file with its modality's profiler and add the display blocks the result page shows."""
     p = Path(file_path)
     suffix = p.suffix.lower()
     if modality == "image" or (modality == "auto" and suffix in (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff")):

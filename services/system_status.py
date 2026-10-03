@@ -20,12 +20,14 @@ OK, INFO, WARN = "ok", "info", "warn"
 
 @dataclass(frozen=True)
 class StatusRow:
+    """One line of the sidebar status panel: component, level (ok / info / warn), state and a hint."""
     component: str
     level: str      # "ok" | "info" | "warn"
     state: str      # short value, e.g. "Heuristic mode"
     hint: str       # what to do / what it means
 
     def to_dict(self) -> Dict[str, str]:
+        """Plain-dict form."""
         return asdict(self)
 
 
@@ -41,6 +43,7 @@ def _hardblock_entries(path: Path) -> int:
 
 
 def collect_status() -> List[StatusRow]:
+    """Inspect the installation (models, calibration, OOD fit, hard-block list, ffmpeg, compute device) and return the status rows."""
     import audio_detector.config as audio_cfg
     import image_detector.config as image_cfg
     import video_detector.config as video_cfg

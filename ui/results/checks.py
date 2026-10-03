@@ -11,6 +11,7 @@ from ui.stages import collect_findings, render_findings_stage
 
 @dataclass(frozen=True)
 class CheckGroup:
+    """A titled set of finding stages shown together on the Evidence tab."""
     title: str
     caption: str
     stages: Tuple[str, ...]
@@ -82,6 +83,7 @@ def _render_localization(decision: Dict[str, Any]) -> None:
 
 
 def render_evidence(item: Dict[str, Any], groups: Sequence[CheckGroup]) -> None:
+    """Draw the Evidence tab: each group of findings as a table, then attribution, localisation and the evidence trail."""
     decision = item.get("decision") or {}
     dim_report = item.get("dimension_report") or {}
     for group in groups:

@@ -48,6 +48,7 @@ def read_last_accuracy(log_path: str | Path) -> Optional[float]:
 
 
 def next_version(log_path: str | Path) -> int:
+    """Next checkpoint version number according to the log (1 if the log does not exist)."""
     rows = _rows(Path(log_path))
     if not rows:
         return 1
@@ -58,6 +59,7 @@ def next_version(log_path: str | Path) -> int:
 
 
 def read_cumulative_samples(log_path: str | Path) -> int:
+    """Total number of samples recorded by the last promoted checkpoint (0 if none)."""
     total = 0
     for row in _rows(Path(log_path)):
         try:
@@ -76,6 +78,7 @@ def append_row(
     new_samples: int,
     cumulative_samples: int,
 ) -> None:
+    """Append one promoted-checkpoint row (version, date, losses, sample counts) to the log."""
     log_path = Path(log_path)
     log_path.parent.mkdir(parents=True, exist_ok=True)
     if not log_path.is_file():

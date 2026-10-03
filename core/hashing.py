@@ -53,4 +53,5 @@ def file_digests(path: str | Path, cached: bool = True) -> Tuple[str, str, int]:
 
 
 def file_sha256(path: str | Path, cached: bool = True) -> str:
+    """Hex SHA-256 of a file. With ``cached=True`` the digest is reused while the file's size and mtime are unchanged."""
     return file_digests(path, cached=cached)[0]

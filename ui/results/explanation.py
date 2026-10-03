@@ -21,6 +21,7 @@ def image_explanation(item: Dict[str, Any], profile_data: Dict[str, Any], ai_res
 
 
 def render_explanation(text: Optional[str]) -> None:
+    """Draw the plain-English explanation text."""
     if text:
         st.markdown(text)
     else:

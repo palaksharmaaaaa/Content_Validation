@@ -22,11 +22,13 @@ _HEX = set("0123456789abcdef")
 
 @dataclass
 class GateResult:
+    """Outcome of the hard-block gate: ``INACTIVE`` (no list), ``CLEAR`` or ``HARD_BLOCK_ESCALATE``."""
     status: str  # INACTIVE | CLEAR | HARD_BLOCK_ESCALATE
     sha256: str
     triggered: bool
 
     def to_dict(self) -> Dict[str, Any]:
+        """Plain-dict form for reports."""
         return {"status": self.status, "sha256": self.sha256, "triggered": self.triggered}
 
 
@@ -42,10 +44,12 @@ def _load_blocklist(path: Path) -> Optional[Set[str]]:
 
 
 class HardBlockGate:
+    """Stops analysis when a file's SHA-256 is on the operator's block list. No classifier is built in."""
     def __init__(self, blocklist_path: Optional[Union[str, Path]] = None):
         self._explicit = Path(blocklist_path) if blocklist_path else None
 
     def check(self, file_path: Union[str, Path]) -> GateResult:
+        """Hash the file and compare it with the block list."""
         path = Path(file_path)
         try:
             digest = file_sha256(path) if path.is_file() else ""
@@ -81,6 +85,7 @@ def _tiff_has_tag(head: bytes, wanted: int) -> bool:
 
 
 def recognize_scientific_format(file_path: Union[str, Path]) -> Optional[Dict[str, str]]:
+    """Name the scientific/medical format (DICOM, FITS, GeoTIFF, ...) by magic bytes, or None. Such files are recognised but not scored."""
     path = Path(file_path)
     try:
         with open(path, "rb") as f:

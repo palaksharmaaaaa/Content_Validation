@@ -43,10 +43,12 @@ _SCORE_ELIGIBLE = {"PHYSICAL_SIGNAL", "METADATA_WEAK"}
 
 
 def status_badge(status: str) -> Tuple[str, str]:
+    """(symbol, label) for a finding status."""
     return _STATUS.get(status, ("❔", status))
 
 
 def band_badge(band: str) -> Tuple[str, str]:
+    """(symbol, label) for a probability band."""
     return _BAND.get(band, ("❔", band))
 
 
@@ -62,6 +64,7 @@ def _weight_text(finding: Dict[str, Any]) -> str:
 
 
 def findings_to_rows(findings: Iterable[Dict[str, Any]], show_weight: bool = False) -> List[Dict[str, str]]:
+    """Table rows (status, check, class, detail, optional evidence weight) for a list of findings."""
     rows: List[Dict[str, str]] = []
     for f in findings:
         emoji, label = status_badge(f.get("status", ""))
@@ -78,6 +81,7 @@ def findings_to_rows(findings: Iterable[Dict[str, Any]], show_weight: bool = Fal
 
 
 def collect_findings(report: Optional[Dict[str, Any]], stage_names: Iterable[str]) -> List[Dict[str, Any]]:
+    """Findings from the named stages of a report, in the order given."""
     by_stage = (report or {}).get("findings_by_stage", {})
     out: List[Dict[str, Any]] = []
     for name in stage_names:
@@ -86,6 +90,7 @@ def collect_findings(report: Optional[Dict[str, Any]], stage_names: Iterable[str
 
 
 def ood_text(ood: Optional[Dict[str, Any]]) -> str:
+    """One-sentence description of an out-of-distribution result."""
     if not ood:
         return "OOD status unavailable."
     status = ood.get("status")

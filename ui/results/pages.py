@@ -141,12 +141,15 @@ def _render_page(item: Dict[str, Any], page: _Page) -> None:
 
 
 def render_image_result(item: Dict[str, Any]) -> None:
+    """The full result page for one analysed image."""
     _render_page(item, IMAGE_PAGE)
 
 
 def render_video_result(item: Dict[str, Any]) -> None:
+    """The full result page for one analysed video."""
     _render_page(item, VIDEO_PAGE)
 
 
 def render_audio_result(item: Dict[str, Any]) -> None:
+    """The full result page for one analysed audio file."""
     _render_page(item, AUDIO_PAGE)

@@ -53,6 +53,7 @@ def key_reasons(decision: Dict[str, Any], dim_report: Optional[Dict[str, Any]], 
 
 
 def render_summary(item: Dict[str, Any], title: str) -> None:
+    """Draw the verdict card: category, AI likelihood, evidence strength, main reasons and a trust note."""
     decision = item.get("decision") or {}
     probs = decision.get("authenticity_probabilities", {})
     p_ai, p_real, p_unsure = (float(probs.get(k, d)) for k, d in (("p_ai", 0.0), ("p_real", 0.0), ("p_undecided", 100.0)))

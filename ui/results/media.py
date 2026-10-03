@@ -8,6 +8,7 @@ import streamlit as st
 
 
 def render_image_preview(item: Dict[str, Any], profile_data: Dict[str, Any], ai_result: Dict[str, Any]) -> None:
+    """Show the image, plus the spatial anomaly heatmap when one exists."""
     left, right = st.columns(2)
     with left:
         st.image(item["path"], caption=f"Original ({profile_data.get('width', 0)} x {profile_data.get('height', 0)} px)", width="stretch")
@@ -20,6 +21,7 @@ def render_image_preview(item: Dict[str, Any], profile_data: Dict[str, Any], ai_
 
 
 def render_video_preview(item: Dict[str, Any]) -> None:
+    """Show the video's keyframe."""
     left, right = st.columns([1.2, 1], gap="medium")
     with left:
         st.video(item["path"])
@@ -33,6 +35,7 @@ def render_video_preview(item: Dict[str, Any]) -> None:
 
 
 def render_audio_preview(item: Dict[str, Any]) -> None:
+    """Play the audio file."""
     left, right = st.columns([1, 1.2], gap="medium")
     with left:
         st.audio(item["path"])
