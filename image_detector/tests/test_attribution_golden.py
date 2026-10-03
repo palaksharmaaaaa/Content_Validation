@@ -16,6 +16,9 @@ STATES = [None, "AUTHENTIC_REAL_PHOTOGRAPH", "AUTHENTIC_RECAPTURED_SCREEN", "AUT
 
 
 
+from tests.golden_support import assert_golden
+
+
 def _run(tmp):
 
     r = random.Random(5)
@@ -50,5 +53,4 @@ def _run(tmp):
 
 
 def test_attribution_matches_golden(tmp_path):
-    expected = json.loads((Path(__file__).resolve().parents[2] / "tests" / "data" / "image_attribution_golden.json").read_text(encoding="utf-8"))
-    assert _run(tmp_path) == expected
+    assert_golden("image_attribution_golden", _run(tmp_path))

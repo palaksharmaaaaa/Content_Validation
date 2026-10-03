@@ -92,7 +92,8 @@ def get_file_size_mb(file_path: str | Path) -> float:
         if not p.is_file():
             return 0.0
         return p.stat().st_size / (1024 * 1024)
-    except Exception:
+    except Exception as exc:
+        logger.debug("get_file_size_mb: ignored %s: %s", type(exc).__name__, exc)
         return 0.0
 
 
@@ -220,7 +221,8 @@ def detect_platform(url: str) -> str:
             if domain in normalized_domains:
                 return platform
         return "Unknown"
-    except Exception:
+    except Exception as exc:
+        logger.debug("detect_platform: ignored %s: %s", type(exc).__name__, exc)
         return "Unknown"
 
 
@@ -299,5 +301,5 @@ def cleanup_url_download(file_path: str | Path | None) -> None:
         p = Path(file_path)
         if p.is_file():
             p.unlink(missing_ok=True)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("cleanup_url_download: ignored %s: %s", type(exc).__name__, exc)

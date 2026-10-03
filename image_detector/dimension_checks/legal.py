@@ -4,6 +4,7 @@ findings never alter P(AI) and are not legal advice; they surface facts a review
 """
 from __future__ import annotations
 
+import logging
 from typing import List
 
 from PIL import Image
@@ -11,6 +12,8 @@ from PIL import Image
 from core.forensics.registry import CheckContext, registry
 from core.forensics.schemas import EvidenceClass, Finding, FindingStatus, Severity
 from image_detector.dimension_checks import _common as C
+
+logger = logging.getLogger(__name__)
 
 STAGE = "legal"
 DIM = "Section22.2"
@@ -33,8 +36,8 @@ def check_rights_and_privacy(ctx: CheckContext) -> List[Finding]:
             copyright_text = str(ex.get(0x8298, "") or "").replace("\x00", "").strip()
             artist = str(ex.get(0x013B, "") or "").replace("\x00", "").strip()
             has_gps = bool(ex.get_ifd(0x8825))
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("check_rights_and_privacy: ignored %s: %s", type(exc).__name__, exc)
     head, _tail, _size = C.read_windows(ctx.path)
     xmp = C.extract_xmp(head)
     xmp_low = xmp.lower()

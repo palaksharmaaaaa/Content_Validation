@@ -123,6 +123,7 @@ _FLAC_FMT = {16: "s16le", 24: "s24le"}
 
 
 def _md5_of_decoded(path: Path, sample_fmt: str) -> Optional[str]:
+    """MD5 of the PCM that ffmpeg decodes from ``path`` (None if ffmpeg is missing, fails or times out)."""
     try:
         proc = subprocess.Popen(
             ["ffmpeg", "-v", "error", "-i", str(path), "-vn", "-f", sample_fmt, "-"],
@@ -131,14 +132,14 @@ def _md5_of_decoded(path: Path, sample_fmt: str) -> Optional[str]:
     except FileNotFoundError:
         return None
     h = hashlib.md5()
-    try:
-        assert proc.stdout is not None
-        for chunk in iter(lambda: proc.stdout.read(1 << 20), b""):
-            h.update(chunk)
-        proc.wait(timeout=120)
-    except Exception:
-        proc.kill()
-        return None
+    with proc:  # closes the stdout pipe even on errors (no leaked handle)
+        try:
+            for chunk in iter(lambda: proc.stdout.read(1 << 20), b""):
+                h.update(chunk)
+            proc.wait(timeout=120)
+        except Exception:
+            proc.kill()
+            return None
     return h.hexdigest() if proc.returncode == 0 else None
 
 

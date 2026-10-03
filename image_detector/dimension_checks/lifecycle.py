@@ -5,6 +5,7 @@ RELIABILITY class: explains why forensic traces may be degraded; never changes P
 """
 from __future__ import annotations
 
+import logging
 from typing import Any, Dict
 
 from PIL import Image
@@ -12,6 +13,8 @@ from PIL import Image
 from core.forensics.registry import CheckContext, registry
 from core.forensics.schemas import EvidenceClass, Finding, FindingStatus, Severity
 from image_detector.dimension_checks import _common as C
+
+logger = logging.getLogger(__name__)
 
 COMMON_PLATFORM_LONG_EDGES = {720, 960, 1080, 1280, 1440, 1600, 2048}
 
@@ -39,7 +42,8 @@ def assess_platform_reencode(ctx: CheckContext) -> Dict[str, Any]:
                     sub = JpegImagePlugin.get_sampling(im)
                 except Exception:
                     sub = None
-    except Exception:
+    except Exception as exc:
+        logger.debug("assess_platform_reencode: ignored %s: %s", type(exc).__name__, exc)
         return {"likelihood": 0.0, "level": "UNKNOWN", "cues": []}
     w = int(ctx.profile.get("width") or w)
     h = int(ctx.profile.get("height") or h)

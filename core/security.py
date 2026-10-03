@@ -92,7 +92,8 @@ def validate_secure_url(url: str) -> Tuple[bool, str, List[str]]:
     url = url.strip()
     try:
         parsed = urlparse(url)
-    except Exception:
+    except Exception as exc:
+        logger.debug("validate_secure_url: ignored %s: %s", type(exc).__name__, exc)
         return False, "Malformed URL format.", []
 
     if parsed.scheme.lower() not in ("http", "https"):
@@ -342,6 +343,6 @@ class SecureUrlFetcher:
             if temp_path is not None:
                 try:
                     temp_path.unlink(missing_ok=True)
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("fetch: ignored %s: %s", type(exc).__name__, exc)
             return self._failure(f"Secure media download failed: {exc}")

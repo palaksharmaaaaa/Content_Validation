@@ -8,8 +8,10 @@ from video_detector.provenance import KNOWN_VIDEO_GENERATOR_SIGNATURES
 
 
 
+from tests.golden_support import assert_golden
+
+
 def test_video_attribution_matches_golden(tmp_path):
-    expected = json.loads((Path(__file__).resolve().parents[2] / "tests" / "data" / "video_attribution_golden.json").read_text(encoding="utf-8"))
     tmp = tmp_path
 
     r = random.Random(8)
@@ -28,4 +30,4 @@ def test_video_attribution_matches_golden(tmp_path):
                   "diffusion_flicker": {"has_diffusion_flicker": r.random() < .4}}
         res.append(json.loads(json.dumps(eng.attribute_video(f, temporal_data=td, provenance_data=pd), sort_keys=True)))
     res.append(eng.attribute_video(tmp / "nope.mp4"))
-    assert json.loads(json.dumps(res, sort_keys=True)) == expected
+    assert_golden("video_attribution_golden", json.loads(json.dumps(res, sort_keys=True)))

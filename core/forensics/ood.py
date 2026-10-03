@@ -6,10 +6,14 @@ library). Unfitted, it reports NOT_CALIBRATED -- it never invents a threshold.
 """
 from __future__ import annotations
 
+import logging
+
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 MIN_FIT_SAMPLES = 20
 THRESHOLD_PERCENTILE = 99.0

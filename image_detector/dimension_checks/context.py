@@ -8,6 +8,8 @@ Set OMNI_CONTEXT_HASH_INDEX or place the file at image_detector/data/context_has
 """
 from __future__ import annotations
 
+import logging
+
 import json
 from pathlib import Path
 from typing import Any, Dict, List
@@ -18,6 +20,8 @@ from core.forensics.config import context_index_file
 from core.forensics.registry import CheckContext, registry
 from core.forensics.schemas import EvidenceClass, Finding, FindingStatus, Severity
 from image_detector.dimension_checks import _common as C
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_INDEX = Path(__file__).resolve().parents[1] / "data" / "context_hash_index.jsonl"
 MATCH_HAMMING = 6
@@ -35,7 +39,8 @@ def _load_index(path: Path) -> List[Dict[str, Any]]:
             row = json.loads(line)
             int(row["phash"], 16)
             rows.append(row)
-        except Exception:
+        except Exception as exc:
+            logger.debug("_load_index: ignored %s: %s", type(exc).__name__, exc)
             continue
     return rows
 

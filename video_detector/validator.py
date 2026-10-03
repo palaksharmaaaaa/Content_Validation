@@ -27,7 +27,8 @@ logger = logging.getLogger("video_detector.validator")
 def _get_file_size_mb(path: Path) -> float:
     try:
         return path.stat().st_size / (1024 * 1024)
-    except Exception:
+    except Exception as exc:
+        logger.debug("_get_file_size_mb: ignored %s: %s", type(exc).__name__, exc)
         return 0.0
 
 

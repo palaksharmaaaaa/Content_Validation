@@ -303,7 +303,8 @@ class ImageContentAnalyzer:
                 if 2.0 <= aspect <= 30.0 and 120 <= (cw * ch) <= 50000:
                     count += 1
             return count
-        except Exception:
+        except Exception as exc:
+            logger.debug("_count_text_regions: ignored %s: %s", type(exc).__name__, exc)
             return 0
 
     def _detect_objects(

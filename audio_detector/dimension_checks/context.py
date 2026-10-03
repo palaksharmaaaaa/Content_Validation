@@ -10,6 +10,8 @@ audio_detector/data/audio_fingerprint_index.jsonl. This fingerprint is coarse: a
 """
 from __future__ import annotations
 
+import logging
+
 import json
 from pathlib import Path
 from typing import Any, Dict, List
@@ -19,6 +21,8 @@ import numpy as np
 from core.forensics.config import audio_fp_index_file
 from core.forensics.registry import CheckContext, registry
 from core.forensics.schemas import EvidenceClass, Finding, FindingStatus, Severity
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_INDEX = Path(__file__).resolve().parents[1] / "data" / "audio_fingerprint_index.jsonl"
 FRAME, HOP, BANDS = 4096, 512, 33
@@ -85,7 +89,8 @@ def _load_index(path: Path) -> List[Dict[str, Any]]:
             row = json.loads(line)
             row["_fp"] = np.frombuffer(bytes.fromhex(row["fp"]), dtype="<u4").astype(np.uint32)
             rows.append(row)
-        except Exception:
+        except Exception as exc:
+            logger.debug("_load_index: ignored %s: %s", type(exc).__name__, exc)
             continue
     return rows
 

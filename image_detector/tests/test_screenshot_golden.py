@@ -10,6 +10,9 @@ from image_detector.config import CANONICAL_SCREEN_RESOLUTIONS
 from image_detector.features import detect_screenshot
 
 
+from tests.golden_support import assert_golden
+
+
 def make(r, w, h, kind):
     if kind == "noise":
         return r.integers(0, 255, (h, w, 3), dtype=np.uint8)
@@ -29,7 +32,6 @@ def make(r, w, h, kind):
 
 
 def test_screenshot_detection_matches_golden():
-    expected = json.loads((Path(__file__).resolve().parents[2] / "tests" / "data" / "image_screenshot_golden.json").read_text(encoding="utf-8"))
 
     r = np.random.default_rng(9)
     rr = random.Random(4)
@@ -46,4 +48,4 @@ def test_screenshot_detection_matches_golden():
         meta = rr.choice(metas)
         res.append(detect_screenshot(rr.choice(names), img, meta))
     res.append(detect_screenshot("nope.png", None))
-    assert json.loads(json.dumps(res, sort_keys=True)) == expected
+    assert_golden("image_screenshot_golden", json.loads(json.dumps(res, sort_keys=True)))

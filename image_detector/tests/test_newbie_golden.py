@@ -9,6 +9,9 @@ VERDICTS = ["LIKELY REAL", "LIKELY AI-GENERATED", "AUTHENTIC (CONVENTIONALLY EDI
             "AUTHENTIC (RECAPTURED SCREEN)", "UNDECIDED", "LIKELY_SYNTHETIC", "LIKELY_AUTHENTIC", "PARTIALLY_SYNTHETIC_OR_EDITED", "GRAPHIC", ""]
 
 
+from tests.golden_support import assert_golden
+
+
 def case(r):
     def put(d, k, v, p=.6):
         if r.random() < p:
@@ -41,10 +44,9 @@ def case(r):
 
 
 def test_newbie_narrative_matches_golden():
-    expected = json.loads((Path(__file__).resolve().parents[2] / "tests" / "data" / "image_newbie_golden.json").read_text(encoding="utf-8"))
     r = random.Random(77)
     actual = []
     for _ in range(1000):
         f, p, i, a, d = case(r)
         actual.append(generate_newbie_explanation(f, p, i, a, d))
-    assert actual == expected
+    assert_golden("image_newbie_golden", actual)

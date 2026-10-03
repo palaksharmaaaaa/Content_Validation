@@ -11,6 +11,9 @@ from PIL import Image
 from image_detector.features import detect_digital_art_and_painting
 
 
+from tests.golden_support import assert_golden
+
+
 def make(r, rng, kind):
     h, w = r.choice([(120, 160), (300, 200), (64, 64)])
     if kind == "photo":
@@ -33,7 +36,6 @@ def make(r, rng, kind):
 
 
 def test_digital_art_detection_matches_golden(tmp_path):
-    expected = json.loads((Path(__file__).resolve().parents[2] / "tests" / "data" / "image_art_golden.json").read_text(encoding="utf-8"))
     tmp = tmp_path
 
     r = random.Random(3)
@@ -51,4 +53,4 @@ def test_digital_art_detection_matches_golden(tmp_path):
         else:
             res.append(detect_digital_art_and_painting("x.png", img, meta))
     res.append(detect_digital_art_and_painting(tmp / "none.png"))
-    assert json.loads(json.dumps(res, sort_keys=True)) == expected
+    assert_golden("image_art_golden", json.loads(json.dumps(res, sort_keys=True)))

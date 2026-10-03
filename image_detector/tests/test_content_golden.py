@@ -9,6 +9,9 @@ from PIL import Image
 from image_detector.content import ImageContentAnalyzer
 
 
+from tests.golden_support import assert_golden
+
+
 def imgs():
     rng = np.random.default_rng(2)
     noise = rng.integers(0, 255, (400, 600, 3), dtype=np.uint8)
@@ -24,7 +27,6 @@ def imgs():
 
 
 def test_content_analysis_matches_golden(tmp_path):
-    expected = json.loads((Path(__file__).resolve().parents[2] / "tests" / "data" / "image_content_golden.json").read_text(encoding="utf-8"))
     tmp = tmp_path
 
     an = ImageContentAnalyzer()
@@ -36,4 +38,4 @@ def test_content_analysis_matches_golden(tmp_path):
         res[k + "_arr"] = an.analyze_image_content(a)
     res["missing"] = an.analyze_image_content(tmp / "none.png")
     res["badtype"] = an.analyze_image_content(123)
-    assert json.loads(json.dumps(res, sort_keys=True, default=str)) == expected
+    assert_golden("image_content_golden", json.loads(json.dumps(res, sort_keys=True, default=str)))

@@ -77,8 +77,8 @@ class AudioProvenanceValidator:
                         encoder_found = enc.upper()
                         cues.append(f"Audio encoder footprint detected: '{encoder_found}'")
                         break
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("analyze_provenance: ignored %s: %s", type(exc).__name__, exc)
 
         if c2pa_res["c2pa_present"]:
             status = "C2PA_PROVENANCE_PRESENT"

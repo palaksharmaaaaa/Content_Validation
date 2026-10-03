@@ -10,6 +10,8 @@ video_detector/data/video_fingerprint_index.jsonl. Always verify matches by eye.
 """
 from __future__ import annotations
 
+import logging
+
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Union
@@ -18,6 +20,8 @@ from core.forensics.config import video_fp_index_file
 from core.forensics.registry import CheckContext, registry
 from core.forensics.schemas import EvidenceClass, Finding, FindingStatus, Severity
 from video_detector.dimension_checks import _common as C
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_INDEX = Path(__file__).resolve().parents[1] / "data" / "video_fingerprint_index.jsonl"
 MATCH_HAMMING = 8
@@ -41,7 +45,8 @@ def _load_index(path: Path) -> List[Dict[str, Any]]:
             row = json.loads(line)
             row["_h"] = [int(h, 16) for h in row["phashes"]]
             rows.append(row)
-        except Exception:
+        except Exception as exc:
+            logger.debug("_load_index: ignored %s: %s", type(exc).__name__, exc)
             continue
     return rows
 

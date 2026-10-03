@@ -125,8 +125,8 @@ class ImageBenchmarkSuite:
         try:
             with open(report_file, "w", encoding="utf-8") as f:
                 json.dump(out_data, f, indent=2)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("evaluate_dataset: ignored %s: %s", type(exc).__name__, exc)
 
         return out_data
 

@@ -47,7 +47,8 @@ def compute_pixel_entropy(image_bgr: np.ndarray) -> float:
         hist = hist[hist > 0]
         entropy = float(-np.sum(hist * np.log2(hist)))
         return round(entropy, 3)
-    except Exception:
+    except Exception as exc:
+        logger.debug("compute_pixel_entropy: ignored %s: %s", type(exc).__name__, exc)
         return 0.0
 
 
@@ -343,8 +344,8 @@ def _fft_decay_alpha(sample_gray: np.ndarray) -> float:
         if len(profile) > 5:
             freqs = np.arange(5, 5 + len(profile))
             return float(-np.polyfit(np.log(freqs), np.log(np.maximum(1e-6, profile)), 1)[0])
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("_fft_decay_alpha: ignored %s: %s", type(exc).__name__, exc)
     return 2.05
 
 

@@ -6,6 +6,9 @@ from pathlib import Path
 from image_detector.explain import IPTC_SOURCE_TYPE_MAPPING, build_nine_dimensions_dossier
 
 
+from tests.golden_support import assert_golden
+
+
 def maybe(r, p, v):
     return v if r.random() < p else None
 
@@ -65,10 +68,9 @@ def case(r):
 
 
 def test_dossier_matches_golden():
-    expected = json.loads((Path(__file__).resolve().parents[2] / "tests" / "data" / "image_dossier_golden.json").read_text(encoding="utf-8"))
     r = random.Random(21)
     actual = []
     for _ in range(1500):
         p, a, i, pr, at = case(r)
         actual.append(json.loads(json.dumps(build_nine_dimensions_dossier(p, a, i, pr, at), sort_keys=True, default=str)))
-    assert actual == expected
+    assert_golden("image_dossier_golden", actual)

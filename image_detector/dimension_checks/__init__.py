@@ -11,6 +11,8 @@ Public API
 """
 from __future__ import annotations
 
+import logging
+
 import functools
 
 from pathlib import Path
@@ -33,6 +35,8 @@ from image_detector.dimension_checks import context  # noqa: F401
 from image_detector.dimension_checks import legal  # noqa: F401
 from image_detector.dimension_checks import lifecycle  # noqa: F401
 from image_detector.dimension_checks import reliability  # noqa: F401
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_OOD_STATS = Path(__file__).resolve().parents[1] / "data" / "ood_stats.npz"
 UNKNOWN_SOURCE_MIN_AI_PERCENT = _UNKNOWN_MIN  # re-exported for callers
@@ -110,7 +114,8 @@ def _default_embedder() -> Optional[Callable[[Path], np.ndarray]]:
             return np.asarray(feats["embedding"], dtype=np.float64)
 
         return embed
-    except Exception:
+    except Exception as exc:
+        logger.debug("_default_embedder: ignored %s: %s", type(exc).__name__, exc)
         return None
 
 

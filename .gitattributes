@@ -1,2 +1,9 @@
+# Normalise line endings in the repository (Windows checkouts convert on their own).
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.mp4 binary
+*.wav binary
+
 # Trained checkpoints are shared through Git LFS so everyone gets identical weights (never training media).
 *.pt filter=lfs diff=lfs merge=lfs -text

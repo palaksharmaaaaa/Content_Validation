@@ -6,6 +6,8 @@ absent. The explicit generator-parameter PNG chunk is the single case allowed th
 """
 from __future__ import annotations
 
+import logging
+
 import json
 from collections import Counter
 from typing import Optional
@@ -16,6 +18,8 @@ from core.forensics.config import EXPLICIT_GENERATOR_LLR_CAP
 from core.forensics.registry import CheckContext, registry
 from core.forensics.schemas import EvidenceClass, Finding, FindingStatus, Severity
 from image_detector.dimension_checks import _common as C
+
+logger = logging.getLogger(__name__)
 
 STAGE = "formats"
 DIM = "O"
@@ -77,7 +81,8 @@ def _generator_from_text(fields: dict) -> Optional[str]:
             continue
         try:
             obj = json.loads(raw)
-        except Exception:
+        except Exception as exc:
+            logger.debug("_generator_from_text: ignored %s: %s", type(exc).__name__, exc)
             continue
         if key == "prompt" and isinstance(obj, dict) and any(isinstance(v, dict) and "class_type" in v for v in obj.values()):
             return "ComfyUI"

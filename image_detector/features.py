@@ -10,6 +10,8 @@ Extracts:
 """
 from __future__ import annotations
 
+import logging
+
 import io
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -20,6 +22,8 @@ from PIL import Image, ImageChops, ImageEnhance, ImageFile
 from PIL.ExifTags import TAGS
 
 from image_detector.config import CANONICAL_SCREEN_RESOLUTIONS, KNOWN_AI_SOFTWARE_SIGNATURES
+
+logger = logging.getLogger(__name__)
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -96,8 +100,8 @@ def _read_exif_fields(img: Image.Image, info: Dict[str, Any]) -> None:
         if hasattr(exif, "get_ifd"):
             for sub_id, sub_val in (exif.get_ifd(0x8769) or {}).items():
                 tags[TAGS.get(sub_id, str(sub_id))] = str(sub_val)[:160]
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("_read_exif_fields: ignored %s: %s", type(exc).__name__, exc)
 
     info["focal_length"] = tags.get("FocalLength")
     info["f_number"] = tags.get("FNumber")
@@ -190,8 +194,8 @@ def extract_image_metadata(image_path: str | Path) -> Dict[str, Any]:
                 _apply_xmp_signatures(xmp_str, info)
             _apply_software_signatures(info)
             _apply_generic_ai_signature(xmp_str, info)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("extract_image_metadata: ignored %s: %s", type(exc).__name__, exc)
     return info
 
 
@@ -258,14 +262,14 @@ def detect_background_cutout(image_path: str | Path, img_bgr: Optional[np.ndarra
                         "is_transparent_png": True,
                         "details": f"Transparent alpha channel cutout detected ({round((transparent_pixels / total_pixels) * 100, 1)}% transparent pixels)",
                     }
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("detect_background_cutout: ignored %s: %s", type(exc).__name__, exc)
 
     if img_bgr is None:
         try:
             img_bgr = cv2.imread(str(image_path))
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("detect_background_cutout: ignored %s: %s", type(exc).__name__, exc)
 
     if img_bgr is None or img_bgr.size == 0:
         return {"is_cutout": False, "cutout_type": None, "is_transparent_png": False, "details": None}
@@ -376,8 +380,8 @@ def _opaque_saturation(image_path: str | Path, hsv_sat: np.ndarray) -> np.ndarra
                 opaque_mask = np.array(im.split()[-1]) > 30
                 if np.sum(opaque_mask) > 100:
                     return hsv_sat[opaque_mask]
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("_opaque_saturation: ignored %s: %s", type(exc).__name__, exc)
     return hsv_sat
 
 
@@ -431,8 +435,8 @@ def detect_digital_art_and_painting(
     if img_bgr is None:
         try:
             img_bgr = cv2.imread(str(image_path))
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("detect_digital_art_and_painting: ignored %s: %s", type(exc).__name__, exc)
 
     if img_bgr is None or img_bgr.size == 0:
         return {
@@ -594,8 +598,8 @@ def analyze_fft_radial_power_spectrum(gray_img: np.ndarray | str | Path) -> Dict
         if len(wedge_energies) >= 8:
             azimuthal_var = float(np.std(wedge_energies) / max(1e-5, np.mean(wedge_energies)))
             peak_energy_ratio = float(np.max(wedge_energies) / max(1e-5, np.median(wedge_energies)))
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("analyze_fft_radial_power_spectrum: ignored %s: %s", type(exc).__name__, exc)
 
     return {
         "spectral_decay_alpha": round(spectral_decay_alpha, 3),
@@ -647,7 +651,8 @@ def compute_ela(
         ela_arr = np.array(enhanced)
         mean_diff = float(np.mean(np.array(ela_img)))
         return mean_diff, ela_arr
-    except Exception:
+    except Exception as exc:
+        logger.debug("compute_ela: ignored %s: %s", type(exc).__name__, exc)
         return 0.0, None
 
 
@@ -786,8 +791,8 @@ def detect_screenshot(
     if img_bgr is None:
         try:
             img_bgr = cv2.imread(str(image_path))
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("detect_screenshot: ignored %s: %s", type(exc).__name__, exc)
 
     if img_bgr is None or img_bgr.size == 0:
         return {
@@ -888,8 +893,8 @@ def detect_inpainting_and_manipulation(
     if img_bgr is None:
         try:
             img_bgr = cv2.imread(str(image_path))
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("detect_inpainting_and_manipulation: ignored %s: %s", type(exc).__name__, exc)
 
     if img_bgr is None or img_bgr.size == 0:
         return {
@@ -987,8 +992,8 @@ def detect_screen_rephotography_moire(
     if img_bgr is None:
         try:
             img_bgr = cv2.imread(str(image_path))
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("detect_screen_rephotography_moire: ignored %s: %s", type(exc).__name__, exc)
 
     if img_bgr is None or img_bgr.size == 0:
         return {
@@ -1053,8 +1058,8 @@ def detect_spectral_modality(
     if img_bgr is None:
         try:
             img_bgr = cv2.imread(str(image_path))
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("detect_spectral_modality: ignored %s: %s", type(exc).__name__, exc)
 
     if img_bgr is None or img_bgr.size == 0:
         return {

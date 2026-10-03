@@ -1,0 +1,19 @@
+{
+ "items": {
+  "aud": "c1625ca8b333c9e8cd40",
+  "blank": "ec7372c02f39d51ace4b",
+  "empty": "1ed46093bfa28d1ea7d2",
+  "img_ai": "bd211d9fb428578fdc88",
+  "img_and_aud": "8ab26361f888db5b2a19",
+  "img_auth": "ee148f1ee0db522f55f7",
+  "img_plain": "985d12e978020f949a3c",
+  "invalid": "c46c2b2c8355305731cc",
+  "prov_ais": "a58f57ae72102fd0355b",
+  "prov_exif": "f101e66bbdf42308d3df",
+  "prov_nest": "d2a68598f7b1c0ca1afb",
+  "prov_sign": "fb54d551857685d2f288",
+  "vid": "1c797e0dcb1c9d3721dc",
+  "vid_legacy": "c734222796039fae3822"
+ },
+ "kind": "dict"
+}

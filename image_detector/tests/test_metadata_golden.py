@@ -16,8 +16,10 @@ SOFT = ["", "Adobe Photoshop 25", "Topaz Photo AI 3", "Canva", "GIMP", "midjourn
 
 
 
+from tests.golden_support import assert_golden
+
+
 def test_metadata_extraction_matches_golden(tmp_path):
-    expected = json.loads((Path(__file__).resolve().parents[2] / "tests" / "data" / "image_metadata_golden.json").read_text(encoding="utf-8"))
     tmp = tmp_path
 
     r = random.Random(14)
@@ -53,4 +55,4 @@ def test_metadata_extraction_matches_golden(tmp_path):
     res["bytesio"] = extract_image_metadata(io.BytesIO(j.read_bytes()))
     res["ndarray"] = extract_image_metadata(arr)
     res["missing"] = extract_image_metadata(tmp / "none.png")
-    assert json.loads(json.dumps(res, sort_keys=True, default=str)) == expected
+    assert_golden("image_metadata_golden", json.loads(json.dumps(res, sort_keys=True, default=str)))

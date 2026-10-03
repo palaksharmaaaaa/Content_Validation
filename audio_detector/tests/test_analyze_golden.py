@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 
 from audio_detector import AudioAIDetector
-from tests.golden_support import skip_unless_state_matches
+from tests.golden_support import assert_golden, skip_unless_state_matches
 from audio_detector.tests.audio_fixtures import tone, write_wav
 
 
@@ -18,7 +18,6 @@ def clean(r):
 
 def test_audio_analysis_matches_golden(tmp_path):
     skip_unless_state_matches("audio_analyze_golden.meta.json", ["audio_detector/data/audio_calibration.json"])
-    expected = json.loads((Path(__file__).resolve().parents[2] / "tests" / "data" / "audio_analyze_golden.json").read_text(encoding="utf-8"))
     tmp = tmp_path
 
     det = AudioAIDetector()
@@ -41,4 +40,4 @@ def test_audio_analysis_matches_golden(tmp_path):
     res["preextracted"] = clean(det.analyze_audio_file(files["tone"], pre_extracted=(tone(2.0), 16000, 2.0)))
     res["pre_none"] = clean(det.analyze_audio_file(files["tone"], pre_extracted=(None, 16000, 0.0)))
     res["spectro"] = {k: v for k, v in det.analyze_audio_file(files["tone"], generate_spectrogram=True).items() if k != "spectrogram_image"}
-    assert json.loads(json.dumps(res, sort_keys=True, default=str)) == expected
+    assert_golden("audio_analyze_golden", json.loads(json.dumps(res, sort_keys=True, default=str)))

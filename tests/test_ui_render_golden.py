@@ -13,7 +13,7 @@ from streamlit.testing.v1 import AppTest
 from audio_detector import AudioContentAnalyzer, AudioModelAttributionEngine
 from audio_detector.tests.audio_fixtures import tone, write_wav
 from services.forensic_service import ForensicService
-from tests.golden_support import skip_unless_state_matches
+from tests.golden_support import assert_golden, skip_unless_state_matches
 from ui.batch_ui import process_single_audio, process_single_image, process_single_video
 
 
@@ -80,7 +80,6 @@ def test_ui_renders_match_golden(tmp_path):
         ["image_detector/models/ai_detector.pt", "image_detector/data/image_calibration.json",
          "audio_detector/data/audio_calibration.json", "video_detector/data/video_calibration.json"],
     )
-    expected = json.loads((Path(__file__).resolve().parents[1] / "tests" / "data" / "ui_render_golden.json").read_text(encoding="utf-8"))
     tmp = tmp_path
 
     rng = np.random.default_rng(12)
@@ -108,4 +107,4 @@ def test_ui_renders_match_golden(tmp_path):
         res["decision_" + k] = render(r_decision, d, tmp)
         res["dossier_" + k] = render(r_dossier, d, tmp)
     assert not [k for k, v in res.items() if "EXCEPTION" in v]
-    assert res == expected
+    assert_golden("ui_render_golden", res)

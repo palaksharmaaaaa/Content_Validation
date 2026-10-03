@@ -9,7 +9,7 @@ import numpy as np
 from PIL import Image
 
 from image_detector import ImageAIDetector
-from tests.golden_support import skip_unless_state_matches
+from tests.golden_support import assert_golden, skip_unless_state_matches
 
 
 def exif(make="Canon", model="Canon EOS R5"):
@@ -64,9 +64,4 @@ def _run(tmp):
 def test_predict_matches_golden_baseline(tmp_path):
     """Golden regression for ImageAIDetector.predict (49 inputs). Regenerate deliberately if scoring is meant to change."""
     skip_unless_state_matches("image_predict_golden.meta.json", ["image_detector/models/ai_detector.pt", "image_detector/data/image_calibration.json"])
-    root = Path(__file__).resolve().parents[2]
-    expected = json.loads((Path(__file__).resolve().parents[2] / "tests" / "data" / "image_predict_golden.json").read_text(encoding="utf-8"))
-    actual = _run(tmp_path)
-    assert set(actual) == set(expected)
-    for name in expected:
-        assert actual[name] == expected[name], name
+    assert_golden("image_predict_golden", _run(tmp_path))

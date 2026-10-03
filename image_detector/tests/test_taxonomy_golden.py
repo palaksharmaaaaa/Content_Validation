@@ -4,6 +4,7 @@ import random
 from pathlib import Path
 
 from image_detector.scoring import evaluate_taxonomy_classification as ev
+from tests.golden_support import assert_golden
 
 
 def rnd_case(r):
@@ -41,9 +42,10 @@ def rnd_case(r):
 
 
 def test_taxonomy_matches_golden_fuzz():
-    expected = json.loads((Path(__file__).resolve().parents[2] / "tests" / "data" / "taxonomy_fuzz_golden.json").read_text(encoding="utf-8"))
     r = random.Random(11)
-    for i, want in enumerate(expected):
+    results = []
+    for _ in range(4000):
         s, label, desc, reasons = ev(**rnd_case(r))
-        assert [str(s), label, desc, reasons] == want, i
-    assert len({w[0] for w in expected}) == 9
+        results.append([str(s), label, desc, reasons])
+    assert len({x[0] for x in results}) == 9  # every reachable taxonomy state is exercised
+    assert_golden("taxonomy_fuzz_golden", results)

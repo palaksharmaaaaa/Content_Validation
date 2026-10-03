@@ -9,7 +9,7 @@ from PIL import Image
 
 from audio_detector.tests.audio_fixtures import tone, write_wav
 from services.forensic_service import ForensicService
-from tests.golden_support import skip_unless_state_matches
+from tests.golden_support import assert_golden, skip_unless_state_matches
 
 
 def norm(o):
@@ -30,7 +30,6 @@ def test_headless_pipelines_match_golden(tmp_path):
         ["image_detector/models/ai_detector.pt", "image_detector/data/image_calibration.json",
          "audio_detector/data/audio_calibration.json", "video_detector/data/video_calibration.json"],
     )
-    expected = json.loads((Path(__file__).resolve().parents[1] / "tests" / "data" / "pipelines_golden.json").read_text(encoding="utf-8"))
     tmp = tmp_path
 
     rng = np.random.default_rng(12)
@@ -56,4 +55,4 @@ def test_headless_pipelines_match_golden(tmp_path):
     vw.release()
     r = strip(svc.video_pipeline.analyze(tmp / "v.mp4")); r.pop("path", None)
     res["vid"] = norm(r)
-    assert res == expected
+    assert_golden("pipelines_golden", res)

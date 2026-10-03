@@ -97,8 +97,8 @@ def atomic_write_json(file_path: str | Path, data: Any, indent: int = 2) -> None
             try:
                 if tmp_path.exists():
                     tmp_path.unlink(missing_ok=True)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("atomic_write_json: ignored %s: %s", type(exc).__name__, exc)
             logger.error("Failed atomic JSON write to %s: %s", target, exc)
             raise
 
@@ -176,8 +176,8 @@ def purge_ephemeral_cache(cache_dir: Optional[Path] = None) -> int:
                     try:
                         f.unlink(missing_ok=True)
                         purged += 1
-                    except Exception:
-                        pass
-    except Exception:
-        pass
+                    except Exception as exc:
+                        logger.debug("purge_ephemeral_cache: ignored %s: %s", type(exc).__name__, exc)
+    except Exception as exc:
+        logger.debug("purge_ephemeral_cache: ignored %s: %s", type(exc).__name__, exc)
     return purged

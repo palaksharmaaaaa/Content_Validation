@@ -7,6 +7,9 @@ from audio_detector.explain import build_audio_nine_dimensions_dossier
 from video_detector.explain import build_video_nine_dimensions_dossier
 
 
+from tests.golden_support import assert_golden
+
+
 def put(r, d, k, v, p=.6):
     if r.random() < p:
         d[k] = v
@@ -55,7 +58,6 @@ def video_case(r):
 
 
 def test_av_dossiers_match_golden():
-    expected = json.loads((Path(__file__).resolve().parents[1] / "tests" / "data" / "av_dossier_golden.json").read_text(encoding="utf-8"))
     r = random.Random(33)
     out = {"audio": [], "video": []}
     for _ in range(800):
@@ -64,4 +66,4 @@ def test_av_dossiers_match_golden():
     for _ in range(800):
         p, a, i, pr, at, cm = video_case(r)
         out["video"].append(build_video_nine_dimensions_dossier(p, a, i, pr, at, cm))
-    assert json.loads(json.dumps(out, sort_keys=True, default=str)) == expected
+    assert_golden("av_dossier_golden", json.loads(json.dumps(out, sort_keys=True, default=str)))

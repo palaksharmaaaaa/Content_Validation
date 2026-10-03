@@ -9,6 +9,9 @@ import numpy as np
 from image_detector.face import FaceDeepfakeDetector
 
 
+from tests.golden_support import assert_golden
+
+
 def scene(r, rng):
     h, w = r.choice([(240, 320), (480, 360), (300, 300), (1400, 1100), (20, 20), (12, 40)])
     img = rng.integers(60, 120, (h, w, 3), dtype=np.uint8) if r.random() < .5 else np.full((h, w, 3), r.randint(40, 200), np.uint8)
@@ -26,7 +29,6 @@ def scene(r, rng):
 
 
 def test_face_detection_matches_golden():
-    expected = json.loads((Path(__file__).resolve().parents[2] / "tests" / "data" / "image_faces_golden.json").read_text(encoding="utf-8"))
 
     r = random.Random(31)
     rng = np.random.default_rng(31)
@@ -39,4 +41,4 @@ def test_face_detection_matches_golden():
         res.append(det.detect_faces(img, person_boxes=pb))
     res.append(det.detect_faces(None))
     res.append(det.detect_faces(np.zeros((3,), np.uint8)))
-    assert json.loads(json.dumps(res, default=lambda o: list(o))) == expected
+    assert_golden("image_faces_golden", json.loads(json.dumps(res, default=lambda o: list(o))))

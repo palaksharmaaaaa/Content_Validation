@@ -5,6 +5,8 @@ results instead of raising on malformed input.
 """
 from __future__ import annotations
 
+import logging
+
 import struct
 import subprocess
 import wave
@@ -14,6 +16,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 
 from core.forensics.bytescan import WINDOW, read_windows  # noqa: F401  (re-exported)
+
+logger = logging.getLogger(__name__)
 
 EXT_TO_FORMAT = {
     ".wav": "wav", ".mp3": "mp3", ".aac": "aac", ".flac": "flac", ".ogg": "ogg", ".oga": "ogg",
@@ -134,7 +138,8 @@ def _decode_text(enc: int, raw: bytes) -> str:
         if enc == 2:
             return raw.decode("utf-16-be")
         return raw.decode("utf-8")
-    except Exception:
+    except Exception as exc:
+        logger.debug("_decode_text: ignored %s: %s", type(exc).__name__, exc)
         return raw.decode("latin-1", errors="replace")
 
 
@@ -347,7 +352,8 @@ def load_native_mono(path: Path, max_seconds: float = 30.0) -> Optional[Tuple[np
             if ch > 1:
                 x = x[: len(x) // ch * ch].reshape(-1, ch).mean(axis=1)
             return x, sr, bits
-        except Exception:
+        except Exception as exc:
+            logger.debug("load_native_mono: ignored %s: %s", type(exc).__name__, exc)
             return None
     try:
         res = subprocess.run(
@@ -379,8 +385,8 @@ def parse_vorbis_comment(body: bytes) -> Dict[str, str]:
             if "=" in kv:
                 k, v = kv.split("=", 1)
                 out[k.upper()] = v[:20000]
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("parse_vorbis_comment: ignored %s: %s", type(exc).__name__, exc)
     return out
 
 

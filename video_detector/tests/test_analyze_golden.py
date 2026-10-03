@@ -6,7 +6,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from tests.golden_support import skip_unless_state_matches
+from tests.golden_support import assert_golden, skip_unless_state_matches
 from video_detector import VideoAIDetector
 
 
@@ -28,7 +28,6 @@ def clean(r):
 
 def test_video_analysis_matches_golden(tmp_path):
     skip_unless_state_matches("video_analyze_golden.meta.json", ["video_detector/data/video_calibration.json"])
-    expected = json.loads((Path(__file__).resolve().parents[2] / "tests" / "data" / "video_analyze_golden.json").read_text(encoding="utf-8"))
     tmp = tmp_path
 
     rng = np.random.default_rng(6)
@@ -59,4 +58,4 @@ def test_video_analysis_matches_golden(tmp_path):
     (tmp / "junk.mp4").write_bytes(b"not a video")
     res["junk"] = clean(det.analyze_video(tmp / "junk.mp4"))
     res["missing"] = clean(det.analyze_video(tmp / "nope.mp4"))
-    assert json.loads(json.dumps(res, sort_keys=True, default=str)) == expected
+    assert_golden("video_analyze_golden", json.loads(json.dumps(res, sort_keys=True, default=str)))

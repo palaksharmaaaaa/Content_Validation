@@ -5,6 +5,8 @@ Pure stdlib + Pillow + numpy + cv2. All scans are bounded (WINDOW bytes head/tai
 """
 from __future__ import annotations
 
+import logging
+
 import struct
 import zlib
 from pathlib import Path
@@ -15,6 +17,8 @@ import numpy as np
 from PIL import Image
 
 from core.forensics.bytescan import read_windows
+
+logger = logging.getLogger(__name__)
 
 FULL_READ_LIMIT = 64 * 1024 * 1024
 
@@ -174,8 +178,8 @@ def collect_text_fields(path: Path) -> Dict[str, str]:
                     val = val.decode("utf-8", errors="replace").replace("\x00", "")
                 if val:
                     fields[f"exif:{name}"] = str(val)[:20000]
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("collect_text_fields: ignored %s: %s", type(exc).__name__, exc)
     return fields
 
 

@@ -7,6 +7,8 @@ pixels, not labels).
 """
 from __future__ import annotations
 
+import logging
+
 import io
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
@@ -17,6 +19,8 @@ from PIL import Image
 from core.forensics.registry import CheckContext, registry
 from core.forensics.schemas import EvidenceClass, Finding, FindingStatus, Severity
 from image_detector.dimension_checks import _common as C
+
+logger = logging.getLogger(__name__)
 
 STAGE = "metadata"
 DIM = "Section21"
@@ -60,7 +64,8 @@ def _read_exif(path) -> Dict[str, Dict[int, Any]]:
             ifd0 = dict(ex)
             sub = dict(ex.get_ifd(0x8769))
             gps = dict(ex.get_ifd(0x8825))
-    except Exception:
+    except Exception as exc:
+        logger.debug("_read_exif: ignored %s: %s", type(exc).__name__, exc)
         return {"ifd0": {}, "exif": {}, "gps": {}}
     return {"ifd0": ifd0, "exif": sub, "gps": gps}
 
@@ -107,7 +112,8 @@ def check_exif_consistency(ctx: CheckContext) -> Finding:
 def _parse_dt(v: Any) -> Optional[datetime]:
     try:
         return datetime.strptime(_s(v)[:19], "%Y:%m:%d %H:%M:%S")
-    except Exception:
+    except Exception as exc:
+        logger.debug("_parse_dt: ignored %s: %s", type(exc).__name__, exc)
         return None
 
 
@@ -120,8 +126,8 @@ def check_timestamp_sanity(ctx: CheckContext) -> Finding:
     gps_date = None
     try:
         gps_date = datetime.strptime(_s(ex["gps"].get(29, ""))[:10], "%Y:%m:%d")
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("check_timestamp_sanity: ignored %s: %s", type(exc).__name__, exc)
     if not any((orig, digi, mod, gps_date)):
         return _f("timestamp_sanity", "Timestamp plausibility", FindingStatus.NOT_APPLICABLE, Severity.NONE,
                   "No EXIF timestamps present.")
@@ -198,8 +204,8 @@ def check_icc_profile(ctx: CheckContext) -> Finding:
     try:
         with Image.open(ctx.path) as im:
             icc = im.info.get("icc_profile")
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("check_icc_profile: ignored %s: %s", type(exc).__name__, exc)
     if not icc:
         return _f("icc_profile", "ICC color profile", FindingStatus.INFO, Severity.NONE,
                   "No embedded ICC profile (common for screenshots, web exports and stripped files).", {"present": False})
@@ -208,7 +214,7 @@ def check_icc_profile(ctx: CheckContext) -> Finding:
         from PIL import ImageCms
 
         desc = ImageCms.getProfileDescription(ImageCms.ImageCmsProfile(io.BytesIO(icc))).strip()
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("check_icc_profile: ignored %s: %s", type(exc).__name__, exc)
     return _f("icc_profile", "ICC color profile", FindingStatus.INFO, Severity.NONE,
               f"Embedded ICC profile present{f' ({desc})' if desc else ''}.", {"present": True, "descriptor": desc, "bytes": len(icc)})

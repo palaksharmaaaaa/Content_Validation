@@ -1,0 +1,28 @@
+{
+ "items": {
+  "flat|balanced": "0015c42e331c4488f6ea",
+  "flat|extra": "d4a28318690febd4d7be",
+  "flat|extra_neg": "a0084029c54ab0fdcdcc",
+  "flat|high": "0015c42e331c4488f6ea",
+  "flicker|balanced": "0ccd300c4f7c7a77a7df",
+  "flicker|extra": "349d6a8789066fe7cfe2",
+  "flicker|extra_neg": "4db07ba89299b9ea2c4c",
+  "flicker|high": "0ccd300c4f7c7a77a7df",
+  "junk": "55ef966917bb8292ea67",
+  "missing": "35d21b04f40b7fe93526",
+  "moving|balanced": "db1f8429122de851841d",
+  "moving|extra": "0d904f04a17f245adc66",
+  "moving|extra_neg": "b7c8a788565e6f07a380",
+  "moving|high": "9145f38730b7538461c7",
+  "noise|balanced": "0b3a64db28de0dad6d48",
+  "noise|extra": "9c10d0a7e4580fee7c7e",
+  "noise|extra_neg": "1128ea48d9434ccb5a50",
+  "noise|high": "0b3a64db28de0dad6d48",
+  "progress": "b622a775b5c2d59f82ed",
+  "still|balanced": "71731d1f9e4bad168b34",
+  "still|extra": "db2af0031f82863c4e57",
+  "still|extra_neg": "d68309356d29be2d6892",
+  "still|high": "71731d1f9e4bad168b34"
+ },
+ "kind": "dict"
+}

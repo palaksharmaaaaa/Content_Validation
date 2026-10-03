@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 
 from core.decision import generate_final_decision as g
+from tests.golden_support import assert_golden
 
 OK = {"readable": True}
 IMG_AUTH = {"ai_percentage": 12.0, "real_percentage": 80.0, "undecided_percentage": 8.0,
@@ -43,8 +44,4 @@ cases = {
 
 
 def test_decision_output_matches_golden():
-    expected = json.loads((Path(__file__).parent / "data" / "decision_golden.json").read_text(encoding="utf-8"))
-    actual = json.loads(json.dumps({k: g(**v) for k, v in cases.items()}, default=str))
-    assert set(actual) == set(expected)
-    for name in expected:
-        assert actual[name] == expected[name], name
+    assert_golden("decision_golden", {k: g(**v) for k, v in cases.items()})
