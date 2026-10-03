@@ -337,6 +337,14 @@ def _screenshot_takeaway(noise: float) -> str:
     )
 
 
+def _undetermined_takeaway(p_ai: float, p_real: float) -> str:
+    return (
+        f"**The Simple Takeaway:** The evidence is **mixed** ({p_ai:.0f}% AI-like, {p_real:.0f}% camera-like), so this tool does not give a verdict.\n\n"
+        "Some signals look like a camera and some are weaker than usual. The most common cause is not AI at all: messaging apps, social media and "
+        "screenshots recompress photos, which removes the fine sensor grain this tool relies on. Treat this as *unknown* and look at the Evidence tab."
+    )
+
+
 def _synthetic_takeaway(p_ai: float, tax_label: str, noise: float, smooth: float) -> str:
     return (
         f"**The Simple Takeaway:** Our forensic engine's heuristic (uncalibrated) score is **{p_ai:.1f}% AI-likelihood**, indicating this image was most likely **created by generative Artificial Intelligence** "
@@ -430,6 +438,8 @@ def generate_newbie_explanation(
     is_screenshot = "SCREENSHOT" in verdict or "SCREEN" in verdict
     if is_screenshot:
         body = _screenshot_takeaway(noise)
+    elif verdict == "UNDETERMINED":
+        body = _undetermined_takeaway(p_ai, p_real)
     elif is_synthetic:
         body = _synthetic_takeaway(p_ai, tax_label, noise, smooth)
     elif is_edited:

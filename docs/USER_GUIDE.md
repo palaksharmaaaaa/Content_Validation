@@ -44,7 +44,7 @@ A blocked-file banner means the file matched your hard-block list or is a recogn
 - **Camera metadata (EXIF)** can be forged and earns no trust on its own.
 - **Generator attribution** ("looks like Midjourney") is an explanation aid and never changes the verdict.
 - Heavily compressed reposts, screenshots and low-resolution files weaken every signal.
-- Face analysis uses a simple skin-colour heuristic, not a validated face detector.
+- Faces are counted with a trained detector (YuNet), but the facial deepfake-risk score is a texture heuristic.
 
 More detail: [Limitations](LIMITATIONS.md).
 

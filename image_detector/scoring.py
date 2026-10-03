@@ -77,6 +77,10 @@ def pool_bayesian_log_odds(
     return round(total_posterior, 3), p_ai, p_real
 
 
+# Below this AI score a local noise inconsistency is treated as ordinary processing, not as AI editing.
+_INPAINT_MIN_AI_PCT = 35.0
+
+
 def evaluate_taxonomy_classification(
     ai_pct: float = 0.0,
     real_pct: float = 0.0,
@@ -300,13 +304,16 @@ def _stage_declared_or_art_synthesis(c: _TaxonomyInputs, S: Any) -> _Outcome:
 def _stage_enhanced_composite(c: _TaxonomyInputs, S: Any) -> _Outcome:
     """3. AI-enhanced / composite: explicit enhancer, face-swap, composite label or inpainting evidence."""
     composite_label = c.metadata.get("iptc_digital_source_type") == "compositeWithTrainedAlgorithmicMedia"
-    if not (c.is_ai_enhancer or c.is_face_swap or composite_label or c.is_inpainted):
+    # Local noise inconsistency alone (HDR, portrait-mode blur, selective retouching) is not evidence of AI: it
+    # only counts as a composite when the pixel score also leans synthetic.
+    inpainting_counts = c.is_inpainted and c.ai_pct >= _INPAINT_MIN_AI_PCT
+    if not (c.is_ai_enhancer or c.is_face_swap or composite_label or inpainting_counts):
         return None
     reasons: List[str] = []
     if c.is_face_swap:
         reasons.append(c.face_swap.get("details", "Neural face-swap and facial graft boundary detected"))
         reasons.append("Discontinuity between facial airbrushing and sharp facial hair/accessories")
-    if c.is_inpainted:
+    if inpainting_counts:
         reasons.append(c.inpainting.get("details", "Localized generative inpainting / composite detected"))
     if c.is_ai_enhancer:
         reasons.append(c.metadata.get("signature_details", "Neural image enhancement / upscaling software detected"))
@@ -324,7 +331,7 @@ def _stage_camera_base_heavily_altered(c: _TaxonomyInputs, S: Any) -> _Outcome:
     return S.AI_ENHANCED_COMPOSITE, [
         f"Genuine camera hardware base capture ({cam})",
         f"Overwhelming synthetic-leaning pixel evidence despite authentic base ({c.ai_pct:.1f}% AI) -- "
-        "consistent with an AI upscaler/denoiser/generative-fill pass that left no metadata footprint",
+        "consistent with an AI upscaler/denoiser/generative-fill pass, or with the phone's own beautify/HDR/night-mode processing, that left no metadata footprint",
     ]
 
 
@@ -386,6 +393,16 @@ def _stage_graphic_edit(c: _TaxonomyInputs, S: Any) -> _Outcome:
     return None
 
 
+def _stage_local_processing(c: _TaxonomyInputs, S: Any) -> _Outcome:
+    """6b. Uneven sensor noise with a real-leaning score: ordinary local processing, not generative editing."""
+    if not (c.is_inpainted and not c.is_scanned and c.ai_pct < _INPAINT_MIN_AI_PCT):
+        return None
+    return S.AUTHENTIC_EDITED, [
+        f"Sensor noise differs between regions of the image (inconsistency ratio: {c.inpainting.get('noise_inconsistency', 0.0):.2f})",
+        "The score does not indicate AI: uneven noise is typical of HDR, portrait-mode blur, beautify filters and selective retouching",
+    ]
+
+
 def _stage_authentic_photograph(c: _TaxonomyInputs, S: Any) -> _Outcome:
     """7. Default: authentic camera / phone photograph (or a scan of a physical print)."""
     m = c.metadata
@@ -419,5 +436,6 @@ _TAXONOMY_STAGES = (
     _stage_pixel_evidence_synthesis,
     _stage_screen_recapture,
     _stage_graphic_edit,
+    _stage_local_processing,
     _stage_authentic_photograph,
 )

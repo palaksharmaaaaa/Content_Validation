@@ -26,11 +26,11 @@ def _render_profile_section_1(v: _ProfileView) -> None:
     """1. Media & Container Origin"""
     st.markdown("**File**")
     f1, f2, f3, f4, f5 = st.columns(5)
-    f1.metric("File Name", v.fname[:20] + "..." if len(v.fname) > 23 else v.fname)
+    f1.metric("File Name", v.fname)
     f2.metric("File Size", f"{v.size_kb:.1f} KB ({v.size_mb:.2f} MB)")
     f3.metric("Format / MIME", f"{v.fmt} • {v.profile_data.get('mime_type', 'image/' + str(v.fmt).lower())}")
     f4.metric("Source Origin", v.src)
-    f5.metric("SHA-256 (Prefix)", f"{v.sha[:10]}..." if v.sha else "N/A")
+    f5.metric("SHA-256", v.sha or "N/A")
 
     st.markdown("---")
 
@@ -235,7 +235,7 @@ def render_video_stream_specs(profile_data: Dict[str, Any]) -> None:
     c6.metric("Aspect Ratio", geom.get("aspect_ratio", "N/A"))
     c7.metric("Bitrate", f"{codec.get('bitrate_kbps', 0.0):.0f} kbps" if codec.get('bitrate_kbps') else "N/A")
     sha_str = hashes.get("sha256", "")
-    c8.metric("SHA-256", f"{sha_str[:12]}..." if sha_str else "N/A")
+    c8.metric("SHA-256", sha_str or "N/A")
 
     st.markdown("---")
 
@@ -261,6 +261,6 @@ def render_audio_signal_specs(item: Dict[str, Any], profile_data: Dict[str, Any]
     c5.metric("Bit Depth", profile_data.get("bit_depth", "16-bit PCM"))
     c6.metric("RMS Energy", f"{profile_data.get('rms_energy', 0.0):.4f}" if profile_data.get('rms_energy') else "Normal")
     c7.metric("Dynamic Range", f"{profile_data.get('dynamic_range_db', 0.0):.1f} dB" if profile_data.get('dynamic_range_db') else "Standard")
-    c8.metric("SHA-256", f"{sha_str[:12]}..." if sha_str else "N/A")
+    c8.metric("SHA-256", sha_str or "N/A")
 
     st.markdown("---")

@@ -77,6 +77,7 @@ _STATUS_LIKELY_AUTHENTIC = "LIKELY_AUTHENTIC"
 _STATUS_PARTIAL = "PARTIALLY_SYNTHETIC_OR_EDITED"
 _STATUS_UNDETERMINED = "UNDETERMINED"
 _AUTHENTIC_TAXONOMY = ("AUTHENTIC_REAL_PHOTOGRAPH", "AUTHENTIC_EDITED")
+_SCORE_BACKED_AUTHENTIC = ("AUTHENTIC_REAL_PHOTOGRAPH", "AUTHENTIC_EDITED", "AUTHENTIC_RECAPTURED_SCREEN")
 
 
 def _attribution_stub(label: str, model_key: str = "unknown", region: str = "N/A") -> Dict[str, Any]:
@@ -270,6 +271,8 @@ def _status_from_probabilities(p_ai: float, p_real: float) -> Tuple[str, str]:
 
 
 def _taxonomy_from_fused(final_status: str, p_ai: float, p_real: float) -> Tuple[str, str, str]:
+    if final_status == _STATUS_UNDETERMINED and p_ai < 50.0:
+        return ("UNDETERMINED", "Undetermined / Mixed Signals", "Forensic evidence is balanced or out-of-distribution.")
     if final_status in ("LIKELY_SYNTHETIC", "LIKELY AI-GENERATED") or p_ai >= 65.0:
         return ("FULLY_AI_GENERATED", "Fully AI Generated",
                 "Synthesized end-to-end via generative diffusion or deep neural models.")
@@ -419,6 +422,11 @@ def generate_final_decision(
             p_ai, p_real = float(ai_result["ai_percentage"]), float(ai_result["real_percentage"])
             p_undecided = float(ai_result.get("undecided_percentage", 0.0))
             final_status = ai_result.get("label") or final_status
+            if tax_state in _SCORE_BACKED_AUTHENTIC and _status_from_probabilities(p_ai, p_real)[0] != _STATUS_LIKELY_AUTHENTIC:
+                # The category must never claim more than the score supports: "real" needs real >= 55 % and AI < 35 %.
+                tax_state, tax_label, tax_desc = _taxonomy_from_fused(_STATUS_UNDETERMINED, p_ai, p_real)
+                tax_reasons = tax_reasons + [f"The score ({p_ai:.0f}% AI, {p_real:.0f}% real) is too close to call, so no verdict is given."]
+                final_status, reason = _STATUS_UNDETERMINED, "Forensic evidence is balanced; explicit uncertainty maintained."
     else:
         tax_state, tax_label, tax_desc = _taxonomy_from_fused(final_status, p_ai, p_real)
 

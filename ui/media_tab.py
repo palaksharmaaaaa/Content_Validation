@@ -34,11 +34,18 @@ class MediaTabSpec:
 
 
 def _ingest_uploads(spec: MediaTabSpec, session_dir: Path) -> List[Dict[str, Any]]:
+    round_key = f"{spec.key}_uploader_round"
     uploaded = st.file_uploader(
         f"Drop {spec.noun.lower()} files here (one or several)", type=spec.file_types,
-        accept_multiple_files=True, key=f"uploader_{spec.key}",
+        accept_multiple_files=True, key=f"uploader_{spec.key}_{st.session_state.get(round_key, 0)}",
     )
     st.caption(spec.hint)
+    if uploaded:
+        with st.expander(f"{len(uploaded)} file(s) selected", expanded=len(uploaded) <= 5):
+            st.markdown(chr(10).join(f"- `{up.name}` ({up.size / 1_000_000:.2f} MB)" for up in uploaded))
+            if st.button("Remove all", key=f"{spec.key}_remove_all"):
+                st.session_state[round_key] = st.session_state.get(round_key, 0) + 1
+                st.rerun()
     items: List[Dict[str, Any]] = []
     for idx, up in enumerate(uploaded or []):
         clean_name = re.sub(r"[^a-zA-Z0-9_.-]", "_", up.name)
@@ -72,7 +79,7 @@ def _ingest_urls(spec: MediaTabSpec, session_dir: Path) -> List[Dict[str, Any]]:
         path = fetched["file_path"]
         item = {"path": path, "filename": fetched["filename"], "size": Path(path).stat().st_size}
         if spec.tag_upload_source:
-            item["source"] = f"Link ({url[:35]}...)"
+            item["source"] = f"Link ({url})"
         items.append(item)
     return items
 

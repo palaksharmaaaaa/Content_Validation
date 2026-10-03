@@ -20,6 +20,7 @@ from ui.results import (
     render_video_result,
 )
 from ui.media_tab import MediaTabSpec, render_media_tab
+from ui.layout import inject_css
 from ui.shell import render_sidebar
 from ui.validators import validate_expected_platform
 
@@ -84,6 +85,7 @@ def get_attribution_engine():
 
 st.set_page_config(page_title="OmniForensics", page_icon="🔍", layout="wide")
 
+inject_css()
 sensitivity_key = render_sidebar(SESSION_CACHE_DIR)
 
 st.title("OmniForensics")

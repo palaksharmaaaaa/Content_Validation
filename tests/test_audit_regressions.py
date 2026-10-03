@@ -193,3 +193,29 @@ def test_short_vendor_names_match_whole_words_only(tmp_path):
     assert plain["model_key"] != "udio"
     real = engine.attribute_audio(f, provenance_data={"metadata": {"generator": "Made with Udio"}})
     assert real["model_key"] == "udio"
+
+
+# ---- verdict must never claim more than the score supports
+@pytest.mark.parametrize("p_ai,p_real,expected", [
+    (2.0, 95.0, "AUTHENTIC_REAL_PHOTOGRAPH"),
+    (37.4, 46.0, "UNDETERMINED"),
+    (49.1, 34.5, "UNDETERMINED"),
+])
+def test_authentic_category_needs_a_real_leaning_score(p_ai, p_real, expected):
+    from core.decision import generate_final_decision
+
+    ai = {"taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH", "taxonomy_label": "Authentic Real Capture", "taxonomy_description": "",
+          "ai_percentage": p_ai, "real_percentage": p_real, "undecided_percentage": 100 - p_ai - p_real, "label": "LIKELY REAL"}
+    d = generate_final_decision({"readable": True}, {}, ai_result=ai)
+    assert d["taxonomy_state"] == expected
+    if expected == "UNDETERMINED":
+        assert d["final_status"] == "UNDETERMINED"
+
+
+def test_local_noise_inconsistency_alone_is_not_partly_ai():
+    from image_detector.schemas import ImageTaxonomyState
+    from image_detector.scoring import evaluate_taxonomy_classification
+
+    inp = {"is_manipulated": True, "noise_inconsistency": 0.73, "details": "x"}
+    low = evaluate_taxonomy_classification(ai_pct=1.9, real_pct=95.0, inpainting_data=inp, inpainting_detected=True)[0]
+    assert low == ImageTaxonomyState.AUTHENTIC_EDITED

@@ -1,8 +1,6 @@
 """
-image_detector.face: Standalone Facial & Deepfake Artifact Detector.
-Localizes human faces via skin-chrominance morphology and facial geometry,
-analyzing bilateral texture smoothness and synthetic boundary artifacts.
-Completely self-contained with zero outside dependencies.
+image_detector.face: face detection (YuNet, see core.face_detection) and facial texture-artifact scoring.
+The texture score (waxy skin, missing sensor noise) is a heuristic cue, not a trained deepfake detector.
 """
 from __future__ import annotations
 
@@ -11,10 +9,9 @@ from typing import Any, Dict, List, Optional, Tuple
 import cv2
 import numpy as np
 
-logger = logging.getLogger("image_detector.face")
+from core.face_detection import get_face_finder
 
-_SKIN_LOWER = (0, 133, 77)
-_SKIN_UPPER = (255, 173, 127)
+logger = logging.getLogger("image_detector.face")
 
 
 class FaceDeepfakeDetector:
@@ -31,129 +28,9 @@ class FaceDeepfakeDetector:
         image_bgr: np.ndarray,
         person_boxes: Optional[List[Tuple[int, int, int, int]]] = None,
     ) -> List[Tuple[int, int, int, int, float]]:
-        """
-        Detects face candidate regions.
-        If person_boxes are provided (from neural object detector):
-          Localizes faces strictly within the upper 48% of each detected person,
-          guaranteeing that furniture, clothing, hands, or background surfaces are
-          never falsely detected as human faces.
-        If person_boxes is None:
-          Runs anthropometric geometry and skin-chrominance gradient validation
-          to identify close-up portrait faces.
-        Returns list of (x, y, w, h, area).
-        """
-        if image_bgr is None or not hasattr(image_bgr, "shape") or len(image_bgr.shape) < 2:
-            return []
-        h_img, w_img = image_bgr.shape[:2]
-        if h_img < 16 or w_img < 16:
-            return []
-        if person_boxes is not None:
-            # An explicit empty list is a confirmed "zero persons in the frame" -> zero faces
-            return self._faces_within_persons(image_bgr, person_boxes)
-        return self._standalone_faces(image_bgr)
-
-    @staticmethod
-    def _skin_mask(frame_bgr: np.ndarray, kernel_size: int) -> np.ndarray:
-        """YCrCb skin-chrominance mask, morphologically closed with an elliptical kernel."""
-        ycrcb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2YCrCb)
-        mask = cv2.inRange(ycrcb, np.array(_SKIN_LOWER, dtype=np.uint8), np.array(_SKIN_UPPER, dtype=np.uint8))
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
-        return cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-
-    def _face_in_person(self, image_bgr: np.ndarray, box: Tuple[int, int, int, int]) -> Optional[Tuple[int, int, int, int, float]]:
-        """A face candidate inside the head region (upper 48%) of one detected person, or None."""
-        h_img, w_img = image_bgr.shape[:2]
-        px, py, pw, ph = box
-        if pw < 10 or ph < 15:
-            return None
-        hy1, hy2 = max(0, int(py)), min(h_img, int(py + ph * 0.48))
-        hx1, hx2 = max(0, int(px)), min(w_img, int(px + pw))
-        head_crop = image_bgr[hy1:hy2, hx1:hx2]
-        if head_crop.size == 0:
-            return None
-        ch, cw = head_crop.shape[:2]
-
-        cnts, _ = cv2.findContours(self._skin_mask(head_crop, 5), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        valid_cnts = [c for c in cnts if cv2.contourArea(c) >= (cw * ch * 0.08)]
-        if valid_cnts:
-            bx, by, bw, bh = cv2.boundingRect(max(valid_cnts, key=cv2.contourArea))
-            if 0.65 <= float(bh) / max(1.0, float(bw)) <= 2.20:
-                bx_c = max(0, min(w_img - 1, hx1 + bx))
-                by_c = max(0, min(h_img - 1, hy1 + by))
-                bw_c, bh_c = min(w_img - bx_c, bw), min(h_img - by_c, bh)
-                return (bx_c, by_c, bw_c, bh_c, float(bw_c * bh_c))
-
-        # No skin blob: a textured head region still implies a visible head
-        gray_head = cv2.cvtColor(head_crop, cv2.COLOR_BGR2GRAY)
-        if gray_head.size > 0 and float(np.std(gray_head)) > 12.0:
-            fw, fh = max(16, int(pw * 0.50)), max(16, int(ph * 0.35))
-            fx = max(0, min(w_img - 1, hx1 + int((pw - fw) / 2)))
-            fy = max(0, min(h_img - 1, hy1 + int(ph * 0.05)))
-            fw, fh = min(w_img - fx, fw), min(h_img - fy, fh)
-            return (fx, fy, fw, fh, float(fw * fh))
-        return None
-
-    def _faces_within_persons(self, image_bgr: np.ndarray, person_boxes: List[Tuple[int, int, int, int]]) -> List[Tuple[int, int, int, int, float]]:
-        faces = (self._face_in_person(image_bgr, box) for box in person_boxes)
-        return [f for f in faces if f is not None]
-
-    def _standalone_faces(self, image_bgr: np.ndarray) -> List[Tuple[int, int, int, int, float]]:
-        """Close-up portrait faces by skin-blob geometry (aspect, extent, texture, forehead/eye contrast)."""
-        h_img, w_img = image_bgr.shape[:2]
-        max_dim = max(h_img, w_img)
-        scale = 1024.0 / max_dim if max_dim > 1024 else 1.0
-        if scale < 1.0:
-            frame = cv2.resize(image_bgr, (int(w_img * scale), int(h_img * scale)), interpolation=cv2.INTER_AREA)
-        else:
-            frame = image_bgr
-        h_d, w_d = frame.shape[:2]
-        total_pixels = float(h_d * w_d)
-
-        kernel_size = max(5, int(min(h_d, w_d) * 0.015))
-        if kernel_size % 2 == 0:
-            kernel_size += 1
-        contours, _ = cv2.findContours(self._skin_mask(frame, kernel_size), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        inv_scale = 1.0 / scale
-        min_area, max_area = max(800, total_pixels * 0.02), total_pixels * 0.55
-
-        raw_candidates = []
-        for c in contours:
-            area = cv2.contourArea(c)
-            if not (min_area <= area <= max_area):
-                continue
-            x, y, w, h = cv2.boundingRect(c)
-            aspect_ratio = float(h) / max(1.0, float(w))
-            extent = float(area) / max(1.0, float(w * h))
-            if not (0.90 <= aspect_ratio <= 1.95 and 0.40 <= extent <= 0.92):
-                continue
-            crop_gray = gray_frame[y: y + h, x: x + w]
-            if crop_gray.size > 0:
-                if float(np.std(crop_gray)) < 15.0:
-                    continue  # flat wall / cloth patch
-                ch = crop_gray.shape[0]
-                fh_crop = crop_gray[: max(1, int(ch * 0.20)), :]
-                eye_crop = crop_gray[int(ch * 0.20): int(ch * 0.50), :]
-                if fh_crop.size > 0 and eye_crop.size > 0 and float(np.mean(fh_crop)) < (float(np.mean(eye_crop)) - 30.0):
-                    continue
-                raw_candidates.append((int(x * inv_scale), int(y * inv_scale), int(w * inv_scale), int(h * inv_scale),
-                                       float(area * (inv_scale ** 2))))
-        return self._non_max_suppression(raw_candidates)
-
-    @staticmethod
-    def _non_max_suppression(candidates: List[Tuple[int, int, int, int, float]], iou_threshold: float = 0.30) -> List[Tuple[int, int, int, int, float]]:
-        """Greedy NMS by descending area."""
-        kept: List[Tuple[int, int, int, int, float]] = []
-        for cx, cy, cw, ch, ca in sorted(candidates, key=lambda item: item[4], reverse=True):
-            overlaps = False
-            for kx, ky, kw, kh, _ka in kept:
-                inter = max(0, min(cx + cw, kx + kw) - max(cx, kx)) * max(0, min(cy + ch, ky + kh) - max(cy, ky))
-                if inter / float(cw * ch + kw * kh - inter) > iou_threshold:
-                    overlaps = True
-                    break
-            if not overlaps:
-                kept.append((cx, cy, cw, ch, ca))
-        return kept
+        """Faces found by the YuNet detector as (x, y, w, h, confidence). ``person_boxes`` is accepted for compatibility
+        and ignored: a real face detector needs no help from the person detector."""
+        return get_face_finder().find(image_bgr)
 
     def analyze_faces(
         self,

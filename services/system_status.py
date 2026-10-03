@@ -65,6 +65,11 @@ def collect_status() -> List[StatusRow]:
                               "Fitted" if ood_stats.is_file() else "Not fitted",
                               "Fit it from your library: python -m %s_detector.dimension_checks.fit_ood" % label.lower()))
 
+    from core.face_detection import get_face_finder
+
+    faces_ok = get_face_finder().available
+    rows.append(StatusRow("Face detector", OK if faces_ok else WARN, "YuNet loaded" if faces_ok else "Unavailable",
+                          "Counts faces with a trained network." if faces_ok else "Model file core/models/face_detection_yunet_2023mar.onnx is missing; faces will not be counted."))
     hb = _hardblock_entries(hardblock_file())
     rows.append(StatusRow("Hard-block list", OK if hb else INFO, f"{hb} hash(es)" if hb else "Empty",
                           "Optional: list SHA-256 hashes (one per line) in core/data/hardblock_sha256.txt."))

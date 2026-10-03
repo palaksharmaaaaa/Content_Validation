@@ -7,9 +7,11 @@ Completely self-contained with zero outside dependencies.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 import cv2
 import numpy as np
+
+from core.face_detection import get_face_finder
 
 logger = logging.getLogger("video_detector.face")
 
@@ -22,110 +24,12 @@ class VideoFaceDeepfakeDetector:
 
     def detect_faces(
         self,
-        frame_bgr: np.ndarray,
+        image_bgr: np.ndarray,
         person_boxes: Optional[List[Tuple[int, int, int, int]]] = None,
     ) -> List[Tuple[int, int, int, int, float]]:
-        """
-        Detects face candidate regions in a video frame.
-        If person_boxes are provided:
-          Constrains candidate regions strictly to the head region (upper 48% of person box),
-          preventing false detections on background surfaces, furniture, and hands.
-        If person_boxes is None:
-          Uses anthropometric morphology and skin-chrominance gradient filtering.
-        """
-        if frame_bgr is None or not hasattr(frame_bgr, "shape") or len(frame_bgr.shape) < 2:
-            return []
-
-        h_img, w_img = frame_bgr.shape[:2]
-        if h_img < 16 or w_img < 16:
-            return []
-
-        # Case 1: Gated by person detections
-        if person_boxes is not None:
-            if len(person_boxes) == 0:
-                return []
-
-            candidate_faces = []
-            for px, py, pw, ph in person_boxes:
-                if pw < 10 or ph < 15:
-                    continue
-                hy1 = max(0, int(py))
-                hy2 = min(h_img, int(py + ph * 0.48))
-                hx1 = max(0, int(px))
-                hx2 = min(w_img, int(px + pw))
-
-                head_crop = frame_bgr[hy1:hy2, hx1:hx2]
-                if head_crop.size == 0:
-                    continue
-                ch, cw = head_crop.shape[:2]
-
-                ycrcb = cv2.cvtColor(head_crop, cv2.COLOR_BGR2YCrCb)
-                lower_skin = np.array([0, 133, 77], dtype=np.uint8)
-                upper_skin = np.array([255, 173, 127], dtype=np.uint8)
-                skin_mask = cv2.inRange(ycrcb, lower_skin, upper_skin)
-                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-                skin_mask = cv2.morphologyEx(skin_mask, cv2.MORPH_CLOSE, kernel)
-
-                cnts, _ = cv2.findContours(skin_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                valid_cnts = [c for c in cnts if cv2.contourArea(c) >= (cw * ch * 0.08)]
-
-                face_found = False
-                if valid_cnts:
-                    c = max(valid_cnts, key=cv2.contourArea)
-                    bx, by, bw, bh = cv2.boundingRect(c)
-                    aspect = float(bh) / max(1.0, float(bw))
-                    if 0.65 <= aspect <= 2.20:
-                        bx_c = max(0, min(w_img - 1, hx1 + bx))
-                        by_c = max(0, min(h_img - 1, hy1 + by))
-                        bw_c = min(w_img - bx_c, bw)
-                        bh_c = min(h_img - by_c, bh)
-                        candidate_faces.append((bx_c, by_c, bw_c, bh_c, float(bw_c * bh_c)))
-                        face_found = True
-
-                if not face_found:
-                    gray_head = cv2.cvtColor(head_crop, cv2.COLOR_BGR2GRAY)
-                    if gray_head.size > 0 and float(np.std(gray_head)) > 12.0:
-                        fw = max(16, int(pw * 0.50))
-                        fh = max(16, int(ph * 0.35))
-                        fx = max(0, min(w_img - 1, hx1 + int((pw - fw) / 2)))
-                        fy = max(0, min(h_img - 1, hy1 + int(ph * 0.05)))
-                        fw = min(w_img - fx, fw)
-                        fh = min(h_img - fy, fh)
-                        candidate_faces.append((fx, fy, fw, fh, float(fw * fh)))
-
-            return candidate_faces
-
-        # Case 2: Standalone frame without prior person boxes
-        total_pixels = float(h_img * w_img)
-
-        ycrcb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2YCrCb)
-        lower_skin = np.array([0, 133, 77], dtype=np.uint8)
-        upper_skin = np.array([255, 173, 127], dtype=np.uint8)
-        skin_mask = cv2.inRange(ycrcb, lower_skin, upper_skin)
-
-        kernel_size = max(5, int(min(h_img, w_img) * 0.015))
-        if kernel_size % 2 == 0:
-            kernel_size += 1
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
-        skin_mask = cv2.erode(skin_mask, kernel, iterations=2)
-        skin_mask = cv2.dilate(skin_mask, kernel, iterations=4)
-
-        contours, _ = cv2.findContours(skin_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        candidate_faces = []
-
-        for c in contours:
-            area = cv2.contourArea(c)
-            min_area = max(1500, total_pixels * 0.0025)
-            max_area = total_pixels * 0.40
-            if min_area <= area <= max_area:
-                x, y, w, h = cv2.boundingRect(c)
-                aspect_ratio = float(h) / max(1.0, float(w))
-                extent = float(area) / max(1.0, float(w * h))
-                if 0.95 <= aspect_ratio <= 1.90 and 0.45 <= extent <= 0.90:
-                    candidate_faces.append((int(x), int(y), int(w), int(h), float(area)))
-
-        candidate_faces.sort(key=lambda item: item[4], reverse=True)
-        return candidate_faces
+        """Faces found by the YuNet detector as (x, y, w, h, confidence). ``person_boxes`` is accepted for compatibility
+        and ignored: a real face detector needs no help from the person detector."""
+        return get_face_finder().find(image_bgr)
 
     def analyze_frame_faces(
         self,

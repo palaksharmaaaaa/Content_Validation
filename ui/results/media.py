@@ -6,6 +6,8 @@ from typing import Any, Dict, List
 
 import streamlit as st
 
+from ui.layout import render_table
+
 
 def render_image_preview(item: Dict[str, Any], profile_data: Dict[str, Any], ai_result: Dict[str, Any]) -> None:
     """Show the image, plus the spatial anomaly heatmap when one exists."""
@@ -54,4 +56,4 @@ def render_timeline(segments: List[Dict[str, Any]], title: str) -> None:
         label = str(seg.get("label", ""))
         verdict = "AI-like" if "AI" in label else ("Real-like" if "REAL" in label else "Unsure")
         rows.append({"From (s)": seg.get("start_seconds", 0.0), "To (s)": seg.get("end_seconds", 0.0), "Verdict": verdict})
-    st.dataframe(rows, hide_index=True, width="stretch")
+    render_table(rows)

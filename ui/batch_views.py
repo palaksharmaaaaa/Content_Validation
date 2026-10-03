@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 import streamlit as st
 
+from ui.layout import render_table
 from ui.results.summary import verdict_style
 
 
@@ -36,10 +37,7 @@ def render_batch_overview(results: List[Dict[str, Any]], modality: str) -> Optio
     c.metric("Could not process", len(results) - len(ok))
 
     table = pd.DataFrame([_row(r, modality) for r in results])
-    st.dataframe(
-        table, hide_index=True, width="stretch",
-        column_config={"AI likelihood": st.column_config.ProgressColumn("AI likelihood", min_value=0, max_value=100, format="%.0f%%")},
-    )
+    render_table(table.fillna("").to_dict("records"), percent_bars=["AI likelihood"])
     left, right, _ = st.columns([1, 1, 2])
     left.download_button("Download table (CSV)", table.to_csv(index=False).encode("utf-8"),
                          file_name=f"{modality}_summary.csv", mime="text/csv", key=f"csv_{modality}")

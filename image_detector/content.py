@@ -277,7 +277,7 @@ class ImageContentAnalyzer:
                             human_count = 1
                             single_character_detected = True
         elif faces_detected > human_count:
-            faces_detected = human_count  # Physical invariant: each person has at most 1 face
+            human_count = faces_detected  # the person detector missed people whose faces were found
         return human_count, faces_detected, single_character_detected
 
     @staticmethod

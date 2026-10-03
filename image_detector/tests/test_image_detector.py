@@ -338,11 +338,12 @@ class TestImageDetector(unittest.TestCase):
         self.assertTrue(inpaint_res["is_manipulated"])
 
         # Test taxonomy routing for inpainting
-        s, l, _, _ = evaluate_taxonomy_classification(
-            inpainting_data=inpaint_res,
-            inpainting_detected=True,
-            metadata={"camera_make": "Sony", "camera_model": "DSC-T99"},
-        )
+        meta = {"camera_make": "Sony", "camera_model": "DSC-T99"}
+        # Uneven noise with a real-leaning score is ordinary local processing, never "partly AI"
+        s, _, _, _ = evaluate_taxonomy_classification(inpainting_data=inpaint_res, inpainting_detected=True, metadata=meta, ai_pct=2.0, real_pct=95.0)
+        self.assertEqual(s, ImageTaxonomyState.AUTHENTIC_EDITED)
+        # The same noise pattern together with a synthetic-leaning score is a composite
+        s, l, _, _ = evaluate_taxonomy_classification(inpainting_data=inpaint_res, inpainting_detected=True, metadata=meta, ai_pct=45.0, real_pct=40.0)
         self.assertEqual(s, ImageTaxonomyState.AI_ENHANCED_COMPOSITE)
         self.assertEqual(l, "AI-Enhanced / Composite (Mix)")
 

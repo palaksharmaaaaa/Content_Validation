@@ -40,7 +40,7 @@ No trained checkpoint, calibration history, feedback or dataset is included. Eve
 | [Testing](docs/TESTING.md) | Running the tests, golden files, adding a check |
 | [Limitations](docs/LIMITATIONS.md) | What is unverified or missing, stated plainly |
 | [Old audit verification](docs/audit/OLD_AUDIT_VERIFICATION.md) | Claim-by-claim result of checking an older audit report |
-| `GLOBAL_*_TAXONOMY_AND_FORENSIC_RESEARCH_REPORT.md` | Research specification for each modality, with an implementation-status appendix |
+| [Taxonomy research reports](docs): `docs/GLOBAL_*_TAXONOMY_AND_FORENSIC_RESEARCH_REPORT.md` | Research specification for each modality, with an implementation-status appendix |
 | [History](docs/history/README.md) | Archived design specs and plans |
 
 ## Repository layout

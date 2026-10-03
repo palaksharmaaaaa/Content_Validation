@@ -19,7 +19,7 @@ claim does not hold · **Open** = valid, deliberately not changed (reason given)
 ## High
 | ID | Verdict | Notes |
 |---|---|---|
-| H-1 Skin-colour "face detection" | **Open (documented)** | Valid; listed in [Limitations](../LIMITATIONS.md). Replacing it with a Haar/DNN detector cannot be validated here (no labelled face images, no network); a blind swap could lower recall on real faces. Do it together with the calibration tool once labelled data exists. |
+| H-1 Skin-colour "face detection" | **Fixed now** | Valid. Faces are now found by the YuNet network (`core/face_detection.py`); counts were reviewed by eye on 36 real photos. Recall/precision remain unmeasured ([Limitations](../LIMITATIONS.md)). |
 | H-2 Vocoder cutoff false positives | **Fixed now** | A cutoff within 8 % of Nyquist is ordinary anti-aliasing and no longer counts. |
 | H-3 Undecided-margin scale | **Fixed now** | Gap was on a 0-100 scale but clamped as 0-1, so the margin was always the 3 % floor. |
 | H-4 Fusion overwritten by image result | Already fixed | `decision_mode` (`image_authoritative` vs `fused`); video verdict comes from the video detector. |

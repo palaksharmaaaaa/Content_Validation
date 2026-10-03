@@ -12,6 +12,8 @@ from audio_detector import AudioSelfImprover
 from image_detector import ImageSelfImprover
 from video_detector import VideoSelfImprover
 
+from ui.layout import render_table
+
 _MODALITIES = (("Image", "image", ImageSelfImprover), ("Video", "video", VideoSelfImprover), ("Audio", "audio", AudioSelfImprover))
 _WEIGHT_KEYS = {"image": "feature_weights", "video": "temporal_weights", "audio": "acoustic_weights"}
 
@@ -52,7 +54,7 @@ def _recent_table(records: Dict[str, List[Dict[str, Any]]], limit: int = 15) -> 
                 "When": str(rec.get("timestamp", ""))[:19].replace("T", " "),
                 "Type": modality, "File": Path(path).name,
                 "Label": rec.get("user_label") or rec.get("ground_truth", "?"),
-                "Note": str(rec.get("notes") or rec.get("user_notes", ""))[:90],
+                "Note": str(rec.get("notes") or rec.get("user_notes", "")),
             })
     return sorted(rows, key=lambda r: r["When"], reverse=True)[:limit]
 
@@ -83,7 +85,7 @@ def render_learning_dashboard() -> None:
             with tab:
                 calib = learners[label].load_calibration()
                 weights = calib.get(_WEIGHT_KEYS[mod], {})
-                st.dataframe([{"Signal": k.replace("_", " "), "Weight": round(v, 3)} for k, v in weights.items()], hide_index=True, width="stretch")
+                render_table([{"Signal": k.replace("_", " "), "Weight": round(v, 3)} for k, v in weights.items()])
                 offsets = calib.get("sensitivity_offsets", {})
                 if offsets:
                     st.caption("Offsets: " + ", ".join(f"{k.replace('_', ' ')} {v:+.2f}" for k, v in offsets.items()))
@@ -91,6 +93,6 @@ def render_learning_dashboard() -> None:
     st.markdown("**Recent corrections**")
     rows = _recent_table(records)
     if rows:
-        st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+        render_table(rows)
     else:
         st.caption("None yet. Open any result, go to the Feedback tab and tell the app what the file really is.")

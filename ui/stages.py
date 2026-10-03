@@ -11,6 +11,8 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 import pandas as pd
 import streamlit as st
 
+from ui.layout import render_table
+
 _STATUS = {
     "PASS": ("✅", "Pass"),
     "WARN": ("⚠", "Warning"),
@@ -142,4 +144,4 @@ def render_findings_stage(
     with st.expander(f"{title}: {summary}", expanded=bool(flagged)):
         st.caption(caption + (f" {advisory_note}" if advisory_note else ""))
         if findings:
-            st.dataframe(pd.DataFrame(findings_to_rows(findings, show_weight=show_weight)), hide_index=True, width="stretch")
+            render_table(findings_to_rows(findings, show_weight=show_weight))
