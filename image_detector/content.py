@@ -13,24 +13,21 @@ Completely self-contained with zero outside dependencies.
 from __future__ import annotations
 
 import logging
-import threading
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 import cv2
 import numpy as np
 
+from core.perception.colors import dominant_colors
+from core.perception.detector import ANIMALS, VEHICLES, get_object_detector
+from core.perception.enrich import describe_scene, recognize_details
 from image_detector.face import FaceDeepfakeDetector
 
 logger = logging.getLogger("image_detector.content")
 
-COCO_ANIMALS = {
-    "bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe",
-}
-
-COCO_VEHICLES = {
-    "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat",
-}
+COCO_ANIMALS = ANIMALS
+COCO_VEHICLES = VEHICLES
 
 COCO_ITEMS = {
     "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "backpack",
@@ -43,51 +40,16 @@ COCO_ITEMS = {
     "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush",
 }
 
-# Module-level shared model cache to avoid reloading weights across instances
-_SHARED_VISION_MODEL = None
-_VISION_INIT_LOCK = threading.Lock()
-_SHARED_CATEGORIES = None
-
-
 class ImageContentAnalyzer:
-    """Scene, object inventory, lighting, and environmental intelligence analyzer for images."""
+    """Scene, object inventory, faces, lighting and environmental intelligence analyzer for images.
+
+    Detection uses RF-DETR, recognition (scene, species, vehicle type, genre, time of day) uses SigLIP 2, expression and
+    same-person matching use the OpenCV zoo models (see core.perception). Every model degrades to "not available".
+    """
 
     def __init__(self):
         self.face_detector = FaceDeepfakeDetector()
-        self.vision_model = None
-        self.categories: List[str] = []
-        self._init_vision_backbone()
-
-    def _init_vision_backbone(self) -> None:
-        """Loads a pretrained neural object detector (SSDLite320 MobileNet V3 Large) for real-time bounding box detection."""
-        with _VISION_INIT_LOCK:  # one load per process even when several sessions initialise concurrently
-            self._init_vision_backbone_locked()
-
-    def _init_vision_backbone_locked(self) -> None:
-        global _SHARED_VISION_MODEL, _SHARED_CATEGORIES
-        if _SHARED_VISION_MODEL is not None and _SHARED_CATEGORIES is not None:
-            self.vision_model = _SHARED_VISION_MODEL
-            self.categories = _SHARED_CATEGORIES
-            return
-
-        try:
-            import torch
-            from torchvision.models.detection import (
-                ssdlite320_mobilenet_v3_large,
-                SSDLite320_MobileNet_V3_Large_Weights,
-            )
-            weights = SSDLite320_MobileNet_V3_Large_Weights.DEFAULT
-            self.vision_model = ssdlite320_mobilenet_v3_large(weights=weights).eval()
-            if torch.cuda.is_available():
-                self.vision_model = self.vision_model.to("cuda")
-            self.categories = weights.meta.get("categories", [])
-            _SHARED_VISION_MODEL = self.vision_model
-            _SHARED_CATEGORIES = self.categories
-            logger.info("ImageContentAnalyzer neural object detector backbone loaded successfully.")
-        except Exception as e:
-            logger.debug("Neural detector backbone not initialized, running fallback: %s", e)
-            self.vision_model = None
-            self.categories = []
+        self.detector = get_object_detector()
 
     def analyze_image_content(self, image_path: str | Path | np.ndarray) -> Dict[str, Any]:
         """Runs multi-dimensional content analysis on an image."""
@@ -126,31 +88,50 @@ class ImageContentAnalyzer:
             item_details,
         ) = self._detect_objects(sample_bgr)
 
-        # 2. Face & Human / Character Detection Anchored to Persons
+        # 1b. What kind of animal / vehicle (zero-shot recognition on each box)
+        recognize_details(sample_bgr, animal_details, "animal")
+        recognize_details(sample_bgr, vehicle_details, "vehicle")
+
+        # 2. Faces: detection, texture risk, expression, same-person groups
         face_info = self.face_detector.analyze_faces(sample_bgr, person_boxes=person_boxes)
         faces_detected = face_info["faces_detected"]
 
         human_count, faces_detected, single_character_detected = self._count_humans(sample_bgr, person_boxes, faces_detected)
 
         # 3. Lighting & Daytime Analysis
+        scene = describe_scene(sample_bgr)
         lighting_info = self._analyze_lighting(sample_bgr)
+        if scene.get("time_of_day"):
+            lighting_info["daytime"] = scene["time_of_day"].capitalize()
 
         # 4. Tone & Mood Analysis
         tone_info = self._analyze_tone_and_color(sample_bgr)
 
         # 5. Environment & Surroundings
         environment = self._infer_environment(sample_bgr, detected_items, detected_vehicles, detected_animals)
+        if scene.get("scene"):
+            environment["setting"] = scene["scene"].capitalize()
+        environment.update({k: scene[k] for k in ("scene_confidence", "scene_candidates", "indoor") if k in scene})
 
         text_regions_count = self._count_text_regions(img_bgr)
 
         # 6. Depiction & Purpose
         purpose = self._infer_purpose(human_count, h, w, detected_items, text_regions_count=text_regions_count, is_character=single_character_detected)
+        if "genre" in scene:
+            # The trained recogniser decides the genre; the text-region heuristic over-fires on busy photos, so a
+            # document layout is only kept when the recogniser also says "document or screenshot".
+            genre = scene["genre"]
+            purpose["primary_genre"] = genre.capitalize() if genre else "General scene"
+            if genre != "document or screenshot":
+                purpose["document_layout"] = "None (Standard Visual Content)"
 
-        return self._assemble_result(
+        result = self._assemble_result(
             human_count, faces_detected, single_character_detected, person_boxes, face_info,
             (detected_animals, animal_details), (detected_vehicles, vehicle_details), (detected_items, item_details),
             text_regions_count, environment, lighting_info, tone_info, purpose,
         )
+        result["colors"] = dominant_colors(sample_bgr)
+        return result
 
     @staticmethod
     def _assemble_result(
@@ -172,6 +153,8 @@ class ImageContentAnalyzer:
                 "person_boxes": [
                     {"x": b[0], "y": b[1], "width": b[2], "height": b[3]} for b in person_boxes
                 ],
+                "expressions": face_info.get("expressions", []),
+                "distinct_people_in_faces": face_info.get("distinct_people", 0),
                 "deepfake_analysis": {
                     "risk": face_info.get("deepfake_risk", "NONE"),
                     "confidence": face_info.get("facial_ai_confidence", 0.0),
@@ -209,6 +192,9 @@ class ImageContentAnalyzer:
             "setting_type": environment.get("setting", "Unknown"),
             "vegetation_ratio": environment.get("vegetation_ratio", 0.0),
             "sky_water_ratio": environment.get("sky_water_ratio", 0.0),
+            "scene_confidence": environment.get("scene_confidence"),
+            "scene_candidates": environment.get("scene_candidates", []),
+            "indoor": environment.get("indoor"),
         }
 
         light_dict = {
@@ -318,88 +304,36 @@ class ImageContentAnalyzer:
         List[str],
         List[Dict[str, Any]],
     ]:
-        """Detects person boxes, animals, vehicles, and items via SSDLite MobileNet V3 with strict confidence filtering."""
-        if self.vision_model is None or not self.categories:
-            return [], [], [], [], [], [], []
-
+        """Detects person boxes, animals, vehicles, and items with RF-DETR."""
+        person_boxes: List[Tuple[int, int, int, int]] = []
+        detected_animals: List[str] = []
+        animal_details: List[Dict[str, Any]] = []
+        detected_vehicles: List[str] = []
+        vehicle_details: List[Dict[str, Any]] = []
+        detected_items: List[str] = []
+        item_details: List[Dict[str, Any]] = []
         try:
-            import torch
-            import torchvision.transforms.functional as TF
-            h_img, w_img = img_bgr.shape[:2]
-            max_d = max(h_img, w_img)
-            scale = 640.0 / max_d if max_d > 640 else 1.0
-            sw, sh = int(w_img * scale), int(h_img * scale)
-            inv_scale = 1.0 / scale
-
-            resized_bgr = cv2.resize(img_bgr, (sw, sh), interpolation=cv2.INTER_AREA)
-            rgb = cv2.cvtColor(resized_bgr, cv2.COLOR_BGR2RGB)
-            tensor = TF.to_tensor(rgb).unsqueeze(0)
-
-            with torch.no_grad():
-                model_device = next(self.vision_model.parameters()).device
-                preds = self.vision_model(tensor.to(model_device))[0]
-
-            boxes = preds["boxes"]
-            labels = preds["labels"]
-            scores = preds["scores"]
-
-            keep = scores >= 0.35
-            k_boxes = boxes[keep].tolist()
-            k_labels = labels[keep].tolist()
-            k_scores = scores[keep].tolist()
-
-            del tensor, preds, boxes, labels, scores
-
-            person_boxes: List[Tuple[int, int, int, int]] = []
-            detected_animals: List[str] = []
-            animal_details: List[Dict[str, Any]] = []
-            detected_vehicles: List[str] = []
-            vehicle_details: List[Dict[str, Any]] = []
-            detected_items: List[str] = []
-            item_details: List[Dict[str, Any]] = []
-
-            for box, label_idx, score in zip(k_boxes, k_labels, k_scores):
-                if label_idx >= len(self.categories):
-                    continue
-                label_name = self.categories[label_idx].lower().strip()
-                if label_name in ("__background__", "n/a"):
-                    continue
-
-                bx1, by1, bx2, by2 = box
-                orig_x = max(0, int(bx1 * inv_scale))
-                orig_y = max(0, int(by1 * inv_scale))
-                orig_w = min(w_img - orig_x, int((bx2 - bx1) * inv_scale))
-                orig_h = min(h_img - orig_y, int((by2 - by1) * inv_scale))
-                bbox_dict = {"x": orig_x, "y": orig_y, "width": orig_w, "height": orig_h, "confidence": round(score, 2)}
-
-                if label_name == "person":
-                    if score >= 0.40:
-                        person_boxes.append((orig_x, orig_y, orig_w, orig_h))
-                elif label_name in COCO_ANIMALS:
-                    if score >= 0.40:
-                        detected_animals.append(label_name)
-                        animal_details.append({"name": label_name, "score": round(score, 2), "bbox": bbox_dict})
-                elif label_name in COCO_VEHICLES:
-                    if score >= 0.40:
-                        detected_vehicles.append(label_name)
-                        vehicle_details.append({"name": label_name, "score": round(score, 2), "bbox": bbox_dict})
-                else:
-                    if label_name not in detected_items:
-                        detected_items.append(label_name)
-                    item_details.append({"name": label_name, "score": round(score, 2), "bbox": bbox_dict})
-
-            return (
-                person_boxes,
-                detected_animals,
-                animal_details,
-                detected_vehicles,
-                vehicle_details,
-                detected_items,
-                item_details,
-            )
+            detections = self.detector.detect(img_bgr)
         except Exception as e:
-            logger.warning("Neural object detection failed: %s", e)
-            return [], [], [], [], [], [], []
+            logger.warning("Object detection failed: %s", e)
+            detections = []
+        for det in detections:
+            label, score = det["label"], det["score"]
+            x, y, w, h = det["box"]
+            bbox_dict = {"x": x, "y": y, "width": w, "height": h, "confidence": round(score, 2)}
+            if label == "person":
+                person_boxes.append((x, y, w, h))
+            elif label in COCO_ANIMALS:
+                detected_animals.append(label)
+                animal_details.append({"name": label, "score": round(score, 2), "bbox": bbox_dict})
+            elif label in COCO_VEHICLES:
+                detected_vehicles.append(label)
+                vehicle_details.append({"name": label, "score": round(score, 2), "bbox": bbox_dict})
+            else:
+                if label not in detected_items:
+                    detected_items.append(label)
+                item_details.append({"name": label, "score": round(score, 2), "bbox": bbox_dict})
+        return person_boxes, detected_animals, animal_details, detected_vehicles, vehicle_details, detected_items, item_details
 
     def _classify_semantic_categories(
         self, img_bgr: np.ndarray

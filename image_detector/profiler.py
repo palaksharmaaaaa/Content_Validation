@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 from core.hashing import file_digests
+from core.perception.colors import dominant_colors, name_color
 
 import cv2
 import numpy as np
@@ -53,54 +54,8 @@ def compute_pixel_entropy(image_bgr: np.ndarray) -> float:
 
 
 def rgb_to_color_name(r: int, g: int, b: int) -> str:
-    """Classifies an RGB tuple into a clean, human-readable color name."""
-    diff = max(abs(r - g), abs(r - b), abs(g - b))
-    lum = 0.299 * r + 0.587 * g + 0.114 * b
-
-    # Low saturation / monochrome
-    if diff <= 16:
-        if lum > 238:
-            return "Pure White"
-        elif lum > 195:
-            return "Off-White / Platinum"
-        elif lum > 145:
-            return "Silver / Slate Gray"
-        elif lum > 95:
-            return "Medium Neutral Gray"
-        elif lum > 42:
-            return "Charcoal / Graphite"
-        else:
-            return "Jet Black"
-
-    # Chromatic dominant hues
-    if r >= g and r >= b:
-        if g > b * 1.4 and r > 170 and g > 120:
-            return "Golden Ochre" if g > 165 else "Warm Amber / Orange"
-        elif g > b:
-            return "Terracotta / Peach" if r > 180 else "Warm Rust / Brown"
-        elif b > g:
-            return "Crimson / Magenta" if b > 115 else "Ruby Red"
-        return "Deep Crimson Red"
-    elif g >= r and g >= b:
-        if b > r * 1.3:
-            return "Teal / Aquamarine"
-        elif r > b * 1.3:
-            return "Olive / Moss Green"
-        elif lum > 175:
-            return "Mint / Sage Green"
-        else:
-            return "Emerald / Forest Green"
-    else:  # Blue dominant
-        if r > g * 1.25:
-            return "Royal Purple / Violet"
-        elif g > r * 1.25:
-            return "Cyan / Cerulean"
-        elif lum > 175:
-            return "Sky / Azure Blue"
-        elif lum < 70:
-            return "Deep Navy Blue"
-        else:
-            return "Cobalt / Sapphire Blue"
+    """Everyday name of an sRGB colour (nearest in CIELAB, see core.perception.colors)."""
+    return name_color(r, g, b).title()
 
 
 def parse_gps_info(gps_dict: dict) -> Dict[str, Any]:
@@ -313,22 +268,12 @@ def _luminance_statistics(gray: np.ndarray) -> Dict[str, Any]:
 
 
 def _dominant_palette(img_bgr: np.ndarray, gray: np.ndarray, channels: int) -> Tuple[List[Dict[str, Any]], int]:
-    """Top-6 quantised colour swatches with human names; also returns the number of unique quantised colours."""
-    small = cv2.resize(
-        img_bgr[:, :, :3] if channels >= 3 else cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR),
-        (100, 100), interpolation=cv2.INTER_AREA,
-    )
+    """Up to six dominant colours with human names; also returns the number of unique quantised colours."""
+    bgr = img_bgr[:, :, :3] if channels >= 3 else cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+    small = cv2.resize(bgr, (100, 100), interpolation=cv2.INTER_AREA)
     pixels = small.reshape(-1, 3)
-    colors, counts = np.unique((pixels // 32) * 32, axis=0, return_counts=True)
-    palette = []
-    for idx in np.argsort(counts)[::-1][:6]:
-        pb, pg, pr = colors[idx]
-        palette.append({
-            "hex": f"#{int(pr):02x}{int(pg):02x}{int(pb):02x}",
-            "rgb": (int(pr), int(pg), int(pb)),
-            "color_name": rgb_to_color_name(int(pr), int(pg), int(pb)),
-            "coverage_pct": round(float(counts[idx] / len(pixels) * 100.0), 1),
-        })
+    colors = np.unique((pixels // 32) * 32, axis=0)
+    palette = dominant_colors(bgr, k=6)
     return palette, len(colors)
 
 

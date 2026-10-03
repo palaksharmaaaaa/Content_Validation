@@ -2,7 +2,87 @@
 from __future__ import annotations
 from typing import Any, Dict, Optional
 import streamlit as st
+
+from ui.layout import render_table
 from image_detector.explain import IPTC_SOURCE_TYPE_MAPPING
+
+
+def _pct(value: Any) -> str:
+    try:
+        return f"{float(value) * 100:.0f}%"
+    except (TypeError, ValueError):
+        return ""
+
+
+def _recognition_rows(details: list, noun: str) -> list:
+    rows = []
+    for d in details:
+        looks_like = d.get("recognized_as") or "not sure"
+        rows.append({noun: str(d.get("name", "")).title(), "Looks like": f"{str(looks_like).title()} ({_pct(d.get('recognition_confidence'))})" if d.get("recognition_confidence") is not None else str(looks_like).title(),
+                     "Detector confidence": _pct(d.get("score"))})
+    return rows
+
+
+def _person_label(group: int) -> str:
+    return "?" if group is None or group < 0 else f"Person {chr(ord('A') + group % 26)}"
+
+
+def _render_visual_scene(content: Dict[str, Any]) -> None:
+    """Scene, people, animals, vehicles, objects, colours and atmosphere for an image or video frame."""
+    humans = (content.get("entities") or {}).get("humans", {})
+    animals = (content.get("entities") or {}).get("animals", {})
+    vehicles = content.get("vehicles", {})
+    items = content.get("contents_and_items", {})
+    env = content.get("environment_and_surroundings", {})
+    lighting = content.get("lighting_and_daytime", {})
+    tone = content.get("tone_and_mood", {})
+    purpose = content.get("purpose_and_depiction", {})
+
+    place = str(env.get("setting_type") or env.get("setting") or "Unknown")
+    where = {True: "indoors", False: "outdoors"}.get(env.get("indoor"))
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Place", place + (f" ({where})" if where else ""))
+    c2.metric("Lighting", str(lighting.get("estimated_daytime") or "Unknown"))
+    c3.metric("Kind of photo", str(purpose.get("primary_genre") or "General scene"))
+    if env.get("scene_candidates"):
+        st.caption("Other places considered: " + ", ".join(f"{c['label']} ({_pct(c['probability'])})" for c in env["scene_candidates"][1:]))
+
+    st.markdown("**People**")
+    persons, faces = humans.get("persons_count", 0), humans.get("faces_count", 0)
+    st.write(f"{persons} person(s) detected, {faces} face(s) analysed" + (f", {humans.get('distinct_people_in_faces')} {'person' if humans.get('distinct_people_in_faces') == 1 else 'different people'}" if faces else ""))
+    face_rows = []
+    for i, d in enumerate((humans.get("deepfake_analysis") or {}).get("details", []), 1):
+        expr = d.get("expression") or {}
+        face_rows.append({"Face": i, "Expression": f"{str(expr.get('label', 'unknown')).title()} ({_pct(expr.get('confidence'))})" if expr else "unknown",
+                          "Same person as": _person_label(d.get("same_person_group")), "Size (px)": f"{d['bbox'][2]} x {d['bbox'][3]}"})
+    render_table(face_rows)
+
+    animal_rows = _recognition_rows(animals.get("details", []), "Animal")
+    vehicle_rows = _recognition_rows(vehicles.get("details", []), "Vehicle")
+    if animal_rows:
+        st.markdown("**Animals**")
+        render_table(animal_rows)
+    if vehicle_rows:
+        st.markdown("**Vehicles**")
+        render_table(vehicle_rows)
+    if not animal_rows and not vehicle_rows:
+        st.caption("No animals or vehicles detected.")
+
+    st.markdown("**Objects**")
+    item_list = items.get("identified_items", [])
+    st.write(", ".join(f"`{item}`" for item in item_list) if item_list else "No prominent everyday objects.")
+
+    colors = content.get("colors", [])
+    if colors:
+        st.markdown("**Dominant colours**")
+        swatches = "".join(
+            f'<span style="display:inline-block;margin:0 .6rem .4rem 0;white-space:normal"><span style="display:inline-block;width:1.1rem;height:1.1rem;'
+            f'border-radius:.25rem;vertical-align:middle;margin-right:.35rem;border:1px solid rgba(128,128,128,.5);background:{c["hex"]}"></span>'
+            f'{c["color_name"]} {c["coverage_pct"]:.0f}%</span>' for c in colors)
+        st.markdown(swatches, unsafe_allow_html=True)
+
+    st.markdown("**Atmosphere**")
+    st.write(f"Colour tone **{tone.get('color_tone', 'Neutral')}**, contrast **{tone.get('atmospheric_mood', 'Balanced')}**, light **{lighting.get('lighting_style', 'Ambient')}**.")
 
 
 def render_scene_and_content_intelligence(content_data: Dict[str, Any], modality: str = "image") -> None:
@@ -17,57 +97,7 @@ def render_scene_and_content_intelligence(content_data: Dict[str, Any], modality
     st.caption("Deep contextual analysis of what is depicted in the media before reviewing AI forensics.")
 
     if modality in ("image", "video"):
-        entities = content_data.get("entities", {})
-        humans = entities.get("humans", {})
-        animals = entities.get("animals", {})
-        vehicles = content_data.get("vehicles", {})
-        items = content_data.get("contents_and_items", {})
-        env = content_data.get("environment_and_surroundings", {})
-        lighting = content_data.get("lighting_and_daytime", {})
-        tone = content_data.get("tone_and_mood", {})
-        purpose = content_data.get("purpose_and_depiction", {})
-
-        # Row 1: Purpose & Setting Overview
-        col1, col2, col3 = st.columns(3)
-        col1.metric(" Purpose / Depiction", purpose.get("photographic_purpose", "General Depiction"))
-        col2.metric(" Setting & Environment", f"{env.get('location_context', 'Indoor')} • {env.get('setting_type', 'General')}")
-        col3.metric(" Daytime & Lighting", lighting.get("estimated_daytime", "Daylight"))
-
-        # Row 2: Living Entities & Items
-        ecol1, ecol2, ecol3 = st.columns(3)
-        human_str = f"{humans.get('persons_count', 0)} person(s), {humans.get('faces_count', 0)} face(s)" if humans.get("has_humans") else "None detected"
-        ecol1.metric(" Living Humans", human_str)
-
-        anim_list = animals.get("animal_types", [])
-        ecol2.metric(" Animals Detected", ", ".join(anim_list) if anim_list else "None detected")
-
-        veh_list = vehicles.get("vehicle_types", [])
-        ecol3.metric(" Vehicles Detected", ", ".join(veh_list) if veh_list else "None detected")
-
-        # Row 3: Items, Tone, Lighting details in expandable container
-        with st.expander("View Full Scene Breakdown (Items, Color Tone, Lighting Details)", expanded=True):
-            sc1, sc2 = st.columns(2)
-            with sc1:
-                st.markdown("**Objects**")
-                item_list = items.get("identified_items", [])
-                if item_list:
-                    st.write("• " + ", ".join(f"`{item}`" for item in item_list))
-                else:
-                    st.write("• No prominent everyday objects isolated.")
-
-                top_rec = items.get("top_recognitions", [])
-                if top_rec:
-                    st.caption("Top recognitions: " + ", ".join(f"{r['label']} ({r['confidence_pct']}%)" for r in top_rec[:4]))
-
-                st.write(f"• **Text / Typography Regions:** `{items.get('text_regions_count', 0)}` block(s) detected")
-
-            with sc2:
-                st.markdown("**Atmosphere and lighting**")
-                st.write(f"• **Color Tone:** `{tone.get('color_tone', 'Neutral')}`")
-                st.write(f"• **Atmospheric Mood:** `{tone.get('atmospheric_mood', 'Balanced')}`")
-                st.write(f"• **Lighting Style:** `{lighting.get('lighting_style', 'Ambient')}`")
-                st.write(f"• **Color Temperature:** `{lighting.get('color_temperature', 'Neutral')}`")
-                st.write(f"• **Vegetation Coverage:** `{env.get('vegetation_coverage_pct', 0)}%` | **Sky/Water:** `{env.get('sky_water_coverage_pct', 0)}%`")
+        _render_visual_scene(content_data)
 
     elif modality == "audio":
         col1, col2, col3 = st.columns(3)

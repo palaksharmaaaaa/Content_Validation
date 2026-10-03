@@ -22,3 +22,5 @@ pillow>=10.0.0
 
 # HTTP Networking & Anti-SSRF Ingestion
 requests>=2.31.0
+# Pretrained perception models (RF-DETR detector, SigLIP 2 recogniser) load through transformers
+transformers>=5.0.0

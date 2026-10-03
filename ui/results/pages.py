@@ -64,6 +64,7 @@ def _parts(item: Dict[str, Any], page: _Page) -> _Parts:
 # ---------------------------------------------------------------- image
 def _image_details(p: _Parts) -> None:
     nine = image_nine_dimensions(p.item, p.profile, p.result, p.content)
+    render_scene_and_content_intelligence(p.content, modality="image")
     render_pre_analysis_specifications(p.profile, expanded=False, source=p.item.get("source", "User Upload"))
     render_image_type_and_category(p.decision, p.content, p.result, nine_dims=nine)
     render_quantified_detections_and_inventory(p.decision, p.content, p.result, p.profile)

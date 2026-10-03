@@ -23,5 +23,12 @@ jobs:
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
           grep -viE '^(torch|torchvision)==' requirements.lock.txt > ci-requirements.txt
           pip install -r ci-requirements.txt
+      - name: Cache pretrained models
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-rfdetr-small-siglip2-base
+      - name: Download pretrained models (RF-DETR Small, SigLIP 2 Base)
+        run: python -m services.fetch_models
       - name: Test
         run: python -m pytest -q

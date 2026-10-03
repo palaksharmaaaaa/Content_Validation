@@ -70,6 +70,19 @@ def collect_status() -> List[StatusRow]:
     faces_ok = get_face_finder().available
     rows.append(StatusRow("Face detector", OK if faces_ok else WARN, "YuNet loaded" if faces_ok else "Unavailable",
                           "Counts faces with a trained network." if faces_ok else "Model file core/models/face_detection_yunet_2023mar.onnx is missing; faces will not be counted."))
+    from core.perception.detector import MODEL_ID as DETECTOR_ID
+    from core.perception.face_attributes import get_face_attributes
+    from core.perception.recognizer import MODEL_ID as RECOGNIZER_ID
+    from services.fetch_models import present
+
+    for label, repo, what in (("Object detector", DETECTOR_ID, "RF-DETR Small: people, animals, vehicles, objects"),
+                              ("Scene and species recognizer", RECOGNIZER_ID, "SigLIP 2 Base: place, animal species, vehicle type, kind of photo")):
+        have = present(repo)
+        rows.append(StatusRow(label, OK if have else WARN, "Ready" if have else "Not downloaded",
+                              what if have else "Run: python -m services.fetch_models"))
+    attrs = get_face_attributes()
+    rows.append(StatusRow("Expression and same-person models", OK if attrs.expression_available and attrs.identity_available else WARN,
+                          "Ready" if attrs.expression_available and attrs.identity_available else "Missing", "Bundled ONNX files in core/models."))
     from image_detector.face_authenticity import get_face_authenticity
 
     fa = get_face_authenticity()

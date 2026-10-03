@@ -52,6 +52,11 @@ class FaceFinder:
 
     def find(self, image_bgr: np.ndarray) -> List[Face]:
         """Faces in a BGR image as (x, y, w, h, confidence) in original pixel coordinates, most confident first."""
+        return [(*d["box"], d["score"]) for d in self.find_detailed(image_bgr)]
+
+    def find_detailed(self, image_bgr: np.ndarray) -> List[dict]:
+        """Like ``find`` but each face is ``{box: (x, y, w, h), score, landmarks: 5x2 array}`` (right eye, left eye, nose,
+        right mouth corner, left mouth corner), all in original pixel coordinates."""
         if image_bgr is None or not hasattr(image_bgr, "shape") or image_bgr.ndim < 2:
             return []
         h, w = image_bgr.shape[:2]
@@ -69,14 +74,15 @@ class FaceFinder:
         with self._lock:
             net.setInputSize((frame.shape[1], frame.shape[0]))
             _ok, raw = net.detect(np.ascontiguousarray(frame, dtype=np.uint8))
-        faces: List[Face] = []
+        faces: List[dict] = []
         for row in (raw if raw is not None else []):
             x, y, fw, fh = (float(v) / scale for v in row[:4])
             x1, y1 = max(0, int(round(x))), max(0, int(round(y)))
             x2, y2 = min(w, int(round(x + fw))), min(h, int(round(y + fh)))
             if x2 - x1 >= MIN_FACE_PIXELS and y2 - y1 >= MIN_FACE_PIXELS:
-                faces.append((x1, y1, x2 - x1, y2 - y1, float(row[-1])))
-        return sorted(faces, key=lambda f: f[4], reverse=True)
+                landmarks = np.array(row[4:14], dtype=np.float32).reshape(5, 2) / scale
+                faces.append({"box": (x1, y1, x2 - x1, y2 - y1), "score": float(row[-1]), "landmarks": landmarks})
+        return sorted(faces, key=lambda f: f["score"], reverse=True)
 
 
 _default: Optional[FaceFinder] = None

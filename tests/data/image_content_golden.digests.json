@@ -1,17 +1,17 @@
 {
  "items": {
   "badtype": "5599277307396c5cadf2",
-  "big": "bdc3814b67c89f908f25",
-  "big_arr": "bdc3814b67c89f908f25",
-  "character": "e598c0973a642864ec95",
-  "character_arr": "e598c0973a642864ec95",
+  "big": "d5dfb83b663e58a21c39",
+  "big_arr": "d5dfb83b663e58a21c39",
+  "character": "a8bd546d19c4bdec0d8d",
+  "character_arr": "a8bd546d19c4bdec0d8d",
   "missing": "5599277307396c5cadf2",
-  "noise": "33c18c876e01f80235de",
-  "noise_arr": "33c18c876e01f80235de",
-  "sky": "f2db07ae9a4f0ebcd1ce",
-  "sky_arr": "f2db07ae9a4f0ebcd1ce",
-  "text": "864a5a95b1e181157897",
-  "text_arr": "864a5a95b1e181157897"
+  "noise": "174ef3eadb6120759520",
+  "noise_arr": "174ef3eadb6120759520",
+  "sky": "84018d26425322e2bec9",
+  "sky_arr": "84018d26425322e2bec9",
+  "text": "1b7f5f2c1dda60699853",
+  "text_arr": "1b7f5f2c1dda60699853"
  },
  "kind": "dict"
 }

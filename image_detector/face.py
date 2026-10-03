@@ -10,6 +10,7 @@ import cv2
 import numpy as np
 
 from core.face_detection import get_face_finder
+from core.perception.face_attributes import get_face_attributes, group_same_person
 
 logger = logging.getLogger("image_detector.face")
 
@@ -50,7 +51,8 @@ class FaceDeepfakeDetector:
                 "face_boxes": [],
             }
 
-        faces = self.detect_faces(image_bgr, person_boxes=person_boxes)
+        detailed = get_face_finder().find_detailed(image_bgr)
+        faces = [(*d["box"], d["score"]) for d in detailed]
         if not faces:
             return {
                 "faces_detected": 0,
@@ -64,7 +66,9 @@ class FaceDeepfakeDetector:
         face_details = []
         deepfake_scores = []
 
-        for x, y, w, h, area in faces:
+        attributes = get_face_attributes()
+        embeddings = []
+        for (x, y, w, h, area), found in zip(faces, detailed):
             face_roi_gray = gray[y : y + h, x : x + w]
             if face_roi_gray.size == 0:
                 continue
@@ -97,14 +101,22 @@ class FaceDeepfakeDetector:
             face_prob = min(0.95, (risk_factors / 2.5) * 0.75 + 0.15)
             deepfake_scores.append(face_prob)
 
+            embedding = attributes.embedding(image_bgr, found["landmarks"])
+            embeddings.append(embedding)
             face_details.append({
                 "bbox": [x, y, w, h],
+                "detector_confidence": round(float(found["score"]), 3),
+                "expression": attributes.expression(image_bgr, found["landmarks"]),
+                "embedding": None if embedding is None else [round(float(v), 5) for v in embedding],
                 "texture_smoothness": round(texture_diff, 2),
                 "facial_noise_residual": round(noise_mean, 2),
                 "is_waxy_texture": texture_diff < 3.2,
                 "deepfake_score": round(face_prob, 2),
             })
 
+        groups = group_same_person(embeddings)
+        for detail, group in zip(face_details, groups):
+            detail["same_person_group"] = group
         avg_score = float(np.mean(deepfake_scores)) if deepfake_scores else 0.0
         if avg_score >= 0.70:
             risk = "HIGH_SYNTHETIC_RISK"
@@ -124,4 +136,6 @@ class FaceDeepfakeDetector:
             "facial_ai_confidence": round(avg_score, 2),
             "face_details": face_details,
             "face_boxes": face_boxes,
+            "expressions": [d["expression"]["label"] for d in face_details if d.get("expression")],
+            "distinct_people": len({g for g in groups if g >= 0}),
         }

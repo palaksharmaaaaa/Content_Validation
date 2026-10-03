@@ -39,6 +39,21 @@ upload / link
 
 Inside `ImageAIDetector.predict()` the image is decoded, about 14 forensic signals are computed (sensor noise, surface smoothness, FFT decay, ELA, EXIF/C2PA, watermark, cut-out background, scanned print, face swap, digital art, screenshot, inpainting, screen recapture, spectral modality), combined as a Bayesian log-odds posterior, converted to AI / Real / Undecided percentages and passed through a seven-branch taxonomy decision tree (`image_detector/scoring.py`) that assigns one of ten states.
 
+## Perception models
+
+`core/perception/` holds the pretrained models that describe an image's content. All are Apache-2.0 and run on CPU.
+
+| Job | Model | Size | Where |
+|---|---|---|---|
+| Face detection | YuNet | 0.2 MB | `core/models/` |
+| Object detection (people, animals, vehicles, objects) | RF-DETR Small | about 130 MB | Hugging Face cache |
+| Place, animal species, vehicle type, photo kind, time of day | SigLIP 2 Base, zero-shot against the vocabularies in `core/perception/vocab.py` | 1.4 GB (375 M parameters, float32) | Hugging Face cache |
+| Facial expression | OpenCV zoo MobileFaceNet FER | 4.8 MB | `core/models/` |
+| Same-person matching | OpenCV zoo SFace (128-d embeddings, cosine 0.363) | 39 MB | `core/models/` |
+| Dominant colours | CIELAB clustering plus a table of colour names (measured, no model) | none | `colors.py` |
+
+`python -m services.fetch_models` downloads the two large ones. A missing model makes its part of the report empty instead of failing. `image_detector/content.py` combines them into the content inventory shown on the Details tab.
+
 ## Face authenticity
 
 `core/face_detection.py` finds faces (YuNet). `image_detector/face_authenticity.py` crops each face the same way for training and inference and classifies it with a small ResNet-18 trained by `image_detector/face_training.py`. `image_detector/dimension_checks/faces.py` turns that into one finding (class `LEARNED_SIGNAL`): positive-only, capped at +0.40 log-odds, and it also blocks a "likely real" verdict via `core.decision`.
