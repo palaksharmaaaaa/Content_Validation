@@ -70,6 +70,16 @@ def collect_status() -> List[StatusRow]:
     faces_ok = get_face_finder().available
     rows.append(StatusRow("Face detector", OK if faces_ok else WARN, "YuNet loaded" if faces_ok else "Unavailable",
                           "Counts faces with a trained network." if faces_ok else "Model file core/models/face_detection_yunet_2023mar.onnx is missing; faces will not be counted."))
+    from image_detector.face_authenticity import get_face_authenticity
+
+    fa = get_face_authenticity()
+    if fa.available:
+        acc = (fa.meta.get("val_stress") or {}).get("accuracy")
+        rows.append(StatusRow("Face authenticity model", OK, "Trained" + (f" ({acc * 100:.1f}% on its own held-out set)" if acc else ""),
+                              "Judges whether each face is real or AI-generated. Trained on one public dataset."))
+    else:
+        rows.append(StatusRow("Face authenticity model", INFO, "Not trained",
+                              "python -m image_detector.face_training --real <folder> --ai <folder>"))
     hb = _hardblock_entries(hardblock_file())
     rows.append(StatusRow("Hard-block list", OK if hb else INFO, f"{hb} hash(es)" if hb else "Empty",
                           "Optional: list SHA-256 hashes (one per line) in core/data/hardblock_sha256.txt."))

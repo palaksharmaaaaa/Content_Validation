@@ -26,6 +26,7 @@ _STATUS = {
 
 _CLASS = {
     "PHYSICAL_SIGNAL": "Physical signal",
+    "LEARNED_SIGNAL": "Learned signal",
     "METADATA_WEAK": "Metadata (weak)",
     "SECURITY": "Security",
     "LEGAL_FLAG": "Legal flag",
@@ -41,7 +42,7 @@ _BAND = {
     "HIGH_CONFIDENCE_AUTHENTIC": ("🟢", "Very likely a real capture"),
 }
 
-_SCORE_ELIGIBLE = {"PHYSICAL_SIGNAL", "METADATA_WEAK"}
+_SCORE_ELIGIBLE = {"PHYSICAL_SIGNAL", "METADATA_WEAK", "LEARNED_SIGNAL"}
 
 
 def status_badge(status: str) -> Tuple[str, str]:
@@ -61,7 +62,7 @@ def _weight_text(finding: Dict[str, Any]) -> str:
         return "Advisory only (never changes the score)"
     if llr is None:
         return "Weak (no score effect)"
-    kind = "physical" if cls == "PHYSICAL_SIGNAL" else "weak"
+    kind = {"PHYSICAL_SIGNAL": "physical", "LEARNED_SIGNAL": "learned"}.get(cls, "weak")
     return f"{llr:+.2f} log-odds ({kind}, capped)"
 
 

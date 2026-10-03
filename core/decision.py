@@ -422,7 +422,12 @@ def generate_final_decision(
             p_ai, p_real = float(ai_result["ai_percentage"]), float(ai_result["real_percentage"])
             p_undecided = float(ai_result.get("undecided_percentage", 0.0))
             final_status = ai_result.get("label") or final_status
-            if tax_state in _SCORE_BACKED_AUTHENTIC and _status_from_probabilities(p_ai, p_real)[0] != _STATUS_LIKELY_AUTHENTIC:
+            face_ai = ai_result.get("face_ai_like")
+            if tax_state in _SCORE_BACKED_AUTHENTIC and face_ai:
+                tax_state, tax_label, tax_desc = _taxonomy_from_fused(_STATUS_UNDETERMINED, 0.0, 0.0)
+                tax_reasons = tax_reasons + [f"A face in the image looks AI-generated ({float(face_ai.get('worst_p_ai') or 0) * 100:.0f}%), so the image is not called real."]
+                final_status, reason = _STATUS_UNDETERMINED, "A face looks AI-generated while the rest of the evidence does not agree; explicit uncertainty maintained."
+            elif tax_state in _SCORE_BACKED_AUTHENTIC and _status_from_probabilities(p_ai, p_real)[0] != _STATUS_LIKELY_AUTHENTIC:
                 # The category must never claim more than the score supports: "real" needs real >= 55 % and AI < 35 %.
                 tax_state, tax_label, tax_desc = _taxonomy_from_fused(_STATUS_UNDETERMINED, p_ai, p_real)
                 tax_reasons = tax_reasons + [f"The score ({p_ai:.0f}% AI, {p_real:.0f}% real) is too close to call, so no verdict is given."]

@@ -92,6 +92,18 @@ Rules the trainer follows:
 - Identity is exact bytes. A re-saved or resized copy counts as a different file and could land on the other side of the split.
 - To share results between machines, share the checkpoint (`*.pt`, stored with Git LFS: run `git lfs install` once), not your data.
 
+## Train the face model
+
+The Evidence tab's **Faces** check uses a classifier that judges whether each face is a real photograph or AI-generated. It is trained from two folders of face images:
+
+```bash
+python -m image_detector.face_training --real "<dir>/Human Faces Dataset/Real Images" --ai "<dir>/Human Faces Dataset/AI-Generated Images" --epochs 6
+```
+
+It reads the files in place, holds out about 20 % by file hash, and writes `image_detector/models/face_authenticity.pt` (about 43 MB, stored with Git LFS). Training takes roughly 25 minutes on a laptop CPU. The report prints accuracy on held-out images, on held-out images degraded the same way for both classes, and through the exact inference path.
+
+How it affects results: a face scored 90 % or more AI-like adds a small, capped amount of evidence toward AI and stops the verdict from saying "likely real". A face that looks real adds nothing, because a generator the model has never seen would also look real to it.
+
 ## Measure real accuracy
 
 After registering labelled media:

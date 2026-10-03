@@ -173,6 +173,9 @@ class ImageForensicPipeline:
         dim_terms = dim_analysis.run_pre()
 
         ai_result = self.detector.predict(path, sensitivity=sensitivity, provenance=provenance, extra_log_lrs=dim_terms)
+        face = dim_analysis.pre_finding("face_authenticity")
+        if face is not None and face.data.get("ai_like"):
+            ai_result["face_ai_like"] = {"worst_p_ai": face.data.get("worst_p_ai")}
         content = self.content_analyzer.analyze_image_content(path)
         attribution = self.attribution_engine.attribute_image(
             path, forensic_data=ai_result, profile_data=profile, provenance_data=provenance

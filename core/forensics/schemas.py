@@ -37,6 +37,7 @@ class FindingStatus(str, Enum):
 class EvidenceClass(str, Enum):
     """What kind of evidence a finding is. Only physical-signal and weak-metadata findings may affect the score."""
     PHYSICAL_SIGNAL = "PHYSICAL_SIGNAL"
+    LEARNED_SIGNAL = "LEARNED_SIGNAL"
     METADATA_WEAK = "METADATA_WEAK"
     SECURITY = "SECURITY"
     LEGAL_FLAG = "LEGAL_FLAG"
@@ -45,7 +46,7 @@ class EvidenceClass(str, Enum):
 
 
 # Classes allowed to contribute log-odds to the authenticity score.
-SCORE_ELIGIBLE_CLASSES = frozenset({EvidenceClass.PHYSICAL_SIGNAL, EvidenceClass.METADATA_WEAK})
+SCORE_ELIGIBLE_CLASSES = frozenset({EvidenceClass.PHYSICAL_SIGNAL, EvidenceClass.METADATA_WEAK, EvidenceClass.LEARNED_SIGNAL})
 
 
 @dataclass

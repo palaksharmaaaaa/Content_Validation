@@ -219,3 +219,13 @@ def test_local_noise_inconsistency_alone_is_not_partly_ai():
     inp = {"is_manipulated": True, "noise_inconsistency": 0.73, "details": "x"}
     low = evaluate_taxonomy_classification(ai_pct=1.9, real_pct=95.0, inpainting_data=inp, inpainting_detected=True)[0]
     assert low == ImageTaxonomyState.AUTHENTIC_EDITED
+
+
+def test_ai_looking_face_blocks_a_real_verdict():
+    from core.decision import generate_final_decision
+
+    ai = {"taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH", "taxonomy_label": "Authentic Real Capture", "taxonomy_description": "",
+          "ai_percentage": 5.0, "real_percentage": 90.0, "undecided_percentage": 5.0, "label": "LIKELY REAL",
+          "face_ai_like": {"worst_p_ai": 0.99}}
+    d = generate_final_decision({"readable": True}, {}, ai_result=ai)
+    assert d["taxonomy_state"] == "UNDETERMINED" and any("face" in r.lower() for r in d["taxonomy_reasons"])

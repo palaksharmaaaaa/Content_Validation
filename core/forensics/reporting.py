@@ -13,7 +13,7 @@ def summarize_for_evidence_trail(report: Dict[str, Any]) -> List[str]:
     lines: List[str] = []
     for stage_findings in report.get("findings_by_stage", {}).values():
         for f in stage_findings:
-            if f["status"] in ("FAIL", "WARN") and f["evidence_class"] in ("SECURITY", "METADATA_WEAK", "PHYSICAL_SIGNAL"):
+            if f["status"] in ("FAIL", "WARN") and f["evidence_class"] in ("SECURITY", "METADATA_WEAK", "PHYSICAL_SIGNAL", "LEARNED_SIGNAL"):
                 lines.append(f"[{f['evidence_class']}] {f['title']}: {f['detail']}")
     return lines
 

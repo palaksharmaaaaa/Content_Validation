@@ -44,7 +44,7 @@ def verdict_style(decision: Dict[str, Any]) -> Tuple[str, str, str]:
 def key_reasons(decision: Dict[str, Any], dim_report: Optional[Dict[str, Any]], limit: int = 4) -> List[str]:
     """The few strongest human-readable reasons: classifier reasons first, then checks that were flagged."""
     reasons = [r for r in decision.get("taxonomy_reasons", []) if r]
-    for finding in collect_findings(dim_report, ["file_integrity", "metadata", "formats", "container", "signal"]):
+    for finding in collect_findings(dim_report, ["file_integrity", "metadata", "formats", "container", "signal", "faces"]):
         if finding.get("status") in ("FAIL", "WARN"):
             reasons.append(f"{finding.get('title', 'Check')}: {finding.get('detail', '')}".strip())
     if not reasons:

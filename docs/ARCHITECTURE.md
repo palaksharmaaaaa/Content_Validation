@@ -39,6 +39,10 @@ upload / link
 
 Inside `ImageAIDetector.predict()` the image is decoded, about 14 forensic signals are computed (sensor noise, surface smoothness, FFT decay, ELA, EXIF/C2PA, watermark, cut-out background, scanned print, face swap, digital art, screenshot, inpainting, screen recapture, spectral modality), combined as a Bayesian log-odds posterior, converted to AI / Real / Undecided percentages and passed through a seven-branch taxonomy decision tree (`image_detector/scoring.py`) that assigns one of ten states.
 
+## Face authenticity
+
+`core/face_detection.py` finds faces (YuNet). `image_detector/face_authenticity.py` crops each face the same way for training and inference and classifies it with a small ResNet-18 trained by `image_detector/face_training.py`. `image_detector/dimension_checks/faces.py` turns that into one finding (class `LEARNED_SIGNAL`): positive-only, capped at +0.40 log-odds, and it also blocks a "likely real" verdict via `core.decision`.
+
 ## Dimension checks
 
 The taxonomy reports (`GLOBAL_*_TAXONOMY_AND_FORENSIC_RESEARCH_REPORT.md`) describe dimensions beyond pixel/waveform physics: file security, metadata and container forensics, legal flags, context re-use, lifecycle laundering, detector reliability, probability bands, out-of-distribution (OOD) detection and open-set attribution. A modality-agnostic foundation in `core/` implements them, and the **image**, **audio** and **video** pipelines are all wired to it (see each report's *Implementation Status* appendix for exactly what is implemented, partial, recognition-only or spec-only).

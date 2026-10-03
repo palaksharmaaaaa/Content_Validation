@@ -27,6 +27,8 @@ IMAGE_CHECKS = (
                ("file_integrity",), note=_ADVISORY),
     CheckGroup("Metadata and container", "JPEG tables, PNG chunks, EXIF coherence, timestamps, embedded thumbnail, ICC profile.",
                ("formats", "metadata"), show_weight=True, note=_WEAK),
+    CheckGroup("Faces", "Whether each face looks like a real photograph or a generated one (trained classifier, advisory).",
+               ("faces",), note=_ADVISORY),
     CheckGroup("Context, rights and lifecycle", "Re-use fingerprint, rights/privacy flags, AI-disclosure labels, re-encode likelihood.",
                ("context", "legal", "lifecycle"), note=_ADVISORY + " Not legal advice."),
 )

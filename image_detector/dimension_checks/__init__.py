@@ -35,6 +35,7 @@ from image_detector.dimension_checks import context  # noqa: F401
 from image_detector.dimension_checks import legal  # noqa: F401
 from image_detector.dimension_checks import lifecycle  # noqa: F401
 from image_detector.dimension_checks import reliability  # noqa: F401
+from image_detector.dimension_checks import faces  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
@@ -145,6 +146,10 @@ class ImageDimensionAnalysis:
         self._pre = registry.run("image", self._ctx(), phase="pre")
         self._pre_terms = build_report(self._pre).score_terms
         return dict(self._pre_terms)
+
+    def pre_finding(self, check_id: str) -> Optional[Finding]:
+        """A finding produced by ``run_pre`` (or None)."""
+        return next((f for f in self._pre if f.check_id == check_id), None)
 
     def _ood(self) -> Dict[str, Any]:
         gate = self._ood_gate or OODGate.load(DEFAULT_OOD_STATS)
