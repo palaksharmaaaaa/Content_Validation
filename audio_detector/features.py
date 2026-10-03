@@ -68,9 +68,14 @@ def compute_spectral_features(samples: np.ndarray, sample_rate: int) -> Dict[str
     cutoff_idx = min(cutoff_idx, len(freqs) - 1)
     cutoff_freq = freqs[cutoff_idx]
 
+    # A cutoff within ~8% of Nyquist is the ordinary anti-aliasing low-pass of any recording at that sample rate
+    # (e.g. 7.5-8 kHz in 16 kHz audio), not evidence of a neural vocoder; only cutoffs clearly below Nyquist count.
+    nyquist = sample_rate / 2.0
+    below_nyquist_edge = cutoff_freq <= 0.92 * nyquist
     has_vocoder_cutoff = bool(
-        (6500 <= cutoff_freq <= 8200 and sample_rate >= 16000)
-        or (15000 <= cutoff_freq <= 16500 and sample_rate >= 44100)
+        below_nyquist_edge
+        and ((6500 <= cutoff_freq <= 8200 and sample_rate >= 16000)
+             or (15000 <= cutoff_freq <= 16500 and sample_rate >= 44100))
     )
 
     # 2. Wiener Spectral Flatness: Geometric Mean / Arithmetic Mean of Power

@@ -17,7 +17,7 @@ Contains its own:
 - Signal profiling & dynamic range (audio_detector.profiler.AudioProfiler)
 - Safe URL audio downloader (audio_detector.downloader.AudioDownloader)
 - End-to-end forensic pipeline (audio_detector.pipeline.AudioForensicPipeline)
-- High-speed batch processor (audio_detector.batch.AudioBatchProcessor)
+- Sequential batch runner (audio_detector.batch.AudioBatchProcessor)
 """
 from core.lazy import install_lazy_exports
 

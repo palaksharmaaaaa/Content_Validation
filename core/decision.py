@@ -56,8 +56,8 @@ def normalize_percentages(
         undecided_pct = round(max(0.0, 100.0 - (ai_pct + real_pct)), decimals)
         return ai_pct, real_pct, undecided_pct
 
-    gap = abs(ai - real)
-    undecided = max(float(min_undecided), (1.0 - min(1.0, gap)) * 20.0)
+    gap = min(1.0, abs(ai - real) / 100.0)  # ai/real are percentages (0-100); the margin needs a 0-1 gap
+    undecided = max(float(min_undecided), (1.0 - gap) * 20.0)
     remaining = max(0.0, 100.0 - undecided)
     denom = ai + real
     if denom > 0:

@@ -9,6 +9,8 @@ Completely self-contained with zero outside dependencies.
 """
 from __future__ import annotations
 
+import logging
+
 from pathlib import Path
 from typing import Any, Dict
 
@@ -18,6 +20,8 @@ from core.hashing import file_sha256
 from video_detector.config import MAX_DURATION_SECONDS, MAX_FILE_SIZE_MB, SUPPORTED_EXTENSIONS
 from video_detector.extractor import VideoFrameExtractor
 from video_detector.schemas import VideoValidationResult
+
+logger = logging.getLogger("video_detector.validator")
 
 
 def _get_file_size_mb(path: Path) -> float:
@@ -30,7 +34,8 @@ def _get_file_size_mb(path: Path) -> float:
 def _calculate_file_hash(path: Path) -> str:
     try:
         return file_sha256(path)
-    except Exception:
+    except Exception as exc:  # unreadable file: report an empty hash, but leave a trace
+        logger.warning("Could not hash %s: %s", path, exc)
         return ""
 
 

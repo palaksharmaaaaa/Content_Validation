@@ -13,13 +13,18 @@ import os
 from pathlib import Path
 import tempfile
 import threading
-from typing import Any, Dict
+from typing import Any
 
 import time
+import weakref
+import functools
+import contextlib
 
 logger = logging.getLogger("core.atomic_io")
 
-_FILE_LOCKS: Dict[str, threading.RLock] = {}
+# Weak values: a path's lock exists only while some caller holds it, so the registry cannot grow without bound,
+# yet two callers contending on the same path always share one lock (the holder keeps it alive).
+_FILE_LOCKS: "weakref.WeakValueDictionary[str, threading.RLock]" = weakref.WeakValueDictionary()
 _REGISTRY_LOCK = threading.Lock()
 
 
@@ -27,9 +32,33 @@ def _get_path_lock(target_path: Path) -> threading.RLock:
     """Returns a dedicated re-entrant lock for the specified file path."""
     canonical = str(target_path.resolve()).lower()
     with _REGISTRY_LOCK:
-        if canonical not in _FILE_LOCKS:
-            _FILE_LOCKS[canonical] = threading.RLock()
-        return _FILE_LOCKS[canonical]
+        lock = _FILE_LOCKS.get(canonical)
+        if lock is None:
+            lock = threading.RLock()
+            _FILE_LOCKS[canonical] = lock
+        return lock
+
+
+def serialized_on(*path_attrs: str):
+    """Method decorator: hold the per-path lock of each named instance attribute for the whole call.
+
+    Makes a read-modify-write across several JSON files (feedback memory + calibration) atomic with respect to other
+    threads using the same files. Locks are taken in sorted path order to avoid lock-order deadlocks.
+    """
+
+    def deco(fn):
+        @functools.wraps(fn)
+        def wrapper(self, *args, **kwargs):
+            paths = sorted({Path(getattr(self, a)).resolve() for a in path_attrs}, key=str)
+            locks = [_get_path_lock(p) for p in paths]
+            with contextlib.ExitStack() as stack:
+                for lock in locks:
+                    stack.enter_context(lock)
+                return fn(self, *args, **kwargs)
+
+        return wrapper
+
+    return deco
 
 
 def atomic_write_json(file_path: str | Path, data: Any, indent: int = 2) -> None:

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import io
 import logging
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -134,8 +135,14 @@ class ImageAIDetector:
         self.transform = None
         self.backend = "heuristic_and_statistical"
         self._is_loaded = False
+        self._load_lock = threading.RLock()
 
     def load(self) -> bool:
+        """Loads once; concurrent callers wait for the first load instead of loading the model twice."""
+        with self._load_lock:
+            return self._load_locked()
+
+    def _load_locked(self) -> bool:
         """Loads neural weights if checkpoint exists, otherwise falls back to pure forensic analysis."""
         if self._is_loaded:
             return True

@@ -1,5 +1,5 @@
 """
-video_detector.batch: High-Speed Batch Processing Engine for Video Forensics.
+video_detector.batch: Sequential batch runner for Video Forensics.
 Processes batches of video files or directories with optional progress reporting.
 Completely self-contained with zero outside dependencies.
 """

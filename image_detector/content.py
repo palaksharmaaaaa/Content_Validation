@@ -13,6 +13,7 @@ Completely self-contained with zero outside dependencies.
 from __future__ import annotations
 
 import logging
+import threading
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -44,6 +45,7 @@ COCO_ITEMS = {
 
 # Module-level shared model cache to avoid reloading weights across instances
 _SHARED_VISION_MODEL = None
+_VISION_INIT_LOCK = threading.Lock()
 _SHARED_CATEGORIES = None
 
 
@@ -58,6 +60,10 @@ class ImageContentAnalyzer:
 
     def _init_vision_backbone(self) -> None:
         """Loads a pretrained neural object detector (SSDLite320 MobileNet V3 Large) for real-time bounding box detection."""
+        with _VISION_INIT_LOCK:  # one load per process even when several sessions initialise concurrently
+            self._init_vision_backbone_locked()
+
+    def _init_vision_backbone_locked(self) -> None:
         global _SHARED_VISION_MODEL, _SHARED_CATEGORIES
         if _SHARED_VISION_MODEL is not None and _SHARED_CATEGORIES is not None:
             self.vision_model = _SHARED_VISION_MODEL
@@ -72,6 +78,8 @@ class ImageContentAnalyzer:
             )
             weights = SSDLite320_MobileNet_V3_Large_Weights.DEFAULT
             self.vision_model = ssdlite320_mobilenet_v3_large(weights=weights).eval()
+            if torch.cuda.is_available():
+                self.vision_model = self.vision_model.to("cuda")
             self.categories = weights.meta.get("categories", [])
             _SHARED_VISION_MODEL = self.vision_model
             _SHARED_CATEGORIES = self.categories
@@ -327,7 +335,8 @@ class ImageContentAnalyzer:
             tensor = TF.to_tensor(rgb).unsqueeze(0)
 
             with torch.no_grad():
-                preds = self.vision_model(tensor)[0]
+                model_device = next(self.vision_model.parameters()).device
+                preds = self.vision_model(tensor.to(model_device))[0]
 
             boxes = preds["boxes"]
             labels = preds["labels"]

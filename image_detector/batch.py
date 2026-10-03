@@ -1,6 +1,6 @@
 """
-image_detector.batch: High-Speed Batch Processing Engine for Image Forensics.
-Processes batches of image files or directories with optional progress reporting.
+image_detector.batch: Batch runner for Image Forensics.
+Analyses images one after another (sequentially, no parallelism) with optional progress reporting.
 Completely self-contained with zero outside dependencies.
 """
 from __future__ import annotations

@@ -8,6 +8,8 @@ Completely self-contained with zero outside dependencies.
 """
 from __future__ import annotations
 
+import logging
+
 from pathlib import Path
 from typing import Any, Dict
 
@@ -18,6 +20,8 @@ from PIL import Image, ImageOps
 from core.hashing import file_sha256
 from image_detector.config import MAX_FILE_SIZE_MB, MIN_RESOLUTION, SUPPORTED_EXTENSIONS
 from image_detector.schemas import ImageValidationResult
+
+logger = logging.getLogger("image_detector.validator")
 
 
 def _get_file_size_mb(path: Path) -> float:
@@ -30,7 +34,8 @@ def _get_file_size_mb(path: Path) -> float:
 def _calculate_file_hash(path: Path) -> str:
     try:
         return file_sha256(path)
-    except Exception:
+    except Exception as exc:  # unreadable file: report an empty hash, but leave a trace
+        logger.warning("Could not hash %s: %s", path, exc)
         return ""
 
 

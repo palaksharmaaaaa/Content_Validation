@@ -284,8 +284,8 @@ def _score_canonical_resolution(path: Path, scores: Dict[str, float], cues: List
                     scores[gen_key] += 0.25
                     cues.append(f"Exact match with canonical native output resolution ({w}x{h}) of {gen_info['name']}")
                     break
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("Canonical-resolution check skipped for %s: %s", path, exc)
 
 
 def _score_spectral(forensic_data: Dict[str, Any], scores: Dict[str, float], cues: List[str]) -> None:

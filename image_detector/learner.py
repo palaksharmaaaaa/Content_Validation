@@ -14,7 +14,7 @@ classifier only).
 
 Maintains a dedicated feedback memory bank and calibrates the Bayesian scoring weights used
 by image_detector.scoring based on user-verification feedback.
-Completely self-contained with zero outside dependencies.
+Depends only on core (atomic JSON I/O, media library) and this package.
 """
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ from typing import Any, Dict, List, Optional
 from image_detector.config import DATA_DIR
 from image_detector.schemas import ImageFeedbackRecord
 from core.metrics_util import sanitize_metric_value
-from core.atomic_io import atomic_read_json, atomic_write_json
+from core.atomic_io import atomic_read_json, atomic_write_json, serialized_on
 from core.media_library import MediaLibrary, library_for, register_feedback
 
 logger = logging.getLogger("image_detector.learner")
@@ -89,6 +89,7 @@ class ImageSelfImprover:
         loaded = atomic_read_json(self.feedback_file, default=[])
         return loaded if isinstance(loaded, list) else []
 
+    @serialized_on("feedback_file", "calibration_file")
     def record_feedback(
         self,
         image_path: str,

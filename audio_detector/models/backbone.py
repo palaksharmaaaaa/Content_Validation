@@ -43,12 +43,10 @@ def build_audio_classifier(
         ckpt = Path(checkpoint_path)
         if ckpt.is_file():
             state = torch.load(ckpt, map_location=dev, weights_only=True)
-            if isinstance(state, dict) and "state_dict" in state:
-                model.load_state_dict(state["state_dict"])
-            elif isinstance(state, dict):
-                model.load_state_dict(state)
-            elif isinstance(state, nn.Module):
-                model = state
+            if isinstance(state, dict):
+                # trainer.py writes "model_state_dict"; plain "state_dict" and bare state dicts are also accepted
+                weights = state.get("model_state_dict") or state.get("state_dict") or state
+                model.load_state_dict(weights)
 
     model.to(dev)
     model.eval()

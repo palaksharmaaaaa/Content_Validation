@@ -14,6 +14,8 @@ from pathlib import Path
 import threading
 from typing import Any, Dict, Optional
 
+from audio_detector.attribution import AudioModelAttributionEngine
+from audio_detector.content import AudioContentAnalyzer
 from audio_detector.detector import AudioAIDetector
 from audio_detector.learner import AudioSelfImprover
 from audio_detector.pipeline import AudioForensicPipeline
@@ -42,6 +44,7 @@ class ForensicService:
 
     def __init__(self, checkpoint_path: Optional[Path] = None):
         self._lock = threading.RLock()
+        self._locks: dict = {}
         self.checkpoint_path = checkpoint_path
 
         # Lazy components
@@ -54,6 +57,8 @@ class ForensicService:
         self._face_detector: Optional[FaceDeepfakeDetector] = None
         self._content_analyzer: Optional[ImageContentAnalyzer] = None
         self._attribution_engine: Optional[ImageModelAttributionEngine] = None
+        self._audio_content_analyzer: Optional[AudioContentAnalyzer] = None
+        self._audio_attribution_engine: Optional[AudioModelAttributionEngine] = None
         self._image_improver: Optional[ImageSelfImprover] = None
         self._audio_improver: Optional[AudioSelfImprover] = None
         self._video_improver: Optional[VideoSelfImprover] = None
@@ -66,12 +71,17 @@ class ForensicService:
                 cls._instance = cls(checkpoint_path=checkpoint_path)
             return cls._instance
 
+    def _lock_for(self, name: str) -> threading.RLock:
+        """One re-entrant lock per lazily built component, so building one model never blocks the others."""
+        with self._lock:
+            return self._locks.setdefault(name, threading.RLock())
+
     # -------------------------------------------------------------------------
     # Lazy Initializers
     # -------------------------------------------------------------------------
     @property
     def image_detector(self) -> ImageAIDetector:
-        with self._lock:
+        with self._lock_for("image_detector"):
             if self._image_detector is None:
                 self._image_detector = ImageAIDetector(checkpoint_path=self.checkpoint_path)
                 self._image_detector.load()
@@ -79,7 +89,7 @@ class ForensicService:
 
     @property
     def image_pipeline(self) -> ImageForensicPipeline:
-        with self._lock:
+        with self._lock_for("image_pipeline"):
             if self._image_pipeline is None:
                 self._image_pipeline = ImageForensicPipeline(
                     detector=self.image_detector,
@@ -90,21 +100,35 @@ class ForensicService:
 
     @property
     def content_analyzer(self) -> ImageContentAnalyzer:
-        with self._lock:
+        with self._lock_for("content_analyzer"):
             if self._content_analyzer is None:
                 self._content_analyzer = ImageContentAnalyzer()
             return self._content_analyzer
 
     @property
     def attribution_engine(self) -> ImageModelAttributionEngine:
-        with self._lock:
+        with self._lock_for("attribution_engine"):
             if self._attribution_engine is None:
                 self._attribution_engine = ImageModelAttributionEngine()
             return self._attribution_engine
 
     @property
+    def audio_content_analyzer(self) -> AudioContentAnalyzer:
+        with self._lock_for("audio_content_analyzer"):
+            if self._audio_content_analyzer is None:
+                self._audio_content_analyzer = AudioContentAnalyzer()
+            return self._audio_content_analyzer
+
+    @property
+    def audio_attribution_engine(self) -> AudioModelAttributionEngine:
+        with self._lock_for("audio_attribution_engine"):
+            if self._audio_attribution_engine is None:
+                self._audio_attribution_engine = AudioModelAttributionEngine()
+            return self._audio_attribution_engine
+
+    @property
     def video_detector(self) -> VideoAIDetector:
-        with self._lock:
+        with self._lock_for("video_detector"):
             if self._video_detector is None:
                 self._video_detector = VideoAIDetector(frame_detector=self.image_detector)
                 self._video_detector.load()
@@ -112,7 +136,7 @@ class ForensicService:
 
     @property
     def audio_detector(self) -> AudioAIDetector:
-        with self._lock:
+        with self._lock_for("audio_detector"):
             if self._audio_detector is None:
                 self._audio_detector = AudioAIDetector()
                 self._audio_detector.load()
@@ -120,28 +144,28 @@ class ForensicService:
 
     @property
     def face_detector(self) -> FaceDeepfakeDetector:
-        with self._lock:
+        with self._lock_for("face_detector"):
             if self._face_detector is None:
                 self._face_detector = FaceDeepfakeDetector()
             return self._face_detector
 
     @property
     def image_improver(self) -> ImageSelfImprover:
-        with self._lock:
+        with self._lock_for("image_improver"):
             if self._image_improver is None:
                 self._image_improver = ImageSelfImprover()
             return self._image_improver
 
     @property
     def audio_improver(self) -> AudioSelfImprover:
-        with self._lock:
+        with self._lock_for("audio_improver"):
             if self._audio_improver is None:
                 self._audio_improver = AudioSelfImprover()
             return self._audio_improver
 
     @property
     def video_pipeline(self) -> VideoForensicPipeline:
-        with self._lock:
+        with self._lock_for("video_pipeline"):
             if self._video_pipeline is None:
                 self._video_pipeline = VideoForensicPipeline(
                     detector=self.video_detector,
@@ -152,7 +176,7 @@ class ForensicService:
 
     @property
     def audio_pipeline(self) -> AudioForensicPipeline:
-        with self._lock:
+        with self._lock_for("audio_pipeline"):
             if self._audio_pipeline is None:
                 self._audio_pipeline = AudioForensicPipeline(
                     detector=self.audio_detector,
@@ -161,7 +185,7 @@ class ForensicService:
 
     @property
     def video_improver(self) -> VideoSelfImprover:
-        with self._lock:
+        with self._lock_for("video_improver"):
             if self._video_improver is None:
                 self._video_improver = VideoSelfImprover()
             return self._video_improver

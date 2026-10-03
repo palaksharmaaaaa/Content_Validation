@@ -131,7 +131,7 @@ _VENDOR_SIGNATURES = (
     (("nova reel", "novareel"), "amazon_nova_reel", "Amazon Nova Reel metadata signature detected"),
 )
 _CHINA = ("bytedance_seedance", "kuaishou_kling", "minimax_hailuo", "alibaba_wan", "tencent_hunyuan", "vidu")
-_UNITED_STATES = ("openai_sora", "google_veo", "runway_gen", "luma_dream_machine", "luma_dream", "pika",
+_UNITED_STATES = ("openai_sora", "google_veo", "runway_gen", "luma_dream_machine", "pika",
                   "meta_movie_gen", "adobe_firefly_video", "amazon_nova_reel")
 
 

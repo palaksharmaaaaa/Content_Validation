@@ -18,7 +18,7 @@ Contains its own:
 - Signal profiling & entropy (image_detector.profiler.ImageProfiler)
 - Safe URL image downloader (image_detector.downloader.ImageDownloader)
 - End-to-end forensic pipeline (image_detector.pipeline.ImageForensicPipeline)
-- High-speed batch processor (image_detector.batch.ImageBatchProcessor)
+- Sequential batch runner (image_detector.batch.ImageBatchProcessor)
 """
 from core.lazy import install_lazy_exports
 

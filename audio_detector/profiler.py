@@ -26,6 +26,22 @@ def compute_file_hashes(file_path: str | Path) -> Tuple[str, str, int]:
     return file_digests(file_path)
 
 
+def _short_term_dynamic_range_db(samples: np.ndarray, sr: int, frame_ms: float = 50.0) -> float:
+    """Spread between loud (95th percentile) and quiet (10th percentile) short-term RMS levels, in dB.
+
+    Ignores digital silence. This is the dynamic range; peak-to-RMS (crest factor) is reported separately.
+    """
+    frame = max(1, int(sr * frame_ms / 1000.0))
+    n = len(samples) // frame
+    if n < 2:
+        return 0.0
+    rms = np.sqrt(np.mean(samples[: n * frame].reshape(n, frame) ** 2, axis=1))
+    rms = rms[rms > 1e-5]
+    if len(rms) < 2:
+        return 0.0
+    return float(20.0 * np.log10(np.percentile(rms, 95) / max(1e-9, np.percentile(rms, 10))))
+
+
 class AudioProfiler:
     """Profiles acoustic stream metrics and dynamic range of audio recordings."""
 
@@ -57,8 +73,9 @@ class AudioProfiler:
         rms = float(np.sqrt(np.mean(samples ** 2)))
         crest_factor = float(peak / max(1e-6, rms))
 
-        # Dynamic range (dB)
-        dr_db = 20.0 * np.log10(max(1e-5, peak) / max(1e-5, rms)) if rms > 0 else 0.0
+        # Crest factor (peak vs. average level) and true loudness dynamic range (spread of short-term levels)
+        crest_factor_db = 20.0 * np.log10(max(1e-5, peak) / max(1e-5, rms)) if rms > 0 else 0.0
+        dr_db = _short_term_dynamic_range_db(samples, sr)
 
         is_clipped = peak >= 0.999
         is_silent = rms < 1e-4
@@ -77,6 +94,7 @@ class AudioProfiler:
             "rms_energy": round(rms, 4),
             "crest_factor": round(crest_factor, 2),
             "dynamic_range_db": round(dr_db, 1),
+            "crest_factor_db": round(crest_factor_db, 1),
             "is_clipped": is_clipped,
             "is_silent": is_silent,
             "format": path.suffix.lstrip(".").upper(),

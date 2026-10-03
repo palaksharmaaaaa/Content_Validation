@@ -41,6 +41,22 @@ def _calculate_file_hash(path: Path, chunk_size: int = 65536) -> str:
     return file_sha256(path)
 
 
+def resample_antialiased(samples: np.ndarray, src_sr: int, dst_sr: int, taps: int = 127) -> np.ndarray:
+    """Linear-interpolation resampling with a windowed-sinc low-pass first when downsampling.
+
+    Plain interpolation folds everything above the new Nyquist frequency back into the band (aliasing), which
+    corrupts exactly the spectral features this engine measures (cutoff, flatness). The FIR low-pass removes it.
+    """
+    s = np.asarray(samples, dtype=np.float32)
+    if src_sr > dst_sr:
+        cutoff = 0.45 * dst_sr / src_sr  # cycles/sample, a little under the new Nyquist
+        n = np.arange(taps) - (taps - 1) / 2.0
+        kernel = np.sinc(2.0 * cutoff * n) * np.hamming(taps)
+        s = np.convolve(s, (kernel / np.sum(kernel)).astype(np.float32), mode="same").astype(np.float32)
+    new_len = max(1, int(len(s) * (dst_sr / float(src_sr))))
+    return np.interp(np.linspace(0, len(s) - 1, new_len), np.arange(len(s)), s).astype(np.float32)
+
+
 class AudioValidator:
     """Independent validator and decoder for audio recordings."""
 
@@ -207,8 +223,7 @@ class AudioValidator:
                     if n_ch > 1:
                         s = s.reshape(-1, n_ch).mean(axis=1)
                     if fr > 0 and fr != self.target_sr and len(s) > 1:
-                        new_len = int(len(s) * (self.target_sr / float(fr)))
-                        s = np.interp(np.linspace(0, len(s) - 1, new_len), np.arange(len(s)), s).astype(np.float32)
+                        s = resample_antialiased(s, fr, self.target_sr)
                         fr = self.target_sr
                     dur = float(len(s)) / max(1, fr)
                     return s, fr, dur

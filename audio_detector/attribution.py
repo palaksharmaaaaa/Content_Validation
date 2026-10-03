@@ -26,6 +26,7 @@ spectral calibration for them only once backed by actual sample analysis, not gu
 """
 from __future__ import annotations
 import logging
+import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from core.shared_results import unknown_attribution
@@ -101,6 +102,11 @@ KNOWN_AUDIO_GENERATORS = {
 }
 
 
+def _word(token: str, text: str) -> bool:
+    """Whole-word match, so short vendor names don't fire inside unrelated words (\"udio\" in \"audio\", \"sonic\" in \"supersonic\")."""
+    return re.search(rf"(?<![a-z0-9]){re.escape(token)}(?![a-z0-9])", text) is not None
+
+
 class AudioModelAttributionEngine:
     """Attributes synthetic voice clones and AI audio to specific foundation models."""
 
@@ -130,10 +136,10 @@ class AudioModelAttributionEngine:
                 if "elevenlabs" in val_str:
                     scores["elevenlabs"] += 0.85
                     cues.append("Metadata declares ElevenLabs audio generation")
-                elif "suno" in val_str:
+                elif _word("suno", val_str):
                     scores["suno_ai"] += 0.85
                     cues.append("Metadata declares Suno AI generation")
-                elif "udio" in val_str:
+                elif _word("udio", val_str):
                     scores["udio"] += 0.85
                     cues.append("Metadata declares Udio generation")
                 elif "lyria" in val_str or ("gemini" in val_str and "audio" in val_str):
@@ -142,10 +148,10 @@ class AudioModelAttributionEngine:
                 elif "audiocraft" in val_str or "musicgen" in val_str or "voicebox" in val_str:
                     scores["meta_audiocraft"] += 0.85
                     cues.append("Metadata declares Meta AudioCraft generation")
-                elif "hume" in val_str:
+                elif _word("hume", val_str):
                     scores["hume_ai"] += 0.85
                     cues.append("Metadata declares Hume AI (Octave) generation")
-                elif "cartesia" in val_str or "sonic" in val_str:
+                elif "cartesia" in val_str or _word("sonic", val_str):
                     scores["cartesia"] += 0.85
                     cues.append("Metadata declares Cartesia (Sonic) generation")
                 elif "play.ht" in val_str or "playht" in val_str:

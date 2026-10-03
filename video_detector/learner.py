@@ -13,7 +13,7 @@ machine learning.
 
 Maintains a dedicated video feedback memory bank, adapts motion delta thresholds, and
 optimizes the temporal scoring weights used by video_detector.scoring.
-Completely self-contained with zero outside dependencies.
+Depends only on core (atomic JSON I/O, media library) and this package.
 """
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ from typing import Any, Dict, List, Optional
 from video_detector.config import DATA_DIR
 from video_detector.schemas import VideoFeedbackRecord
 from core.metrics_util import sanitize_metric_value
-from core.atomic_io import atomic_read_json, atomic_write_json
+from core.atomic_io import atomic_read_json, atomic_write_json, serialized_on
 from core.media_library import MediaLibrary, library_for, register_feedback
 
 logger = logging.getLogger("video_detector.learner")
@@ -89,6 +89,7 @@ class VideoSelfImprover:
         loaded = atomic_read_json(self.feedback_file, default=[])
         return loaded if isinstance(loaded, list) else []
 
+    @serialized_on("feedback_file", "calibration_file")
     def record_feedback(
         self,
         video_path: str,

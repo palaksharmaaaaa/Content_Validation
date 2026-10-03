@@ -1,5 +1,5 @@
 """
-audio_detector.batch: High-Speed Batch Processing Engine for Audio Forensics.
+audio_detector.batch: Sequential batch runner for Audio Forensics.
 Processes batches of audio files or directories with optional progress reporting.
 Completely self-contained with zero outside dependencies.
 """

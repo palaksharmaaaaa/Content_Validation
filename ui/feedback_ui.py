@@ -15,7 +15,7 @@ import streamlit as st
 
 from audio_detector import AudioProfiler, AudioSelfImprover
 from image_detector import ImageProfiler, ImageSelfImprover
-from image_detector.explain import build_nine_dimensions_dossier, generate_newbie_explanation
+from image_detector.explain import IPTC_SOURCE_TYPE_MAPPING, build_nine_dimensions_dossier, generate_newbie_explanation
 from video_detector import VideoProfiler, VideoSelfImprover
 from ui.profile_view import add_ui_profile_blocks
 from ui.stages import (

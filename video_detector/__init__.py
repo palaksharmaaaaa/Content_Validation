@@ -20,7 +20,7 @@ Contains its own:
 - Cross-modal audio-visual synchronization (video_detector.cross_modal.CrossModalConsistencyEngine)
 - Safe URL video downloader (video_detector.downloader.VideoDownloader)
 - End-to-end forensic pipeline (video_detector.pipeline.VideoForensicPipeline)
-- High-speed batch processor (video_detector.batch.VideoBatchProcessor)
+- Sequential batch runner (video_detector.batch.VideoBatchProcessor)
 """
 from core.lazy import install_lazy_exports
 

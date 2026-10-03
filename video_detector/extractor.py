@@ -50,7 +50,7 @@ class VideoFrameExtractor:
                 return {"error": "Could not open video file."}
 
             fps = cap.get(cv2.CAP_PROP_FPS)
-            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            total_frames = max(0, int(cap.get(cv2.CAP_PROP_FRAME_COUNT)))  # OpenCV returns -1 for some containers
             width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             fourcc_int = int(cap.get(cv2.CAP_PROP_FOURCC))

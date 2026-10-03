@@ -69,3 +69,23 @@ def test_rejections_leave_no_temp_files(fetcher, monkeypatch, tmp_path, resp, ne
 def test_url_rejected_before_any_network(fetcher, tmp_path):
     r = fetcher.fetch("https://evil.example.com/a.jpg", dest_dir=tmp_path)
     assert not r["success"] and "rejected" in r["error"]
+
+
+def test_relative_redirect_is_resolved(fetcher, monkeypatch, tmp_path):
+    seen = []
+    resps = iter([FakeResp(status=302, location="/media/real.jpg"), FakeResp(headers={"content-type": "image/jpeg"})])
+
+    def get(self, url, **k):
+        seen.append(url)
+        return next(resps)
+
+    monkeypatch.setattr(requests.Session, "get", get)
+    assert fetcher.fetch("https://example.com/a", dest_dir=tmp_path)["success"]
+    assert seen[1] == "https://example.com/media/real.jpg"
+
+
+def test_exhausted_redirect_budget_is_an_error_not_a_download(fetcher, monkeypatch, tmp_path):
+    _serve(monkeypatch, [FakeResp(status=302, location="https://example.com/next")] * 6)
+    r = fetcher.fetch("https://example.com/a", dest_dir=tmp_path)
+    assert not r["success"] and "redirect" in r["error"].lower()
+    assert list(tmp_path.iterdir()) == []

@@ -395,9 +395,9 @@
  "img_plain": {
   "ai_detected": true,
   "authenticity_probabilities": {
-   "p_ai": 67.9,
-   "p_real": 29.1,
-   "p_undecided": 3.0
+   "p_ai": 61.6,
+   "p_real": 26.4,
+   "p_undecided": 12.0
   },
   "calibration_status": "UNCALIBRATED_HEURISTIC",
   "content_inventory": {
@@ -427,7 +427,7 @@
   "cross_modal": {},
   "decision_mode": "fused",
   "evidence_trail": [],
-  "final_status": "LIKELY_SYNTHETIC",
+  "final_status": "PARTIALLY_SYNTHETIC_OR_EDITED",
   "forensic_modality_results": {
    "audio_ai_pct": null,
    "image_ai_pct": 70.0,
@@ -455,11 +455,11 @@
    "provenance_verdict": "PROVENANCE_UNKNOWN",
    "software": null
   },
-  "reason": "Forensic signals indicate high likelihood of synthetic/generative AI creation.",
-  "taxonomy_description": "Synthesized end-to-end via generative diffusion or deep neural models.",
-  "taxonomy_label": "Fully AI Generated",
+  "reason": "Significant forensic anomalies detected; partial synthesis or post-processing likely.",
+  "taxonomy_description": "Authentic base media augmented with neural synthesis, voice cloning, or deepfake manipulation.",
+  "taxonomy_label": "AI-Enhanced / Composite (Mix)",
   "taxonomy_reasons": [],
-  "taxonomy_state": "FULLY_AI_GENERATED",
+  "taxonomy_state": "AI_ENHANCED_COMPOSITE",
   "what_it_represents": "Standard visual capture"
  },
  "invalid": {
@@ -833,9 +833,9 @@
  "vid_legacy": {
   "ai_detected": true,
   "authenticity_probabilities": {
-   "p_ai": 75.2,
-   "p_real": 21.8,
-   "p_undecided": 3.0
+   "p_ai": 70.5,
+   "p_real": 20.5,
+   "p_undecided": 9.0
   },
   "calibration_status": "UNCALIBRATED_HEURISTIC",
   "content_inventory": {

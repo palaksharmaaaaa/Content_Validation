@@ -3,12 +3,12 @@
   "acoustic_features": {
    "cutoff_freq_hz": 7843.8,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.5339,
-   "p_audio_ai": 0.75,
+   "p_audio_ai": 0.25,
    "spectral_flatness": 0.762965
   },
-  "ai_duration_pct": 100.0,
+  "ai_duration_pct": 0.0,
   "ai_percentage": 60.4,
   "confidence": 0.7,
   "cutoff_freq_hz": 7843.8,
@@ -17,11 +17,11 @@
    "status": "Audible track extracted and evaluated.",
    "temporal_segments": [
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 3.0,
      "end_seconds": 3.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 0.0
     }
    ]
@@ -30,11 +30,9 @@
   "duration_seconds": 3.0,
   "error": null,
   "filename": "f.wav",
-  "forensic_cues": [
-   "Sharp vocoder brick-wall frequency cutoff at 7843.8 Hz (indicative of ElevenLabs, Suno, CosyVoice)"
-  ],
+  "forensic_cues": [],
   "has_audio_track": true,
-  "has_vocoder_cutoff": true,
+  "has_vocoder_cutoff": false,
   "high_freq_ratio": 0.5339,
   "label": "LIKELY AI-GENERATED",
   "metadata": {},
@@ -44,19 +42,19 @@
   "spectral_features": {
    "cutoff_freq_hz": 7843.8,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.5339,
-   "p_audio_ai": 0.75,
+   "p_audio_ai": 0.25,
    "spectral_flatness": 0.762965
   },
   "spectral_flatness": 0.762965,
   "temporal_segments": [
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 3.0,
     "end_seconds": 3.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 0.0
    }
   ],
@@ -67,12 +65,12 @@
   "acoustic_features": {
    "cutoff_freq_hz": 7843.8,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.5339,
-   "p_audio_ai": 0.75,
+   "p_audio_ai": 0.25,
    "spectral_flatness": 0.762965
   },
-  "ai_duration_pct": 100.0,
+  "ai_duration_pct": 0.0,
   "ai_percentage": 52.9,
   "confidence": 0.62,
   "cutoff_freq_hz": 7843.8,
@@ -81,11 +79,11 @@
    "status": "Audible track extracted and evaluated.",
    "temporal_segments": [
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 3.0,
      "end_seconds": 3.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 0.0
     }
    ]
@@ -94,11 +92,9 @@
   "duration_seconds": 3.0,
   "error": null,
   "filename": "f.wav",
-  "forensic_cues": [
-   "Sharp vocoder brick-wall frequency cutoff at 7843.8 Hz (indicative of ElevenLabs, Suno, CosyVoice)"
-  ],
+  "forensic_cues": [],
   "has_audio_track": true,
-  "has_vocoder_cutoff": true,
+  "has_vocoder_cutoff": false,
   "high_freq_ratio": 0.5339,
   "label": "UNDECIDED",
   "metadata": {},
@@ -108,19 +104,19 @@
   "spectral_features": {
    "cutoff_freq_hz": 7843.8,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.5339,
-   "p_audio_ai": 0.75,
+   "p_audio_ai": 0.25,
    "spectral_flatness": 0.762965
   },
   "spectral_flatness": 0.762965,
   "temporal_segments": [
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 3.0,
     "end_seconds": 3.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 0.0
    }
   ],
@@ -131,12 +127,12 @@
   "acoustic_features": {
    "cutoff_freq_hz": 7843.8,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.5339,
-   "p_audio_ai": 0.75,
+   "p_audio_ai": 0.25,
    "spectral_flatness": 0.762965
   },
-  "ai_duration_pct": 100.0,
+  "ai_duration_pct": 0.0,
   "ai_percentage": 62.5,
   "confidence": 0.72,
   "cutoff_freq_hz": 7843.8,
@@ -145,11 +141,11 @@
    "status": "Audible track extracted and evaluated.",
    "temporal_segments": [
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 3.0,
      "end_seconds": 3.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 0.0
     }
    ]
@@ -159,12 +155,11 @@
   "error": null,
   "filename": "f.wav",
   "forensic_cues": [
-   "Sharp vocoder brick-wall frequency cutoff at 7843.8 Hz (indicative of ElevenLabs, Suno, CosyVoice)",
    "Dimension check 'enf' adjusted log-odds by +0.30",
    "Dimension check 'z' adjusted log-odds by -0.10"
   ],
   "has_audio_track": true,
-  "has_vocoder_cutoff": true,
+  "has_vocoder_cutoff": false,
   "high_freq_ratio": 0.5339,
   "label": "LIKELY AI-GENERATED",
   "metadata": {},
@@ -174,19 +169,19 @@
   "spectral_features": {
    "cutoff_freq_hz": 7843.8,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.5339,
-   "p_audio_ai": 0.75,
+   "p_audio_ai": 0.25,
    "spectral_flatness": 0.762965
   },
   "spectral_flatness": 0.762965,
   "temporal_segments": [
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 3.0,
     "end_seconds": 3.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 0.0
    }
   ],
@@ -197,12 +192,12 @@
   "acoustic_features": {
    "cutoff_freq_hz": 7843.8,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.5339,
-   "p_audio_ai": 0.75,
+   "p_audio_ai": 0.25,
    "spectral_flatness": 0.762965
   },
-  "ai_duration_pct": 100.0,
+  "ai_duration_pct": 0.0,
   "ai_percentage": 33.5,
   "confidence": 0.61,
   "cutoff_freq_hz": 7843.8,
@@ -211,11 +206,11 @@
    "status": "Audible track extracted and evaluated.",
    "temporal_segments": [
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 3.0,
      "end_seconds": 3.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 0.0
     }
    ]
@@ -225,11 +220,10 @@
   "error": null,
   "filename": "f.wav",
   "forensic_cues": [
-   "Sharp vocoder brick-wall frequency cutoff at 7843.8 Hz (indicative of ElevenLabs, Suno, CosyVoice)",
    "Dimension check 'enf' adjusted log-odds by -0.40"
   ],
   "has_audio_track": true,
-  "has_vocoder_cutoff": true,
+  "has_vocoder_cutoff": false,
   "high_freq_ratio": 0.5339,
   "label": "UNDECIDED",
   "metadata": {},
@@ -239,19 +233,19 @@
   "spectral_features": {
    "cutoff_freq_hz": 7843.8,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.5339,
-   "p_audio_ai": 0.75,
+   "p_audio_ai": 0.25,
    "spectral_flatness": 0.762965
   },
   "spectral_flatness": 0.762965,
   "temporal_segments": [
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 3.0,
     "end_seconds": 3.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 0.0
    }
   ],
@@ -262,12 +256,12 @@
   "acoustic_features": {
    "cutoff_freq_hz": 7843.8,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.5339,
-   "p_audio_ai": 0.75,
+   "p_audio_ai": 0.25,
    "spectral_flatness": 0.762965
   },
-  "ai_duration_pct": 100.0,
+  "ai_duration_pct": 0.0,
   "ai_percentage": 56.6,
   "confidence": 0.66,
   "cutoff_freq_hz": 7843.8,
@@ -276,11 +270,11 @@
    "status": "Audible track extracted and evaluated.",
    "temporal_segments": [
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 3.0,
      "end_seconds": 3.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 0.0
     }
    ]
@@ -289,11 +283,9 @@
   "duration_seconds": 3.0,
   "error": null,
   "filename": "f.wav",
-  "forensic_cues": [
-   "Sharp vocoder brick-wall frequency cutoff at 7843.8 Hz (indicative of ElevenLabs, Suno, CosyVoice)"
-  ],
+  "forensic_cues": [],
   "has_audio_track": true,
-  "has_vocoder_cutoff": true,
+  "has_vocoder_cutoff": false,
   "high_freq_ratio": 0.5339,
   "label": "LIKELY AI-GENERATED",
   "metadata": {},
@@ -303,19 +295,19 @@
   "spectral_features": {
    "cutoff_freq_hz": 7843.8,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.5339,
-   "p_audio_ai": 0.75,
+   "p_audio_ai": 0.25,
    "spectral_flatness": 0.762965
   },
   "spectral_flatness": 0.762965,
   "temporal_segments": [
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 3.0,
     "end_seconds": 3.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 0.0
    }
   ],
@@ -358,12 +350,12 @@
   "acoustic_features": {
    "cutoff_freq_hz": 7890.6,
    "digital_silence_ratio": 0.0004,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.3777,
-   "p_audio_ai": 0.75,
+   "p_audio_ai": 0.25,
    "spectral_flatness": 0.998978
   },
-  "ai_duration_pct": 170.0,
+  "ai_duration_pct": 0.0,
   "ai_percentage": 60.4,
   "confidence": 0.7,
   "cutoff_freq_hz": 7890.6,
@@ -372,35 +364,35 @@
    "status": "Audible track extracted and evaluated.",
    "temporal_segments": [
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 3.0,
      "end_seconds": 3.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 0.0
     },
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 3.0,
      "end_seconds": 4.5,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 1.5
     },
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 2.0,
      "end_seconds": 5.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 3.0
     },
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 0.5,
      "end_seconds": 5.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 4.5
     }
    ]
@@ -409,11 +401,9 @@
   "duration_seconds": 5.0,
   "error": null,
   "filename": "c.wav",
-  "forensic_cues": [
-   "Sharp vocoder brick-wall frequency cutoff at 7890.6 Hz (indicative of ElevenLabs, Suno, CosyVoice)"
-  ],
+  "forensic_cues": [],
   "has_audio_track": true,
-  "has_vocoder_cutoff": true,
+  "has_vocoder_cutoff": false,
   "high_freq_ratio": 0.3777,
   "label": "LIKELY AI-GENERATED",
   "metadata": {},
@@ -423,43 +413,43 @@
   "spectral_features": {
    "cutoff_freq_hz": 7890.6,
    "digital_silence_ratio": 0.0004,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.3777,
-   "p_audio_ai": 0.75,
+   "p_audio_ai": 0.25,
    "spectral_flatness": 0.998978
   },
   "spectral_flatness": 0.998978,
   "temporal_segments": [
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 3.0,
     "end_seconds": 3.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 0.0
    },
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 3.0,
     "end_seconds": 4.5,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 1.5
    },
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 2.0,
     "end_seconds": 5.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 3.0
    },
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 0.5,
     "end_seconds": 5.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 4.5
    }
   ],
@@ -470,12 +460,12 @@
   "acoustic_features": {
    "cutoff_freq_hz": 7890.6,
    "digital_silence_ratio": 0.0004,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.3777,
-   "p_audio_ai": 0.75,
+   "p_audio_ai": 0.25,
    "spectral_flatness": 0.998978
   },
-  "ai_duration_pct": 170.0,
+  "ai_duration_pct": 0.0,
   "ai_percentage": 52.9,
   "confidence": 0.62,
   "cutoff_freq_hz": 7890.6,
@@ -484,35 +474,35 @@
    "status": "Audible track extracted and evaluated.",
    "temporal_segments": [
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 3.0,
      "end_seconds": 3.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 0.0
     },
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 3.0,
      "end_seconds": 4.5,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 1.5
     },
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 2.0,
      "end_seconds": 5.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 3.0
     },
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 0.5,
      "end_seconds": 5.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 4.5
     }
    ]
@@ -521,11 +511,9 @@
   "duration_seconds": 5.0,
   "error": null,
   "filename": "c.wav",
-  "forensic_cues": [
-   "Sharp vocoder brick-wall frequency cutoff at 7890.6 Hz (indicative of ElevenLabs, Suno, CosyVoice)"
-  ],
+  "forensic_cues": [],
   "has_audio_track": true,
-  "has_vocoder_cutoff": true,
+  "has_vocoder_cutoff": false,
   "high_freq_ratio": 0.3777,
   "label": "UNDECIDED",
   "metadata": {},
@@ -535,43 +523,43 @@
   "spectral_features": {
    "cutoff_freq_hz": 7890.6,
    "digital_silence_ratio": 0.0004,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.3777,
-   "p_audio_ai": 0.75,
+   "p_audio_ai": 0.25,
    "spectral_flatness": 0.998978
   },
   "spectral_flatness": 0.998978,
   "temporal_segments": [
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 3.0,
     "end_seconds": 3.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 0.0
    },
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 3.0,
     "end_seconds": 4.5,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 1.5
    },
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 2.0,
     "end_seconds": 5.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 3.0
    },
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 0.5,
     "end_seconds": 5.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 4.5
    }
   ],
@@ -582,12 +570,12 @@
   "acoustic_features": {
    "cutoff_freq_hz": 7890.6,
    "digital_silence_ratio": 0.0004,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.3777,
-   "p_audio_ai": 0.75,
+   "p_audio_ai": 0.25,
    "spectral_flatness": 0.998978
   },
-  "ai_duration_pct": 170.0,
+  "ai_duration_pct": 0.0,
   "ai_percentage": 62.5,
   "confidence": 0.72,
   "cutoff_freq_hz": 7890.6,
@@ -596,35 +584,35 @@
    "status": "Audible track extracted and evaluated.",
    "temporal_segments": [
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 3.0,
      "end_seconds": 3.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 0.0
     },
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 3.0,
      "end_seconds": 4.5,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 1.5
     },
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 2.0,
      "end_seconds": 5.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 3.0
     },
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 0.5,
      "end_seconds": 5.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 4.5
     }
    ]
@@ -634,12 +622,11 @@
   "error": null,
   "filename": "c.wav",
   "forensic_cues": [
-   "Sharp vocoder brick-wall frequency cutoff at 7890.6 Hz (indicative of ElevenLabs, Suno, CosyVoice)",
    "Dimension check 'enf' adjusted log-odds by +0.30",
    "Dimension check 'z' adjusted log-odds by -0.10"
   ],
   "has_audio_track": true,
-  "has_vocoder_cutoff": true,
+  "has_vocoder_cutoff": false,
   "high_freq_ratio": 0.3777,
   "label": "LIKELY AI-GENERATED",
   "metadata": {},
@@ -649,43 +636,43 @@
   "spectral_features": {
    "cutoff_freq_hz": 7890.6,
    "digital_silence_ratio": 0.0004,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.3777,
-   "p_audio_ai": 0.75,
+   "p_audio_ai": 0.25,
    "spectral_flatness": 0.998978
   },
   "spectral_flatness": 0.998978,
   "temporal_segments": [
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 3.0,
     "end_seconds": 3.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 0.0
    },
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 3.0,
     "end_seconds": 4.5,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 1.5
    },
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 2.0,
     "end_seconds": 5.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 3.0
    },
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 0.5,
     "end_seconds": 5.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 4.5
    }
   ],
@@ -696,12 +683,12 @@
   "acoustic_features": {
    "cutoff_freq_hz": 7890.6,
    "digital_silence_ratio": 0.0004,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.3777,
-   "p_audio_ai": 0.75,
+   "p_audio_ai": 0.25,
    "spectral_flatness": 0.998978
   },
-  "ai_duration_pct": 170.0,
+  "ai_duration_pct": 0.0,
   "ai_percentage": 33.5,
   "confidence": 0.61,
   "cutoff_freq_hz": 7890.6,
@@ -710,35 +697,35 @@
    "status": "Audible track extracted and evaluated.",
    "temporal_segments": [
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 3.0,
      "end_seconds": 3.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 0.0
     },
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 3.0,
      "end_seconds": 4.5,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 1.5
     },
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 2.0,
      "end_seconds": 5.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 3.0
     },
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 0.5,
      "end_seconds": 5.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 4.5
     }
    ]
@@ -748,11 +735,10 @@
   "error": null,
   "filename": "c.wav",
   "forensic_cues": [
-   "Sharp vocoder brick-wall frequency cutoff at 7890.6 Hz (indicative of ElevenLabs, Suno, CosyVoice)",
    "Dimension check 'enf' adjusted log-odds by -0.40"
   ],
   "has_audio_track": true,
-  "has_vocoder_cutoff": true,
+  "has_vocoder_cutoff": false,
   "high_freq_ratio": 0.3777,
   "label": "UNDECIDED",
   "metadata": {},
@@ -762,43 +748,43 @@
   "spectral_features": {
    "cutoff_freq_hz": 7890.6,
    "digital_silence_ratio": 0.0004,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.3777,
-   "p_audio_ai": 0.75,
+   "p_audio_ai": 0.25,
    "spectral_flatness": 0.998978
   },
   "spectral_flatness": 0.998978,
   "temporal_segments": [
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 3.0,
     "end_seconds": 3.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 0.0
    },
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 3.0,
     "end_seconds": 4.5,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 1.5
    },
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 2.0,
     "end_seconds": 5.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 3.0
    },
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 0.5,
     "end_seconds": 5.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 4.5
    }
   ],
@@ -809,12 +795,12 @@
   "acoustic_features": {
    "cutoff_freq_hz": 7890.6,
    "digital_silence_ratio": 0.0004,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.3777,
-   "p_audio_ai": 0.75,
+   "p_audio_ai": 0.25,
    "spectral_flatness": 0.998978
   },
-  "ai_duration_pct": 170.0,
+  "ai_duration_pct": 0.0,
   "ai_percentage": 56.6,
   "confidence": 0.66,
   "cutoff_freq_hz": 7890.6,
@@ -823,35 +809,35 @@
    "status": "Audible track extracted and evaluated.",
    "temporal_segments": [
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 3.0,
      "end_seconds": 3.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 0.0
     },
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 3.0,
      "end_seconds": 4.5,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 1.5
     },
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 2.0,
      "end_seconds": 5.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 3.0
     },
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 0.5,
      "end_seconds": 5.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 4.5
     }
    ]
@@ -860,11 +846,9 @@
   "duration_seconds": 5.0,
   "error": null,
   "filename": "c.wav",
-  "forensic_cues": [
-   "Sharp vocoder brick-wall frequency cutoff at 7890.6 Hz (indicative of ElevenLabs, Suno, CosyVoice)"
-  ],
+  "forensic_cues": [],
   "has_audio_track": true,
-  "has_vocoder_cutoff": true,
+  "has_vocoder_cutoff": false,
   "high_freq_ratio": 0.3777,
   "label": "LIKELY AI-GENERATED",
   "metadata": {},
@@ -874,43 +858,43 @@
   "spectral_features": {
    "cutoff_freq_hz": 7890.6,
    "digital_silence_ratio": 0.0004,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.3777,
-   "p_audio_ai": 0.75,
+   "p_audio_ai": 0.25,
    "spectral_flatness": 0.998978
   },
   "spectral_flatness": 0.998978,
   "temporal_segments": [
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 3.0,
     "end_seconds": 3.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 0.0
    },
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 3.0,
     "end_seconds": 4.5,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 1.5
    },
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 2.0,
     "end_seconds": 5.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 3.0
    },
    {
-    "ai_prob": 0.75,
+    "ai_prob": 0.25,
     "duration_seconds": 0.5,
     "end_seconds": 5.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 4.5
    }
   ],
@@ -2143,12 +2127,12 @@
   "acoustic_features": {
    "cutoff_freq_hz": 7687.5,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.1369,
-   "p_audio_ai": 0.6,
+   "p_audio_ai": 0.1,
    "spectral_flatness": 0.379839
   },
-  "ai_duration_pct": 100.0,
+  "ai_duration_pct": 0.0,
   "ai_percentage": 38.6,
   "confidence": 0.54,
   "cutoff_freq_hz": 7687.5,
@@ -2157,11 +2141,11 @@
    "status": "Audible track extracted and evaluated.",
    "temporal_segments": [
     {
-     "ai_prob": 0.6,
+     "ai_prob": 0.1,
      "duration_seconds": 3.0,
      "end_seconds": 3.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 0.0
     }
    ]
@@ -2170,11 +2154,9 @@
   "duration_seconds": 3.0,
   "error": null,
   "filename": "a.wav",
-  "forensic_cues": [
-   "Sharp vocoder brick-wall frequency cutoff at 7687.5 Hz (indicative of ElevenLabs, Suno, CosyVoice)"
-  ],
+  "forensic_cues": [],
   "has_audio_track": true,
-  "has_vocoder_cutoff": true,
+  "has_vocoder_cutoff": false,
   "high_freq_ratio": 0.1369,
   "label": "UNDECIDED",
   "metadata": {},
@@ -2184,19 +2166,19 @@
   "spectral_features": {
    "cutoff_freq_hz": 7687.5,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.1369,
-   "p_audio_ai": 0.6,
+   "p_audio_ai": 0.1,
    "spectral_flatness": 0.379839
   },
   "spectral_flatness": 0.379839,
   "temporal_segments": [
    {
-    "ai_prob": 0.6,
+    "ai_prob": 0.1,
     "duration_seconds": 3.0,
     "end_seconds": 3.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 0.0
    }
   ],
@@ -2207,12 +2189,12 @@
   "acoustic_features": {
    "cutoff_freq_hz": 7687.5,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.1369,
-   "p_audio_ai": 0.6,
+   "p_audio_ai": 0.1,
    "spectral_flatness": 0.379839
   },
-  "ai_duration_pct": 100.0,
+  "ai_duration_pct": 0.0,
   "ai_percentage": 45.4,
   "confidence": 0.54,
   "cutoff_freq_hz": 7687.5,
@@ -2221,11 +2203,11 @@
    "status": "Audible track extracted and evaluated.",
    "temporal_segments": [
     {
-     "ai_prob": 0.6,
+     "ai_prob": 0.1,
      "duration_seconds": 3.0,
      "end_seconds": 3.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 0.0
     }
    ]
@@ -2234,11 +2216,9 @@
   "duration_seconds": 3.0,
   "error": null,
   "filename": "a.wav",
-  "forensic_cues": [
-   "Sharp vocoder brick-wall frequency cutoff at 7687.5 Hz (indicative of ElevenLabs, Suno, CosyVoice)"
-  ],
+  "forensic_cues": [],
   "has_audio_track": true,
-  "has_vocoder_cutoff": true,
+  "has_vocoder_cutoff": false,
   "high_freq_ratio": 0.1369,
   "label": "UNDECIDED",
   "metadata": {},
@@ -2248,19 +2228,19 @@
   "spectral_features": {
    "cutoff_freq_hz": 7687.5,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.1369,
-   "p_audio_ai": 0.6,
+   "p_audio_ai": 0.1,
    "spectral_flatness": 0.379839
   },
   "spectral_flatness": 0.379839,
   "temporal_segments": [
    {
-    "ai_prob": 0.6,
+    "ai_prob": 0.1,
     "duration_seconds": 3.0,
     "end_seconds": 3.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 0.0
    }
   ],
@@ -2271,12 +2251,12 @@
   "acoustic_features": {
    "cutoff_freq_hz": 7687.5,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.1369,
-   "p_audio_ai": 0.6,
+   "p_audio_ai": 0.1,
    "spectral_flatness": 0.379839
   },
-  "ai_duration_pct": 100.0,
+  "ai_duration_pct": 0.0,
   "ai_percentage": 38.6,
   "confidence": 0.54,
   "cutoff_freq_hz": 7687.5,
@@ -2285,11 +2265,11 @@
    "status": "Audible track extracted and evaluated.",
    "temporal_segments": [
     {
-     "ai_prob": 0.6,
+     "ai_prob": 0.1,
      "duration_seconds": 3.0,
      "end_seconds": 3.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 0.0
     }
    ]
@@ -2298,11 +2278,9 @@
   "duration_seconds": 3.0,
   "error": null,
   "filename": "a.wav",
-  "forensic_cues": [
-   "Sharp vocoder brick-wall frequency cutoff at 7687.5 Hz (indicative of ElevenLabs, Suno, CosyVoice)"
-  ],
+  "forensic_cues": [],
   "has_audio_track": true,
-  "has_vocoder_cutoff": true,
+  "has_vocoder_cutoff": false,
   "high_freq_ratio": 0.1369,
   "label": "UNDECIDED",
   "metadata": {},
@@ -2312,19 +2290,19 @@
   "spectral_features": {
    "cutoff_freq_hz": 7687.5,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.1369,
-   "p_audio_ai": 0.6,
+   "p_audio_ai": 0.1,
    "spectral_flatness": 0.379839
   },
   "spectral_flatness": 0.379839,
   "temporal_segments": [
    {
-    "ai_prob": 0.6,
+    "ai_prob": 0.1,
     "duration_seconds": 3.0,
     "end_seconds": 3.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 0.0
    }
   ],
@@ -2335,12 +2313,12 @@
   "acoustic_features": {
    "cutoff_freq_hz": 7687.5,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.1369,
-   "p_audio_ai": 0.6,
+   "p_audio_ai": 0.1,
    "spectral_flatness": 0.379839
   },
-  "ai_duration_pct": 100.0,
+  "ai_duration_pct": 0.0,
   "ai_percentage": 48.4,
   "confidence": 0.57,
   "cutoff_freq_hz": 7687.5,
@@ -2349,11 +2327,11 @@
    "status": "Audible track extracted and evaluated.",
    "temporal_segments": [
     {
-     "ai_prob": 0.6,
+     "ai_prob": 0.1,
      "duration_seconds": 3.0,
      "end_seconds": 3.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 0.0
     }
    ]
@@ -2363,12 +2341,11 @@
   "error": null,
   "filename": "a.wav",
   "forensic_cues": [
-   "Sharp vocoder brick-wall frequency cutoff at 7687.5 Hz (indicative of ElevenLabs, Suno, CosyVoice)",
    "Dimension check 'enf' adjusted log-odds by +0.30",
    "Dimension check 'z' adjusted log-odds by -0.10"
   ],
   "has_audio_track": true,
-  "has_vocoder_cutoff": true,
+  "has_vocoder_cutoff": false,
   "high_freq_ratio": 0.1369,
   "label": "UNDECIDED",
   "metadata": {},
@@ -2378,19 +2355,19 @@
   "spectral_features": {
    "cutoff_freq_hz": 7687.5,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.1369,
-   "p_audio_ai": 0.6,
+   "p_audio_ai": 0.1,
    "spectral_flatness": 0.379839
   },
   "spectral_flatness": 0.379839,
   "temporal_segments": [
    {
-    "ai_prob": 0.6,
+    "ai_prob": 0.1,
     "duration_seconds": 3.0,
     "end_seconds": 3.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 0.0
    }
   ],
@@ -2401,12 +2378,12 @@
   "acoustic_features": {
    "cutoff_freq_hz": 7687.5,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.1369,
-   "p_audio_ai": 0.6,
+   "p_audio_ai": 0.1,
    "spectral_flatness": 0.379839
   },
-  "ai_duration_pct": 100.0,
+  "ai_duration_pct": 0.0,
   "ai_percentage": 21.8,
   "confidence": 0.75,
   "cutoff_freq_hz": 7687.5,
@@ -2415,11 +2392,11 @@
    "status": "Audible track extracted and evaluated.",
    "temporal_segments": [
     {
-     "ai_prob": 0.6,
+     "ai_prob": 0.1,
      "duration_seconds": 3.0,
      "end_seconds": 3.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 0.0
     }
    ]
@@ -2429,11 +2406,10 @@
   "error": null,
   "filename": "a.wav",
   "forensic_cues": [
-   "Sharp vocoder brick-wall frequency cutoff at 7687.5 Hz (indicative of ElevenLabs, Suno, CosyVoice)",
    "Dimension check 'enf' adjusted log-odds by -0.40"
   ],
   "has_audio_track": true,
-  "has_vocoder_cutoff": true,
+  "has_vocoder_cutoff": false,
   "high_freq_ratio": 0.1369,
   "label": "LIKELY REAL",
   "metadata": {},
@@ -2443,19 +2419,19 @@
   "spectral_features": {
    "cutoff_freq_hz": 7687.5,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.1369,
-   "p_audio_ai": 0.6,
+   "p_audio_ai": 0.1,
    "spectral_flatness": 0.379839
   },
   "spectral_flatness": 0.379839,
   "temporal_segments": [
    {
-    "ai_prob": 0.6,
+    "ai_prob": 0.1,
     "duration_seconds": 3.0,
     "end_seconds": 3.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 0.0
    }
   ],
@@ -2466,12 +2442,12 @@
   "acoustic_features": {
    "cutoff_freq_hz": 7687.5,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.1369,
-   "p_audio_ai": 0.6,
+   "p_audio_ai": 0.1,
    "spectral_flatness": 0.379839
   },
-  "ai_duration_pct": 100.0,
+  "ai_duration_pct": 0.0,
   "ai_percentage": 41.9,
   "confidence": 0.5,
   "cutoff_freq_hz": 7687.5,
@@ -2480,11 +2456,11 @@
    "status": "Audible track extracted and evaluated.",
    "temporal_segments": [
     {
-     "ai_prob": 0.6,
+     "ai_prob": 0.1,
      "duration_seconds": 3.0,
      "end_seconds": 3.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 0.0
     }
    ]
@@ -2493,11 +2469,9 @@
   "duration_seconds": 3.0,
   "error": null,
   "filename": "a.wav",
-  "forensic_cues": [
-   "Sharp vocoder brick-wall frequency cutoff at 7687.5 Hz (indicative of ElevenLabs, Suno, CosyVoice)"
-  ],
+  "forensic_cues": [],
   "has_audio_track": true,
-  "has_vocoder_cutoff": true,
+  "has_vocoder_cutoff": false,
   "high_freq_ratio": 0.1369,
   "label": "UNDECIDED",
   "metadata": {},
@@ -2507,19 +2481,19 @@
   "spectral_features": {
    "cutoff_freq_hz": 7687.5,
    "digital_silence_ratio": 0.0001,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.1369,
-   "p_audio_ai": 0.6,
+   "p_audio_ai": 0.1,
    "spectral_flatness": 0.379839
   },
   "spectral_flatness": 0.379839,
   "temporal_segments": [
    {
-    "ai_prob": 0.6,
+    "ai_prob": 0.1,
     "duration_seconds": 3.0,
     "end_seconds": 3.0,
-    "has_vocoder_cutoff": true,
-    "label": "LIKELY AI-GENERATED",
+    "has_vocoder_cutoff": false,
+    "label": "LIKELY REAL",
     "start_seconds": 0.0
    }
   ],

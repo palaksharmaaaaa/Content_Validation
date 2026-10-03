@@ -12,6 +12,7 @@ Completely self-contained with zero outside dependencies.
 from __future__ import annotations
 
 import logging
+import threading
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -65,8 +66,14 @@ class VideoAIDetector:
         self.model = None
         self.device = None
         self._is_loaded = False
+        self._load_lock = threading.RLock()
 
     def load(self) -> bool:
+        """Loads once; concurrent callers wait for the first load instead of loading the model twice."""
+        with self._load_lock:
+            return self._load_locked()
+
+    def _load_locked(self) -> bool:
         """Loads neural weights if video checkpoint exists."""
         if self._is_loaded:
             return True

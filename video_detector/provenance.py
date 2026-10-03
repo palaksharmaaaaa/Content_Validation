@@ -101,14 +101,14 @@ class VideoProvenanceValidator:
         try:
             with open(path, "rb") as f:
                 head = f.read(65536)
-                for atom in KNOWN_VIDEO_ATOMS:
-                    if atom in head:
-                        atoms_found.append(atom.decode("ascii", errors="ignore"))
-
                 file_size = path.stat().st_size
                 tail_len = min(file_size, 128 * 1024)
                 f.seek(max(0, file_size - tail_len))
                 tail = f.read(tail_len)
+                # moov/udta sit at the END of non-fast-start MP4s, so atom names are looked up in head and tail
+                for atom in KNOWN_VIDEO_ATOMS:
+                    if atom in head or atom in tail:
+                        atoms_found.append(atom.decode("ascii", errors="ignore"))
 
             text_blob = (head + tail).lower()
             for sig in KNOWN_VIDEO_GENERATOR_SIGNATURES:

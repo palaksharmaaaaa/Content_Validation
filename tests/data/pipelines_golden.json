@@ -4,12 +4,12 @@
    "acoustic_features": {
     "cutoff_freq_hz": 7781.2,
     "digital_silence_ratio": 0.0,
-    "has_vocoder_cutoff": true,
+    "has_vocoder_cutoff": false,
     "high_freq_ratio": 0.1986,
-    "p_audio_ai": 0.75,
+    "p_audio_ai": 0.25,
     "spectral_flatness": 0.551714
    },
-   "ai_duration_pct": 100.0,
+   "ai_duration_pct": 0.0,
    "ai_percentage": 52.9,
    "confidence": 0.62,
    "cutoff_freq_hz": 7781.2,
@@ -18,11 +18,11 @@
     "status": "Audible track extracted and evaluated.",
     "temporal_segments": [
      {
-      "ai_prob": 0.75,
+      "ai_prob": 0.25,
       "duration_seconds": 2.0,
       "end_seconds": 2.0,
-      "has_vocoder_cutoff": true,
-      "label": "LIKELY AI-GENERATED",
+      "has_vocoder_cutoff": false,
+      "label": "LIKELY REAL",
       "start_seconds": 0.0
      }
     ]
@@ -31,11 +31,9 @@
    "duration_seconds": 2.0,
    "error": null,
    "filename": "a.wav",
-   "forensic_cues": [
-    "Sharp vocoder brick-wall frequency cutoff at 7781.2 Hz (indicative of ElevenLabs, Suno, CosyVoice)"
-   ],
+   "forensic_cues": [],
    "has_audio_track": true,
-   "has_vocoder_cutoff": true,
+   "has_vocoder_cutoff": false,
    "high_freq_ratio": 0.1986,
    "label": "UNDECIDED",
    "metadata": {},
@@ -45,20 +43,20 @@
    "spectral_features": {
     "cutoff_freq_hz": 7781.2,
     "digital_silence_ratio": 0.0,
-    "has_vocoder_cutoff": true,
+    "has_vocoder_cutoff": false,
     "high_freq_ratio": 0.1986,
-    "p_audio_ai": 0.75,
+    "p_audio_ai": 0.25,
     "spectral_flatness": 0.551714
    },
    "spectral_flatness": 0.551714,
    "spectrogram_image": "<ndarray>",
    "temporal_segments": [
     {
-     "ai_prob": 0.75,
+     "ai_prob": 0.25,
      "duration_seconds": 2.0,
      "end_seconds": 2.0,
-     "has_vocoder_cutoff": true,
-     "label": "LIKELY AI-GENERATED",
+     "has_vocoder_cutoff": false,
+     "label": "LIKELY REAL",
      "start_seconds": 0.0
     }
    ],
@@ -67,14 +65,14 @@
   },
   "ai_detected": true,
   "attribution_open_set": {
-   "model_key": "elevenlabs",
+   "model_key": "unknown",
    "note": "",
    "unknown_source": false
   },
   "authenticity_probabilities": {
-   "p_ai": 60.2,
-   "p_real": 36.8,
-   "p_undecided": 3.0
+   "p_ai": 52.6,
+   "p_real": 32.2,
+   "p_undecided": 15.2
   },
   "confidence": 0.62,
   "confidence_band": {
@@ -86,9 +84,9 @@
   "decision": {
    "ai_detected": true,
    "authenticity_probabilities": {
-    "p_ai": 60.2,
-    "p_real": 36.8,
-    "p_undecided": 3.0
+    "p_ai": 52.6,
+    "p_real": 32.2,
+    "p_undecided": 15.2
    },
    "calibration_status": "UNCALIBRATED_HEURISTIC",
    "content_inventory": {
@@ -117,9 +115,7 @@
    "content_valid": true,
    "cross_modal": {},
    "decision_mode": "fused",
-   "evidence_trail": [
-    "[Audio Forensic] Sharp vocoder brick-wall frequency cutoff at 7781.2 Hz (indicative of ElevenLabs, Suno, CosyVoice)"
-   ],
+   "evidence_trail": [],
    "final_status": "PARTIALLY_SYNTHETIC_OR_EDITED",
    "forensic_modality_results": {
     "audio_ai_pct": 52.9,
@@ -127,35 +123,31 @@
     "video_ai_pct": null
    },
    "localization": {
-    "suspicious_audio_duration_pct": 100.0,
+    "suspicious_audio_duration_pct": 0.0,
     "suspicious_image_area_pct": 0.0,
     "suspicious_video_duration_pct": 0.0
    },
    "model_attribution": {
-    "attributed_model": "ElevenLabs Speech Synthesis",
-    "attribution_confidence": 0.31,
-    "confidence": 0.31,
+    "attributed_model": "Unknown / Generic Neural Vocoder",
+    "confidence": 0.08,
     "cues": [
-     "Sharp brick-wall vocoder cutoff at 7781 Hz (typical of ElevenLabs / CosyVoice)"
+     "No distinctive audio synthesizer fingerprints isolated."
     ],
-    "model_key": "elevenlabs",
-    "provider": "ElevenLabs",
-    "region_of_origin": "United States",
+    "model_key": "unknown",
     "top_candidates": [
      {
-      "confidence": 0.31,
+      "confidence": 0.08,
       "model": "ElevenLabs Speech Synthesis"
      },
      {
-      "confidence": 0.27,
+      "confidence": 0.08,
       "model": "Alibaba CosyVoice (1.0 / 2.0)"
      },
      {
-      "confidence": 0.04,
+      "confidence": 0.08,
       "model": "2Noise ChatTTS"
      }
-    ],
-    "watermark_detected": false
+    ]
    },
    "provenance": {
     "ai_declared_in_c2pa": false,
@@ -175,7 +167,7 @@
   },
   "dimension_report": {
    "attribution_open_set": {
-    "model_key": "elevenlabs",
+    "model_key": "unknown",
     "note": "",
     "unknown_source": false
    },
@@ -560,13 +552,13 @@
    }
   },
   "evidence_trail": [
-   "Sharp vocoder brick-wall frequency cutoff at 7781.2 Hz (indicative of ElevenLabs, Suno, CosyVoice)",
-   "Voice Synthesizer Fingerprint: ElevenLabs Speech Synthesis (31% confidence)"
+   "Voice Synthesizer Fingerprint: Unknown / Generic Neural Vocoder (8% confidence)"
   ],
   "file_profile": {
    "crest_factor": 1.74,
+   "crest_factor_db": 4.8,
    "duration_seconds": 2.0,
-   "dynamic_range_db": 4.8,
+   "dynamic_range_db": 0.1,
    "file_size_bytes": 64044,
    "file_size_mb": 0.061,
    "filename": "a.wav",
@@ -594,32 +586,28 @@
    "triggered": false
   },
   "model_attribution": {
-   "attributed_model": "ElevenLabs Speech Synthesis",
-   "attribution_confidence": 0.31,
-   "confidence": 0.31,
+   "attributed_model": "Unknown / Generic Neural Vocoder",
+   "confidence": 0.08,
    "cues": [
-    "Sharp brick-wall vocoder cutoff at 7781 Hz (typical of ElevenLabs / CosyVoice)"
+    "No distinctive audio synthesizer fingerprints isolated."
    ],
-   "model_key": "elevenlabs",
-   "provider": "ElevenLabs",
-   "region_of_origin": "United States",
+   "model_key": "unknown",
    "top_candidates": [
     {
-     "confidence": 0.31,
+     "confidence": 0.08,
      "model": "ElevenLabs Speech Synthesis"
     },
     {
-     "confidence": 0.27,
+     "confidence": 0.08,
      "model": "Alibaba CosyVoice (1.0 / 2.0)"
     },
     {
-     "confidence": 0.04,
+     "confidence": 0.08,
      "model": "2Noise ChatTTS"
     }
-   ],
-   "watermark_detected": false
+   ]
   },
-  "newbie_explanation": "### \ud83c\udf99\ufe0f What We Identified in this Audio Track\n\nThis file (`a.wav`) is a **0.0-second audio recording** sampled at **16,000 Hz**. Acoustically, it features **1 speaker** delivering **vocal speech**.\n\n### \ud83d\udca1 How Would You Explain This to a Newbie?\n\n**The Simple Takeaway:** Our forensic acoustic engine's heuristic (uncalibrated) score is **60.2% AI-likelihood**, indicating this audio was most likely **created by an AI voice generator or clone** (such as ElevenLabs, OpenAI Voice, or Tortoise) rather than spoken by a live human.\n\n**Think of it like this:** When a real person speaks into a microphone, air passes through vocal cords, bounces around the mouth and chest, and catches subtle human imperfections \u2014 like tiny breaths, tongue clicks, and the natural echo of the room you are standing in. An AI voice model, on the other hand, calculates speech mathematically using a digital vocoder. When we analyze the sound waves under our forensic microscope, the speech harmonics are unnaturally smooth, the sound abruptly cuts off at a digital ceiling (the vocoder brickwall), and the silent gaps between words are pure mathematical zeros rather than real-world room ambience. Even though it sounds uncannily like a real person, the acoustic evidence points to a computer-generated origin.",
+  "newbie_explanation": "### \ud83c\udf99\ufe0f What We Identified in this Audio Track\n\nThis file (`a.wav`) is a **0.0-second audio recording** sampled at **16,000 Hz**. Acoustically, it features **1 speaker** delivering **vocal speech**.\n\n### \ud83d\udca1 How Would You Explain This to a Newbie?\n\n**The Simple Takeaway:** Our forensic acoustic engine's heuristic (uncalibrated) score is **52.6% AI-likelihood**, indicating this audio was most likely **created by an AI voice generator or clone** (such as ElevenLabs, OpenAI Voice, or Tortoise) rather than spoken by a live human.\n\n**Think of it like this:** When a real person speaks into a microphone, air passes through vocal cords, bounces around the mouth and chest, and catches subtle human imperfections \u2014 like tiny breaths, tongue clicks, and the natural echo of the room you are standing in. An AI voice model, on the other hand, calculates speech mathematically using a digital vocoder. When we analyze the sound waves under our forensic microscope, the speech harmonics are unnaturally smooth, the sound abruptly cuts off at a digital ceiling (the vocoder brickwall), and the silent gaps between words are pure mathematical zeros rather than real-world room ambience. Even though it sounds uncannily like a real person, the acoustic evidence points to a computer-generated origin.",
   "nine_dimensions_dossier": {
    "dimension_1_hardware_provenance": {
     "c2pa_status": "Absent (Neutral)",
@@ -641,9 +629,9 @@
    "dimension_3_prnu_sensor_noise": {
     "description": "Detects sharp artificial frequency drop-offs characteristic of neural speech synthesizers (16kHz/24kHz).",
     "detected_cutoff_hz": "None (Full Bandwidth)",
-    "diagnosis": "Sharp vocoder brickwall cutoff detected at 0 Hz; common signature of ElevenLabs / VITS neural models.",
+    "diagnosis": "Natural acoustic harmonic roll-off preserved to Nyquist frequency.",
     "dimension_id": 3,
-    "is_brickwalled": true,
+    "is_brickwalled": false,
     "title": "Dimension 3: Neural Vocoder High-Frequency Cutoff (Brickwalling)"
    },
    "dimension_4_surface_smoothness": {
@@ -686,11 +674,11 @@
     "title": "Dimension 8: Frequency Spectrum Bandwidth & Nyquist Coverage"
    },
    "dimension_9_generative_attribution": {
-    "attributed_generator": "ElevenLabs Speech Synthesis",
-    "attribution_confidence": "31%",
+    "attributed_generator": "Unknown / Generic Neural Vocoder",
+    "attribution_confidence": "0%",
     "description": "Identifies voice cloning engines (ElevenLabs, OpenAI Voice, Tortoise, Bark, VITS) and watermark markers.",
     "dimension_id": 9,
-    "suspicious_duration_pct": "100.0%",
+    "suspicious_duration_pct": "0.0%",
     "title": "Dimension 9: Foundation Voice Model Attribution & Watermarking",
     "watermark_detected": false
    }
@@ -3496,9 +3484,9 @@
    "unknown_source": true
   },
   "authenticity_probabilities": {
-   "p_ai": 83.9,
-   "p_real": 13.1,
-   "p_undecided": 3.0
+   "p_ai": 81.8,
+   "p_real": 12.8,
+   "p_undecided": 5.4
   },
   "confidence": 0.82,
   "confidence_band": {
@@ -3646,9 +3634,9 @@
   "decision": {
    "ai_detected": true,
    "authenticity_probabilities": {
-    "p_ai": 83.9,
-    "p_real": 13.1,
-    "p_undecided": 3.0
+    "p_ai": 81.8,
+    "p_real": 12.8,
+    "p_undecided": 5.4
    },
    "calibration_status": "UNCALIBRATED_HEURISTIC",
    "content_inventory": {
@@ -4222,7 +4210,7 @@
     }
    ]
   },
-  "newbie_explanation": "### \ud83d\udcf9 What We Identified in this Video\n\nThis file (`v.mp4`) is a **0.0-second video recording** formatted at **0 \u00d7 0 pixels** running at **0.0 frames per second**. The video depicts **a visual landscape or scene**.\n\n### \ud83d\udca1 How Would You Explain This to a Newbie?\n\n**The Simple Takeaway:** Our forensic engine's heuristic (uncalibrated) score is **83.9% AI-likelihood**, indicating this video was most likely **generated by Artificial Intelligence** (such as Sora, Runway, Kling, or Luma) rather than captured by a real physical video camera.\n\n**Think of it like this:** When a real video camera shoots a scene, light continuously hits a physical sensor chip 24 to 60 times every second. Because physical objects obey Newtonian physics, moving hands, hair, and backgrounds transition smoothly without distorting. However, AI video models generate clips by 'dreaming' one frame after another. When you look closely under the forensic microscope, the background slightly warps, micro-textures flicker unnaturally between frames, and the natural camera sensor grain is missing. It looks convincing at first glance, but the temporal physics reveal it was computed mathematically, not filmed optically.",
+  "newbie_explanation": "### \ud83d\udcf9 What We Identified in this Video\n\nThis file (`v.mp4`) is a **0.0-second video recording** formatted at **0 \u00d7 0 pixels** running at **0.0 frames per second**. The video depicts **a visual landscape or scene**.\n\n### \ud83d\udca1 How Would You Explain This to a Newbie?\n\n**The Simple Takeaway:** Our forensic engine's heuristic (uncalibrated) score is **81.8% AI-likelihood**, indicating this video was most likely **generated by Artificial Intelligence** (such as Sora, Runway, Kling, or Luma) rather than captured by a real physical video camera.\n\n**Think of it like this:** When a real video camera shoots a scene, light continuously hits a physical sensor chip 24 to 60 times every second. Because physical objects obey Newtonian physics, moving hands, hair, and backgrounds transition smoothly without distorting. However, AI video models generate clips by 'dreaming' one frame after another. When you look closely under the forensic microscope, the background slightly warps, micro-textures flicker unnaturally between frames, and the natural camera sensor grain is missing. It looks convincing at first glance, but the temporal physics reveal it was computed mathematically, not filmed optically.",
   "nine_dimensions_dossier": {
    "dimension_1_hardware_provenance": {
     "c2pa_status": "Absent (Neutral)",

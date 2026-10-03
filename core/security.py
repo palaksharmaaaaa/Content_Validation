@@ -18,7 +18,7 @@ import socket
 import tempfile
 import threading
 from typing import Any, Dict, List, Optional, Tuple
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 from PIL import Image
 import requests
@@ -246,7 +246,7 @@ class SecureUrlFetcher:
         Returns (response, error). Each request is pinned to the IPs that were validated for its host.
         """
         resp = None
-        for _ in range(self._MAX_REDIRECTS):
+        for hop in range(self._MAX_REDIRECTS + 1):
             with _PinnedResolver(hostname, resolved_ips):
                 resp = session.get(
                     url, headers=self._HEADERS, stream=True,
@@ -256,7 +256,10 @@ class SecureUrlFetcher:
                     break
                 target = resp.headers.get("Location")
                 if not target:
-                    break
+                    return None, "Redirect response without a Location header."
+                if hop >= self._MAX_REDIRECTS:
+                    return None, f"Too many redirects (more than {self._MAX_REDIRECTS})."
+                target = urljoin(url, target)  # Location may be relative
                 valid, msg, ips = validate_secure_url(target)
                 if not valid:
                     return None, f"SSRF blocked malicious redirect: {msg}"

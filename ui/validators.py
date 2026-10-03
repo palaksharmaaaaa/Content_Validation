@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
 from PIL import Image
@@ -270,11 +270,13 @@ def validate_expected_platform(url: str, expected_platform: str) -> Dict[str, An
 
 
 def fetch_media_from_url(
-    url: str, expected_type: str = "image", max_mb: int = MAX_FILE_SIZE_MB
+    url: str, expected_type: str = "image", max_mb: int = MAX_FILE_SIZE_MB, dest_dir: Optional[Path] = None
 ) -> Dict[str, Any]:
-    """Downloads remote media via anti-SSRF SecureUrlFetcher, enforcing size limits and format checks."""
+    """Downloads remote media via anti-SSRF SecureUrlFetcher, enforcing size limits and format checks.
+
+    Pass the session's scratch directory as ``dest_dir`` so the sidebar wipe removes the download."""
     fetcher = SecureUrlFetcher(max_mb=max_mb, timeout_seconds=120)
-    fetch_res = fetcher.fetch(url, expected_type=expected_type)
+    fetch_res = fetcher.fetch(url, dest_dir=dest_dir, expected_type=expected_type)
     if not fetch_res.get("success"):
         return {"success": False, "error": fetch_res.get("error", "Download failed")}
 
