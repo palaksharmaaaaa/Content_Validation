@@ -19,13 +19,13 @@ Completely self-contained with zero outside dependencies.
 from __future__ import annotations
 
 from datetime import datetime
-import json
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from image_detector.config import CALIBRATION_FILE, DATA_DIR, MEMORY_FILE
+from image_detector.config import DATA_DIR
 from image_detector.schemas import ImageFeedbackRecord
+from core.metrics_util import sanitize_metric_value
 from core.atomic_io import atomic_read_json, atomic_write_json
 from core.media_library import MediaLibrary, library_for, register_feedback
 
@@ -93,36 +93,25 @@ class ImageSelfImprover:
         self,
         image_path: str,
         user_label: str,  # 'REAL' or 'AI'
-        forensic_metrics: Dict[str, Any],
+        forensic_metrics: Optional[Dict[str, Any]] = None,
         notes: str = "",
+        *,
+        metrics: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Registers user or ground-truth verification of an image, updates memory bank,
-        and dynamically adapts forensic thresholds.
+        and dynamically adapts forensic thresholds. ``metrics`` is the modality-neutral alias of ``forensic_metrics``.
         """
+        forensic_metrics = forensic_metrics or metrics or {}
         memory = self.load_memory()
         calib = self.load_calibration()
         register_feedback(self.library, image_path, user_label)
-
-        def _sanitize_val(val: Any) -> Any:
-            if hasattr(val, "shape"):
-                return None
-            if isinstance(val, (float, int, str, bool)):
-                return val
-            if hasattr(val, "item") and getattr(val, "size", 1) == 1:
-                return val.item()
-            if isinstance(val, dict):
-                return {str(dk): _sanitize_val(dv) for dk, dv in val.items() if _sanitize_val(dv) is not None}
-            if isinstance(val, (list, tuple)):
-                clean = [_sanitize_val(x) for x in val]
-                return [x for x in clean if x is not None]
-            return None
 
         sanitized_metrics = {}
         for k, v in forensic_metrics.items():
             if k in ("spatial_heatmap", "image", "raw_image"):
                 continue
-            s_val = _sanitize_val(v)
+            s_val = sanitize_metric_value(v)
             if s_val is not None:
                 sanitized_metrics[k] = s_val
 

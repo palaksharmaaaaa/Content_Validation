@@ -1,0 +1,903 @@
+{
+ "aud": {
+  "ai_detected": true,
+  "authenticity_probabilities": {
+   "p_ai": 94.7,
+   "p_real": 2.3,
+   "p_undecided": 3.0
+  },
+  "calibration_status": "UNCALIBRATED_HEURISTIC",
+  "content_inventory": {
+   "acoustic_environment": "N/A",
+   "animal_types": [],
+   "animals_detected": false,
+   "atmospheric_mood": "Balanced",
+   "audio_speakers": 0,
+   "color_tone": "Neutral",
+   "depiction_summary": "",
+   "dominant_audio_type": "N/A",
+   "estimated_daytime": "Daylight",
+   "faces_count": 0,
+   "identified_items": [],
+   "lighting_style": "Ambient",
+   "location_context": "N/A",
+   "persons_count": 0,
+   "photographic_purpose": "General Depiction",
+   "scene_type": "General Scene",
+   "setting_type": "General Scene",
+   "text_regions_count": 0,
+   "vehicle_types": [],
+   "vehicles_detected": false,
+   "vocal_tone": "N/A"
+  },
+  "content_valid": true,
+  "cross_modal": {},
+  "decision_mode": "fused",
+  "evidence_trail": [
+   "[Audio Forensic] x",
+   "[Metadata Provenance] tool"
+  ],
+  "final_status": "LIKELY_SYNTHETIC",
+  "forensic_modality_results": {
+   "audio_ai_pct": 30.0,
+   "image_ai_pct": null,
+   "video_ai_pct": null
+  },
+  "localization": {
+   "suspicious_audio_duration_pct": 10.0,
+   "suspicious_image_area_pct": 0.0,
+   "suspicious_video_duration_pct": 0.0
+  },
+  "model_attribution": {
+   "attributed_model": "Unattributable / Custom Fine-Tuned Model",
+   "attribution_confidence": 0.0,
+   "attribution_cues": [],
+   "model_key": "unknown_ai",
+   "region_of_origin": "Global / Open-Source",
+   "top_candidates": []
+  },
+  "provenance": {
+   "ai_declared_in_c2pa": false,
+   "c2pa_present": false,
+   "c2pa_signature": "Absent",
+   "hardware_make": null,
+   "hardware_model": null,
+   "provenance_verdict": "PROVENANCE_UNKNOWN",
+   "software": null
+  },
+  "reason": "Forensic signals indicate high likelihood of synthetic/generative AI creation.",
+  "taxonomy_description": "Synthesized end-to-end via generative diffusion or deep neural models.",
+  "taxonomy_label": "Fully AI Generated",
+  "taxonomy_reasons": [],
+  "taxonomy_state": "FULLY_AI_GENERATED",
+  "what_it_represents": "Standard visual capture"
+ },
+ "blank": {
+  "ai_detected": false,
+  "authenticity_probabilities": {
+   "p_ai": 0.0,
+   "p_real": 0.0,
+   "p_undecided": 100.0
+  },
+  "content_inventory": {
+   "contents_and_items": {
+    "identified_items": [
+     "cup"
+    ],
+    "text_regions_count": 3
+   },
+   "entities": {
+    "animals": {
+     "animal_types": [
+      "dog"
+     ]
+    },
+    "humans": {
+     "faces_count": 1,
+     "persons_count": 2
+    }
+   },
+   "environment_and_surroundings": {
+    "setting_type": "Street"
+   },
+   "estimated_speakers": 2,
+   "lighting_and_daytime": {
+    "estimated_daytime": "Night"
+   },
+   "purpose_and_depiction": {
+    "photographic_purpose": "Portrait"
+   },
+   "vehicles": {
+    "vehicle_types": [
+     "car"
+    ]
+   }
+  },
+  "content_valid": false,
+  "evidence_trail": [
+   "Media contains blank, zero-variance, or completely degraded frames."
+  ],
+  "final_status": "BLANK_OR_DEGRADED",
+  "forensic_modality_results": {},
+  "localization": {},
+  "model_attribution": {
+   "attributed_model": "Unattributable / Blank Content",
+   "attribution_confidence": 0.0,
+   "attribution_cues": [],
+   "model_key": "unknown",
+   "region_of_origin": "N/A",
+   "top_candidates": []
+  },
+  "provenance": {},
+  "reason": "Media exhibits negligible information entropy or blank content."
+ },
+ "empty": {
+  "ai_detected": false,
+  "authenticity_probabilities": {
+   "p_ai": 0.0,
+   "p_real": 0.0,
+   "p_undecided": 100.0
+  },
+  "content_inventory": {},
+  "content_valid": true,
+  "cross_modal": {},
+  "evidence_trail": [
+   "Insufficient forensic indicators extracted."
+  ],
+  "final_status": "UNDETERMINED",
+  "forensic_modality_results": {},
+  "localization": {},
+  "model_attribution": {
+   "attributed_model": "Unattributable",
+   "attribution_confidence": 0.0,
+   "attribution_cues": [],
+   "model_key": "unknown",
+   "region_of_origin": "N/A",
+   "top_candidates": []
+  },
+  "provenance": {},
+  "reason": "No diagnostic forensic signals available to evaluate authenticity."
+ },
+ "img_ai": {
+  "ai_detected": true,
+  "authenticity_probabilities": {
+   "p_ai": 91.0,
+   "p_real": 5.0,
+   "p_undecided": 4.0
+  },
+  "calibration_status": "UNCALIBRATED_HEURISTIC",
+  "content_inventory": {
+   "acoustic_environment": "N/A",
+   "animal_types": [],
+   "animals_detected": false,
+   "atmospheric_mood": "Balanced",
+   "audio_speakers": 0,
+   "color_tone": "Neutral",
+   "depiction_summary": "",
+   "dominant_audio_type": "N/A",
+   "estimated_daytime": "Daylight",
+   "faces_count": 0,
+   "identified_items": [],
+   "lighting_style": "Ambient",
+   "location_context": "N/A",
+   "persons_count": 0,
+   "photographic_purpose": "General Depiction",
+   "scene_type": "General Scene",
+   "setting_type": "General Scene",
+   "text_regions_count": 0,
+   "vehicle_types": [],
+   "vehicles_detected": false,
+   "vocal_tone": "N/A"
+  },
+  "content_valid": true,
+  "cross_modal": {},
+  "decision_mode": "image_authoritative",
+  "evidence_trail": [
+   "[Model Attribution] c",
+   "[Model Attribution] High-confidence fingerprint alignment: Sora (US) at 90% match."
+  ],
+  "final_status": "LIKELY AI-GENERATED",
+  "forensic_modality_results": {
+   "audio_ai_pct": null,
+   "image_ai_pct": 91.0,
+   "video_ai_pct": null
+  },
+  "localization": {
+   "suspicious_audio_duration_pct": 0.0,
+   "suspicious_image_area_pct": 0.0,
+   "suspicious_video_duration_pct": 0.0
+  },
+  "model_attribution": {
+   "attributed_model": "Sora",
+   "attribution_confidence": 0.9,
+   "attribution_cues": [
+    "c"
+   ],
+   "model_key": "sora",
+   "region_of_origin": "US"
+  },
+  "provenance": {
+   "ai_declared_in_c2pa": false,
+   "c2pa_present": false,
+   "c2pa_signature": "Absent",
+   "hardware_make": null,
+   "hardware_model": null,
+   "provenance_verdict": "PROVENANCE_UNKNOWN",
+   "software": null
+  },
+  "reason": "Forensic signals indicate high likelihood of synthetic/generative AI creation.",
+  "taxonomy_description": null,
+  "taxonomy_label": null,
+  "taxonomy_reasons": [],
+  "taxonomy_state": "FULLY_AI_GENERATED",
+  "what_it_represents": "Standard visual capture"
+ },
+ "img_and_aud": {
+  "ai_detected": false,
+  "authenticity_probabilities": {
+   "p_ai": 6.8,
+   "p_real": 90.2,
+   "p_undecided": 3.0
+  },
+  "calibration_status": "UNCALIBRATED_HEURISTIC",
+  "content_inventory": {
+   "acoustic_environment": "N/A",
+   "animal_types": [],
+   "animals_detected": false,
+   "atmospheric_mood": "Balanced",
+   "audio_speakers": 0,
+   "color_tone": "Neutral",
+   "depiction_summary": "",
+   "dominant_audio_type": "N/A",
+   "estimated_daytime": "Daylight",
+   "faces_count": 0,
+   "identified_items": [],
+   "lighting_style": "Ambient",
+   "location_context": "N/A",
+   "persons_count": 0,
+   "photographic_purpose": "General Depiction",
+   "scene_type": "General Scene",
+   "setting_type": "General Scene",
+   "text_regions_count": 0,
+   "vehicle_types": [],
+   "vehicles_detected": false,
+   "vocal_tone": "N/A"
+  },
+  "content_valid": true,
+  "cross_modal": {},
+  "decision_mode": "fused",
+  "evidence_trail": [
+   "[Image Forensic] a",
+   "[Audio Forensic] x"
+  ],
+  "final_status": "LIKELY_AUTHENTIC",
+  "forensic_modality_results": {
+   "audio_ai_pct": 30.0,
+   "image_ai_pct": 12.0,
+   "video_ai_pct": null
+  },
+  "localization": {
+   "suspicious_audio_duration_pct": 10.0,
+   "suspicious_image_area_pct": 0.0,
+   "suspicious_video_duration_pct": 0.0
+  },
+  "model_attribution": {
+   "attributed_model": "None (Authentic Capture)",
+   "attribution_confidence": 0.0,
+   "attribution_cues": [
+    "Camera-like sensor noise and optical properties observed (heuristic; metadata is unauthenticated)."
+   ],
+   "model_key": "none_authentic",
+   "region_of_origin": "Physical Sensor / Camera",
+   "top_candidates": []
+  },
+  "provenance": {
+   "ai_declared_in_c2pa": false,
+   "c2pa_present": false,
+   "c2pa_signature": "Absent",
+   "hardware_make": null,
+   "hardware_model": null,
+   "provenance_verdict": "PROVENANCE_UNKNOWN",
+   "software": null
+  },
+  "reason": "Physical sensor noise, natural optics, and provenance support authentic capture.",
+  "taxonomy_description": "Contains authentic sensor noise, natural acoustic/optical properties, and unmanipulated physics.",
+  "taxonomy_label": "Authentic Real Capture",
+  "taxonomy_reasons": [],
+  "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
+  "what_it_represents": "Standard visual capture"
+ },
+ "img_auth": {
+  "ai_detected": false,
+  "authenticity_probabilities": {
+   "p_ai": 12.0,
+   "p_real": 80.0,
+   "p_undecided": 8.0
+  },
+  "calibration_status": "UNCALIBRATED_HEURISTIC",
+  "content_inventory": {
+   "acoustic_environment": "N/A",
+   "animal_types": [
+    "dog"
+   ],
+   "animals_detected": true,
+   "atmospheric_mood": "Balanced",
+   "audio_speakers": 2,
+   "color_tone": "Neutral",
+   "depiction_summary": "",
+   "dominant_audio_type": "N/A",
+   "estimated_daytime": "Night",
+   "faces_count": 1,
+   "identified_items": [
+    "cup"
+   ],
+   "lighting_style": "Ambient",
+   "location_context": "N/A",
+   "persons_count": 2,
+   "photographic_purpose": "Portrait",
+   "scene_type": "Street",
+   "setting_type": "Street",
+   "text_regions_count": 3,
+   "vehicle_types": [
+    "car"
+   ],
+   "vehicles_detected": true,
+   "vocal_tone": "N/A"
+  },
+  "content_valid": true,
+  "cross_modal": {},
+  "decision_mode": "image_authoritative",
+  "evidence_trail": [
+   "[Image Forensic] a",
+   "[Hardware Provenance] Camera hardware EXIF tags present (unauthenticated, not scored): Sony A7",
+   "[Model Attribution] c",
+   "[Model Attribution] High-confidence fingerprint alignment: Sora (US) at 90% match."
+  ],
+  "final_status": "LIKELY REAL",
+  "forensic_modality_results": {
+   "audio_ai_pct": null,
+   "image_ai_pct": 12.0,
+   "video_ai_pct": null
+  },
+  "localization": {
+   "suspicious_audio_duration_pct": 0.0,
+   "suspicious_image_area_pct": 0.0,
+   "suspicious_video_duration_pct": 0.0
+  },
+  "model_attribution": {
+   "attributed_model": "None (Authentic Capture)",
+   "attribution_confidence": 0.0,
+   "attribution_cues": [
+    "Camera-like sensor noise and optical properties observed (heuristic; metadata is unauthenticated)."
+   ],
+   "model_key": "none_authentic",
+   "region_of_origin": "Physical Sensor / Camera",
+   "top_candidates": []
+  },
+  "provenance": {
+   "ai_declared_in_c2pa": false,
+   "c2pa_present": false,
+   "c2pa_signature": "Absent",
+   "hardware_make": "Sony",
+   "hardware_model": "A7",
+   "provenance_verdict": "PROVENANCE_UNKNOWN",
+   "software": null
+  },
+  "reason": "Physical sensor noise, natural optics, and provenance support authentic capture.",
+  "taxonomy_description": "D",
+  "taxonomy_label": "L",
+  "taxonomy_reasons": [
+   "r"
+  ],
+  "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
+  "what_it_represents": "Portrait \u2022 2 person(s), 1 face(s) \u2022 Street setting \u2022 Night"
+ },
+ "img_plain": {
+  "ai_detected": true,
+  "authenticity_probabilities": {
+   "p_ai": 67.9,
+   "p_real": 29.1,
+   "p_undecided": 3.0
+  },
+  "calibration_status": "UNCALIBRATED_HEURISTIC",
+  "content_inventory": {
+   "acoustic_environment": "N/A",
+   "animal_types": [],
+   "animals_detected": false,
+   "atmospheric_mood": "Balanced",
+   "audio_speakers": 0,
+   "color_tone": "Neutral",
+   "depiction_summary": "",
+   "dominant_audio_type": "N/A",
+   "estimated_daytime": "Daylight",
+   "faces_count": 0,
+   "identified_items": [],
+   "lighting_style": "Ambient",
+   "location_context": "N/A",
+   "persons_count": 0,
+   "photographic_purpose": "General Depiction",
+   "scene_type": "General Scene",
+   "setting_type": "General Scene",
+   "text_regions_count": 0,
+   "vehicle_types": [],
+   "vehicles_detected": false,
+   "vocal_tone": "N/A"
+  },
+  "content_valid": true,
+  "cross_modal": {},
+  "decision_mode": "fused",
+  "evidence_trail": [],
+  "final_status": "LIKELY_SYNTHETIC",
+  "forensic_modality_results": {
+   "audio_ai_pct": null,
+   "image_ai_pct": 70.0,
+   "video_ai_pct": null
+  },
+  "localization": {
+   "suspicious_audio_duration_pct": 0.0,
+   "suspicious_image_area_pct": 0.0,
+   "suspicious_video_duration_pct": 0.0
+  },
+  "model_attribution": {
+   "attributed_model": "Unattributable / Custom Fine-Tuned Model",
+   "attribution_confidence": 0.0,
+   "attribution_cues": [],
+   "model_key": "unknown_ai",
+   "region_of_origin": "Global / Open-Source",
+   "top_candidates": []
+  },
+  "provenance": {
+   "ai_declared_in_c2pa": false,
+   "c2pa_present": false,
+   "c2pa_signature": "Absent",
+   "hardware_make": null,
+   "hardware_model": null,
+   "provenance_verdict": "PROVENANCE_UNKNOWN",
+   "software": null
+  },
+  "reason": "Forensic signals indicate high likelihood of synthetic/generative AI creation.",
+  "taxonomy_description": "Synthesized end-to-end via generative diffusion or deep neural models.",
+  "taxonomy_label": "Fully AI Generated",
+  "taxonomy_reasons": [],
+  "taxonomy_state": "FULLY_AI_GENERATED",
+  "what_it_represents": "Standard visual capture"
+ },
+ "invalid": {
+  "ai_detected": false,
+  "authenticity_probabilities": {
+   "p_ai": 0.0,
+   "p_real": 0.0,
+   "p_undecided": 100.0
+  },
+  "content_inventory": {},
+  "content_valid": false,
+  "evidence_trail": [
+   "File failed initial container reading and format integrity."
+  ],
+  "final_status": "INVALID_FILE",
+  "forensic_modality_results": {},
+  "localization": {},
+  "model_attribution": {
+   "attributed_model": "Unattributable / File Error",
+   "attribution_confidence": 0.0,
+   "attribution_cues": [],
+   "model_key": "unknown",
+   "region_of_origin": "N/A",
+   "top_candidates": []
+  },
+  "provenance": {},
+  "reason": "bad"
+ },
+ "prov_ais": {
+  "ai_detected": true,
+  "authenticity_probabilities": {
+   "p_ai": 95.8,
+   "p_real": 1.2,
+   "p_undecided": 3.0
+  },
+  "calibration_status": "UNCALIBRATED_HEURISTIC",
+  "content_inventory": {
+   "acoustic_environment": "N/A",
+   "animal_types": [],
+   "animals_detected": false,
+   "atmospheric_mood": "Balanced",
+   "audio_speakers": 0,
+   "color_tone": "Neutral",
+   "depiction_summary": "",
+   "dominant_audio_type": "N/A",
+   "estimated_daytime": "Daylight",
+   "faces_count": 0,
+   "identified_items": [],
+   "lighting_style": "Ambient",
+   "location_context": "N/A",
+   "persons_count": 0,
+   "photographic_purpose": "General Depiction",
+   "scene_type": "General Scene",
+   "setting_type": "General Scene",
+   "text_regions_count": 0,
+   "vehicle_types": [],
+   "vehicles_detected": false,
+   "vocal_tone": "N/A"
+  },
+  "content_valid": true,
+  "cross_modal": {},
+  "decision_mode": "fused",
+  "evidence_trail": [
+   "[Metadata Provenance] tool"
+  ],
+  "final_status": "LIKELY_SYNTHETIC",
+  "forensic_modality_results": {
+   "audio_ai_pct": null,
+   "image_ai_pct": null,
+   "video_ai_pct": null
+  },
+  "localization": {
+   "suspicious_audio_duration_pct": 0.0,
+   "suspicious_image_area_pct": 0.0,
+   "suspicious_video_duration_pct": 0.0
+  },
+  "model_attribution": {
+   "attributed_model": "Unattributable / Custom Fine-Tuned Model",
+   "attribution_confidence": 0.0,
+   "attribution_cues": [],
+   "model_key": "unknown_ai",
+   "region_of_origin": "Global / Open-Source",
+   "top_candidates": []
+  },
+  "provenance": {
+   "ai_declared_in_c2pa": false,
+   "c2pa_present": false,
+   "c2pa_signature": "Absent",
+   "hardware_make": null,
+   "hardware_model": null,
+   "provenance_verdict": "PROVENANCE_UNKNOWN",
+   "software": null
+  },
+  "reason": "Forensic signals indicate high likelihood of synthetic/generative AI creation.",
+  "taxonomy_description": "Synthesized end-to-end via generative diffusion or deep neural models.",
+  "taxonomy_label": "Fully AI Generated",
+  "taxonomy_reasons": [],
+  "taxonomy_state": "FULLY_AI_GENERATED",
+  "what_it_represents": "Standard visual capture"
+ },
+ "prov_exif": {
+  "ai_detected": false,
+  "authenticity_probabilities": {
+   "p_ai": 0.0,
+   "p_real": 0.0,
+   "p_undecided": 100.0
+  },
+  "content_inventory": {},
+  "content_valid": true,
+  "cross_modal": {},
+  "evidence_trail": [
+   "Insufficient forensic indicators extracted."
+  ],
+  "final_status": "UNDETERMINED",
+  "forensic_modality_results": {},
+  "localization": {},
+  "model_attribution": {
+   "attributed_model": "Unattributable",
+   "attribution_confidence": 0.0,
+   "attribution_cues": [],
+   "model_key": "unknown",
+   "region_of_origin": "N/A",
+   "top_candidates": []
+  },
+  "provenance": {
+   "exif": {
+    "camera_make": "Sony",
+    "camera_model": "A7"
+   }
+  },
+  "reason": "No diagnostic forensic signals available to evaluate authenticity."
+ },
+ "prov_nest": {
+  "ai_detected": true,
+  "authenticity_probabilities": {
+   "p_ai": 96.8,
+   "p_real": 0.2,
+   "p_undecided": 3.0
+  },
+  "calibration_status": "UNCALIBRATED_HEURISTIC",
+  "content_inventory": {
+   "acoustic_environment": "N/A",
+   "animal_types": [],
+   "animals_detected": false,
+   "atmospheric_mood": "Balanced",
+   "audio_speakers": 0,
+   "color_tone": "Neutral",
+   "depiction_summary": "",
+   "dominant_audio_type": "N/A",
+   "estimated_daytime": "Daylight",
+   "faces_count": 0,
+   "identified_items": [],
+   "lighting_style": "Ambient",
+   "location_context": "N/A",
+   "persons_count": 0,
+   "photographic_purpose": "General Depiction",
+   "scene_type": "General Scene",
+   "setting_type": "General Scene",
+   "text_regions_count": 0,
+   "vehicle_types": [],
+   "vehicles_detected": false,
+   "vocal_tone": "N/A"
+  },
+  "content_valid": true,
+  "cross_modal": {},
+  "decision_mode": "fused",
+  "evidence_trail": [
+   "[Video Forensic] f",
+   "[Video Temporal] High inter-frame warping risk (HIGH, motion delta: 1.20)",
+   "[C2PA Provenance] Manifest explicitly asserts generative AI creation."
+  ],
+  "final_status": "LIKELY_SYNTHETIC",
+  "forensic_modality_results": {
+   "audio_ai_pct": null,
+   "image_ai_pct": null,
+   "video_ai_pct": 93.0
+  },
+  "localization": {
+   "suspicious_audio_duration_pct": 0.0,
+   "suspicious_image_area_pct": 0.0,
+   "suspicious_video_duration_pct": 0.0
+  },
+  "model_attribution": {
+   "attributed_model": "Unattributable / Custom Fine-Tuned Model",
+   "attribution_confidence": 0.0,
+   "attribution_cues": [],
+   "model_key": "unknown_ai",
+   "region_of_origin": "Global / Open-Source",
+   "top_candidates": []
+  },
+  "provenance": {
+   "ai_declared_in_c2pa": true,
+   "c2pa_present": true,
+   "c2pa_signature": "No signature marker",
+   "hardware_make": "Sony",
+   "hardware_model": null,
+   "provenance_verdict": "PROVENANCE_UNKNOWN",
+   "software": null
+  },
+  "reason": "Forensic signals indicate high likelihood of synthetic/generative AI creation.",
+  "taxonomy_description": "Synthesized end-to-end via generative diffusion or deep neural models.",
+  "taxonomy_label": "Fully AI Generated",
+  "taxonomy_reasons": [],
+  "taxonomy_state": "FULLY_AI_GENERATED",
+  "what_it_represents": "Standard visual capture"
+ },
+ "prov_sign": {
+  "ai_detected": true,
+  "authenticity_probabilities": {
+   "p_ai": 94.2,
+   "p_real": 2.8,
+   "p_undecided": 3.0
+  },
+  "calibration_status": "UNCALIBRATED_HEURISTIC",
+  "content_inventory": {
+   "acoustic_environment": "N/A",
+   "animal_types": [],
+   "animals_detected": false,
+   "atmospheric_mood": "Balanced",
+   "audio_speakers": 0,
+   "color_tone": "Neutral",
+   "depiction_summary": "",
+   "dominant_audio_type": "N/A",
+   "estimated_daytime": "Daylight",
+   "faces_count": 0,
+   "identified_items": [],
+   "lighting_style": "Ambient",
+   "location_context": "N/A",
+   "persons_count": 0,
+   "photographic_purpose": "General Depiction",
+   "scene_type": "General Scene",
+   "setting_type": "General Scene",
+   "text_regions_count": 0,
+   "vehicle_types": [],
+   "vehicles_detected": false,
+   "vocal_tone": "N/A"
+  },
+  "content_valid": true,
+  "cross_modal": {},
+  "decision_mode": "fused",
+  "evidence_trail": [
+   "[Video Forensic] f",
+   "[Video Temporal] High inter-frame warping risk (HIGH, motion delta: 1.20)",
+   "[C2PA Provenance] Content Credentials signature markers present (not cryptographically verified; no score credit)."
+  ],
+  "final_status": "LIKELY_SYNTHETIC",
+  "forensic_modality_results": {
+   "audio_ai_pct": null,
+   "image_ai_pct": null,
+   "video_ai_pct": 93.0
+  },
+  "localization": {
+   "suspicious_audio_duration_pct": 0.0,
+   "suspicious_image_area_pct": 0.0,
+   "suspicious_video_duration_pct": 0.0
+  },
+  "model_attribution": {
+   "attributed_model": "Unattributable / Custom Fine-Tuned Model",
+   "attribution_confidence": 0.0,
+   "attribution_cues": [],
+   "model_key": "unknown_ai",
+   "region_of_origin": "Global / Open-Source",
+   "top_candidates": []
+  },
+  "provenance": {
+   "ai_declared_in_c2pa": false,
+   "c2pa_present": true,
+   "c2pa_signature": "Marker present (unverified)",
+   "hardware_make": null,
+   "hardware_model": null,
+   "provenance_verdict": "PROVENANCE_UNKNOWN",
+   "software": null
+  },
+  "reason": "Forensic signals indicate high likelihood of synthetic/generative AI creation.",
+  "taxonomy_description": "Synthesized end-to-end via generative diffusion or deep neural models.",
+  "taxonomy_label": "Fully AI Generated",
+  "taxonomy_reasons": [],
+  "taxonomy_state": "FULLY_AI_GENERATED",
+  "what_it_represents": "Standard visual capture"
+ },
+ "vid": {
+  "ai_detected": true,
+  "authenticity_probabilities": {
+   "p_ai": 96.8,
+   "p_real": 0.2,
+   "p_undecided": 3.0
+  },
+  "calibration_status": "UNCALIBRATED_HEURISTIC",
+  "content_inventory": {
+   "acoustic_environment": "N/A",
+   "animal_types": [
+    "dog"
+   ],
+   "animals_detected": true,
+   "atmospheric_mood": "Balanced",
+   "audio_speakers": 2,
+   "color_tone": "Neutral",
+   "depiction_summary": "",
+   "dominant_audio_type": "N/A",
+   "estimated_daytime": "Night",
+   "faces_count": 1,
+   "identified_items": [
+    "cup"
+   ],
+   "lighting_style": "Ambient",
+   "location_context": "N/A",
+   "persons_count": 2,
+   "photographic_purpose": "Portrait",
+   "scene_type": "Street",
+   "setting_type": "Street",
+   "text_regions_count": 3,
+   "vehicle_types": [
+    "car"
+   ],
+   "vehicles_detected": true,
+   "vocal_tone": "N/A"
+  },
+  "content_valid": true,
+  "cross_modal": {
+   "cues": [
+    "cm"
+   ],
+   "is_multimodal": true,
+   "tampering_risk": "HIGH"
+  },
+  "decision_mode": "fused",
+  "evidence_trail": [
+   "[Video Forensic] f",
+   "[Video Temporal] High inter-frame warping risk (HIGH, motion delta: 1.20)",
+   "[Audio Forensic] x",
+   "[Cross-Modal] cm",
+   "[Model Attribution] c",
+   "[Model Attribution] High-confidence fingerprint alignment: Sora (US) at 90% match."
+  ],
+  "final_status": "LIKELY_SYNTHETIC",
+  "forensic_modality_results": {
+   "audio_ai_pct": 30.0,
+   "image_ai_pct": null,
+   "video_ai_pct": 93.0
+  },
+  "localization": {
+   "suspicious_audio_duration_pct": 10.0,
+   "suspicious_image_area_pct": 0.0,
+   "suspicious_video_duration_pct": 0.0
+  },
+  "model_attribution": {
+   "attributed_model": "Sora",
+   "attribution_confidence": 0.9,
+   "attribution_cues": [
+    "c"
+   ],
+   "model_key": "sora",
+   "region_of_origin": "US"
+  },
+  "provenance": {
+   "ai_declared_in_c2pa": false,
+   "c2pa_present": false,
+   "c2pa_signature": "Absent",
+   "hardware_make": null,
+   "hardware_model": null,
+   "provenance_verdict": "PROVENANCE_UNKNOWN",
+   "software": null
+  },
+  "reason": "Forensic signals indicate high likelihood of synthetic/generative AI creation.",
+  "taxonomy_description": "Synthesized end-to-end via generative diffusion or deep neural models.",
+  "taxonomy_label": "Fully AI Generated",
+  "taxonomy_reasons": [],
+  "taxonomy_state": "FULLY_AI_GENERATED",
+  "what_it_represents": "Portrait \u2022 2 person(s), 1 face(s) \u2022 Street setting \u2022 Night"
+ },
+ "vid_legacy": {
+  "ai_detected": true,
+  "authenticity_probabilities": {
+   "p_ai": 75.2,
+   "p_real": 21.8,
+   "p_undecided": 3.0
+  },
+  "calibration_status": "UNCALIBRATED_HEURISTIC",
+  "content_inventory": {
+   "acoustic_environment": "N/A",
+   "animal_types": [],
+   "animals_detected": false,
+   "atmospheric_mood": "Balanced",
+   "audio_speakers": 0,
+   "color_tone": "Neutral",
+   "depiction_summary": "",
+   "dominant_audio_type": "N/A",
+   "estimated_daytime": "Daylight",
+   "faces_count": 0,
+   "identified_items": [],
+   "lighting_style": "Ambient",
+   "location_context": "N/A",
+   "persons_count": 0,
+   "photographic_purpose": "General Depiction",
+   "scene_type": "General Scene",
+   "setting_type": "General Scene",
+   "text_regions_count": 0,
+   "vehicle_types": [],
+   "vehicles_detected": false,
+   "vocal_tone": "N/A"
+  },
+  "content_valid": true,
+  "cross_modal": {},
+  "decision_mode": "fused",
+  "evidence_trail": [],
+  "final_status": "LIKELY_SYNTHETIC",
+  "forensic_modality_results": {
+   "audio_ai_pct": null,
+   "image_ai_pct": null,
+   "video_ai_pct": 70.0
+  },
+  "localization": {
+   "suspicious_audio_duration_pct": 0.0,
+   "suspicious_image_area_pct": 0.0,
+   "suspicious_video_duration_pct": 40.0
+  },
+  "model_attribution": {
+   "attributed_model": "Unattributable / Custom Fine-Tuned Model",
+   "attribution_confidence": 0.0,
+   "attribution_cues": [],
+   "model_key": "unknown_ai",
+   "region_of_origin": "Global / Open-Source",
+   "top_candidates": []
+  },
+  "provenance": {
+   "ai_declared_in_c2pa": false,
+   "c2pa_present": false,
+   "c2pa_signature": "Absent",
+   "hardware_make": null,
+   "hardware_model": null,
+   "provenance_verdict": "PROVENANCE_UNKNOWN",
+   "software": null
+  },
+  "reason": "Forensic signals indicate high likelihood of synthetic/generative AI creation.",
+  "taxonomy_description": "Synthesized end-to-end via generative diffusion or deep neural models.",
+  "taxonomy_label": "Fully AI Generated",
+  "taxonomy_reasons": [],
+  "taxonomy_state": "FULLY_AI_GENERATED",
+  "what_it_represents": "Standard visual capture"
+ }
+}

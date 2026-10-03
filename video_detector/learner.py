@@ -18,13 +18,13 @@ Completely self-contained with zero outside dependencies.
 from __future__ import annotations
 
 from datetime import datetime
-import json
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from video_detector.config import CALIBRATION_FILE, DATA_DIR, MEMORY_FILE
+from video_detector.config import DATA_DIR
 from video_detector.schemas import VideoFeedbackRecord
+from core.metrics_util import sanitize_metric_value
 from core.atomic_io import atomic_read_json, atomic_write_json
 from core.media_library import MediaLibrary, library_for, register_feedback
 
@@ -96,35 +96,23 @@ class VideoSelfImprover:
         video_metrics: Optional[Dict[str, Any]] = None,
         temporal_metrics: Optional[Dict[str, Any]] = None,
         notes: str = "",
+        *,
+        metrics: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """
         Registers ground-truth video feedback and recalibrates temporal warping and flicker thresholds.
         """
-        raw_metrics = video_metrics or temporal_metrics or kwargs.get("metrics") or {}
+        raw_metrics = video_metrics or temporal_metrics or metrics or {}
         memory = self.load_memory()
         calib = self.load_calibration()
         register_feedback(self.library, video_path, user_label)
-
-        def _sanitize_val(val: Any) -> Any:
-            if hasattr(val, "shape"):
-                return None
-            if isinstance(val, (float, int, str, bool)):
-                return val
-            if hasattr(val, "item") and getattr(val, "size", 1) == 1:
-                return val.item()
-            if isinstance(val, dict):
-                return {str(dk): _sanitize_val(dv) for dk, dv in val.items() if _sanitize_val(dv) is not None}
-            if isinstance(val, (list, tuple)):
-                clean = [_sanitize_val(x) for x in val]
-                return [x for x in clean if x is not None]
-            return None
 
         sanitized_metrics = {}
         for k, v in raw_metrics.items():
             if k in ("frames", "sampled_frames", "raw_frames"):
                 continue
-            s_val = _sanitize_val(v)
+            s_val = sanitize_metric_value(v)
             if s_val is not None:
                 sanitized_metrics[k] = s_val
 

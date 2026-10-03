@@ -12,6 +12,7 @@ A multi-modal (image / video / audio) content-authenticity forensics engine with
 - [Top-level repository tree](#top-level-repository-tree)
 - [Architecture](#architecture)
 - [How a request actually flows](#how-a-request-actually-flows)
+- [Dimension checks foundation (image first)](#dimension-checks-foundation-image-first)
 - [`image_detector/` workspace](#image_detector-workspace)
 - [`audio_detector/` workspace](#audio_detector-workspace)
 - [`video_detector/` workspace](#video_detector-workspace)
@@ -48,7 +49,7 @@ Run the test suite:
 pytest
 ```
 
-(`pytest.ini` points at `core/tests`, `image_detector/tests`, `audio_detector/tests`, `video_detector/tests`, and `tests/`. The root-level `test_pipeline.py` is **not** collected by this configuration — run it directly with `python test_pipeline.py` if needed.)
+(`pytest.ini` points at `core/tests`, `image_detector/tests`, `audio_detector/tests`, `video_detector/tests`, and `tests/`. The root-level `manual_pipeline_smoke.py` is **not** collected by this configuration — run it directly with `python manual_pipeline_smoke.py` if needed.)
 
 ---
 
@@ -60,19 +61,26 @@ project-content-validation/
 ├── core/                       # Shared, presentation-independent orchestration layer
 │   ├── atomic_io.py            #   crash-safe JSON I/O, OS temp cache management, and memory wiping
 │   ├── decision.py             #   cross-modal Bayesian fusion + the one normalize_percentages()
-│   ├── security.py             #   anti-SSRF / DNS-rebinding-safe URL fetching, decompression-bomb guard
+│   ├── security.py             #   anti-SSRF / DNS-rebinding-safe URL fetching (ports 80/443 only), decompression-bomb guard
+│   ├── hashing.py / filecache.py / lazy.py / metrics_util.py / shared_results.py   # shared digests, stat-keyed caches, lazy exports, helpers
+│   ├── provenance_view.py      #   the one nested c2pa/exif/verdict provenance shape (marker presence only)
+│   ├── calibration_report.py   #   accuracy / ECE / Brier / band-occupancy maths
+│   ├── bands.py, forensics/    #   five probability bands; Finding/registry/gates/OOD/bytescan foundation
+│   └── tests/
+├── services/                   # Application-level facades (depend on core + detectors; core never imports them)
 │   ├── forensic_service.py     #   lazy singleton facade wrapping all three detector packages
-│   └── tests/test_enterprise_hardening.py
+│   └── calibration_cli.py      #   measures real accuracy/ECE on the held-out validation split
 ├── image_detector/              # Full image forensic pipeline (zero-media feature store, see below)
 ├── audio_detector/               # Full audio forensic pipeline (see dedicated section below)
 ├── video_detector/               # Full video forensic pipeline (see dedicated section below)
 ├── ui/                          # Streamlit rendering + per-modality orchestration glue
 │   ├── batch_ui.py              #   process_single_image/video/audio + batch dashboard/table/selector
 │   ├── feedback_ui.py           #   every "render_*" results page + the feedback/rating widgets
-│   └── validators.py            #   file/C2PA/EXIF validation, URL platform detection, media fetch
+│   ├── stages.py / profile_view.py   #   advisory-stage renderers; display blocks for profile dicts
+│   └── validators.py            #   file validation, provenance dispatch to the packages, URL platform detection, media fetch
 ├── tests/test_unified_suite.py   # Cross-package integration tests (core.decision, SSRF delegation, etc.)
 ├── tests/test_feature_store.py   # Zero-disk feature store extraction and training tests
-├── test_pipeline.py              # Root-level smoke test (NOT in pytest.ini's testpaths)
+├── manual_pipeline_smoke.py              # Root-level smoke test (NOT in pytest.ini's testpaths)
 ├── requirements.txt
 ├── pytest.ini
 ├── .gitignore
@@ -121,7 +129,7 @@ Four layers, strict dependency direction (lower layers never import upward):
 3. **`ui/`** — Streamlit rendering code plus the `process_single_image/video/audio` orchestration functions that call into a specific detector package's pipeline, then into `core.decision.generate_final_decision` to produce the final cross-modal verdict dict the UI actually renders.
 4. **`app.py`** — the Streamlit launch target. Builds cached detector/service instances, wires the sidebar sensitivity selector, and lays out the 5 tabs, each of which calls down into `ui.batch_ui`.
 
-`core/forensic_service.py`'s `ForensicService` is a separate, parallel orchestration facade (a lazy-loading singleton exposing `analyze_image/audio/video`, `record_feedback`, `health_check`) intended for headless/non-Streamlit use. `app.py` builds one via `get_forensic_service()` but, per the verified call graph, the Streamlit tabs actually route through `ui.batch_ui`'s `process_single_*` functions rather than through `ForensicService`'s own `analyze_*` methods — both paths reach the same underlying pipelines, just via two different facades that currently coexist rather than one superseding the other.
+`services/forensic_service.py`'s `ForensicService` is a separate, parallel orchestration facade (a lazy-loading singleton exposing `analyze_image/audio/video`, `record_feedback`, `health_check`) intended for headless/non-Streamlit use. `app.py` builds one via `get_forensic_service()` but, per the verified call graph, the Streamlit tabs actually route through `ui.batch_ui`'s `process_single_*` functions rather than through `ForensicService`'s own `analyze_*` methods — both paths reach the same underlying pipelines, just via two different facades that currently coexist rather than one superseding the other.
 
 ---
 
@@ -147,6 +155,53 @@ User uploads/URL-fetches a file in app.py
 ```
 
 Inside `ImageAIDetector.predict()` itself (the single most important function in the repo — see the [image_detector section](#image_detector-workspace) for the exact ordered list of every signal it computes and every log-odds term it contributes), roughly: decode the image → extract ~14 forensic signals (sensor noise, surface smoothness, FFT spectral decay, ELA, EXIF/C2PA metadata, watermark, background cutout, scanned-print, face-swap, digital-art, screenshot, inpainting, screen-recapture-Moiré, spectral modality) → load the current feedback-calibrated weights → combine every signal into a Bayesian log-odds posterior → convert to AI%/Real%/Undecided% → run the result through a 7-branch taxonomy decision tree (`image_detector/scoring.py`) that assigns one of 10 defined taxonomy states.
+
+---
+
+## Dimension checks foundation (image first)
+
+The taxonomy reports (`GLOBAL_*_TAXONOMY_AND_FORENSIC_RESEARCH_REPORT.md`) describe dimensions beyond pixel/waveform physics: file security, metadata and container forensics, legal flags, context re-use, lifecycle laundering, detector reliability, probability bands, out-of-distribution (OOD) detection and open-set attribution. A modality-agnostic foundation in `core/` implements them, and the **image**, **audio** and **video** pipelines are all wired to it (see each report's *Implementation Status* appendix for exactly what is implemented, partial, recognition-only or spec-only).
+
+```
+core/forensics/   schemas.py (Finding/DimensionReport) · registry.py (isolated checks + hybrid caps)
+                  gates.py (hard-block hash list, scientific-format recognition) · ood.py (Mahalanobis OOD gate)
+core/bands.py     the five calibrated probability bands
+image_detector/dimension_checks/   integrity · formats · metadata · context · legal · lifecycle · reliability
+audio_detector/dimension_checks/   integrity · container · signal · context · legal · lifecycle · reliability
+core/forensics/bytescan.py         shared bounded byte scans (signatures, prompt-injection text)
+video_detector/dimension_checks/   integrity · container · signal · context · legal · lifecycle · reliability
+ui/stages.py      modality-agnostic Streamlit stage components (shared by image, audio and video)
+```
+
+**Image flow with the new stages** (existing stages unchanged):
+`gates (hard-block / recognized out-of-scope format)` → Stage 1 pre-analysis → **1b File Integrity & Security** → Stage 2 nine dimensions → Stage 3 type/category → **3b Metadata & Container Forensics** → Stage 4 detection → **4b Confidence Band & Reliability** → heatmap → Stage 5 narrative → **6b Context, Rights & Lifecycle** → feedback.
+
+**What affects the verdict.** Only metadata/physical-consistency findings (`PHYSICAL_SIGNAL`, `METADATA_WEAK`) may add log-odds, as small capped terms (per finding +/-0.25, explicit generator-parameter PNG chunk 0.40, total +/-0.40, base-10), passed to `ImageAIDetector.predict(extra_log_lrs=...)`. Absence of metadata is never scored. Security, legal, context, lifecycle and reliability findings, bands, OOD status and `UNKNOWN_SOURCE` are advisory and never change P(AI). A failing check becomes an `ERROR` finding and never breaks the pipeline.
+
+**Operator-supplied local files** (all gitignored; nothing is bundled):
+
+| Purpose | How to enable |
+|---|---|
+| Hard-block gate (SHA-256 list of known-prohibited files; no classifier is built in) | one hex SHA-256 per line in `core/data/hardblock_sha256.txt`, or set `OMNI_HARDBLOCK_SHA256_FILE`. A match stops analysis with `HARD_BLOCK_ESCALATE`. |
+| Context re-use index | JSON lines `{"phash": "<16 hex>", "label": "...", "source": "..."}` in `image_detector/data/context_hash_index.jsonl`, or set `OMNI_CONTEXT_HASH_INDEX`. |
+| OOD gate | register labeled media in the library, then `python -m image_detector.dimension_checks.fit_ood` (writes `image_detector/data/ood_stats.npz`). Until fitted the gate reports `NOT_CALIBRATED` rather than inventing a threshold. |
+
+**Audio flow** gains the same stages: gates (hard-block / MIDI recognized as symbolic music) → Stage 1 specs → **1b File Integrity & Security** → Stage 2 → Stage 3 → **3b Container, Metadata & Signal Forensics** (ID3 / RIFF-bext / FLAC MD5 / MP3-LAME / Ogg structure; ENF mains-hum trace and splice detection; fake hi-res and bit-depth padding; telephony band-limit; loudness) → Stage 4 → **4b Confidence Band & Reliability** → Stage 5 → **6b Context, Rights & Lifecycle** → feedback. Audio pools by weighted average, so the capped terms (explicit generator string in tags +0.40, ENF continuous -0.15, ENF splice +0.15) shift the pooled probability in log-odds space; with no terms the result is unchanged. A missing ENF trace is never evidence of synthesis. Extra operator files: `OMNI_AUDIO_FP_INDEX` (JSON-lines acoustic fingerprint index; build entries with `audio_detector.dimension_checks.context.fingerprint_hex`) and `python -m audio_detector.dimension_checks.fit_ood`.
+
+**Video flow** gains the same stages: gates (hard-block / recognized scientific formats) → Stage 1 specs → **1b File Integrity & Security** → Stage 2 → Stage 3 → **3b Container, Metadata & Signal Forensics** (MP4/MOV box layout, sample-table consistency, creation times and tool strings, telemetry-track presence, x264/x265/libavcodec strings, MKV/WebM writer strings; interlace/combing and frame cadence) → Stage 4 → **4b Confidence Band & Reliability** → Stage 5 → **6b Context, Rights & Lifecycle** → feedback. Video pools by weighted average, so the one scoring term (an explicit generative-tool name in container software/comment fields, +0.40) shifts the pooled probability in log-odds space; with no terms the result is unchanged. Interlace and cadence findings are informational. Extra operator files: `OMNI_VIDEO_FP_INDEX` (JSON-lines frame-hash index; build entries with `video_detector.dimension_checks.context.video_fingerprint_hashes`) and `python -m video_detector.dimension_checks.fit_ood`.
+
+Recognized-but-unscored scientific formats (FITS, DICOM, GeoTIFF, OpenEXR, HDF5, NetCDF, AEDAT event files) return `RECOGNIZED_OUT_OF_SCOPE` instead of a real-vs-AI verdict.
+
+### Verdict semantics and known limits (read before trusting a score)
+
+- **Probabilities are heuristic and uncalibrated.** Every dossier carries `calibration_status: "UNCALIBRATED_HEURISTIC"` and the UI says so. Thresholds (ENF jump, combing ratio, bits-per-pixel, band cutoffs) were tuned on synthetic fixtures only; no labeled dataset is checked in, so real accuracy / false-positive rates are **unmeasured**.
+- **C2PA is presence-only.** `ui.validators.scan_c2pa_markers` and `image_detector.provenance` look for byte markers; no certificate chain or hash binding is validated. Presence is reported but never scored as protective evidence, and the wording is never "verified".
+- **Camera EXIF is unauthenticated.** Coherent EXIF earns no credit in the dimension checks. In `ImageAIDetector.predict`, camera EXIF is *contradicted* (hardware credit shrinks from `EXIF_TRUSTED_CREDIT` to `EXIF_UNTRUSTED_CREDIT`, physical-signal discount withheld) when the raw noise+smoothness evidence leans synthetic by at least `EXIF_CONTRADICTION_LR`. A forger who also produces natural-looking pixel noise is still not detected.
+- **`core.decision.generate_final_decision` has two explicit modes** (`decision_mode`): `image_authoritative` (a single image result with a taxonomy state is final) and `fused` (video / audio / cross-modal / declared-AI provenance are pooled). Video verdicts come from the video detector's own result (`video_result=`), not from a keyframe image. Attribution is explanation only and is never double-counted as evidence.
+- **One orchestration path.** Each `*_detector.pipeline.*ForensicPipeline.run()` is the single analysis sequence (profile → provenance → dimension checks → detector → content → attribution → post checks → `generate_final_decision` → dossier → narrative) and returns every intermediate (`ImageRun` / `AudioRun` / `VideoRun`). `analyze()` turns that into the headless report; `ui.batch_ui.process_single_*` are thin adapters that add only UI concerns (gate short-circuit shape, display profile blocks, keyframe file). `tests/test_ui_flow_apptest.py` asserts both paths produce the same verdict.
+- **Measure, don't trust.** `python -m services.calibration_cli --modality image|audio|video` scores the held-out validation split of your media library and reports accuracy, false-positive rate, Brier score, ECE and band occupancy (`core/calibration_report.py`). With no labeled library it says so and reports nothing.
+- **Test isolation.** The root `conftest.py` fingerprints `*/models/*.pt`, `*/data/*.json|npz` and `core/data/*` before and after a run and fails the session if any test changed them.
+
 
 ---
 
@@ -241,7 +296,7 @@ Also **no trained checkpoint and an empty `dataset/`**, same as audio — the ne
 | `security.py` | `validate_secure_url()` — rejects non-http(s) schemes, rejects localhost/metadata-service hostnames by name, resolves every A/AAAA record and rejects if *any* resolved IP falls in a private/loopback/link-local/cloud-metadata/multicast/reserved range (19 hardcoded CIDR blocks, IPv4 + IPv6). `_PinnedResolver` closes the DNS-rebinding TOCTOU gap by pinning `socket.getaddrinfo` to only the already-validated IPs for the duration of one request. `SecureUrlFetcher` — streams the download with a byte-count ceiling, rejects `text/html` responses, manually follows up to 3 redirects while re-validating (and re-pinning) every hop. `sanitize_filename()`, `generate_secure_cache_name()`. Also sets `PIL.Image.MAX_IMAGE_PIXELS` at import time as a decompression-bomb guard — importing this module anywhere in the process changes that global Pillow setting. |
 | `decision.py` | `normalize_percentages()` — the single canonical implementation all three detector packages' `scoring.py` modules import. Two modes: scale-all-three-together when an `undecided_val` is supplied (what every per-modality detector uses, calibrated against this exact algorithm — don't change it without re-validating every taxonomy threshold), or derive `undecided` from the AI/Real score gap when it's omitted (used internally below). `generate_final_decision()` — the cross-modal Bayesian fusion function: pools image/video/audio AI-probabilities plus provenance/cross-modal/attribution evidence as weighted log-odds terms, derives a `final_status` and (if the per-modality result didn't already carry one) a fallback taxonomy state, and sanitizes attribution for authentic verdicts (forces "None (Authentic Capture)" so an authentic photo never shows a spurious generator attribution). |
 | `atomic_io.py` | `atomic_write_json()`/`atomic_read_json()`/`atomic_update_json()` — write-to-temp-then-`os.replace` atomic persistence with per-resolved-path `RLock`s and Windows-specific retry-on-`PermissionError` handling. Used by all three packages' `learner.py` for calibration/feedback persistence. |
-| `forensic_service.py` | `ForensicService` — a thread-safe lazy-loading singleton wrapping every detector/pipeline/improver object behind `analyze_image/audio/video()`, `record_feedback()`, and `health_check()`. Note: `health_check()` always reports `HEALTHY` — it is not a live liveness probe, just a static capability-description dict. |
+| `services/forensic_service.py` (moved out of `core/`) | `ForensicService` — a thread-safe lazy-loading singleton wrapping every detector/pipeline/improver object behind `analyze_image/audio/video()`, `record_feedback()`, and `health_check()`. Note: `health_check()` always reports `HEALTHY` — it is not a live liveness probe, just a static capability-description dict. |
 
 ---
 
@@ -277,9 +332,11 @@ pytest.ini testpaths:
                               across all three downloaders, atomic persistence, forensic-service facade)
 ```
 
+**Golden regression tests.** Every refactored decision path is pinned by a seeded golden under `tests/data/` (decision fusion, image `predict`, taxonomy fuzz, attribution, dossiers, narratives, metadata, faces, screenshots, digital art, audio/video analysis, headless pipelines, and the rendered Streamlit element trees). Goldens that depend on learned state (`*_calibration.json`, the checkpoint) skip themselves with an explanation if that state changed (e.g. after feedback/retraining). To change behaviour on purpose, regenerate the affected golden and review the diff.
+
 **Honest coverage gap:** only `image_detector` has real-sample end-to-end tests (against the checked-in `dataset/` images) — `audio_detector` and `video_detector` have no real sample media checked into this repo, so their test suites exercise the code paths with synthetic sine-wave/noise fixtures rather than validating actual detection accuracy against real recordings. This is a known, documented limitation, not an oversight hidden from users of this README.
 
-`test_pipeline.py` at the repository root is a smoke test but is **not** listed in `pytest.ini`'s `testpaths`, so a plain `pytest` invocation will not run it — invoke it directly with `python test_pipeline.py` if you need it.
+`manual_pipeline_smoke.py` at the repository root is a smoke test but is **not** listed in `pytest.ini`'s `testpaths`, so a plain `pytest` invocation will not run it — invoke it directly with `python manual_pipeline_smoke.py` if you need it.
 
 ---
 
@@ -318,7 +375,7 @@ How it behaves:
 
 ### In-memory prediction and the upload scratch cache
 - `ImageAIDetector.predict()` accepts a path, raw `bytes`, an `io.BytesIO`, a decoded `numpy.ndarray` or a PIL image.
-- Streamlit uploads are written to the OS temp directory (`core.atomic_io.get_ephemeral_cache_dir()` → `<tmp>/omni_forensics_ephemeral_cache`). The sidebar **"Wipe Transient Media Cache"** button (or `core.atomic_io.purge_ephemeral_cache()`) clears it. This only affects temporary upload copies, never your library files.
+- Streamlit uploads are written to a **per-session** directory under the OS temp directory (`core.atomic_io.get_session_cache_dir(session_id)` → `<tmp>/omni_forensics_ephemeral_cache/session_<id>`), so concurrent users never see or wipe each other's files. The sidebar **"Wipe Transient Media Cache"** button clears only the current session's directory (`purge_ephemeral_cache(dir)`). This only affects temporary upload copies, never your library files.
 
 ---
 

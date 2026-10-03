@@ -13,45 +13,47 @@ Contains its own:
 - Main detection engine (audio_detector.detector.AudioAIDetector)
 - Scene & acoustic delivery tone (audio_detector.content.AudioContentAnalyzer)
 - Voice & music synthesizer attribution (audio_detector.attribution.AudioModelAttributionEngine)
-- Cryptographic C2PA & chunk provenance (audio_detector.provenance.AudioProvenanceValidator)
+- C2PA marker-presence & chunk provenance (audio_detector.provenance.AudioProvenanceValidator)
 - Signal profiling & dynamic range (audio_detector.profiler.AudioProfiler)
 - Safe URL audio downloader (audio_detector.downloader.AudioDownloader)
 - End-to-end forensic pipeline (audio_detector.pipeline.AudioForensicPipeline)
 - High-speed batch processor (audio_detector.batch.AudioBatchProcessor)
 """
-from audio_detector.attribution import AudioModelAttributionEngine
-from audio_detector.batch import AudioBatchProcessor
-from audio_detector.benchmarks import AudioBenchmarkSuite
-from audio_detector.content import AudioContentAnalyzer
-from audio_detector.detector import AudioAIDetector
-from audio_detector.downloader import AudioDownloader
-from audio_detector.explain import build_audio_nine_dimensions_dossier, generate_audio_newbie_explanation
-from audio_detector.features import (
-    compute_spectral_features,
-    generate_spectrogram_image,
-    segment_audio_temporal,
-)
-from audio_detector.learner import AudioSelfImprover
-from audio_detector.models.backbone import AudioClassifierNet, build_audio_classifier
-from audio_detector.pipeline import AudioForensicPipeline
-from audio_detector.profiler import AudioProfiler, compute_file_hashes
-from audio_detector.provenance import AudioProvenanceValidator
-from audio_detector.schemas import (
-    AudioBenchmarkMetrics,
-    AudioFeedbackRecord,
-    AudioForensicResult,
-    AudioModalityScore,
-    AudioTemporalSegment,
-    AudioValidationResult,
-)
-from audio_detector.scoring import (
-    calculate_audio_epistemic_uncertainty,
-    evaluate_audio_decision,
-    normalize_percentages,
-    pool_acoustic_evidence,
-)
-from audio_detector.trainer import AudioDetectorTrainer
-from audio_detector.validator import AudioValidator
+from core.lazy import install_lazy_exports
+
+_LAZY_EXPORTS = {
+    "AudioAIDetector": ("audio_detector.detector", "AudioAIDetector"),
+    "AudioBatchProcessor": ("audio_detector.batch", "AudioBatchProcessor"),
+    "AudioBenchmarkMetrics": ("audio_detector.schemas", "AudioBenchmarkMetrics"),
+    "AudioBenchmarkSuite": ("audio_detector.benchmarks", "AudioBenchmarkSuite"),
+    "AudioClassifierNet": ("audio_detector.models.backbone", "AudioClassifierNet"),
+    "AudioContentAnalyzer": ("audio_detector.content", "AudioContentAnalyzer"),
+    "AudioDetectorTrainer": ("audio_detector.trainer", "AudioDetectorTrainer"),
+    "AudioDownloader": ("audio_detector.downloader", "AudioDownloader"),
+    "AudioFeedbackRecord": ("audio_detector.schemas", "AudioFeedbackRecord"),
+    "AudioForensicPipeline": ("audio_detector.pipeline", "AudioForensicPipeline"),
+    "AudioForensicResult": ("audio_detector.schemas", "AudioForensicResult"),
+    "AudioModalityScore": ("audio_detector.schemas", "AudioModalityScore"),
+    "AudioModelAttributionEngine": ("audio_detector.attribution", "AudioModelAttributionEngine"),
+    "AudioProfiler": ("audio_detector.profiler", "AudioProfiler"),
+    "AudioProvenanceValidator": ("audio_detector.provenance", "AudioProvenanceValidator"),
+    "AudioSelfImprover": ("audio_detector.learner", "AudioSelfImprover"),
+    "AudioTemporalSegment": ("audio_detector.schemas", "AudioTemporalSegment"),
+    "AudioValidationResult": ("audio_detector.schemas", "AudioValidationResult"),
+    "AudioValidator": ("audio_detector.validator", "AudioValidator"),
+    "build_audio_classifier": ("audio_detector.models.backbone", "build_audio_classifier"),
+    "build_audio_nine_dimensions_dossier": ("audio_detector.explain", "build_audio_nine_dimensions_dossier"),
+    "calculate_audio_epistemic_uncertainty": ("audio_detector.scoring", "calculate_audio_epistemic_uncertainty"),
+    "compute_file_hashes": ("audio_detector.profiler", "compute_file_hashes"),
+    "compute_spectral_features": ("audio_detector.features", "compute_spectral_features"),
+    "evaluate_audio_decision": ("audio_detector.scoring", "evaluate_audio_decision"),
+    "generate_audio_newbie_explanation": ("audio_detector.explain", "generate_audio_newbie_explanation"),
+    "generate_spectrogram_image": ("audio_detector.features", "generate_spectrogram_image"),
+    "normalize_percentages": ("audio_detector.scoring", "normalize_percentages"),
+    "pool_acoustic_evidence": ("audio_detector.scoring", "pool_acoustic_evidence"),
+    "segment_audio_temporal": ("audio_detector.features", "segment_audio_temporal"),
+}
+install_lazy_exports(__name__, _LAZY_EXPORTS, globals())
 
 __all__ = [
     # Core Engine & Pipelines

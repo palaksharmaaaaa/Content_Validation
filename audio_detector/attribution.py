@@ -25,10 +25,10 @@ these can be identified from audio content alone the way the original six can; a
 spectral calibration for them only once backed by actual sample analysis, not guessed numbers.
 """
 from __future__ import annotations
-
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from core.shared_results import unknown_attribution
 
 logger = logging.getLogger("audio_detector.attribution")
 
@@ -243,13 +243,4 @@ class AudioModelAttributionEngine:
         )
 
     def _unknown_attribution(self, reason: str) -> Dict[str, Any]:
-        return {
-            "attributed_model": "Unknown",
-            "model_key": "unknown",
-            "confidence": 0.0,
-            "attribution_confidence": 0.0,
-            "region_of_origin": "Unknown",
-            "watermark_detected": False,
-            "cues": [reason],
-            "top_candidates": [],
-        }
+        return unknown_attribution(reason)

@@ -9,8 +9,7 @@ Completely self-contained with zero outside dependencies.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
-import numpy as np
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger("video_detector.cross_modal")
 
@@ -22,6 +21,17 @@ class CrossModalConsistencyEngine:
         pass
 
     def evaluate_consistency(
+        self,
+        video_forensics: Dict[str, Any],
+        audio_forensics: Optional[Dict[str, Any]] = None,
+        content_inventory: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Evaluates cross-modal coherence; always includes ``cross_modal_status`` for display."""
+        res = self._evaluate(video_forensics, audio_forensics, content_inventory)
+        res["cross_modal_status"] = res.get("status", "CROSS_MODAL_COHERENT")
+        return res
+
+    def _evaluate(
         self,
         video_forensics: Dict[str, Any],
         audio_forensics: Optional[Dict[str, Any]] = None,
@@ -111,7 +121,4 @@ def evaluate_cross_modal_consistency(
     content_inventory: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Evaluates cross-modal coherence between video visual frames and audio speech track."""
-    engine = CrossModalConsistencyEngine()
-    res = engine.evaluate_consistency(video_forensics, audio_forensics, content_inventory)
-    res["cross_modal_status"] = res.get("status", "CROSS_MODAL_COHERENT")
-    return res
+    return CrossModalConsistencyEngine().evaluate_consistency(video_forensics, audio_forensics, content_inventory)

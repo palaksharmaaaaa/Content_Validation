@@ -15,49 +15,52 @@ Contains its own:
 - Facial deepfake detection (video_detector.face.VideoFaceDeepfakeDetector)
 - Scene & content intelligence (video_detector.content.VideoContentAnalyzer)
 - Generator model attribution (video_detector.attribution.VideoModelAttributionEngine)
-- Cryptographic C2PA & container atoms (video_detector.provenance.VideoProvenanceValidator)
+- C2PA marker-presence & container atoms (video_detector.provenance.VideoProvenanceValidator)
 - Stream profiling & specifications (video_detector.profiler.VideoProfiler)
 - Cross-modal audio-visual synchronization (video_detector.cross_modal.CrossModalConsistencyEngine)
 - Safe URL video downloader (video_detector.downloader.VideoDownloader)
 - End-to-end forensic pipeline (video_detector.pipeline.VideoForensicPipeline)
 - High-speed batch processor (video_detector.batch.VideoBatchProcessor)
 """
-from video_detector.attribution import VideoModelAttributionEngine
-from video_detector.batch import VideoBatchProcessor
-from video_detector.benchmarks import VideoBenchmarkSuite
-from video_detector.content import VideoContentAnalyzer
-from video_detector.cross_modal import CrossModalConsistencyEngine, evaluate_cross_modal_consistency
-from video_detector.detector import VideoAIDetector
-from video_detector.downloader import VideoDownloader
-from video_detector.explain import build_video_nine_dimensions_dossier, generate_video_newbie_explanation
-from video_detector.extractor import VideoFrameExtractor
-from video_detector.face import VideoFaceDeepfakeDetector
-from video_detector.learner import VideoSelfImprover
-from video_detector.models.backbone import VideoTemporalTransitionModel
-from video_detector.pipeline import VideoForensicPipeline
-from video_detector.profiler import VideoProfiler, compute_file_hashes
-from video_detector.provenance import VideoProvenanceValidator
-from video_detector.schemas import (
-    VideoBenchmarkMetrics,
-    VideoFeedbackRecord,
-    VideoForensicResult,
-    VideoModalityScore,
-    VideoTemporalSegment,
-    VideoValidationResult,
-)
-from video_detector.scoring import (
-    calculate_video_epistemic_uncertainty,
-    evaluate_video_decision,
-    normalize_percentages,
-    pool_video_temporal_score,
-)
-from video_detector.temporal import (
-    compute_interframe_motion_variance,
-    detect_diffusion_flickering,
-    group_temporal_segments,
-)
-from video_detector.trainer import VideoDetectorTrainer
-from video_detector.validator import VideoValidator, analyze_video
+from core.lazy import install_lazy_exports
+
+_LAZY_EXPORTS = {
+    "CrossModalConsistencyEngine": ("video_detector.cross_modal", "CrossModalConsistencyEngine"),
+    "VideoAIDetector": ("video_detector.detector", "VideoAIDetector"),
+    "VideoBatchProcessor": ("video_detector.batch", "VideoBatchProcessor"),
+    "VideoBenchmarkMetrics": ("video_detector.schemas", "VideoBenchmarkMetrics"),
+    "VideoBenchmarkSuite": ("video_detector.benchmarks", "VideoBenchmarkSuite"),
+    "VideoContentAnalyzer": ("video_detector.content", "VideoContentAnalyzer"),
+    "VideoDetectorTrainer": ("video_detector.trainer", "VideoDetectorTrainer"),
+    "VideoDownloader": ("video_detector.downloader", "VideoDownloader"),
+    "VideoFaceDeepfakeDetector": ("video_detector.face", "VideoFaceDeepfakeDetector"),
+    "VideoFeedbackRecord": ("video_detector.schemas", "VideoFeedbackRecord"),
+    "VideoForensicPipeline": ("video_detector.pipeline", "VideoForensicPipeline"),
+    "VideoForensicResult": ("video_detector.schemas", "VideoForensicResult"),
+    "VideoFrameExtractor": ("video_detector.extractor", "VideoFrameExtractor"),
+    "VideoModalityScore": ("video_detector.schemas", "VideoModalityScore"),
+    "VideoModelAttributionEngine": ("video_detector.attribution", "VideoModelAttributionEngine"),
+    "VideoProfiler": ("video_detector.profiler", "VideoProfiler"),
+    "VideoProvenanceValidator": ("video_detector.provenance", "VideoProvenanceValidator"),
+    "VideoSelfImprover": ("video_detector.learner", "VideoSelfImprover"),
+    "VideoTemporalSegment": ("video_detector.schemas", "VideoTemporalSegment"),
+    "VideoTemporalTransitionModel": ("video_detector.models.backbone", "VideoTemporalTransitionModel"),
+    "VideoValidationResult": ("video_detector.schemas", "VideoValidationResult"),
+    "VideoValidator": ("video_detector.validator", "VideoValidator"),
+    "build_video_nine_dimensions_dossier": ("video_detector.explain", "build_video_nine_dimensions_dossier"),
+    "calculate_video_epistemic_uncertainty": ("video_detector.scoring", "calculate_video_epistemic_uncertainty"),
+    "compute_file_hashes": ("video_detector.profiler", "compute_file_hashes"),
+    "compute_interframe_motion_variance": ("video_detector.temporal", "compute_interframe_motion_variance"),
+    "detect_diffusion_flickering": ("video_detector.temporal", "detect_diffusion_flickering"),
+    "evaluate_cross_modal_consistency": ("video_detector.cross_modal", "evaluate_cross_modal_consistency"),
+    "evaluate_video_decision": ("video_detector.scoring", "evaluate_video_decision"),
+    "generate_video_newbie_explanation": ("video_detector.explain", "generate_video_newbie_explanation"),
+    "group_temporal_segments": ("video_detector.temporal", "group_temporal_segments"),
+    "normalize_percentages": ("video_detector.scoring", "normalize_percentages"),
+    "pool_video_temporal_score": ("video_detector.scoring", "pool_video_temporal_score"),
+    "validate_video_stream": ("video_detector.validator", "validate_video_stream"),
+}
+install_lazy_exports(__name__, _LAZY_EXPORTS, globals())
 
 __all__ = [
     # Core Engine & Pipelines

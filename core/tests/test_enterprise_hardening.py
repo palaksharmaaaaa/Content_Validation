@@ -10,7 +10,7 @@ import unittest
 from PIL import Image
 
 from core.atomic_io import atomic_read_json, atomic_update_json, atomic_write_json
-from core.forensic_service import ForensicService
+from services.forensic_service import ForensicService
 from core.security import (
     SAFE_MAX_IMAGE_PIXELS,
     is_ip_restricted,
@@ -117,6 +117,27 @@ class TestEnterpriseHardening(unittest.TestCase):
         self.assertEqual(health["security"]["decompression_bomb_protection"], "ACTIVE")
         self.assertEqual(health["security"]["atomic_storage"], "ACTIVE")
 
+
+class TestSessionCacheIsolation(unittest.TestCase):
+    def test_sessions_are_isolated_and_purge_is_scoped(self):
+        from core.atomic_io import get_session_cache_dir, purge_ephemeral_cache
+
+        a, b = get_session_cache_dir("sess-a"), get_session_cache_dir("sess-b")
+        self.assertNotEqual(a, b)
+        (a / "x.bin").write_bytes(b"1")
+        (b / "y.bin").write_bytes(b"2")
+        self.assertEqual(purge_ephemeral_cache(a), 1)
+        self.assertFalse((a / "x.bin").exists())
+        self.assertTrue((b / "y.bin").exists())
+        purge_ephemeral_cache(b)
+
+    def test_session_id_cannot_traverse(self):
+        from core.atomic_io import get_session_cache_dir
+
+        d = get_session_cache_dir("../../etc")
+        self.assertEqual(d.parent, get_session_cache_dir("zz").parent)
+        with self.assertRaises(ValueError):
+            get_session_cache_dir("../..")
 
 if __name__ == "__main__":
     unittest.main()

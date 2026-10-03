@@ -126,6 +126,16 @@ def get_ephemeral_cache_dir() -> Path:
     return cache_dir
 
 
+def get_session_cache_dir(session_id: str) -> Path:
+    """Per-session scratch directory so concurrent users never share (or wipe) each other's uploads."""
+    safe = "".join(c for c in str(session_id) if c.isalnum() or c in "-_")[:64]
+    if not safe:
+        raise ValueError("session_id must contain at least one alphanumeric character")
+    d = get_ephemeral_cache_dir() / f"session_{safe}"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
 def purge_ephemeral_cache(cache_dir: Optional[Path] = None) -> int:
     """Purges all transient media files from OS temp cache with zero disk leak."""
     target_dir = cache_dir or get_ephemeral_cache_dir()

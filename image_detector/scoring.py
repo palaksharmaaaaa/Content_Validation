@@ -9,6 +9,7 @@ Contains:
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -119,231 +120,304 @@ def evaluate_taxonomy_classification(
     if prob_real is not None:
         real_pct = prob_real * 100.0 if prob_real <= 1.0 else prob_real
 
-    metadata = dict(metadata or {})
-    watermark_data = dict(watermark_data or {})
-    if watermark_detected is not None:
-        watermark_data["watermark_detected"] = watermark_detected
+    c = _TaxonomyInputs(
+        ai_pct=ai_pct, real_pct=real_pct, noise_mean=noise_mean, smoothness=smoothness,
+        is_square_gen=is_square_gen, is_canonical_gen=is_canonical_gen,
+        metadata=dict(metadata or {}),
+        watermark=_with_flag(watermark_data, "watermark_detected", watermark_detected),
+        cutout=_with_flag(cutout_data, "is_cutout", cutout_detected),
+        scanned=_with_flag(scanned_data, "is_scanned", scanned_detected),
+        face_swap=_with_flag(face_swap_data, "is_face_swap", face_swap_detected),
+        art=_with_flag(art_data, "is_digital_art", art_detected),
+        screenshot=_with_flag(screenshot_data, "is_screenshot", screenshot_detected),
+        inpainting=_with_flag(inpainting_data, "is_manipulated", inpainting_detected),
+        screen_recapture=dict(kwargs.get("screen_recapture_data") or {}),
+        recapture_flag=bool(kwargs.get("screen_recapture_detected")),
+        metadata_absent=bool(kwargs.get("metadata_absent")),
+        synthetic_signal_count=int(kwargs.get("synthetic_signal_count", 99)),
+        text_count=int(kwargs.get("text_regions_count", 0)),
+    )
+    for stage in _TAXONOMY_STAGES:
+        outcome = stage(c, ImageTaxonomyState)
+        if outcome is not None:
+            state, reasons = outcome
+            return state, ImageTaxonomyState.get_label(state), ImageTaxonomyState.get_description(state), reasons
+    raise AssertionError("the final taxonomy stage always returns a state")  # pragma: no cover
 
-    cutout_data = dict(cutout_data or {})
-    if cutout_detected is not None:
-        cutout_data["is_cutout"] = cutout_detected
 
-    scanned_data = dict(scanned_data or {})
-    if scanned_detected is not None:
-        scanned_data["is_scanned"] = scanned_detected
+def _with_flag(data: Optional[Dict[str, Any]], key: str, override: Optional[bool]) -> Dict[str, Any]:
+    out = dict(data or {})
+    if override is not None:
+        out[key] = override
+    return out
 
-    face_swap_data = dict(face_swap_data or {})
-    if face_swap_detected is not None:
-        face_swap_data["is_face_swap"] = face_swap_detected
 
-    art_data = dict(art_data or {})
-    if art_detected is not None:
-        art_data["is_digital_art"] = art_detected
-    is_digital_art = bool(art_data.get("is_digital_art"))
+@dataclass
+class _TaxonomyInputs:
+    """Normalised evidence handed to each taxonomy stage (detector dicts plus derived booleans)."""
 
-    screenshot_data = dict(screenshot_data or {})
-    if screenshot_detected is not None:
-        screenshot_data["is_screenshot"] = screenshot_detected
-    is_screenshot = bool(screenshot_data.get("is_screenshot"))
+    ai_pct: float
+    real_pct: float
+    noise_mean: float
+    smoothness: float
+    is_square_gen: bool
+    is_canonical_gen: bool
+    metadata: Dict[str, Any]
+    watermark: Dict[str, Any]
+    cutout: Dict[str, Any]
+    scanned: Dict[str, Any]
+    face_swap: Dict[str, Any]
+    art: Dict[str, Any]
+    screenshot: Dict[str, Any]
+    inpainting: Dict[str, Any]
+    screen_recapture: Dict[str, Any]
+    recapture_flag: bool
+    metadata_absent: bool
+    synthetic_signal_count: int
+    text_count: int
 
-    inpainting_data = dict(inpainting_data or {})
-    if inpainting_detected is not None:
-        inpainting_data["is_manipulated"] = inpainting_detected
-    is_inpainted = bool(inpainting_data.get("is_manipulated"))
+    @property
+    def is_digital_art(self) -> bool:
+        return bool(self.art.get("is_digital_art"))
 
+    @property
+    def is_screenshot(self) -> bool:
+        return bool(self.screenshot.get("is_screenshot"))
+
+    @property
+    def is_inpainted(self) -> bool:
+        return bool(self.inpainting.get("is_manipulated"))
+
+    @property
+    def has_watermark(self) -> bool:
+        return bool(self.watermark.get("watermark_detected"))
+
+    @property
+    def has_ai_iptc(self) -> bool:
+        return (self.metadata.get("iptc_digital_source_type") == "trainedAlgorithmicMedia"
+                or self.metadata.get("photoshop_credit") == "Made with Google AI")
+
+    @property
+    def has_pure_ai_meta(self) -> bool:
+        return bool(self.metadata.get("ai_signature_found") and not self.metadata.get("ai_enhancer_signature_found"))
+
+    @property
+    def has_camera(self) -> bool:
+        return bool(self.metadata.get("camera_make") and self.metadata.get("camera_model"))
+
+    @property
+    def is_scanned(self) -> bool:
+        return bool(self.scanned.get("is_scanned"))
+
+    @property
+    def is_face_swap(self) -> bool:
+        return bool(self.face_swap.get("is_face_swap"))
+
+    @property
+    def is_ai_enhancer(self) -> bool:
+        return bool(self.metadata.get("ai_enhancer_signature_found"))
+
+    @property
+    def canvas_matches_generator(self) -> bool:
+        return self.is_canonical_gen or self.is_square_gen
+
+    @property
+    def declares_ai(self) -> bool:
+        """Watermark, embedded 'made with AI' label, or a pure-AI metadata signature (all unauthenticated declarations)."""
+        return self.has_watermark or self.has_ai_iptc or self.has_pure_ai_meta
+
+
+_Outcome = Optional[Tuple[Any, List[str]]]
+
+
+def _stage_screenshot(c: _TaxonomyInputs, S: Any) -> _Outcome:
+    """1. Screen captures (any device/orientation), classified by the nature of the displayed content."""
+    if not c.is_screenshot:
+        return None
+    device = c.screenshot.get("device_type", "Device")
+    orient = c.screenshot.get("orientation", "Portrait")
+    screen_res = c.screenshot.get("screen_resolution", "")
+    details = c.screenshot.get("details", f"{device} screen capture in {orient} orientation")
     reasons: List[str] = []
 
-    has_gemini_watermark = bool(watermark_data.get("watermark_detected"))
-    has_ai_iptc = (
-        metadata.get("iptc_digital_source_type") == "trainedAlgorithmicMedia"
-        or metadata.get("photoshop_credit") == "Made with Google AI"
-    )
-    has_pure_ai_meta = bool(metadata.get("ai_signature_found") and not metadata.get("ai_enhancer_signature_found"))
-    has_camera_hardware = bool(metadata.get("camera_make") and metadata.get("camera_model"))
-    is_scanned_print = bool(scanned_data.get("is_scanned"))
-    is_face_swap = bool(face_swap_data.get("is_face_swap"))
-    is_ai_enhancer = bool(metadata.get("ai_enhancer_signature_found"))
+    if c.declares_ai or c.is_digital_art or c.ai_pct >= 62.0:
+        reasons.append(f"Screen capture from {device} ({orient} orientation) displaying fully AI-generated media")
+        if c.has_watermark:
+            reasons.append(c.watermark.get("details", "AI generator watermark detected inside display"))
+        if c.has_ai_iptc:
+            reasons.append("Embedded metadata declares: 'Made with Google AI' (unauthenticated label)")
+        if c.is_digital_art:
+            reasons.append(c.art.get("details", "AI digital artwork / synthetic rendering displayed on screen"))
+        reasons.append(details)
+        return S.AI_GENERATED_SCREENSHOT, reasons
 
-    # 1. SCREENSHOT CATEGORIZATION (Mobile, Tablet, Laptop, Desktop across orientations)
-    if is_screenshot:
-        device_label = screenshot_data.get("device_type", "Device")
-        orient_label = screenshot_data.get("orientation", "Portrait")
-        screen_res = screenshot_data.get("screen_resolution", "")
-        sc_details = screenshot_data.get("details", f"{device_label} screen capture in {orient_label} orientation")
+    if c.is_face_swap or c.is_ai_enhancer or c.is_inpainted:
+        reasons.append(f"Screen capture from {device} ({orient} orientation) displaying AI-enhanced / spliced media")
+        if c.is_face_swap:
+            reasons.append(c.face_swap.get("details", "Neural face-swap / facial graft boundary detected"))
+        if c.is_inpainted:
+            reasons.append(c.inpainting.get("details", "Localized generative inpainting / composite detected"))
+        if c.is_ai_enhancer:
+            reasons.append(c.metadata.get("signature_details", "Neural image enhancement / upscaling signature detected"))
+        reasons.append(details)
+        return S.AI_ENHANCED_SCREENSHOT, reasons
 
-        # Evaluate inner content nature
-        if has_gemini_watermark or has_ai_iptc or has_pure_ai_meta or is_digital_art or ai_pct >= 62.0:
-            state = ImageTaxonomyState.AI_GENERATED_SCREENSHOT
-            reasons.append(f"Screen capture from {device_label} ({orient_label} orientation) displaying fully AI-generated media")
-            if has_gemini_watermark:
-                reasons.append(watermark_data.get("details", "AI generator watermark detected inside display"))
-            if has_ai_iptc:
-                reasons.append("Cryptographic metadata certifies: 'Made with Google AI'")
-            if is_digital_art:
-                reasons.append(art_data.get("details", "AI digital artwork / synthetic rendering displayed on screen"))
-            reasons.append(sc_details)
-            return state, ImageTaxonomyState.get_label(state), ImageTaxonomyState.get_description(state), reasons
+    reasons.append(f"Authentic digital screen capture from {device} ({orient} orientation, {screen_res})")
+    reasons.append(details)
+    reasons.append("Unmanipulated operating system / app interface rendering with zero generative synthesis")
+    return S.AUTHENTIC_SCREENSHOT, reasons
 
-        if is_face_swap or is_ai_enhancer or is_inpainted:
-            state = ImageTaxonomyState.AI_ENHANCED_SCREENSHOT
-            reasons.append(f"Screen capture from {device_label} ({orient_label} orientation) displaying AI-enhanced / spliced media")
-            if is_face_swap:
-                reasons.append(face_swap_data.get("details", "Neural face-swap / facial graft boundary detected"))
-            if is_inpainted:
-                reasons.append(inpainting_data.get("details", "Localized generative inpainting / composite detected"))
-            if is_ai_enhancer:
-                reasons.append(metadata.get("signature_details", "Neural image enhancement / upscaling signature detected"))
-            reasons.append(sc_details)
-            return state, ImageTaxonomyState.get_label(state), ImageTaxonomyState.get_description(state), reasons
 
-        state = ImageTaxonomyState.AUTHENTIC_SCREENSHOT
-        reasons.append(f"Authentic digital screen capture from {device_label} ({orient_label} orientation, {screen_res})")
-        reasons.append(sc_details)
-        reasons.append("Unmanipulated operating system / app interface rendering with zero generative synthesis")
-        return state, ImageTaxonomyState.get_label(state), ImageTaxonomyState.get_description(state), reasons
+def _stage_declared_or_art_synthesis(c: _TaxonomyInputs, S: Any) -> _Outcome:
+    """2. Fully AI-generated: explicit declaration (watermark / label / metadata) or non-optical digital art."""
+    if not (c.declares_ai or (c.is_digital_art and not c.has_camera and not c.is_scanned)):
+        return None
+    reasons: List[str] = []
+    if (c.is_digital_art and c.art.get("visual_medium") == "Digital 3D CGI / AI Neural Painting"
+            and not c.has_watermark and not c.has_ai_iptc and not c.has_pure_ai_meta):
+        reasons.append("Deterministic procedural 3D ray-traced rendering / CGI synthetic model detected")
+        reasons.append(c.art.get("details", "Absence of natural Bayer sensor PRNU noise"))
+        return S.PROCEDURAL_CGI_SYNTHETIC, reasons
 
-    # 2. FULLY AI-GENERATED MEDIA
-    if has_gemini_watermark or has_ai_iptc or has_pure_ai_meta or (is_digital_art and not has_camera_hardware and not is_scanned_print):
-        # Distinguish Procedural CGI vs Diffusion AI if applicable
-        if is_digital_art and art_data.get("visual_medium") == "Digital 3D CGI / AI Neural Painting" and not has_gemini_watermark and not has_ai_iptc and not has_pure_ai_meta:
-            state = ImageTaxonomyState.PROCEDURAL_CGI_SYNTHETIC
-            reasons.append("Deterministic procedural 3D ray-traced rendering / CGI synthetic model detected")
-            reasons.append(art_data.get("details", "Absence of natural Bayer sensor PRNU noise"))
-            return state, ImageTaxonomyState.get_label(state), ImageTaxonomyState.get_description(state), reasons
-
-        state = ImageTaxonomyState.FULLY_AI_GENERATED
-        if has_gemini_watermark:
-            reasons.append(watermark_data.get("details", "AI generator watermark detected in corner"))
-        if has_ai_iptc:
-            reasons.append("Cryptographic metadata certifies: 'Made with Google AI' (trainedAlgorithmicMedia)")
-        if has_pure_ai_meta:
-            reasons.append(metadata.get("signature_details", "AI generator footprint detected in metadata"))
-        if is_digital_art:
-            reasons.append(art_data.get("details", "AI digital artwork / synthetic painting style detected"))
-            reasons.append("Non-optical color rendering and absence of physical camera sensor PRNU grain")
-            if cutout_data.get("is_cutout"):
-                reasons.append("Synthetic 3D asset with transparent alpha background cutout")
-        else:
-            reasons.append(f"Synthetic generation metrics (Bilateral Smoothness: {smoothness:.2f}, PRNU Noise: {noise_mean:.2f})")
-        if is_canonical_gen or is_square_gen:
-            reasons.append("Canvas dimensions match standard generative model diffusion canvas")
-        return state, ImageTaxonomyState.get_label(state), ImageTaxonomyState.get_description(state), reasons
-
-    # 3. AI-ENHANCED / COMPOSITE (MIX)
-    has_ai_composite_meta = (
-        is_ai_enhancer
-        or is_face_swap
-        or metadata.get("iptc_digital_source_type") == "compositeWithTrainedAlgorithmicMedia"
-    )
-    if has_ai_composite_meta or is_inpainted:
-        state = ImageTaxonomyState.AI_ENHANCED_COMPOSITE
-        if is_face_swap:
-            reasons.append(face_swap_data.get("details", "Neural face-swap and facial graft boundary detected"))
-            reasons.append("Discontinuity between facial airbrushing and sharp facial hair/accessories")
-        if is_inpainted:
-            reasons.append(inpainting_data.get("details", "Localized generative inpainting / composite detected"))
-        if is_ai_enhancer:
-            reasons.append(metadata.get("signature_details", "Neural image enhancement / upscaling software detected"))
-            if metadata.get("camera_make"):
-                reasons.append(f"Original base capture from camera hardware: {metadata.get('camera_make')} {metadata.get('camera_model') or ''}".strip())
-        return state, ImageTaxonomyState.get_label(state), ImageTaxonomyState.get_description(state), reasons
-
-    # 3b. AI-ENHANCED / COMPOSITE -- score-band fallback for a genuine camera base with
-    # overwhelming synthetic-leaning pixel evidence but no explicit enhancer/face-swap/
-    # inpainting signature (e.g. a generic AI upscaler/denoiser that leaves no metadata
-    # footprint). Without this, such an image had no reachable path into this category at
-    # all: branch 3 above requires an explicit discrete signal, and branch 4 below requires
-    # the ABSENCE of camera hardware -- so a real photo this heavily altered would previously
-    # fall through all the way to AUTHENTIC_REAL_PHOTOGRAPH.
-    if has_camera_hardware and not is_scanned_print and ai_pct >= 62.0:
-        state = ImageTaxonomyState.AI_ENHANCED_COMPOSITE
-        cam_str = f"{metadata.get('camera_make', '') or ''} {metadata.get('camera_model', '') or ''}".strip()
-        reasons.append(f"Genuine camera hardware base capture ({cam_str})")
-        reasons.append(
-            f"Overwhelming synthetic-leaning pixel evidence despite authentic base ({ai_pct:.1f}% AI) -- "
-            "consistent with an AI upscaler/denoiser/generative-fill pass that left no metadata footprint"
-        )
-        return state, ImageTaxonomyState.get_label(state), ImageTaxonomyState.get_description(state), reasons
-
-    # 4. HIGH-CONFIDENCE GENERATIVE SYNTHESIS (without explicit watermark)
-    if (ai_pct >= 58.0 or (ai_pct >= 48.0 and (is_square_gen or is_canonical_gen))) and not has_camera_hardware and not scanned_data.get("is_scanned"):
-        has_real_noise = noise_mean > 1.85 and smoothness > 1.60
-        # Corroboration gate: when there is no camera hardware, AI/enhancer signature, OR
-        # C2PA manifest (metadata_absent -- the common case for downloaded/re-shared/
-        # screenshotted images), the blended ai_pct score alone is not enough to route this
-        # image to FULLY_AI_GENERATED. Require at least 2 independently-synthetic-leaning
-        # pixel signals (noise, smoothness, FFT anomaly, neural backbone) as corroboration.
-        # metadata_absent/synthetic_signal_count default to "no gate" (False/high) so direct
-        # callers that don't pass them (e.g. existing unit tests) see no behavior change.
-        metadata_absent = bool(kwargs.get("metadata_absent"))
-        synthetic_signal_count = int(kwargs.get("synthetic_signal_count", 99))
-        lacks_corroboration = metadata_absent and synthetic_signal_count < 2
-        if not has_real_noise and not lacks_corroboration:
-            state = ImageTaxonomyState.FULLY_AI_GENERATED
-            reasons.append(f"High posterior probability of generative synthesis ({ai_pct:.1f}% AI)")
-            reasons.append("Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise")
-            if is_canonical_gen or is_square_gen:
-                reasons.append("Canvas dimensions match standard generative model diffusion canvas")
-            if cutout_data.get("is_cutout"):
-                reasons.append("Synthetic character / asset rendered on isolated solid background canvas")
-            return state, ImageTaxonomyState.get_label(state), ImageTaxonomyState.get_description(state), reasons
-
-    # 5. AUTHENTIC SCREEN RE-PHOTOGRAPHY (RECAPTURED PHYSICAL DISPLAY)
-    screen_recapture_data = dict(kwargs.get("screen_recapture_data") or {})
-    is_recaptured = bool(screen_recapture_data.get("is_screen_recapture") or kwargs.get("screen_recapture_detected"))
-    if is_recaptured:
-        state = ImageTaxonomyState.AUTHENTIC_RECAPTURED_SCREEN
-        reasons.append("Optical camera recapture of physical display screen (CRT/LCD/OLED)")
-        if screen_recapture_data.get("details"):
-            reasons.append(screen_recapture_data["details"])
-        if metadata.get("camera_make"):
-            reasons.append(f"Recaptured with hardware camera: {metadata.get('camera_make')} {metadata.get('camera_model') or ''}".strip())
-        return state, ImageTaxonomyState.get_label(state), ImageTaxonomyState.get_description(state), reasons
-
-    # 6. AUTHENTIC CREATED PHOTOGRAPH (CONVENTIONALLY EDITED / GRAPHIC DESIGN)
-    is_cutout = bool(cutout_data.get("is_cutout"))
-    is_graphic_edit = bool(metadata.get("graphic_editor_signature_found"))
-    text_count = int(kwargs.get("text_regions_count", 0))
-    has_graphic_text = text_count >= 3
-
-    if is_cutout or is_graphic_edit or (has_graphic_text and not is_digital_art):
-        # Only authentic if verified camera hardware OR genuine sensor noise >= 1.35 with low AI probability
-        if (has_camera_hardware or noise_mean >= 1.35 or real_pct >= 50.0) and ai_pct < 50.0:
-            state = ImageTaxonomyState.AUTHENTIC_EDITED
-            if is_cutout:
-                reasons.append(cutout_data.get("details", "Background removal or studio solid background replacement detected"))
-            if is_graphic_edit:
-                reasons.append(metadata.get("signature_details", "Graphic layout composition software detected"))
-            if has_graphic_text:
-                reasons.append(f"Graphic design typography / text elements overlaid on image ({text_count} text blocks detected)")
-            reasons.append("Base subject contains authentic photographic sensor noise and natural physical geometry")
-            return state, ImageTaxonomyState.get_label(state), ImageTaxonomyState.get_description(state), reasons
-        elif ai_pct >= 50.0 or noise_mean < 1.10:
-            # Synthetic 3D asset or AI character render cutout
-            state = ImageTaxonomyState.FULLY_AI_GENERATED
-            reasons.append(cutout_data.get("details", "Isolated synthetic character / object on solid background canvas"))
-            reasons.append("Absence of authentic camera sensor PRNU noise across subject boundaries")
-            return state, ImageTaxonomyState.get_label(state), ImageTaxonomyState.get_description(state), reasons
-
-    # 7. AUTHENTIC REAL CAMERA / MOBILE-PHONE PHOTOGRAPH
-    state = ImageTaxonomyState.AUTHENTIC_REAL_PHOTOGRAPH
-    if scanned_data.get("is_scanned"):
-        reasons.append(scanned_data.get("details", "High-resolution flatbed scan of physical photographic print"))
-        reasons.append("Preserved physical halftone screening and authentic photographic print emulsion")
+    if c.has_watermark:
+        reasons.append(c.watermark.get("details", "AI generator watermark detected in corner"))
+    if c.has_ai_iptc:
+        reasons.append("Embedded metadata declares: 'Made with Google AI' (trainedAlgorithmicMedia; unauthenticated label)")
+    if c.has_pure_ai_meta:
+        reasons.append(c.metadata.get("signature_details", "AI generator footprint detected in metadata"))
+    if c.is_digital_art:
+        reasons.append(c.art.get("details", "AI digital artwork / synthetic painting style detected"))
+        reasons.append("Non-optical color rendering and absence of physical camera sensor PRNU grain")
+        if c.cutout.get("is_cutout"):
+            reasons.append("Synthetic 3D asset with transparent alpha background cutout")
     else:
-        if metadata.get("camera_make"):
-            reasons.append(f"Verified camera hardware: {metadata.get('camera_make')} {metadata.get('camera_model') or ''}".strip())
-        if metadata.get("has_optical_parameters"):
-            opt_details = []
-            if metadata.get("focal_length"):
-                opt_details.append(f"f={metadata['focal_length']}mm")
-            if metadata.get("f_number"):
-                opt_details.append(f"f/{metadata['f_number']}")
-            if metadata.get("iso"):
-                opt_details.append(f"ISO {metadata['iso']}")
-            if opt_details:
-                reasons.append(f"Physical lens optical parameters: {', '.join(opt_details)}")
-        reasons.append(f"Natural camera sensor Poisson shot noise (PRNU residual: {noise_mean:.2f})")
-        reasons.append("Natural optical depth of field, coherent lighting, and unmanipulated geometry")
+        reasons.append(f"Synthetic generation metrics (Bilateral Smoothness: {c.smoothness:.2f}, PRNU Noise: {c.noise_mean:.2f})")
+    if c.canvas_matches_generator:
+        reasons.append("Canvas dimensions match standard generative model diffusion canvas")
+    return S.FULLY_AI_GENERATED, reasons
 
-    return state, ImageTaxonomyState.get_label(state), ImageTaxonomyState.get_description(state), reasons
+
+def _stage_enhanced_composite(c: _TaxonomyInputs, S: Any) -> _Outcome:
+    """3. AI-enhanced / composite: explicit enhancer, face-swap, composite label or inpainting evidence."""
+    composite_label = c.metadata.get("iptc_digital_source_type") == "compositeWithTrainedAlgorithmicMedia"
+    if not (c.is_ai_enhancer or c.is_face_swap or composite_label or c.is_inpainted):
+        return None
+    reasons: List[str] = []
+    if c.is_face_swap:
+        reasons.append(c.face_swap.get("details", "Neural face-swap and facial graft boundary detected"))
+        reasons.append("Discontinuity between facial airbrushing and sharp facial hair/accessories")
+    if c.is_inpainted:
+        reasons.append(c.inpainting.get("details", "Localized generative inpainting / composite detected"))
+    if c.is_ai_enhancer:
+        reasons.append(c.metadata.get("signature_details", "Neural image enhancement / upscaling software detected"))
+        if c.metadata.get("camera_make"):
+            reasons.append(f"Original base capture from camera hardware: {c.metadata.get('camera_make')} {c.metadata.get('camera_model') or ''}".strip())
+    return S.AI_ENHANCED_COMPOSITE, reasons
+
+
+def _stage_camera_base_heavily_altered(c: _TaxonomyInputs, S: Any) -> _Outcome:
+    """3b. Score-band fallback: genuine camera base with overwhelming synthetic pixel evidence but no explicit enhancer
+    signature (e.g. a generic AI upscaler/denoiser that leaves no metadata footprint)."""
+    if not (c.has_camera and not c.is_scanned and c.ai_pct >= 62.0):
+        return None
+    cam = f"{c.metadata.get('camera_make', '') or ''} {c.metadata.get('camera_model', '') or ''}".strip()
+    return S.AI_ENHANCED_COMPOSITE, [
+        f"Genuine camera hardware base capture ({cam})",
+        f"Overwhelming synthetic-leaning pixel evidence despite authentic base ({c.ai_pct:.1f}% AI) -- "
+        "consistent with an AI upscaler/denoiser/generative-fill pass that left no metadata footprint",
+    ]
+
+
+def _stage_pixel_evidence_synthesis(c: _TaxonomyInputs, S: Any) -> _Outcome:
+    """4. High-confidence generative synthesis from pixel evidence alone (no declaration, no camera)."""
+    if not ((c.ai_pct >= 58.0 or (c.ai_pct >= 48.0 and c.canvas_matches_generator)) and not c.has_camera and not c.is_scanned):
+        return None
+    has_real_noise = c.noise_mean > 1.85 and c.smoothness > 1.60
+    # Corroboration gate: with no camera / AI signature / C2PA marker (the common state of downloaded or re-shared images)
+    # the blended score alone is not enough; require >= 2 independently synthetic-leaning pixel signals.
+    lacks_corroboration = c.metadata_absent and c.synthetic_signal_count < 2
+    if has_real_noise or lacks_corroboration:
+        return None
+    reasons = [
+        f"High posterior probability of generative synthesis ({c.ai_pct:.1f}% AI)",
+        "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
+    ]
+    if c.canvas_matches_generator:
+        reasons.append("Canvas dimensions match standard generative model diffusion canvas")
+    if c.cutout.get("is_cutout"):
+        reasons.append("Synthetic character / asset rendered on isolated solid background canvas")
+    return S.FULLY_AI_GENERATED, reasons
+
+
+def _stage_screen_recapture(c: _TaxonomyInputs, S: Any) -> _Outcome:
+    """5. Authentic photograph of a physical display."""
+    if not (c.screen_recapture.get("is_screen_recapture") or c.recapture_flag):
+        return None
+    reasons = ["Optical camera recapture of physical display screen (CRT/LCD/OLED)"]
+    if c.screen_recapture.get("details"):
+        reasons.append(c.screen_recapture["details"])
+    if c.metadata.get("camera_make"):
+        reasons.append(f"Recaptured with hardware camera: {c.metadata.get('camera_make')} {c.metadata.get('camera_model') or ''}".strip())
+    return S.AUTHENTIC_RECAPTURED_SCREEN, reasons
+
+
+def _stage_graphic_edit(c: _TaxonomyInputs, S: Any) -> _Outcome:
+    """6. Conventionally edited / graphic-design photograph, or a synthetic cutout asset."""
+    is_cutout = bool(c.cutout.get("is_cutout"))
+    is_graphic_edit = bool(c.metadata.get("graphic_editor_signature_found"))
+    has_graphic_text = c.text_count >= 3
+    if not (is_cutout or is_graphic_edit or (has_graphic_text and not c.is_digital_art)):
+        return None
+    reasons: List[str] = []
+    # Only authentic if verified camera hardware OR genuine sensor noise >= 1.35 with low AI probability
+    if (c.has_camera or c.noise_mean >= 1.35 or c.real_pct >= 50.0) and c.ai_pct < 50.0:
+        if is_cutout:
+            reasons.append(c.cutout.get("details", "Background removal or studio solid background replacement detected"))
+        if is_graphic_edit:
+            reasons.append(c.metadata.get("signature_details", "Graphic layout composition software detected"))
+        if has_graphic_text:
+            reasons.append(f"Graphic design typography / text elements overlaid on image ({c.text_count} text blocks detected)")
+        reasons.append("Base subject contains authentic photographic sensor noise and natural physical geometry")
+        return S.AUTHENTIC_EDITED, reasons
+    if c.ai_pct >= 50.0 or c.noise_mean < 1.10:
+        reasons.append(c.cutout.get("details", "Isolated synthetic character / object on solid background canvas"))
+        reasons.append("Absence of authentic camera sensor PRNU noise across subject boundaries")
+        return S.FULLY_AI_GENERATED, reasons
+    return None
+
+
+def _stage_authentic_photograph(c: _TaxonomyInputs, S: Any) -> _Outcome:
+    """7. Default: authentic camera / phone photograph (or a scan of a physical print)."""
+    m = c.metadata
+    reasons: List[str] = []
+    if c.is_scanned:
+        reasons.append(c.scanned.get("details", "High-resolution flatbed scan of physical photographic print"))
+        reasons.append("Preserved physical halftone screening and authentic photographic print emulsion")
+        return S.AUTHENTIC_REAL_PHOTOGRAPH, reasons
+    if m.get("camera_make"):
+        reasons.append(f"Camera hardware EXIF tags: {m.get('camera_make')} {m.get('camera_model') or ''}".strip())
+    if m.get("has_optical_parameters"):
+        optics = []
+        if m.get("focal_length"):
+            optics.append(f"f={m['focal_length']}mm")
+        if m.get("f_number"):
+            optics.append(f"f/{m['f_number']}")
+        if m.get("iso"):
+            optics.append(f"ISO {m['iso']}")
+        if optics:
+            reasons.append(f"Physical lens optical parameters: {', '.join(optics)}")
+    reasons.append(f"Natural camera sensor Poisson shot noise (PRNU residual: {c.noise_mean:.2f})")
+    reasons.append("Natural optical depth of field, coherent lighting, and unmanipulated geometry")
+    return S.AUTHENTIC_REAL_PHOTOGRAPH, reasons
+
+
+_TAXONOMY_STAGES = (
+    _stage_screenshot,
+    _stage_declared_or_art_synthesis,
+    _stage_enhanced_composite,
+    _stage_camera_base_heavily_altered,
+    _stage_pixel_evidence_synthesis,
+    _stage_screen_recapture,
+    _stage_graphic_edit,
+    _stage_authentic_photograph,
+)

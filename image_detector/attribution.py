@@ -23,15 +23,12 @@ Remini, Nano Banana) are currently metadata-signature-only -- no resolution tabl
 calibration yet. Add real calibration for them only once backed by actual sample analysis.
 """
 from __future__ import annotations
-
 import logging
 from pathlib import Path
-import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
-import cv2
-import numpy as np
 from PIL import Image
+from core.shared_results import unknown_attribution
 
 logger = logging.getLogger("image_detector.attribution")
 
@@ -174,6 +171,139 @@ KNOWN_IMAGE_GENERATORS = {
 }
 
 
+_AUTHENTIC_PROVIDERS = {
+    "AUTHENTIC_REAL_PHOTOGRAPH": "Physical Optical Camera",
+    "AUTHENTIC_RECAPTURED_SCREEN": "Recaptured Physical Screen (Optical Camera)",
+    "AUTHENTIC_SCREENSHOT": "Authentic Device Screen",
+    "AUTHENTIC_EDITED": "Conventional Graphic Editor (Non-Generative)",
+}
+
+# (software needles, generator key, score weight, cue text). First match wins; "{sw}" is the lower-cased software string.
+_SOFTWARE_SIGNATURES = (
+    (("midjourney",), "midjourney", 1.2, "EXIF Software explicitly declares Midjourney ({sw})"),
+    (("dall-e", "dalle"), "openai_dalle3", 1.2, "Metadata declares DALL-E generation"),
+    (("stable diffusion", "automatic1111", "comfyui"), "stable_diffusion", 1.2, "Metadata declares Stable Diffusion pipeline ({sw})"),
+    (("ideogram",), "ideogram2", 1.5, "Metadata declares Ideogram engine ({sw})"),
+    (("recraft",), "recraft_v3", 1.5, "Metadata declares Recraft design engine ({sw})"),
+    (("magnific",), "magnific_ai", 1.5, "Metadata declares Magnific AI upscaler ({sw})"),
+    (("firefly",), "adobe_firefly", 1.5, "Metadata declares Adobe Firefly ({sw})"),
+    (("leonardo",), "leonardo_ai", 1.5, "Metadata declares Leonardo.Ai ({sw})"),
+    (("grok", "xai"), "grok_imagine", 1.5, "Metadata declares xAI Grok Imagine ({sw})"),
+    (("nano banana", "gemini 2.5 flash image"), "google_nano_banana", 1.5, "Metadata declares Google Gemini 2.5 Flash Image / Nano Banana ({sw})"),
+    (("seedream",), "bytedance_seedream", 1.5, "Metadata declares ByteDance Seedream ({sw})"),
+    (("hunyuan",), "tencent_hunyuan_image", 1.5, "Metadata declares Tencent Hunyuan Image ({sw})"),
+    (("qwen",), "alibaba_qwen_image", 1.5, "Metadata declares Alibaba Qwen-Image ({sw})"),
+    (("kolors",), "kuaishou_kolors", 1.5, "Metadata declares Kuaishou Kolors ({sw})"),
+    (("gpt-image", "gpt image"), "openai_gpt_image", 1.5, "Metadata declares OpenAI GPT Image 1 ({sw})"),
+    (("remini",), "remini", 1.5, "Metadata declares Remini enhancement ({sw})"),
+)
+
+_REGION_BY_KEY = {
+    **{k: "United States" for k in ("openai_dalle3", "midjourney", "google_imagen", "topaz_photo_ai",
+                                    "leonardo_ai", "grok_imagine", "google_nano_banana", "openai_gpt_image")},
+    "canva": "Australia",
+    "flux1": "Germany / EU",
+    "stable_diffusion": "United Kingdom",
+    "remini": "Italy / EU",
+    **{k: "China" for k in ("bytedance_seedream", "tencent_hunyuan_image", "alibaba_qwen_image", "kuaishou_kolors")},
+}
+
+
+def _authentic_attribution(tax_state: str) -> Dict[str, Any]:
+    return {
+        "attributed_model": "None (Authentic Capture)",
+        "model_key": "none_authentic",
+        "provider": _AUTHENTIC_PROVIDERS[tax_state],
+        "confidence": 0.0,
+        "attribution_confidence": 0.0,
+        "region_of_origin": "N/A",
+        "watermark_detected": False,
+        "cues": ["Authentic media capture - no generative foundation model detected."],
+        "top_candidates": [],
+    }
+
+
+def _score_declarations(
+    path: Path, forensic_data: Optional[Dict[str, Any]], meta: Dict[str, Any], scores: Dict[str, float], cues: List[str]
+) -> bool:
+    """Direct watermark / filename / embedded-label / software declarations. Returns whether a watermark was seen.
+
+    All of these are unauthenticated claims (filenames and metadata are trivially editable): they steer the
+    attribution guess, which is explanation only and is never scored as evidence of synthesis.
+    """
+    software = str(meta.get("software", "")).lower()
+    creator = str(meta.get("creator_tool", "")).lower()
+    fname = path.name.lower()
+    watermark = False
+
+    if forensic_data and forensic_data.get("watermark_detected"):
+        watermark = True
+        scores["google_imagen"] += 1.2
+        cues.append(f"Visual watermark detected: {forensic_data.get('watermark_details') or 'AI Watermark'}")
+    if "gemini" in fname:
+        scores["google_imagen"] += 0.80
+        cues.append(f"Filename signature indicates Google Gemini export: '{path.name}'")
+    if meta.get("photoshop_credit") == "Made with Google AI" or meta.get("iptc_digital_source_type") == "trainedAlgorithmicMedia":
+        scores["google_imagen"] += 1.5
+        cues.append("Embedded metadata declares: 'Made with Google AI' (trainedAlgorithmicMedia; unauthenticated label)")
+    if "topaz photo ai" in software or "topaz" in creator:
+        scores["topaz_photo_ai"] += 1.5
+        cues.append(f"Metadata confirms enhancement software: Topaz Photo AI ({meta.get('software') or meta.get('creator_tool')})")
+    if "canva" in software or "canva" in creator:
+        scores["canva"] += 1.5
+        cues.append(f"Metadata confirms Canva graphic design export: {meta.get('creator_tool') or 'Canva'}")
+    if forensic_data and forensic_data.get("face_swap_detected"):
+        scores["face_swap_pipeline"] += 1.2
+        cues.append(f"Forensic cues indicate neural face-swapping: {forensic_data.get('face_swap_details', 'Face graft artifacts')}")
+    if "face-swap" in fname or "faceswap" in fname:
+        scores["face_swap_pipeline"] += 0.90
+        cues.append(f"Filename explicitly declares face-swap pipeline: '{path.name}'")
+    return watermark
+
+
+def _score_software_header(provenance_data: Dict[str, Any], software: str, scores: Dict[str, float], cues: List[str]) -> None:
+    for needles, key, weight, cue in _SOFTWARE_SIGNATURES:
+        if any(n in software for n in needles):
+            scores[key] += weight
+            cues.append(cue.format(sw=software))
+            break
+    if provenance_data.get("c2pa_present"):
+        scores["openai_dalle3"] += 0.35
+        scores["google_imagen"] += 0.30
+        scores["adobe_firefly"] += 0.40
+        cues.append("C2PA Content Credentials markers present (unverified)")
+
+
+def _score_canonical_resolution(path: Path, scores: Dict[str, float], cues: List[str]) -> None:
+    try:
+        with Image.open(path) as img:
+            w, h = img.size
+        for gen_key, gen_info in KNOWN_IMAGE_GENERATORS.items():
+            for rw, rh in gen_info["resolutions"]:
+                if (w == rw and h == rh) or (w == rh and h == rw):
+                    scores[gen_key] += 0.25
+                    cues.append(f"Exact match with canonical native output resolution ({w}x{h}) of {gen_info['name']}")
+                    break
+    except Exception:
+        pass
+
+
+def _score_spectral(forensic_data: Dict[str, Any], scores: Dict[str, float], cues: List[str]) -> None:
+    decay = float(forensic_data.get("spectral_features", {}).get("spectral_decay_slope", 0.0))
+    if decay < 1.65:
+        scores["midjourney"] += 0.25
+        scores["flux1"] += 0.20
+    elif decay > 2.30:
+        scores["stable_diffusion"] += 0.20
+    if float(forensic_data.get("surface_smoothness", 0.0)) < 2.0:
+        scores["openai_dalle3"] += 0.15
+    if forensic_data.get("digital_art_detected") or (forensic_data.get("forensic_metrics") and forensic_data["forensic_metrics"].get("is_digital_art")):
+        scores["google_imagen"] += 0.40
+        scores["openai_dalle3"] += 0.20
+        scores["midjourney"] += 0.15
+        cues.append("Stylistic palette and saturation profile match generative digital artwork")
+
+
 class ImageModelAttributionEngine:
     """Attributes synthetic images to specific generative architectures and foundation models."""
 
@@ -193,167 +323,24 @@ class ImageModelAttributionEngine:
             return self._unknown_attribution("File not found")
 
         tax_state = forensic_data.get("taxonomy_state") if forensic_data else None
-        if tax_state in (
-            "AUTHENTIC_REAL_PHOTOGRAPH",
-            "AUTHENTIC_RECAPTURED_SCREEN",
-            "AUTHENTIC_SCREENSHOT",
-            "AUTHENTIC_EDITED",
-        ):
-            if tax_state == "AUTHENTIC_RECAPTURED_SCREEN":
-                provider = "Recaptured Physical Screen (Optical Camera)"
-            elif tax_state == "AUTHENTIC_SCREENSHOT":
-                provider = "Authentic Device Screen"
-            elif tax_state == "AUTHENTIC_EDITED":
-                provider = "Conventional Graphic Editor (Non-Generative)"
-            else:
-                provider = "Physical Optical Camera"
-
-            return {
-                "attributed_model": "None (Authentic Capture)",
-                "model_key": "none_authentic",
-                "provider": provider,
-                "confidence": 0.0,
-                "attribution_confidence": 0.0,
-                "region_of_origin": "N/A",
-                "watermark_detected": False,
-                "cues": ["Authentic media capture - no generative foundation model detected."],
-                "top_candidates": [],
-            }
+        if tax_state in _AUTHENTIC_PROVIDERS:
+            return _authentic_attribution(tax_state)
 
         scores: Dict[str, float] = {k: 0.05 for k in KNOWN_IMAGE_GENERATORS}
         cues: List[str] = []
-        watermark_detected = False
+        meta = provenance_data.get("metadata", {}) if provenance_data else {}
 
-        meta = (provenance_data.get("metadata", {}) if provenance_data else {})
-        software = str(meta.get("software", "")).lower()
-        creator = str(meta.get("creator_tool", "")).lower()
-        fname = path.name.lower()
-
-        # 0. Direct Watermark & Provenance Deterministic Overrides
-        if forensic_data and forensic_data.get("watermark_detected"):
-            watermark_detected = True
-            wm_type = forensic_data.get("watermark_details") or "AI Watermark"
-            scores["google_imagen"] += 1.2
-            cues.append(f"Visual watermark detected: {wm_type}")
-
-        if "gemini" in fname:
-            scores["google_imagen"] += 0.80
-            cues.append(f"Filename signature indicates Google Gemini export: '{path.name}'")
-
-        if meta.get("photoshop_credit") == "Made with Google AI" or meta.get("iptc_digital_source_type") == "trainedAlgorithmicMedia":
-            scores["google_imagen"] += 1.5
-            cues.append("Cryptographic metadata certifies: 'Made with Google AI' (trainedAlgorithmicMedia)")
-
-        if "topaz photo ai" in software or "topaz" in creator:
-            scores["topaz_photo_ai"] += 1.5
-            cues.append(f"Metadata confirms enhancement software: Topaz Photo AI ({meta.get('software') or meta.get('creator_tool')})")
-
-        if "canva" in software or "canva" in creator:
-            scores["canva"] += 1.5
-            cues.append(f"Metadata confirms Canva graphic design export: {meta.get('creator_tool') or 'Canva'}")
-
-        if forensic_data and forensic_data.get("face_swap_detected"):
-            scores["face_swap_pipeline"] += 1.2
-            cues.append(f"Forensic cues indicate neural face-swapping: {forensic_data.get('face_swap_details', 'Face graft artifacts')}")
-
-        if "face-swap" in fname or "faceswap" in fname:
-            scores["face_swap_pipeline"] += 0.90
-            cues.append(f"Filename explicitly declares face-swap pipeline: '{path.name}'")
-
-        # 1. Standard Metadata & Software Headers
+        watermark_detected = _score_declarations(path, forensic_data, meta, scores, cues)
         if provenance_data:
-            if "midjourney" in software:
-                scores["midjourney"] += 1.2
-                cues.append(f"EXIF Software explicitly declares Midjourney ({software})")
-            elif "dall-e" in software or "dalle" in software:
-                scores["openai_dalle3"] += 1.2
-                cues.append("Metadata declares DALL-E generation")
-            elif "stable diffusion" in software or "automatic1111" in software or "comfyui" in software:
-                scores["stable_diffusion"] += 1.2
-                cues.append(f"Metadata declares Stable Diffusion pipeline ({software})")
-            elif "ideogram" in software:
-                scores["ideogram2"] += 1.5
-                cues.append(f"Metadata declares Ideogram engine ({software})")
-            elif "recraft" in software:
-                scores["recraft_v3"] += 1.5
-                cues.append(f"Metadata declares Recraft design engine ({software})")
-            elif "magnific" in software:
-                scores["magnific_ai"] += 1.5
-                cues.append(f"Metadata declares Magnific AI upscaler ({software})")
-            elif "firefly" in software:
-                scores["adobe_firefly"] += 1.5
-                cues.append(f"Metadata declares Adobe Firefly ({software})")
-            elif "leonardo" in software:
-                scores["leonardo_ai"] += 1.5
-                cues.append(f"Metadata declares Leonardo.Ai ({software})")
-            elif "grok" in software or "xai" in software:
-                scores["grok_imagine"] += 1.5
-                cues.append(f"Metadata declares xAI Grok Imagine ({software})")
-            elif "nano banana" in software or "gemini 2.5 flash image" in software:
-                scores["google_nano_banana"] += 1.5
-                cues.append(f"Metadata declares Google Gemini 2.5 Flash Image / Nano Banana ({software})")
-            elif "seedream" in software:
-                scores["bytedance_seedream"] += 1.5
-                cues.append(f"Metadata declares ByteDance Seedream ({software})")
-            elif "hunyuan" in software:
-                scores["tencent_hunyuan_image"] += 1.5
-                cues.append(f"Metadata declares Tencent Hunyuan Image ({software})")
-            elif "qwen" in software:
-                scores["alibaba_qwen_image"] += 1.5
-                cues.append(f"Metadata declares Alibaba Qwen-Image ({software})")
-            elif "kolors" in software:
-                scores["kuaishou_kolors"] += 1.5
-                cues.append(f"Metadata declares Kuaishou Kolors ({software})")
-            elif "gpt-image" in software or "gpt image" in software:
-                scores["openai_gpt_image"] += 1.5
-                cues.append(f"Metadata declares OpenAI GPT Image 1 ({software})")
-            elif "remini" in software:
-                scores["remini"] += 1.5
-                cues.append(f"Metadata declares Remini enhancement ({software})")
-
-            if provenance_data.get("c2pa_present"):
-                scores["openai_dalle3"] += 0.35
-                scores["google_imagen"] += 0.30
-                scores["adobe_firefly"] += 0.40
-                cues.append("C2PA Content Credentials signature detected")
-
-        # 2. Canonical Resolution Matching
-        try:
-            with Image.open(path) as img:
-                w, h = img.size
-                for gen_key, gen_info in KNOWN_IMAGE_GENERATORS.items():
-                    for rw, rh in gen_info["resolutions"]:
-                        if (w == rw and h == rh) or (w == rh and h == rw):
-                            scores[gen_key] += 0.25
-                            cues.append(f"Exact match with canonical native output resolution ({w}x{h}) of {gen_info['name']}")
-                            break
-        except Exception:
-            pass
-
-        # 3. Spectral decay slope matching
+            _score_software_header(provenance_data, str(meta.get("software", "")).lower(), scores, cues)
+        _score_canonical_resolution(path, scores, cues)
         if forensic_data:
-            spectral = forensic_data.get("spectral_features", {})
-            decay = float(spectral.get("spectral_decay_slope", 0.0))
-            if decay < 1.65:
-                scores["midjourney"] += 0.25
-                scores["flux1"] += 0.20
-            elif decay > 2.30:
-                scores["stable_diffusion"] += 0.20
+            _score_spectral(forensic_data, scores, cues)
 
-            smooth = float(forensic_data.get("surface_smoothness", 0.0))
-            if smooth < 2.0:
-                scores["openai_dalle3"] += 0.15
-
-            if forensic_data.get("digital_art_detected") or (forensic_data.get("forensic_metrics") and forensic_data["forensic_metrics"].get("is_digital_art")):
-                scores["google_imagen"] += 0.40
-                scores["openai_dalle3"] += 0.20
-                scores["midjourney"] += 0.15
-                cues.append("Stylistic palette and saturation profile match generative digital artwork")
-
-        # Normalize candidate probabilities
         total = sum(scores.values())
         norm_scores = {k: v / total for k, v in scores.items()} if total > 0 else scores
         top_candidates = sorted(norm_scores.items(), key=lambda x: x[1], reverse=True)
+        top3 = [{"model": KNOWN_IMAGE_GENERATORS[k]["name"], "confidence": round(s, 2)} for k, s in top_candidates[:3]]
 
         best_key, best_score = top_candidates[0]
         if best_score < 0.25:
@@ -362,36 +349,25 @@ class ImageModelAttributionEngine:
                 "model_key": "unknown",
                 "confidence": round(best_score, 2),
                 "cues": cues or ["No distinctive generator-specific signatures isolated."],
-                "top_candidates": [{"model": KNOWN_IMAGE_GENERATORS[k]["name"], "confidence": round(s, 2)} for k, s in top_candidates[:3]],
+                "top_candidates": top3,
             }
 
         best_info = KNOWN_IMAGE_GENERATORS[best_key]
         conf = round(best_score, 2)
-        region = (
-            "United States" if best_key in (
-                "openai_dalle3", "midjourney", "google_imagen", "topaz_photo_ai",
-                "leonardo_ai", "grok_imagine", "google_nano_banana", "openai_gpt_image",
-            )
-            else "Australia" if best_key == "canva"
-            else "Germany / EU" if best_key == "flux1"
-            else "United Kingdom" if best_key == "stable_diffusion"
-            else "Italy / EU" if best_key == "remini"
-            else "China" if best_key in (
-                "bytedance_seedream", "tencent_hunyuan_image", "alibaba_qwen_image", "kuaishou_kolors",
-            )
-            else "Global / Open-Source"
-        )
         return {
             "attributed_model": best_info["name"],
             "model_key": best_key,
             "provider": best_info["provider"],
             "confidence": conf,
             "attribution_confidence": conf,
-            "region_of_origin": region,
+            "region_of_origin": _REGION_BY_KEY.get(best_key, "Global / Open-Source"),
             "watermark_detected": watermark_detected,
             "cues": cues or [f"Aesthetic, metadata, and spectral fingerprint matches {best_info['name']}"],
-            "top_candidates": [{"model": KNOWN_IMAGE_GENERATORS[k]["name"], "confidence": round(s, 2)} for k, s in top_candidates[:3]],
+            "top_candidates": top3,
         }
+
+    def _unknown_attribution(self, reason: str) -> Dict[str, Any]:
+        return unknown_attribution(reason)
 
     def attribute_media(
         self,
@@ -410,13 +386,4 @@ class ImageModelAttributionEngine:
         )
 
     def _unknown_attribution(self, reason: str) -> Dict[str, Any]:
-        return {
-            "attributed_model": "Unknown",
-            "model_key": "unknown",
-            "confidence": 0.0,
-            "attribution_confidence": 0.0,
-            "region_of_origin": "Unknown",
-            "watermark_detected": False,
-            "cues": [reason],
-            "top_candidates": [],
-        }
+        return unknown_attribution(reason)

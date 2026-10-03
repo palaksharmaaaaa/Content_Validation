@@ -14,11 +14,10 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 import cv2
 import numpy as np
-from PIL import Image
 
 from image_detector.face import FaceDeepfakeDetector
 
@@ -122,33 +121,8 @@ class ImageContentAnalyzer:
         # 2. Face & Human / Character Detection Anchored to Persons
         face_info = self.face_detector.analyze_faces(sample_bgr, person_boxes=person_boxes)
         faces_detected = face_info["faces_detected"]
-        human_count = len(person_boxes)
 
-        single_character_detected = False
-        if human_count == 0:
-            if faces_detected > 0:
-                human_count = faces_detected
-            else:
-                # Check for isolated upright character / figure silhouette (e.g. masked character, hooded figure, anime character)
-                gray_s = cv2.cvtColor(sample_bgr, cv2.COLOR_BGR2GRAY)
-                sh, sw = gray_s.shape[:2]
-                corners = [gray_s[:25, :25], gray_s[:25, -25:], gray_s[-25:, :25], gray_s[-25:, -25:]]
-                if sum(float(np.std(c)) < 8.0 for c in corners) >= 3:
-                    bg_val = float(np.median([float(np.mean(c)) for c in corners]))
-                    diff_bg = np.abs(gray_s.astype(float) - bg_val)
-                    fg_mask = (diff_bg > 18).astype(np.uint8)
-                    kernel_bg = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))
-                    fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, kernel_bg)
-                    cnts_bg, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                    major_bodies = [c for c in cnts_bg if cv2.contourArea(c) > (sh * sw * 0.08)]
-                    if len(major_bodies) == 1:
-                        bx, by, bw, bh = cv2.boundingRect(major_bodies[0])
-                        if bh > bw * 0.8:  # Upright character / figure
-                            human_count = 1
-                            single_character_detected = True
-        elif human_count > 0 and faces_detected > human_count:
-            # Physical invariant: each person has at most 1 face
-            faces_detected = human_count
+        human_count, faces_detected, single_character_detected = self._count_humans(sample_bgr, person_boxes, faces_detected)
 
         # 3. Lighting & Daytime Analysis
         lighting_info = self._analyze_lighting(sample_bgr)
@@ -159,33 +133,26 @@ class ImageContentAnalyzer:
         # 5. Environment & Surroundings
         environment = self._infer_environment(sample_bgr, detected_items, detected_vehicles, detected_animals)
 
-        # Detect text regions via morphological gradient
-        text_regions_count = 0
-        try:
-            gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
-            gh, gw = gray.shape[:2]
-            if max(gh, gw) > 800:
-                sc = 800.0 / max(gh, gw)
-                s_gray = cv2.resize(gray, (int(gw * sc), int(gh * sc)), interpolation=cv2.INTER_AREA)
-            else:
-                s_gray = gray
-            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (9, 1))
-            m_grad = cv2.morphologyEx(s_gray, cv2.MORPH_GRADIENT, kernel)
-            _, bw = cv2.threshold(m_grad, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-            close_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (21, 3))
-            connected = cv2.morphologyEx(bw, cv2.MORPH_CLOSE, close_kernel)
-            cnts, _ = cv2.findContours(connected, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            for c in cnts:
-                x, y, cw, ch = cv2.boundingRect(c)
-                aspect = float(cw) / max(1.0, float(ch))
-                if 2.0 <= aspect <= 30.0 and 120 <= (cw * ch) <= 50000:
-                    text_regions_count += 1
-        except Exception:
-            text_regions_count = 0
+        text_regions_count = self._count_text_regions(img_bgr)
 
         # 6. Depiction & Purpose
         purpose = self._infer_purpose(human_count, h, w, detected_items, text_regions_count=text_regions_count, is_character=single_character_detected)
 
+        return self._assemble_result(
+            human_count, faces_detected, single_character_detected, person_boxes, face_info,
+            (detected_animals, animal_details), (detected_vehicles, vehicle_details), (detected_items, item_details),
+            text_regions_count, environment, lighting_info, tone_info, purpose,
+        )
+
+    @staticmethod
+    def _assemble_result(
+        human_count, faces_detected, single_character_detected, person_boxes, face_info,
+        animals, vehicles, items, text_regions_count, environment, lighting_info, tone_info, purpose,
+    ) -> Dict[str, Any]:
+        """Builds the nested content-inventory dict (with the flat/legacy aliases consumers read)."""
+        detected_animals, animal_details = animals
+        detected_vehicles, vehicle_details = vehicles
+        detected_items, item_details = items
         entities_dict = {
             "humans": {
                 "count": human_count,
@@ -275,6 +242,61 @@ class ImageContentAnalyzer:
             "faces_count": faces_detected,
             "scene_type": env_dict["setting"],
         }
+
+    @staticmethod
+    def _count_humans(sample_bgr: np.ndarray, person_boxes: list, faces_detected: int) -> Tuple[int, int, bool]:
+        """Returns (human_count, faces_detected, single_character_detected) reconciling person boxes with faces."""
+        human_count = len(person_boxes)
+        single_character_detected = False
+        if human_count == 0:
+            if faces_detected > 0:
+                human_count = faces_detected
+            else:
+                # Isolated upright character / figure silhouette (masked character, hooded figure, anime character)
+                gray_s = cv2.cvtColor(sample_bgr, cv2.COLOR_BGR2GRAY)
+                sh, sw = gray_s.shape[:2]
+                corners = [gray_s[:25, :25], gray_s[:25, -25:], gray_s[-25:, :25], gray_s[-25:, -25:]]
+                if sum(float(np.std(c)) < 8.0 for c in corners) >= 3:
+                    bg_val = float(np.median([float(np.mean(c)) for c in corners]))
+                    fg_mask = (np.abs(gray_s.astype(float) - bg_val) > 18).astype(np.uint8)
+                    kernel_bg = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))
+                    fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, kernel_bg)
+                    cnts_bg, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                    major_bodies = [c for c in cnts_bg if cv2.contourArea(c) > (sh * sw * 0.08)]
+                    if len(major_bodies) == 1:
+                        _bx, _by, bw, bh = cv2.boundingRect(major_bodies[0])
+                        if bh > bw * 0.8:  # Upright character / figure
+                            human_count = 1
+                            single_character_detected = True
+        elif faces_detected > human_count:
+            faces_detected = human_count  # Physical invariant: each person has at most 1 face
+        return human_count, faces_detected, single_character_detected
+
+    @staticmethod
+    def _count_text_regions(img_bgr: np.ndarray) -> int:
+        """Counts text-like regions via a morphological-gradient / Otsu / closing pipeline."""
+        try:
+            gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+            gh, gw = gray.shape[:2]
+            if max(gh, gw) > 800:
+                sc = 800.0 / max(gh, gw)
+                s_gray = cv2.resize(gray, (int(gw * sc), int(gh * sc)), interpolation=cv2.INTER_AREA)
+            else:
+                s_gray = gray
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (9, 1))
+            m_grad = cv2.morphologyEx(s_gray, cv2.MORPH_GRADIENT, kernel)
+            _, bw = cv2.threshold(m_grad, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+            connected = cv2.morphologyEx(bw, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (21, 3)))
+            cnts, _ = cv2.findContours(connected, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            count = 0
+            for c in cnts:
+                _x, _y, cw, ch = cv2.boundingRect(c)
+                aspect = float(cw) / max(1.0, float(ch))
+                if 2.0 <= aspect <= 30.0 and 120 <= (cw * ch) <= 50000:
+                    count += 1
+            return count
+        except Exception:
+            return 0
 
     def _detect_objects(
         self, img_bgr: np.ndarray

@@ -6,8 +6,7 @@ Completely self-contained with zero outside dependencies.
 from __future__ import annotations
 
 import logging
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import cv2
 import numpy as np
@@ -20,8 +19,17 @@ logger = logging.getLogger("video_detector.content")
 class VideoContentAnalyzer:
     """Scene and content intelligence analyzer for video frames."""
 
-    def __init__(self):
+    def __init__(self, image_content_analyzer: Optional[Any] = None):
+        """``image_content_analyzer``: any object with ``analyze_image_content(ndarray)``. When supplied (the services
+        layer injects the image package's analyzer) the full scene inventory of a representative keyframe is used;
+        otherwise a light built-in heuristic keeps this package self-contained."""
         self.face_detector = VideoFaceDeepfakeDetector()
+        self.image_content_analyzer = image_content_analyzer
+
+    @staticmethod
+    def representative_frame(frames_bgr: List[np.ndarray]) -> np.ndarray:
+        """The keyframe ~15% into the sampled timeline (past fade-ins, before late scene changes)."""
+        return frames_bgr[min(len(frames_bgr) - 1, int(len(frames_bgr) * 0.15))]
 
     def analyze_video_frames(self, frames_bgr: List[np.ndarray]) -> Dict[str, Any]:
         """Runs content, environmental, and scene analysis across sampled video keyframes."""
@@ -32,6 +40,8 @@ class VideoContentAnalyzer:
                 "lighting_and_daytime": {"daytime": "Unknown"},
                 "purpose_and_depiction": {"primary_genre": "Unknown"},
             }
+        if self.image_content_analyzer is not None:
+            return self.image_content_analyzer.analyze_image_content(self.representative_frame(frames_bgr))
 
         # 1. Face analysis across frames
         face_info = self.face_detector.analyze_video_frames(frames_bgr)

@@ -50,12 +50,8 @@ def _downsample_if_needed(img: np.ndarray, max_dim: int = 1536) -> np.ndarray:
     return img
 
 
-def extract_image_metadata(image_path: str | Path) -> Dict[str, Any]:
-    """
-    Extracts standard EXIF metadata, optical camera parameters, Adobe XMP packets,
-    IPTC digital source types, and classifies generator, editor, and screenshot signatures.
-    """
-    metadata_info = {
+def _blank_metadata_info() -> Dict[str, Any]:
+    return {
         "has_exif": False,
         "camera_make": None,
         "camera_model": None,
@@ -80,118 +76,123 @@ def extract_image_metadata(image_path: str | Path) -> Dict[str, Any]:
         "xmp_summary": {},
     }
 
+
+def _read_exif_fields(img: Image.Image, info: Dict[str, Any]) -> None:
+    """Standard EXIF plus the Exif sub-IFD (optical parameters) into ``info``."""
+    exif = img.getexif()
+    if not exif:
+        return
+    info["has_exif"] = True
+    tags = info["raw_tags"]
+    for tag_id, value in exif.items():
+        tags[TAGS.get(tag_id, str(tag_id))] = str(value)[:160]
+
+    info["camera_make"] = tags.get("Make")
+    info["camera_model"] = tags.get("Model")
+    info["software"] = tags.get("Software")
+    info["date_time"] = tags.get("DateTime")
+
     try:
-        with Image.open(image_path) as img:
-            # 1. Standard EXIF extraction
-            exif = img.getexif()
-            if exif:
-                metadata_info["has_exif"] = True
-                for tag_id, value in exif.items():
-                    tag_name = TAGS.get(tag_id, str(tag_id))
-                    metadata_info["raw_tags"][tag_name] = str(value)[:160]
-
-                metadata_info["camera_make"] = metadata_info["raw_tags"].get("Make")
-                metadata_info["camera_model"] = metadata_info["raw_tags"].get("Model")
-                metadata_info["software"] = metadata_info["raw_tags"].get("Software")
-                metadata_info["date_time"] = metadata_info["raw_tags"].get("DateTime")
-
-                # Check Sub-IFD for optical parameters (FNumber, FocalLength, ExposureTime, ISOSpeedRatings)
-                try:
-                    if hasattr(exif, "get_ifd"):
-                        sub_ifd = exif.get_ifd(0x8769)
-                        if sub_ifd:
-                            for sub_id, sub_val in sub_ifd.items():
-                                sub_name = TAGS.get(sub_id, str(sub_id))
-                                metadata_info["raw_tags"][sub_name] = str(sub_val)[:160]
-                except Exception:
-                    pass
-
-                metadata_info["focal_length"] = metadata_info["raw_tags"].get("FocalLength")
-                metadata_info["f_number"] = metadata_info["raw_tags"].get("FNumber")
-                metadata_info["exposure_time"] = metadata_info["raw_tags"].get("ExposureTime")
-                metadata_info["iso"] = metadata_info["raw_tags"].get("ISOSpeedRatings") or metadata_info["raw_tags"].get("PhotographicSensitivity")
-                metadata_info["lens_model"] = metadata_info["raw_tags"].get("LensModel")
-
-                if any([metadata_info["focal_length"], metadata_info["f_number"], metadata_info["exposure_time"], metadata_info["iso"]]):
-                    metadata_info["has_optical_parameters"] = True
-
-            # 2. XMP & IPTC extraction from image info
-            xmp_raw = img.info.get("XML:com.adobe.xmp") or img.info.get("xmp")
-            xmp_str = ""
-            if xmp_raw:
-                if isinstance(xmp_raw, bytes):
-                    xmp_str = xmp_raw.decode("utf-8", errors="ignore")
-                else:
-                    xmp_str = str(xmp_raw)
-
-            # Check creation time in info
-            if "Creation Time" in img.info:
-                metadata_info["xmp_summary"]["creation_time"] = str(img.info["Creation Time"])
-
-            # Parse XMP key tags
-            if xmp_str:
-                if "trainedAlgorithmicMedia" in xmp_str:
-                    metadata_info["iptc_digital_source_type"] = "trainedAlgorithmicMedia"
-                    metadata_info["ai_signature_found"] = True
-                    metadata_info["signature_details"] = "IPTC DigitalSourceType: trainedAlgorithmicMedia (Algorithmic / AI Generated)"
-                elif "compositeWithTrainedAlgorithmicMedia" in xmp_str:
-                    metadata_info["iptc_digital_source_type"] = "compositeWithTrainedAlgorithmicMedia"
-                    metadata_info["ai_enhancer_signature_found"] = True
-                    metadata_info["signature_details"] = "IPTC DigitalSourceType: compositeWithTrainedAlgorithmicMedia (AI Composite/Enhanced)"
-
-                if "Made with Google AI" in xmp_str:
-                    metadata_info["photoshop_credit"] = "Made with Google AI"
-                    metadata_info["ai_signature_found"] = True
-                    metadata_info["signature_details"] = "Photoshop Credit: Made with Google AI (Google Gemini / Imagen)"
-
-                if "Topaz Photo AI" in xmp_str:
-                    metadata_info["creator_tool"] = "Topaz Photo AI"
-                    metadata_info["ai_enhancer_signature_found"] = True
-                    metadata_info["signature_details"] = "Processed with Topaz Photo AI (Neural Restoration / Denoising / Upscaling)"
-
-                if "Canva" in xmp_str or "Attrib:Ads" in xmp_str:
-                    metadata_info["creator_tool"] = "Canva"
-                    metadata_info["graphic_editor_signature_found"] = True
-                    metadata_info["signature_details"] = "Graphic layout designed and exported via Canva"
-
-            # Check software tag in EXIF for known tools
-            software_val = str(metadata_info.get("software") or "").lower()
-            if "topaz photo ai" in software_val:
-                metadata_info["ai_enhancer_signature_found"] = True
-                metadata_info["creator_tool"] = "Topaz Photo AI"
-                metadata_info["signature_details"] = f"EXIF Software: {metadata_info['software']}"
-            elif "canva" in software_val:
-                metadata_info["graphic_editor_signature_found"] = True
-                metadata_info["creator_tool"] = "Canva"
-                metadata_info["signature_details"] = "EXIF Software: Canva"
-            elif any(s in software_val for s in ("photoshop", "gimp", "lightroom", "snapseed", "picsart", "pixlr")):
-                metadata_info["graphic_editor_signature_found"] = True
-                metadata_info["creator_tool"] = metadata_info["software"]
-
-            for sc_sig in KNOWN_SCREENSHOT_SOFTWARE_SIGNATURES:
-                if sc_sig in software_val:
-                    metadata_info["screenshot_software_found"] = True
-                    metadata_info["screenshot_software_name"] = metadata_info["software"]
-                    break
-
-            # General signature search across tags
-            all_tag_strings = " ".join(
-                str(v).lower() for v in metadata_info["raw_tags"].values()
-            ) + " " + xmp_str.lower()
-
-            if not metadata_info["ai_signature_found"]:
-                for sig in KNOWN_AI_SOFTWARE_SIGNATURES:
-                    if sig in all_tag_strings:
-                        metadata_info["ai_signature_found"] = True
-                        metadata_info["signature_details"] = (
-                            f"Detected AI generator footprint: '{sig}' in image metadata."
-                        )
-                        break
-
+        if hasattr(exif, "get_ifd"):
+            for sub_id, sub_val in (exif.get_ifd(0x8769) or {}).items():
+                tags[TAGS.get(sub_id, str(sub_id))] = str(sub_val)[:160]
     except Exception:
         pass
 
-    return metadata_info
+    info["focal_length"] = tags.get("FocalLength")
+    info["f_number"] = tags.get("FNumber")
+    info["exposure_time"] = tags.get("ExposureTime")
+    info["iso"] = tags.get("ISOSpeedRatings") or tags.get("PhotographicSensitivity")
+    info["lens_model"] = tags.get("LensModel")
+    if any([info["focal_length"], info["f_number"], info["exposure_time"], info["iso"]]):
+        info["has_optical_parameters"] = True
+
+
+def _xmp_string(img: Image.Image, info: Dict[str, Any]) -> str:
+    """The embedded XMP packet as text ("" if none); also records a PNG creation time."""
+    xmp_raw = img.info.get("XML:com.adobe.xmp") or img.info.get("xmp")
+    if "Creation Time" in img.info:
+        info["xmp_summary"]["creation_time"] = str(img.info["Creation Time"])
+    if not xmp_raw:
+        return ""
+    return xmp_raw.decode("utf-8", errors="ignore") if isinstance(xmp_raw, bytes) else str(xmp_raw)
+
+
+def _apply_xmp_signatures(xmp_str: str, info: Dict[str, Any]) -> None:
+    """IPTC DigitalSourceType / credit / tool markers. All are unauthenticated self-declarations."""
+    if "trainedAlgorithmicMedia" in xmp_str:
+        info["iptc_digital_source_type"] = "trainedAlgorithmicMedia"
+        info["ai_signature_found"] = True
+        info["signature_details"] = "IPTC DigitalSourceType: trainedAlgorithmicMedia (Algorithmic / AI Generated)"
+    elif "compositeWithTrainedAlgorithmicMedia" in xmp_str:
+        info["iptc_digital_source_type"] = "compositeWithTrainedAlgorithmicMedia"
+        info["ai_enhancer_signature_found"] = True
+        info["signature_details"] = "IPTC DigitalSourceType: compositeWithTrainedAlgorithmicMedia (AI Composite/Enhanced)"
+    if "Made with Google AI" in xmp_str:
+        info["photoshop_credit"] = "Made with Google AI"
+        info["ai_signature_found"] = True
+        info["signature_details"] = "Photoshop Credit: Made with Google AI (Google Gemini / Imagen)"
+    if "Topaz Photo AI" in xmp_str:
+        info["creator_tool"] = "Topaz Photo AI"
+        info["ai_enhancer_signature_found"] = True
+        info["signature_details"] = "Processed with Topaz Photo AI (Neural Restoration / Denoising / Upscaling)"
+    if "Canva" in xmp_str or "Attrib:Ads" in xmp_str:
+        info["creator_tool"] = "Canva"
+        info["graphic_editor_signature_found"] = True
+        info["signature_details"] = "Graphic layout designed and exported via Canva"
+
+
+def _apply_software_signatures(info: Dict[str, Any]) -> None:
+    """Editor / enhancer / screenshot-tool classification from the EXIF Software tag."""
+    software_val = str(info.get("software") or "").lower()
+    if "topaz photo ai" in software_val:
+        info["ai_enhancer_signature_found"] = True
+        info["creator_tool"] = "Topaz Photo AI"
+        info["signature_details"] = f"EXIF Software: {info['software']}"
+    elif "canva" in software_val:
+        info["graphic_editor_signature_found"] = True
+        info["creator_tool"] = "Canva"
+        info["signature_details"] = "EXIF Software: Canva"
+    elif any(s in software_val for s in ("photoshop", "gimp", "lightroom", "snapseed", "picsart", "pixlr")):
+        info["graphic_editor_signature_found"] = True
+        info["creator_tool"] = info["software"]
+    for sc_sig in KNOWN_SCREENSHOT_SOFTWARE_SIGNATURES:
+        if sc_sig in software_val:
+            info["screenshot_software_found"] = True
+            info["screenshot_software_name"] = info["software"]
+            break
+
+
+def _apply_generic_ai_signature(xmp_str: str, info: Dict[str, Any]) -> None:
+    """Substring search of the known-generator list across every tag value and the XMP packet."""
+    if info["ai_signature_found"]:
+        return
+    haystack = " ".join(str(v).lower() for v in info["raw_tags"].values()) + " " + xmp_str.lower()
+    for sig in KNOWN_AI_SOFTWARE_SIGNATURES:
+        if sig in haystack:
+            info["ai_signature_found"] = True
+            info["signature_details"] = f"Detected AI generator footprint: '{sig}' in image metadata."
+            break
+
+
+def extract_image_metadata(image_path: str | Path) -> Dict[str, Any]:
+    """
+    Extracts standard EXIF metadata, optical camera parameters, Adobe XMP packets,
+    IPTC digital source types, and classifies generator, editor, and screenshot signatures.
+    All of it is unauthenticated, forgeable metadata.
+    """
+    info = _blank_metadata_info()
+    try:
+        with Image.open(image_path) as img:
+            _read_exif_fields(img, info)
+            xmp_str = _xmp_string(img, info)
+            if xmp_str:
+                _apply_xmp_signatures(xmp_str, info)
+            _apply_software_signatures(info)
+            _apply_generic_ai_signature(xmp_str, info)
+    except Exception:
+        pass
+    return info
 
 
 def detect_ai_watermark(image_path: str | Path, img_bgr: np.ndarray) -> Dict[str, Any]:
@@ -367,6 +368,52 @@ def detect_face_swap_artifacts(image_path: str | Path, img_bgr: np.ndarray) -> D
     }
 
 
+def _opaque_saturation(image_path: str | Path, hsv_sat: np.ndarray) -> np.ndarray:
+    """Saturation channel, restricted to opaque pixels for RGBA files (transparent cutouts must not dilute it)."""
+    try:
+        with Image.open(image_path) as im:
+            if im.mode == "RGBA":
+                opaque_mask = np.array(im.split()[-1]) > 30
+                if np.sum(opaque_mask) > 100:
+                    return hsv_sat[opaque_mask]
+    except Exception:
+        pass
+    return hsv_sat
+
+
+def _art_visual_medium(is_art: bool, is_ink_art: bool, flat_noise: float) -> str:
+    if not is_art:
+        return "Photographic Capture"
+    if is_ink_art or flat_noise < 0.25:
+        return "Cel-Shaded / Ink Cross-Hatched Digital Art"
+    if flat_noise < 0.45:
+        return "Flat Vector / Cel-Shaded Digital Art"
+    if flat_noise > 1.2:
+        return "Oil / Watercolor / Impasto Painting Texture"
+    return "Digital 3D CGI / AI Neural Painting"
+
+
+def _art_confidence_and_details(
+    is_ink_art: bool, visual_medium: str, mean_sat: float, high_sat_pct: float,
+    flat_noise: float, dark_edge_pct: float, q_colors: int,
+) -> Tuple[float, str]:
+    if is_ink_art:
+        edge_score = min(1.0, dark_edge_pct / 1.5)
+        noise_score = min(1.0, max(0.0, (0.40 - flat_noise) / 0.30))
+        confidence = float(np.clip(edge_score * 0.5 + noise_score * 0.5, 0.65, 0.96))
+        return confidence, (
+            f"AI digital art / stylized illustration detected ({visual_medium}) "
+            f"(dark ink contours: {dark_edge_pct:.2f}%, flat-region noise: {flat_noise:.2f}, color clusters: {q_colors})"
+        )
+    sat_score = min(1.0, (mean_sat - 110.0) / 70.0)
+    pct_score = min(1.0, (high_sat_pct - 40.0) / 50.0)
+    confidence = float(np.clip(sat_score * 0.6 + pct_score * 0.4, 0.50, 0.98))
+    return confidence, (
+        f"AI digital art / synthetic painting style detected ({visual_medium}) "
+        f"(mean saturation: {mean_sat:.1f}, high-sat pixels: {high_sat_pct:.1f}%, flat-region noise: {flat_noise:.2f})"
+    )
+
+
 def detect_digital_art_and_painting(
     image_path: str | Path,
     img_bgr: Optional[np.ndarray] = None,
@@ -397,90 +444,38 @@ def detect_digital_art_and_painting(
             "details": None,
         }
 
-    # Handle transparent PNG / cutout if present
-    hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
-    sat = hsv[:, :, 1]
-
-    # If RGBA, exclude transparent background from saturation statistics
-    try:
-        with Image.open(image_path) as im:
-            if im.mode == "RGBA":
-                alpha = np.array(im.split()[-1])
-                opaque_mask = alpha > 30
-                if np.sum(opaque_mask) > 100:
-                    sat = sat[opaque_mask]
-    except Exception:
-        pass
-
+    sat = _opaque_saturation(image_path, cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)[:, :, 1])
     mean_sat = float(np.mean(sat))
     high_sat_pct = float(np.sum(sat > 120) / max(1, sat.size) * 100.0)
 
-    # Grayscale flat noise check: homogeneous regions separate from edges
-    gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
-    sample = _downsample_if_needed(gray, max_dim=1536)
-    blurred = cv2.medianBlur(sample, 3)
-    diff = cv2.absdiff(sample, blurred).astype(np.float32)
+    # Flat-region sensor noise: homogeneous regions separate from edges
+    sample = _downsample_if_needed(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY), max_dim=1536)
+    diff = cv2.absdiff(sample, cv2.medianBlur(sample, 3)).astype(np.float32)
     grad = cv2.magnitude(cv2.Sobel(sample, cv2.CV_32F, 1, 0), cv2.Sobel(sample, cv2.CV_32F, 0, 1))
     flat_mask = grad < 15.0
     flat_noise = float(np.mean(diff[flat_mask])) if np.sum(flat_mask) > 100 else float(np.mean(diff))
 
-    # Ink line art, dark fantasy illustrations, manga, and cel-shaded drawings often have lower saturation,
-    # but exhibit prominent dark ink contour lines (Canny edges in dark regions) combined with low flat-region sensor noise
+    # Ink line art, manga and cel-shaded drawings have lower saturation but prominent dark contour lines
+    # (Canny edges in dark regions) combined with low flat-region sensor noise.
     edges = cv2.Canny(sample, 50, 150)
-    dark_edges = (sample < 50) & (edges > 0)
-    dark_edge_pct = float(np.sum(dark_edges) / max(1, edges.size) * 100.0)
+    dark_edge_pct = float(np.sum((sample < 50) & (edges > 0)) / max(1, edges.size) * 100.0)
 
-    # Color quantization check (discrete posterized shading vs continuous photographic tones)
-    small = cv2.resize(img_bgr, (150, 150), interpolation=cv2.INTER_AREA)
-    q_colors = len(np.unique((small // 24) * 24, axis=0))
+    # Discrete posterized shading vs continuous photographic tones
+    q_colors = len(np.unique((cv2.resize(img_bgr, (150, 150), interpolation=cv2.INTER_AREA) // 24) * 24, axis=0))
 
     has_camera_hardware = bool(metadata.get("camera_make")) if metadata else False
+    is_ink_art = bool(not has_camera_hardware and dark_edge_pct >= 0.70 and flat_noise < 0.38 and q_colors < 130)
 
-    is_ink_art = bool(
-        not has_camera_hardware
-        and dark_edge_pct >= 0.70
-        and flat_noise < 0.38
-        and q_colors < 130
-    )
-
-    # Natural photography rarely exceeds mean_sat > 105 and high_sat_pct > 40% simultaneously
-    # Digital art, anime, CGI renders, and AI paintings consistently have mean_sat >= 115 and high_sat_pct >= 45%
-    # Stylized dark illustrations consistently exhibit dark ink contours with low flat-region noise
+    # Natural photography rarely exceeds mean_sat > 105 and high_sat_pct > 40% simultaneously; digital art, anime,
+    # CGI renders and AI paintings are typically mean_sat >= 115 and high_sat_pct >= 45%.
     is_art = bool((mean_sat >= 115.0 and high_sat_pct >= 45.0) or is_ink_art)
 
-    # Classify visual medium (Dimension C)
+    visual_medium = _art_visual_medium(is_art, is_ink_art, flat_noise)
+    confidence, details = 0.0, None
     if is_art:
-        if is_ink_art or flat_noise < 0.25:
-            visual_medium = "Cel-Shaded / Ink Cross-Hatched Digital Art"
-        elif flat_noise < 0.45:
-            visual_medium = "Flat Vector / Cel-Shaded Digital Art"
-        elif flat_noise > 1.2:
-            visual_medium = "Oil / Watercolor / Impasto Painting Texture"
-        else:
-            visual_medium = "Digital 3D CGI / AI Neural Painting"
-    else:
-        visual_medium = "Photographic Capture"
-
-    confidence = 0.0
-    if is_art:
-        if is_ink_art:
-            edge_score = min(1.0, dark_edge_pct / 1.5)
-            noise_score = min(1.0, max(0.0, (0.40 - flat_noise) / 0.30))
-            confidence = float(np.clip(edge_score * 0.5 + noise_score * 0.5, 0.65, 0.96))
-            details = (
-                f"AI digital art / stylized illustration detected ({visual_medium}) "
-                f"(dark ink contours: {dark_edge_pct:.2f}%, flat-region noise: {flat_noise:.2f}, color clusters: {q_colors})"
-            )
-        else:
-            sat_score = min(1.0, (mean_sat - 110.0) / 70.0)
-            pct_score = min(1.0, (high_sat_pct - 40.0) / 50.0)
-            confidence = float(np.clip(sat_score * 0.6 + pct_score * 0.4, 0.50, 0.98))
-            details = (
-                f"AI digital art / synthetic painting style detected ({visual_medium}) "
-                f"(mean saturation: {mean_sat:.1f}, high-sat pixels: {high_sat_pct:.1f}%, flat-region noise: {flat_noise:.2f})"
-            )
-    else:
-        details = None
+        confidence, details = _art_confidence_and_details(
+            is_ink_art, visual_medium, mean_sat, high_sat_pct, flat_noise, dark_edge_pct, q_colors
+        )
 
     return {
         "is_digital_art": is_art,
@@ -696,6 +691,83 @@ def generate_spatial_manipulation_heatmap(img_bgr: np.ndarray) -> Dict[str, Any]
     }
 
 
+_SCREENSHOT_FILENAME_MARKERS = (
+    "screenshot", "screen_shot", "screen-shot", "screencap", "capture_", "snip", "screen shot",
+)
+
+
+def _device_from_aspect(orientation: str, aspect_ratio: float) -> Optional[str]:
+    """Device class guessed from aspect ratio and orientation when no canonical resolution matched.
+
+    Tablet's aspect band (1.30-1.65) is a strict subset of desktop's first band (1.25-1.85), so the more specific
+    landscape+desktop combination is checked first; tablet then only wins in portrait or outside the desktop band.
+    """
+    is_mobile = 1.75 <= aspect_ratio <= 2.35
+    is_tablet = 1.30 <= aspect_ratio <= 1.65
+    is_desktop = (1.25 <= aspect_ratio <= 1.85) or (2.30 <= aspect_ratio <= 2.45)
+    if is_mobile and orientation == "Portrait":
+        return "Mobile Phone"
+    if is_desktop and orientation == "Landscape":
+        return "Laptop / Desktop"
+    if is_tablet:
+        return "Tablet"
+    return None
+
+
+def _edge_density(strip: np.ndarray) -> float:
+    return float(np.sum(cv2.Canny(strip, 50, 150) > 0)) / float(max(1, strip.size))
+
+
+def _bar_signals(gray: np.ndarray, orientation: str, aspect_ratio: float) -> Tuple[List[str], float]:
+    """Mobile status/navigation bars (portrait phones) or a dark desktop taskbar (landscape desktops)."""
+    h = gray.shape[0]
+    is_mobile = 1.75 <= aspect_ratio <= 2.35
+    is_desktop = (1.25 <= aspect_ratio <= 1.85) or (2.30 <= aspect_ratio <= 2.45)
+    found: List[str] = []
+    gain = 0.0
+    if orientation == "Portrait" and is_mobile:
+        if 0.015 < _edge_density(gray[:max(10, int(h * 0.045)), :]) < 0.25:
+            found.append("mobile_top_status_bar")
+            gain += 0.25
+        if 0.008 < _edge_density(gray[-max(8, int(h * 0.035)):, :]) < 0.20:
+            found.append("mobile_navigation_bar")
+            gain += 0.20
+    elif orientation == "Landscape" and is_desktop:
+        bar = gray[-max(16, int(h * 0.05)):, :]
+        if float(np.std(np.mean(bar, axis=1))) < 12.0 and np.mean(bar) < 70:
+            found.append("desktop_taskbar")
+            gain += 0.25
+    return found, gain
+
+
+def _rectilinear_ui(sample: np.ndarray, meta: Dict[str, Any]) -> bool:
+    """Window/region snip: strong axis-aligned edges plus a dominant flat background tone."""
+    grad_x = cv2.Sobel(sample, cv2.CV_32F, 1, 0)
+    grad_y = cv2.Sobel(sample, cv2.CV_32F, 0, 1)
+    edge_mask = cv2.magnitude(grad_x, grad_y) > 40.0
+    edge_total = float(np.sum(edge_mask))
+    if edge_total <= 500:
+        return False
+    ax, ay = np.abs(grad_x)[edge_mask], np.abs(grad_y)[edge_mask]
+    rectilinear_ratio = (float(np.sum(ay > ax * 2.0)) + float(np.sum(ax > ay * 2.0))) / edge_total
+    hist = cv2.calcHist([sample], [0], None, [256], [0, 256])
+    top_bin_ratio = float(np.max(hist)) / float(sample.size)
+    return bool((top_bin_ratio >= 0.25 and rectilinear_ratio >= 0.65) or meta.get("screenshot_software_found"))
+
+
+def _ui_structure_signals(
+    gray: np.ndarray, sample: np.ndarray, orientation: str, aspect_ratio: float, meta: Dict[str, Any]
+) -> Tuple[List[str], float, Optional[str]]:
+    """UI-structure evidence: (indicator names, confidence gain, device name if only a snip layout matched)."""
+    found, gain = _bar_signals(gray, orientation, aspect_ratio)
+    snip_device = None
+    if _rectilinear_ui(sample, meta):
+        found.append("rectilinear_ui_layout")
+        gain += 0.45
+        snip_device = "Device / Window Snip"
+    return found, gain, snip_device
+
+
 def detect_screenshot(
     image_path: str | Path,
     img_bgr: Optional[np.ndarray] = None,
@@ -731,28 +803,15 @@ def detect_screenshot(
     h, w = img_bgr.shape[:2]
     meta = dict(meta or {})
 
-    # Determine orientation
-    if w > h:
-        orientation = "Landscape"
-    elif h > w:
-        orientation = "Portrait"
-    else:
-        orientation = "Square"
-
+    orientation = "Landscape" if w > h else ("Portrait" if h > w else "Square")
     aspect_ratio = float(max(w, h)) / max(1.0, float(min(w, h)))
     ui_elements: List[str] = []
     confidence = 0.0
     device_type = "None"
     screen_resolution = f"{w}x{h}"
 
-    # 1. Canonical Device Screen Resolution Match
-    matched_device = None
-    matched_desc = None
-    if (w, h) in CANONICAL_SCREEN_RESOLUTIONS:
-        matched_device, matched_desc = CANONICAL_SCREEN_RESOLUTIONS[(w, h)]
-    elif (h, w) in CANONICAL_SCREEN_RESOLUTIONS:
-        matched_device, matched_desc = CANONICAL_SCREEN_RESOLUTIONS[(h, w)]
-
+    # 1. Canonical Device Screen Resolution Match (either orientation)
+    matched_device, matched_desc = CANONICAL_SCREEN_RESOLUTIONS.get((w, h)) or CANONICAL_SCREEN_RESOLUTIONS.get((h, w)) or (None, None)
     if matched_device:
         device_type = matched_device
         ui_elements.append(f"canonical_resolution ({matched_desc})")
@@ -760,18 +819,7 @@ def detect_screenshot(
 
     # 2. Filename Signature
     fname = str(Path(image_path).name).lower()
-    has_screenshot_filename = any(
-        k in fname
-        for k in (
-            "screenshot",
-            "screen_shot",
-            "screen-shot",
-            "screencap",
-            "capture_",
-            "snip",
-            "screen shot",
-        )
-    )
+    has_screenshot_filename = any(k in fname for k in _SCREENSHOT_FILENAME_MARKERS)
     if has_screenshot_filename:
         ui_elements.append("filename_signature")
         confidence += 0.45
@@ -783,82 +831,23 @@ def detect_screenshot(
         confidence += 0.50
 
     # 4. Aspect Ratio Evaluation
-    is_mobile_aspect = 1.75 <= aspect_ratio <= 2.35
-    is_tablet_aspect = 1.30 <= aspect_ratio <= 1.65
-    is_desktop_aspect = (1.25 <= aspect_ratio <= 1.85) or (2.30 <= aspect_ratio <= 2.45)
-
-    # is_tablet_aspect (1.30-1.65) is a strict subset of is_desktop_aspect's first range
-    # (1.25-1.85) -- checking tablet before desktop would make every landscape screenshot
-    # in that overlap (a very common laptop aspect ratio, e.g. 4:3/3:2 displays) always
-    # resolve to "Tablet" and desktop unreachable for that band. Desktop/laptop screens are
-    # essentially always landscape, while tablet screenshots are commonly portrait, so check
-    # the more specific landscape+desktop-aspect combination first; tablet then only wins in
-    # portrait orientation or outside the desktop band.
     if not matched_device:
-        if is_mobile_aspect and orientation == "Portrait":
-            device_type = "Mobile Phone"
-        elif is_desktop_aspect and orientation == "Landscape":
-            device_type = "Laptop / Desktop"
-        elif is_tablet_aspect:
-            device_type = "Tablet"
+        device_type = _device_from_aspect(orientation, aspect_ratio) or device_type
 
     # 5. Visual UI Structure Analysis
     gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
     sample = _downsample_if_needed(gray, max_dim=1024)
-    sample_noise = cv2.absdiff(sample, cv2.medianBlur(sample, 3))
-    flat_noise = float(np.mean(sample_noise))
+    flat_noise = float(np.mean(cv2.absdiff(sample, cv2.medianBlur(sample, 3))))
 
     has_cam = bool(meta.get("camera_make") and meta.get("camera_model")) or bool(meta.get("has_optical_parameters"))
 
     # Only analyze UI edge structures if not clearly an optical camera capture
     if not has_cam and flat_noise < 1.45:
-        if orientation == "Portrait" and is_mobile_aspect:
-            # Top status bar check
-            top_bar_h = max(10, int(h * 0.045))
-            top_bar = gray[:top_bar_h, :]
-            edges_top = cv2.Canny(top_bar, 50, 150)
-            edge_density = float(np.sum(edges_top > 0)) / float(max(1, top_bar.size))
-            if 0.015 < edge_density < 0.25:
-                ui_elements.append("mobile_top_status_bar")
-                confidence += 0.25
-
-            # Bottom navigation / gesture indicator check
-            bot_bar_h = max(8, int(h * 0.035))
-            bot_bar = gray[-bot_bar_h:, :]
-            edges_bot = cv2.Canny(bot_bar, 50, 150)
-            edge_density_bot = float(np.sum(edges_bot > 0)) / float(max(1, bot_bar.size))
-            if 0.008 < edge_density_bot < 0.20:
-                ui_elements.append("mobile_navigation_bar")
-                confidence += 0.20
-
-        elif orientation == "Landscape" and is_desktop_aspect:
-            # Desktop taskbar check at bottom
-            bot_taskbar_h = max(16, int(h * 0.05))
-            bot_taskbar = gray[-bot_taskbar_h:, :]
-            std_row = float(np.std(np.mean(bot_taskbar, axis=1)))
-            if std_row < 12.0 and np.mean(bot_taskbar) < 70:
-                ui_elements.append("desktop_taskbar")
-                confidence += 0.25
-
-        # 6. Arbitrary UI Region Snip / Window Capture Analysis
-        grad_x = cv2.Sobel(sample, cv2.CV_32F, 1, 0)
-        grad_y = cv2.Sobel(sample, cv2.CV_32F, 0, 1)
-        mag = cv2.magnitude(grad_x, grad_y)
-        edge_mask = mag > 40.0
-        edge_total = float(np.sum(edge_mask))
-        if edge_total > 500:
-            horiz_edges = float(np.sum(np.abs(grad_y)[edge_mask] > (np.abs(grad_x)[edge_mask] * 2.0)))
-            vert_edges = float(np.sum(np.abs(grad_x)[edge_mask] > (np.abs(grad_y)[edge_mask] * 2.0)))
-            rectilinear_ratio = (horiz_edges + vert_edges) / edge_total
-
-            hist = cv2.calcHist([sample], [0], None, [256], [0, 256])
-            top_bin_ratio = float(np.max(hist)) / float(sample.size)
-
-            if (top_bin_ratio >= 0.25 and rectilinear_ratio >= 0.65) or meta.get("screenshot_software_found"):
-                ui_elements.append("rectilinear_ui_layout")
-                confidence += 0.45
-                if device_type == "None":
-                    device_type = "Device / Window Snip"
+        found, gain, snip_device = _ui_structure_signals(gray, sample, orientation, aspect_ratio, meta)
+        ui_elements.extend(found)
+        confidence += gain
+        if snip_device and device_type == "None":
+            device_type = snip_device
 
     if has_screenshot_filename or meta.get("screenshot_software_found"):
         is_screenshot = True

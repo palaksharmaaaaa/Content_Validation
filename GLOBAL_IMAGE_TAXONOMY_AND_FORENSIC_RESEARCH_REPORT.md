@@ -1,10 +1,10 @@
 # Comprehensive Global Image Taxonomy, Universal Physical Spectrum, and Generative AI Synthesis Architecture
 
-**Document Reference:** `RPT-IMG-FOR-2026-OCT-02-REV5`  
-**Standard Compliance:** NIST OpenMFC, C2PA Technical Specification v2.4, IPTC Photo Metadata Standard (2024–2026), ISO/IEC 23000-22 (MIAF), ISO/IEC 27037 (Digital Evidence Handling), IAU FITS Standard v4.0, DICOM PS3.1-2026, OGC GeoTIFF 1.1, ACES 2.0 (SMPTE ST 2065-1), ISO/IEC 30107-3 (PAD)  
+**Document Reference:** `RPT-IMG-FOR-2026-OCT-02-REV6`  
+**Referenced Standards (informational only; this software is not certified or audited against them):** NIST OpenMFC, C2PA Technical Specification v2.4, IPTC Photo Metadata Standard (2024–2026), ISO/IEC 23000-22 (MIAF), ISO/IEC 27037 (Digital Evidence Handling), IAU FITS Standard v4.0, DICOM PS3.1-2026, OGC GeoTIFF 1.1, ACES 2.0 (SMPTE ST 2065-1), ISO/IEC 30107-3 (PAD)  
 **Classification:** Technical Architecture & Omnidimensional Image Forensic Specification  
 **Publication Date:** October 2, 2026  
-**Timestamp:** 2026-10-02T14:50:00+05:30  
+**Timestamp:** 2026-10-02  
 **Repository Working Directory:** `<repo>`  
 **Author:** Antigravity Advanced Agentic Coding & Forensic Engineering Team  
 
@@ -18,7 +18,8 @@
 | **REV2** | 2026-10-02T06:00:00+05:30 | Expanded to fourteen dimensions adding astrophysical, subatomic, and event streams. |
 | **REV3** | 2026-10-02T13:20:00+05:30 | Added formats/codecs, presentation attack detection, and cross-cutting legal/safety axes. |
 | **REV4** | 2026-10-02T14:20:00+05:30 | **Definitive 17-Dimensional Ontology (A–Q)**: Harmonized TOC and ontology; resolved duplicate headings; decoupled OOD from probability bands; added dedicated metadata/container forensics (EXIF/XMP/ICC/MakerNotes); integrated SVG script injection attack vectors; added demographic bias/recalibration frameworks and open-set source attribution. |
-| **REV5** | 2026-10-02T14:50:00+05:30 | **Consistency Pass:** Repaired TOC anchors (Dimensions D–K, P, Section 22); replaced off-topic IEEE 3333.1 with ISO/IEC 30107-3; corrected ICC container locations (APP2/iCCP/colr); added metadata evidentiary-weight caveat; added engine-state rows (OOD, INCONCLUSIVE, UNKNOWN_SOURCE, HARD_BLOCK) to Appendix A; added orthogonal-channel note to probability bands; clarified that pipeline stages are target-architecture. |
+| **REV5** | 2026-10-02 | **Consistency Pass:** Repaired TOC anchors (Dimensions D–K, P, Section 22); replaced off-topic IEEE 3333.1 with ISO/IEC 30107-3; corrected ICC container locations (APP2/iCCP/colr); added metadata evidentiary-weight caveat; added engine-state rows (OOD, INCONCLUSIVE, UNKNOWN_SOURCE, HARD_BLOCK) to Appendix A; added orthogonal-channel note to probability bands; clarified that pipeline stages are target-architecture. |
+| **REV6** | 2026-10-02 | **Implementation Release (image):** Added Appendix D (implementation status per dimension). The image pipeline now implements the shared dimension-check foundation: hard-block and recognition gates, file-integrity/format/metadata findings with capped hybrid scoring, legal/context/lifecycle/reliability advisory stages, five probability bands, OOD gate (uncalibrated until fitted), and open-set `UNKNOWN_SOURCE`. The Streamlit image flow gained Stages 1b, 3b, 4b and 6b. |
 
 ---
 
@@ -82,6 +83,7 @@ In addition to these seventeen signal dimensions, this specification defines ded
 27. [Appendix A: Controlled Vocabulary Standards Mapping](#appendix-a-controlled-vocabulary-standards-mapping)
 28. [Appendix B: Canonical Generative Architecture Aspect Ratios & Resolutions](#appendix-b-canonical-generative-architecture-aspect-ratios--resolutions)
 29. [Appendix C: Mathematical Physics Formulations](#appendix-c-mathematical-physics-formulations)
+30. [Appendix D: Implementation Status (REV6)](#appendix-d-implementation-status-rev6)
 
 ---
 
@@ -592,3 +594,52 @@ $$\mathbf{S} = \begin{bmatrix} S_0 \\ S_1 \\ S_2 \\ S_3 \end{bmatrix} = \begin{b
 ### 4. Bayesian Multi-Evidence Pooling LLR & Calibration
 $$\mathcal{L} = \sum_{i=1}^N w_i \ln \left( \frac{P(x_i \mid \text{AI})}{P(x_i \mid \text{Real})} \right), \quad P(\text{AI} \mid \mathbf{x}) = \frac{1}{1 + e^{-\mathcal{L}}}$$
 
+
+---
+
+## Appendix D: Implementation Status (REV6)
+
+Status key: **Implemented** (code + tests), **Partial** (some sub-items), **Recognition-only** (format sniffed, no authenticity scoring), **Spec-only** (documented taxonomy, no code). "Advisory" findings never change P(AI). Code references are relative to the repository root.
+
+| Dimension / Section | Status | Where | Notes |
+| :--- | :--- | :--- | :--- |
+| **A** Provenance & authenticity spectrum | Partial | `image_detector/scoring.py`, `detector.py` | States 1-9 via heuristic decision tree; State 10 (adversarial spoof) has a label but no decision branch. |
+| **B** Genre & subject | Implemented (heuristic) | `image_detector/content.py` | Object/lighting/genre heuristics; no trained genre model. |
+| **C** Art mediums & SVG attack surface | Partial | `features.py` (digital-art), `dimension_checks/integrity.py` | Digital-art detector only; SVG active-content scan implemented. |
+| **D** EM spectrum & medical/radar modalities | Partial / Recognition-only | `features.py` (spectral modality), `core/forensics/gates.py` | Visible/IR heuristics only; DICOM/FITS/GeoTIFF/OpenEXR/HDF5/NetCDF recognized, not scored. MRI/ultrasound/mmWave/GPR analysis: spec-only. |
+| **E** Astrophysical | Recognition-only | `gates.py` | FITS recognized. |
+| **F** Nanoscale / quantum | Spec-only | - | |
+| **G** Optical wavefront / polarization | Spec-only | - | |
+| **H** Geospatial / remote sensing | Recognition-only | `gates.py` | GeoTIFF/HDF5/NetCDF recognized. |
+| **I** Neuromorphic event streams | Recognition-only | `gates.py` | AEDAT/AER header recognized; no event-stream analysis. |
+| **J** Exotic particle / nuclear | Spec-only | - | DICOM recognized only. |
+| **K** Neuroimaging / BCI | Spec-only | - | |
+| **L** Color science | Partial | `dimension_checks/metadata.py` (`icc_profile`) | ICC presence/descriptor only; no gamut/transfer analysis. |
+| **M** Lens optics & projections | Spec-only | - | Screen-recapture (Moire) lives under Dimension A. |
+| **N** Documents / OCR / codes | Spec-only | - | Screenshot detection exists (Dimension A); no OCR or code decoding. Instruction-like metadata text is scanned (Dimension Q). |
+| **O** Formats & compression | Partial | `dimension_checks/formats.py`, `features.py` (ELA) | JPEG quantization tables + est. quality + subsampling, PNG chunk inventory/generator parameters, ELA. Double-JPEG coefficient analysis, HEIC/AVIF/JXL parsing, RAW, gain/depth maps: spec-only. |
+| **P** Generative AI & PAD | Partial | `attribution.py`, `dimension_checks/__init__.py` | 21-generator attribution + open-set `UNKNOWN_SOURCE` flag. Presentation-attack / face-morph detection: spec-only. |
+| **Q** Cryptography, stego & file security | Partial | `provenance.py`, `dimension_checks/integrity.py` | C2PA is a byte-signature presence scan, **not** cryptographic validation. Implemented: format sniff, trailing data, polyglot signatures, SVG active content, prompt-injection text. zk-SNARK, PUF, steganalysis: spec-only. |
+| **Sec. 21** Metadata & container forensics | Implemented (weak evidence) | `dimension_checks/metadata.py` | EXIF coherence, timestamp plausibility, thumbnail match, ICC. MakerNotes decoding and XMP namespace validation: spec-only. |
+| **Sec. 22.1** Harm / hard-block | Partial | `core/forensics/gates.py` | Pluggable SHA-256 hard-block list (no classifier). Violence/hate/self-harm classification: spec-only. |
+| **Sec. 22.2** Legal flags | Implemented (advisory) | `dimension_checks/legal.py` | Rights notice, GPS privacy, biometric notice, AI-disclosure label. Export-control and PHI scans: spec-only. |
+| **Sec. 22.3** Cheapfakes / context | Partial | `dimension_checks/context.py` | pHash/dHash + optional local reference index; no external reverse search. |
+| **Sec. 22.4** Granularity | Partial | `features.py` (heatmap) | Spatial anomaly heatmap from the detector; not a per-pixel authenticity tensor. |
+| **Sec. 22.5** Lifecycle laundering | Implemented (heuristic) | `dimension_checks/lifecycle.py` | Platform re-encode likelihood. |
+| **Sec. 22.6** Detector validity | Partial | `dimension_checks/reliability.py` | Confidence limiters. Demographic-parity audits and domain-shift benchmarks: spec-only. |
+| **Sec. 22.7** Accessibility | Spec-only | - | |
+| **Sec. 22.8** Open-set attribution | Implemented (basic) | `dimension_checks/__init__.py` | `UNKNOWN_SOURCE` when no generator profile matches an AI-leaning image. |
+| **Sec. 24** Five probability bands | Implemented | `core/bands.py` | Applied to the in-distribution score. |
+| **Sec. 24** OOD gate | Implemented, uncalibrated by default | `core/forensics/ood.py`, `dimension_checks/fit_ood.py` | Reports `NOT_CALIBRATED` until fitted from the media library (`python -m image_detector.dimension_checks.fit_ood`). |
+
+**Hybrid scoring (as built):** only `PHYSICAL_SIGNAL` / `METADATA_WEAK` findings may add log-odds (base-10, positive = toward AI): per-finding cap 0.25 (explicit generator-parameter PNG chunk 0.40), total clamp +/-0.40, absence never scored. They enter the detector as `dim_<check_id>` terms through `ImageAIDetector.predict(extra_log_lrs=...)`.
+
+**Not yet implemented for this modality:** see the rows marked Spec-only/Partial above. Audio and video wiring of the shared foundation follows in later cycles (Appendix F of those reports).
+
+
+**Post-audit corrections (2026-10-03), all covered by tests:**
+- Scores are heuristic and uncalibrated (`calibration_status`); thresholds were tuned on synthetic fixtures only. `python -m services.calibration_cli --modality image` measures accuracy, ECE and band occupancy on the held-out validation split once a labeled media library exists.
+- C2PA is marker presence only (no signature validation): reported, never scored, never called "verified".
+- Camera EXIF is unauthenticated: coherent EXIF earns no credit; EXIF contradicted by strong synthetic pixel evidence is demoted (image detector trust policy).
+- The package pipelines and the Streamlit flow share one verdict path (`core.decision.generate_final_decision`, `decision_mode` = `image_authoritative` | `fused`); attribution is explanation only and is not double counted.
+- Parser fixes: RIFF chunk walking is seek-based (no false WARN beyond 4 MB), PNG text chunks after IDAT are found.

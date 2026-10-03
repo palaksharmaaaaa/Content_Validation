@@ -8,18 +8,18 @@ Completely self-contained with zero outside dependencies.
 """
 from __future__ import annotations
 
-import hashlib
 import logging
 from pathlib import Path
 import subprocess
 import tempfile
-from typing import Any, Dict, Optional, Tuple
+from typing import Optional, Tuple
 import wave
 
 import numpy as np
 
 _FFMPEG_MISSING_WARNED = False
 
+from core.hashing import file_sha256
 from audio_detector.config import (
     MAX_DURATION_SECONDS,
     MAX_FILE_SIZE_MB,
@@ -37,12 +37,8 @@ def _get_file_size_mb(path: Path) -> float:
 
 
 def _calculate_file_hash(path: Path, chunk_size: int = 65536) -> str:
-    """Computes SHA-256 cryptographic checksum."""
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        while chunk := f.read(chunk_size):
-            h.update(chunk)
-    return h.hexdigest()
+    """SHA-256 checksum via the shared cached hasher."""
+    return file_sha256(path)
 
 
 class AudioValidator:

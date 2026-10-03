@@ -1,10 +1,10 @@
 # Comprehensive Global Video Taxonomy, Universal Temporal Spectrum, and Generative AI Video Synthesis Architecture
 
-**Document Reference:** `RPT-VID-FOR-2026-OCT-02-REV5`  
-**Standard Compliance:** NIST OpenMFC, C2PA Technical Specification v2.4, IPTC Video Metadata Standard (2024–2026), ISO/IEC 27037:2012, SMPTE ST 2110, ITU-R BT.2100, DICOM PS3.1-2026 (clinical video)  
+**Document Reference:** `RPT-VID-FOR-2026-OCT-02-REV7`  
+**Referenced Standards (informational only; this software is not certified or audited against them):** NIST OpenMFC, C2PA Technical Specification v2.4, IPTC Video Metadata Standard (2024–2026), ISO/IEC 27037:2012, SMPTE ST 2110, ITU-R BT.2100, DICOM PS3.1-2026 (clinical video)  
 **Classification:** Technical Architecture & Omnidimensional Video Forensic Specification  
 **Publication Date:** October 2, 2026  
-**Timestamp:** 2026-10-02T14:50:00+05:30  
+**Timestamp:** 2026-10-02  
 **Repository Working Directory:** `<repo>`  
 **Author:** Antigravity Advanced Agentic Coding & Video Forensic Engineering Team  
 
@@ -18,7 +18,9 @@
 | **REV2** | 2026-10-02T12:30:00+05:30 | Expanded astrophysical, femtosecond SCARF, and neuromorphic DVS video streams. |
 | **REV3** | 2026-10-02T13:22:00+05:30 | Added virtual camera attacks, interlacing, streaming protocols, telemetry, world models, avatars, and watermarking. |
 | **REV4** | 2026-10-02T14:20:00+05:30 | **Production Forensic Integrity Release:** Enforced strict 16-dimension ontology (A–P); added Section 20 Dedicated Metadata & Container-Structure Forensics (ISOBMFF box order, NAL SEI strings, telemetry tracks); added Doppler radar and sonar continuous video; added Stereoscopic 3D & MV-HEVC multi-view; expanded watermarking landscape (SynthID, Digimarc, IMATAG, Truepic, C2PA); codified legal/regulatory standards (Texas CUBI, Regulation (EU) 2024/1689 Art. 50, ITAR/EAR $<0.3\text{ m}$ GSD, HIPAA/EHDS surgical video PHI); integrated detector demographic validity (Fitzpatrick I–VI) and accessibility tracks (CEA-608/708, WebVTT); calibrated PRNU to VISION and Dresden benchmarks with "Absent $\ne$ AI" physical safeguards (global shutter CMOS, temporal noise reduction); decoupled epistemic OOD detection from Bayesian probability bands; and established the 5 calibrated operational probability bands. |
-| **REV5** | 2026-10-02T14:50:00+05:30 | **Consistency Pass:** Removed off-topic IEEE 3333.1 and non-video FITS citations; synced ontology lines for Dimensions D and L; fixed TOC anchor for Section 21; corrected MPEG-TS continuity-counter wording; added metadata evidentiary-weight caveat; added engine-state rows to Appendix A; added orthogonal-channel note; clarified that pipeline stages are target-architecture. |
+| **REV5** | 2026-10-02 | **Consistency Pass:** Removed off-topic IEEE 3333.1 and non-video FITS citations; synced ontology lines for Dimensions D and L; fixed TOC anchor for Section 21; corrected MPEG-TS continuity-counter wording; added metadata evidentiary-weight caveat; added engine-state rows to Appendix A; added orthogonal-channel note; clarified that pipeline stages are target-architecture. |
+| **REV6** | 2026-10-02 | **Status Release:** Added Appendix F (implementation status per dimension). The shared dimension-check foundation exists in `core/` (wired into image first); video wiring is pending. |
+| **REV7** | 2026-10-02 | **Implementation Release (video):** The video pipeline now implements the shared dimension-check foundation: hard-block and scientific-format gates; file-integrity checks; ISOBMFF box/sample-table/metadata/telemetry/encoder-string and EBML container checks; interlacing and frame-cadence signal checks; fingerprint/legal/lifecycle/reliability advisory stages; five probability bands, OOD gate (uncalibrated until fitted) and open-set `UNKNOWN_SOURCE`. The Streamlit video flow gained Stages 1b, 3b, 4b and 6b. Appendix F rewritten; the foundation is now wired into image, audio and video. |
 
 ---
 
@@ -80,6 +82,7 @@ This document establishes the operational forensic taxonomy of video categories 
 28. [Appendix C: Video Codec Forensic Signature & Compression Matrix](#appendix-c-video-codec-forensic-signature--compression-matrix)
 29. [Appendix D: Legacy & Historical Video Format Timeline](#appendix-d-legacy--historical-video-format-timeline)
 30. [Appendix E: Mathematical Physics Formulations for Temporal Forensics](#appendix-e-mathematical-physics-formulations-for-temporal-forensics)
+31. [Appendix F: Implementation Status (REV7)](#appendix-f-implementation-status-rev7)
 
 ---
 
@@ -548,3 +551,47 @@ $$\text{STSC} = \frac{1}{T} \sum_{t=1}^{T-2} \|\mathbf{x}(t+2) - 2\mathbf{x}(t+1
 ### 4. Bayesian Spatio-Temporal Evidence Pooling
 $$\mathcal{L}_{\text{video}} = \sum_{i=1}^{N_{\text{spatial}}} w_i \ln \left( \frac{P(x_i \mid \text{AI})}{P(x_i \mid \text{Real})} \right) + \sum_{j=1}^{N_{\text{temporal}}} w_j \ln \left( \frac{P(x_j \mid \text{AI})}{P(x_j \mid \text{Real})} \right), \quad P(\text{AI} \mid \mathbf{x}) = \frac{1}{1 + e^{-\mathcal{L}_{\text{video}}}}$$
 
+
+---
+
+## Appendix F: Implementation Status (REV7)
+
+Status key: **Implemented** (code + tests), **Partial** (some sub-items), **Recognition-only** (format sniffed, no authenticity scoring), **Spec-only** (documented taxonomy, no code). "Advisory" findings never change P(AI). The shared foundation (`core/forensics/`, `core/bands.py`, `ui/stages.py`) is now wired into the **image**, **audio** and **video** modalities. Code references are relative to `video_detector/` unless stated.
+
+| Dimension / Section | Status | Where | Notes |
+| :--- | :--- | :--- | :--- |
+| **A** Provenance & authenticity spectrum | Partial | `scoring.py`, `detector.py` | Temporal heuristics only. Virtual-camera injection (State 11) cannot be recovered from a file; only OBS/Streamlabs/ManyCam-style capture-software strings are reported (`dimension_checks/container.py`). |
+| **B** Genre & subject | Partial | `content.py` | |
+| **C** Art styles / AR filters | Spec-only | - | |
+| **D** EM spectrum, radar/sonar, depth video | Spec-only | - | |
+| **E-J** Astrophysical, ultrafast, polarization, remote sensing, event streams, BCI | Recognition-only / Spec-only | `core/forensics/gates.py` | DICOM (cine), HDF5, NetCDF and AEDAT event-stream files are recognized and not scored; no analysis of these modalities. |
+| **K** Temporal dynamics | Partial | `temporal.py`, `dimension_checks/signal.py` | Inter-frame motion variance and flicker (existing); row-combing interlace detection with container `fiel` flag; duplicate-frame cadence (3:2 pulldown, regular duplication, heavy duplication, isolated duplicates, hard cuts). Rolling-shutter and optical-flow-consistency analysis: spec-only. |
+| **L** Spatial geometry / 3D / VR | Spec-only | - | |
+| **M** Codecs, streaming, telemetry, containers | Partial | `dimension_checks/container.py` | MP4/MOV box layout (brands, fast-start, fragmentation), sample-table consistency (`stts`/`stsz`/`stss`/`stco`/`stsc`, CFR/VFR), `mvhd` time plausibility, tool strings, telemetry-track presence (GoPro `gpmd`, Sony `rtmd`, Google `camm`, DJI), x264/x265/libavcodec bitstream strings, MKV/WebM EBML writer strings. HLS/DASH segment forensics, WebRTC loss artifacts and telemetry-vs-optical-flow validation: spec-only. |
+| **N** Audio-visual synchronization | Partial | `cross_modal.py` | Modality-asymmetry and scene-plausibility checks against an externally supplied audio result; no phoneme-viseme analysis. |
+| **O** Generative AI & world models | Partial | `attribution.py` | 15-generator attribution (8 calibrated). Explicit generator names in container software/comment fields are scored (+0.40). |
+| **P** Watermarking, crypto, security, stego | Partial | `provenance.py`, `dimension_checks/integrity.py` | C2PA is a byte-signature presence scan plus detection of the C2PA UUID box, **not** cryptographic validation. Implemented: format sniff, bytes beyond the container end (incl. truncation), polyglot signatures, instruction-like tag text. Watermark detectors and steganalysis: spec-only. |
+| **Sec. 20** Metadata & container forensics | Implemented (weak evidence) | `dimension_checks/container.py` | See Dimension M. SEI NAL decoding beyond text strings, QP trajectories: spec-only. |
+| **Sec. 21.1** Harm / hard-block | Partial | `core/forensics/gates.py` | Pluggable SHA-256 hard-block list (no classifier). Violence/hate classification: spec-only. |
+| **Sec. 21.2** Legal flags | Implemented (advisory) | `dimension_checks/legal.py` | Rights notice, embedded location / GPS telemetry, biometric notice (faces), AI-disclosure label. Export-control and PHI scans: spec-only. |
+| **Sec. 21.3** Cheapfakes / context | Partial | `dimension_checks/context.py` | 16-frame perceptual-hash fingerprint + optional local reference index; no external reverse search. |
+| **Sec. 21.4** Granularity | Partial | `temporal.py` | Temporal segments; no spatio-temporal tube masks. |
+| **Sec. 21.5** Lifecycle laundering | Implemented (heuristic) | `dimension_checks/lifecycle.py` | Re-encoding likelihood (bits per pixel, platform sizes, web-export layout, stripped metadata). |
+| **Sec. 21.6** File security | Implemented | `dimension_checks/integrity.py` | See Dimension P. Demuxer-exploit detection: spec-only. |
+| **Sec. 21.7** Detector validity | Partial | `dimension_checks/reliability.py` | Confidence limiters (resolution, short clips, compression, interlacing, duplicated cadence, VFR, re-encoding). Demographic-parity audits and domain-shift benchmarks: spec-only. |
+| **Sec. 21.8** Accessibility | Spec-only | - | Caption-track forensics not implemented. |
+| **Sec. 21.9** Open-set attribution | Implemented (basic) | `dimension_checks/__init__.py` | `UNKNOWN_SOURCE` when no generator profile matches an AI-leaning video. |
+| **Sec. 22** Five probability bands | Implemented | `core/bands.py` | Applied to the in-distribution score. |
+| **Sec. 22** OOD gate | Implemented, uncalibrated by default | `core/forensics/ood.py`, `dimension_checks/fit_ood.py` | 5-dim temporal feature vector; reports `NOT_CALIBRATED` until fitted (`python -m video_detector.dimension_checks.fit_ood`). |
+
+**Hybrid scoring (as built):** only `PHYSICAL_SIGNAL` / `METADATA_WEAK` findings may add log-odds (base-10, positive = toward AI): per-finding cap 0.25 (explicit generator string 0.40), total clamp +/-0.40, absence never scored. Video pools by weighted average, so the terms shift the pooled probability in log-odds space (`VideoAIDetector.analyze_video(extra_log_lrs=...)`); with no terms the result is unchanged. The only scoring term is an explicit generative-tool name in container software/comment fields (+0.40). Interlacing and cadence findings are informational and carry no log-odds.
+
+**Known limitation (pre-existing):** the Stage 5 narrative text in the Streamlit video flow can show 0 x 0 pixels / 0.0 s / 0.0 fps because it reads profile keys the video profiler does not populate under those names; this predates the dimension checks and is not changed here.
+
+
+**Post-audit corrections (2026-10-03), all covered by tests:**
+- Scores are heuristic and uncalibrated (`calibration_status`); thresholds were tuned on synthetic fixtures only. `python -m services.calibration_cli --modality video` measures accuracy, ECE and band occupancy on the held-out validation split once a labeled media library exists.
+- C2PA is marker presence only (no signature validation): reported, never scored, never called "verified".
+- Camera EXIF is unauthenticated: coherent EXIF earns no credit; EXIF contradicted by strong synthetic pixel evidence is demoted (image detector trust policy).
+- The package pipelines and the Streamlit flow share one verdict path (`core.decision.generate_final_decision`, `decision_mode` = `image_authoritative` | `fused`); attribution is explanation only and is not double counted.
+- Parser fixes: RIFF chunk walking is seek-based (no false WARN beyond 4 MB), PNG text chunks after IDAT are found.

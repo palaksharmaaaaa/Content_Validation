@@ -8,7 +8,6 @@ Completely self-contained with zero outside dependencies.
 """
 from __future__ import annotations
 
-import hashlib
 from pathlib import Path
 from typing import Any, Dict
 
@@ -16,6 +15,7 @@ import cv2
 import numpy as np
 from PIL import Image, ImageOps
 
+from core.hashing import file_sha256
 from image_detector.config import MAX_FILE_SIZE_MB, MIN_RESOLUTION, SUPPORTED_EXTENSIONS
 from image_detector.schemas import ImageValidationResult
 
@@ -29,11 +29,7 @@ def _get_file_size_mb(path: Path) -> float:
 
 def _calculate_file_hash(path: Path) -> str:
     try:
-        h = hashlib.sha256()
-        with open(path, "rb") as f:
-            while chunk := f.read(65536):
-                h.update(chunk)
-        return h.hexdigest()
+        return file_sha256(path)
     except Exception:
         return ""
 

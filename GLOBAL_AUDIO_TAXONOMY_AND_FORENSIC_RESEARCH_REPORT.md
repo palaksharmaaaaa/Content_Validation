@@ -1,10 +1,10 @@
 # Comprehensive Global Audio Taxonomy, Universal Acoustic Spectrum, and Generative AI Audio Synthesis Architecture
 
-**Document Reference:** `RPT-AUD-FOR-2026-OCT-02-REV5`  
-**Standard Compliance:** AES Standards (AES27, AES43, AES47, AES67, AES70), EBU R128 / Tech 3333, EBU Tech 3285 (BWF), C2PA Technical Specification v2.4, IPTC Audio Metadata Standards (2024–2026), ISO/IEC 27037:2012, MPEG-H 3D Audio, ITU-R BS.1770-4  
+**Document Reference:** `RPT-AUD-FOR-2026-OCT-02-REV7`  
+**Referenced Standards (informational only; this software is not certified or audited against them):** AES Standards (AES27, AES43, AES47, AES67, AES70), EBU R128 / Tech 3333, EBU Tech 3285 (BWF), C2PA Technical Specification v2.4, IPTC Audio Metadata Standards (2024–2026), ISO/IEC 27037:2012, MPEG-H 3D Audio, ITU-R BS.1770-4  
 **Classification:** Technical Architecture & Omnidimensional Acoustic Forensic Specification  
 **Publication Date:** October 2, 2026  
-**Timestamp:** 2026-10-02T14:50:00+05:30  
+**Timestamp:** 2026-10-02  
 **Repository Working Directory:** `<repo>`  
 **Author:** Antigravity Advanced Agentic Coding & Acoustic Forensic Engineering Team  
 
@@ -18,7 +18,9 @@
 | **REV2** | 2026-10-02T12:35:00+05:30 | Expanded cosmic, gravitational wave, quantum phononics, and optoacoustic modalities. |
 | **REV3** | 2026-10-02T13:24:00+05:30 | Added telephony, fake hi-res detection, loudness (LUFS), paralinguistics, music theory, side-channels, data-over-sound, DolphinAttack, and real-time voice changers. |
 | **REV4** | 2026-10-02T14:20:00+05:30 | **Production Forensic Integrity Release:** Enforced strict 16-dimension ontology (A–P); added Section 20 Dedicated Metadata, Container-Structure, & Encoder Forensics (ID3v1/v2, BWF `bext` coding history, RIFF chunks, Vorbis comments, encoder strings); added AM/FM/SSB RF demodulation, Morse code (CW), and planetary seismic audification; expanded multi-layer watermarking (Meta AudioSeal, WavMark, SynthID, DSSS); codified legal/regulatory standards (Texas CUBI, Regulation (EU) 2024/1689 Art. 50, FCC Declaratory Ruling 24-17 under TCPA 47 U.S.C. § 227, HIPAA/EHDS acoustic biomarker PHI); integrated detector demographic validity (accents, dialects, vocal pathologies) and accessibility tracks; corrected table header to "Authentic Physical Acoustic/Mic Capture"; calibrated ENF benchmarks to electric utility grid archives with "Absent $\ne$ AI" physical safeguards (battery power, studio AC regenerators); decoupled epistemic OOD detection from Bayesian probability bands; and established the 5 calibrated operational probability bands. |
-| **REV5** | 2026-10-02T14:50:00+05:30 | **Consistency Pass:** Removed visual-quality IEEE 3333.1 and unverifiable ISO 22144 / AES-11id citations (AES27/AES43/EBU Tech 3285 substituted, flagged for verification); synced ontology line for Dimension D; fixed TOC anchor for Section 21; softened over-strong claims on BWF `CodingHistory`, FLAC MD5, LAME tags, and ENF courtroom proof; added metadata evidentiary-weight caveat; added engine-state rows to Appendix A; added orthogonal-channel note; clarified that pipeline stages are target-architecture. |
+| **REV5** | 2026-10-02 | **Consistency Pass:** Removed visual-quality IEEE 3333.1 and unverifiable ISO 22144 / AES-11id citations (AES27/AES43/EBU Tech 3285 substituted, flagged for verification); synced ontology line for Dimension D; fixed TOC anchor for Section 21; softened over-strong claims on BWF `CodingHistory`, FLAC MD5, LAME tags, and ENF courtroom proof; added metadata evidentiary-weight caveat; added engine-state rows to Appendix A; added orthogonal-channel note; clarified that pipeline stages are target-architecture. |
+| **REV6** | 2026-10-02 | **Status Release:** Added Appendix F (implementation status per dimension). The shared dimension-check foundation exists in `core/` (wired into image first); audio wiring is pending. |
+| **REV7** | 2026-10-02 | **Implementation Release (audio):** The audio pipeline now implements the shared dimension-check foundation: hard-block and symbolic-music gates; file-integrity checks; ID3/RIFF-bext/FLAC-MD5/MP3-LAME/Ogg container checks; ENF trace and splice detection, fake hi-res and bit-depth padding, telephony band-limit and loudness/dynamics signal checks; fingerprint/legal/lifecycle/reliability advisory stages; five probability bands, OOD gate (uncalibrated until fitted) and open-set `UNKNOWN_SOURCE`. The Streamlit audio flow gained Stages 1b, 3b, 4b and 6b. Appendix F rewritten. |
 
 ---
 
@@ -80,6 +82,7 @@ This document establishes the operational forensic taxonomy of audio categories 
 28. [Appendix C: Audio Codec Forensic Signature & Psychoacoustic Cutoff Matrix](#appendix-c-audio-codec-forensic-signature--psychoacoustic-cutoff-matrix)
 29. [Appendix D: Legacy & Historical Audio Format Timeline](#appendix-d-legacy--historical-audio-format-timeline)
 30. [Appendix E: Mathematical Physics Formulations for Acoustic Forensics](#appendix-e-mathematical-physics-formulations-for-acoustic-forensics)
+31. [Appendix F: Implementation Status (REV7)](#appendix-f-implementation-status-rev7)
 
 ---
 
@@ -575,3 +578,49 @@ $$F_n = \frac{(2n - 1) c}{4L}, \quad n \in \{1, 2, 3, 4\}$$
 ### 4. Bayesian Multi-Evidence Acoustic Fusion Formulation
 $$\mathcal{L}_{\text{audio}} = \sum_{i=1}^{M_{\text{physical}}} w_i \ln \left( \frac{P(x_i \mid \text{AI})}{P(x_i \mid \text{Real})} \right) + \sum_{j=1}^{K_{\text{codec}}} w_j \ln \left( \frac{P(x_j \mid \text{AI})}{P(x_j \mid \text{Real})} \right) + \sum_{k=1}^{L_{\text{neural}}} w_k \ln \left( \frac{P(x_k \mid \text{AI})}{P(x_k \mid \text{Real})} \right)$$
 $$P(\text{AI} \mid \mathbf{x}) = \frac{1}{1 + e^{-\mathcal{L}_{\text{audio}}}}$$
+
+
+---
+
+## Appendix F: Implementation Status (REV7)
+
+Status key: **Implemented** (code + tests), **Partial** (some sub-items), **Recognition-only** (format sniffed, no authenticity scoring), **Spec-only** (documented taxonomy, no code). "Advisory" findings never change P(AI). The shared foundation (`core/forensics/`, `core/bands.py`, `ui/stages.py`) is wired into the **image** and **audio** modalities; video is a later cycle. Code references are relative to `audio_detector/` unless stated.
+
+| Dimension / Section | Status | Where | Notes |
+| :--- | :--- | :--- | :--- |
+| **A** Provenance & authenticity spectrum | Partial | `scoring.py`, `detector.py` | Vocoder-cutoff / spectral-flatness / silence heuristics give AI-vs-real; no loopback, tuned, stem-separated, or voice-conversion states. |
+| **B** Content, music & paralinguistics | Partial | `content.py` | Delivery style and speech/music/ambient inference only; no language ID, diarization, or music theory. |
+| **C** Acoustic physics & side-channels | Spec-only | - | No RT60 / room impulse analysis. |
+| **D** Frequency spectrum & data-over-sound | Partial / Recognition-only | `features.py`, `core/forensics/gates.py` | Spectral cutoff and HF ratio; MIDI recognized (symbolic, not scored). RF demodulation, Morse, seismic audification, data-over-sound: spec-only. |
+| **E-I** Cosmic, quantum, photoacoustic, parametric, neuro-acoustic | Spec-only | - | |
+| **J** Transduction & microphones | Spec-only | - | |
+| **K** Spatial audio | Spec-only | - | |
+| **L** Codecs, telephony, fake hi-res | Partial | `dimension_checks/signal.py` | Implemented: fake hi-res (band-limit vs container rate), 16-in-24 bit padding, lossy-origin cutoff in lossless containers, narrowband-telephony detection. MDCT double-compression, AMR/EVS codec forensics, VoIP loss concealment: spec-only. |
+| **M** Studio production & loudness | Partial | `dimension_checks/signal.py` | RMS/peak/crest factor, clipping ratio, approximate true peak, over-compression flag. **Not** ITU-R BS.1770 LUFS. Tuning / stem-separation forensics: spec-only. |
+| **N** Generative AI frontier | Partial | `attribution.py` | 13-generator attribution (6 calibrated); no voice-cloning or real-time voice-changer detection. |
+| **O** Forensic science (ENF, formants, double compression) | Partial | `dimension_checks/signal.py` | ENF trace (50/60 Hz, 8 s STFT, parabolic interpolation), splice-discontinuity detection, stable-tone rejection; absence is never evidence. Formant tracking and MDCT analysis: spec-only. |
+| **P** Cryptography, security & watermarking | Partial | `provenance.py`, `dimension_checks/integrity.py` | C2PA is a byte-signature presence scan, **not** cryptographic validation. Implemented: format sniff, bytes beyond declared end, polyglot signatures, instruction-like tag text. AudioSeal/WavMark/SynthID detection and steganalysis: spec-only. |
+| **Sec. 20** Metadata & container forensics | Implemented (weak evidence) | `dimension_checks/container.py` | ID3v2, RIFF + BWF `bext`/LIST INFO, FLAC STREAMINFO MD5 (ffmpeg-verified), MP3 Xing/LAME tag, Ogg page CRC / sequence / granule. M4A/AAC atoms and LAME tag-CRC verification: spec-only. |
+| **Sec. 21.1** Harm / hard-block | Partial | `core/forensics/gates.py` | Pluggable SHA-256 hard-block list (no classifier). Harassment/vishing classification: spec-only. |
+| **Sec. 21.2** Legal flags | Implemented (advisory) | `dimension_checks/legal.py` | Rights notice, voice-biometric notice, AI-disclosure label, synthetic-voice likeness/TCPA advisory. |
+| **Sec. 21.3** Cheapfakes / context | Partial | `dimension_checks/context.py` | Coarse acoustic fingerprint + optional local reference index; no ASR/semantic cross-check. |
+| **Sec. 21.4** Granularity | Partial | `features.py` | Per-window temporal segments; no per-speaker diarization. |
+| **Sec. 21.5** Lifecycle laundering | Implemented (heuristic) | `dimension_checks/lifecycle.py` | Transcoding-cascade likelihood. |
+| **Sec. 21.6** File security | Implemented | `dimension_checks/integrity.py` | See Dimension P. Decoder-exploit and ultrasonic-command (DolphinAttack) detection: spec-only. |
+| **Sec. 21.7** Detector validity | Partial | `dimension_checks/reliability.py` | Confidence limiters (short, clipped, telephony, cascade). Accent/dialect bias audits and channel-shift benchmarks: spec-only. |
+| **Sec. 21.8** Accessibility | Spec-only | - | |
+| **Sec. 21.9** Open-set attribution | Implemented (basic) | `dimension_checks/__init__.py` | `UNKNOWN_SOURCE` when no generator profile matches an AI-leaning recording. |
+| **Sec. 23** Five probability bands | Implemented | `core/bands.py` | Applied to the in-distribution score. |
+| **Sec. 23** OOD gate | Implemented, uncalibrated by default | `core/forensics/ood.py`, `dimension_checks/fit_ood.py` | 5-dim acoustic feature vector; reports `NOT_CALIBRATED` until fitted (`python -m audio_detector.dimension_checks.fit_ood`). |
+
+**Hybrid scoring (as built):** only `PHYSICAL_SIGNAL` / `METADATA_WEAK` findings may add log-odds (base-10, positive = toward AI): per-finding cap 0.25 (explicit generator string in tags 0.40), total clamp +/-0.40, absence never scored. Audio pools by weighted average, so the terms shift the pooled probability in log-odds space (`AudioAIDetector.analyze_audio_file(extra_log_lrs=...)`); with no terms the result is unchanged. Scoring terms: explicit generator self-declaration in ID3/RIFF fields (+0.40), ENF continuous trace (-0.15), ENF splice discontinuity (+0.15).
+
+Video wiring of the foundation (ISOBMFF box / `stts` checks, SEI/telemetry, interlace and telecine, virtual-camera checks, UI stage parity) is planned next.
+
+
+**Post-audit corrections (2026-10-03), all covered by tests:**
+- Scores are heuristic and uncalibrated (`calibration_status`); thresholds were tuned on synthetic fixtures only. `python -m services.calibration_cli --modality audio` measures accuracy, ECE and band occupancy on the held-out validation split once a labeled media library exists.
+- C2PA is marker presence only (no signature validation): reported, never scored, never called "verified".
+- Camera EXIF is unauthenticated: coherent EXIF earns no credit; EXIF contradicted by strong synthetic pixel evidence is demoted (image detector trust policy).
+- The package pipelines and the Streamlit flow share one verdict path (`core.decision.generate_final_decision`, `decision_mode` = `image_authoritative` | `fused`); attribution is explanation only and is not double counted.
+- Parser fixes: RIFF chunk walking is seek-based (no false WARN beyond 4 MB), PNG text chunks after IDAT are found.

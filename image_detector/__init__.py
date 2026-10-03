@@ -14,61 +14,58 @@ Contains its own:
 - Facial deepfake detection (image_detector.face.FaceDeepfakeDetector)
 - Scene & content intelligence (image_detector.content.ImageContentAnalyzer)
 - Generator model attribution (image_detector.attribution.ImageModelAttributionEngine)
-- Cryptographic C2PA & EXIF provenance (image_detector.provenance.ImageProvenanceValidator)
+- C2PA marker-presence & EXIF provenance (image_detector.provenance.ImageProvenanceValidator)
 - Signal profiling & entropy (image_detector.profiler.ImageProfiler)
 - Safe URL image downloader (image_detector.downloader.ImageDownloader)
 - End-to-end forensic pipeline (image_detector.pipeline.ImageForensicPipeline)
 - High-speed batch processor (image_detector.batch.ImageBatchProcessor)
 """
-from image_detector.attribution import ImageModelAttributionEngine
-from image_detector.batch import ImageBatchProcessor
-from image_detector.benchmarks import ImageBenchmarkSuite
-from image_detector.content import ImageContentAnalyzer
-from image_detector.detector import ImageAIDetector
-from image_detector.downloader import ImageDownloader
-from image_detector.explain import build_nine_dimensions_dossier, generate_newbie_explanation
-from image_detector.face import FaceDeepfakeDetector
-from image_detector.features import (
-    analyze_fft_radial_power_spectrum,
-    calculate_sensor_noise_profile,
-    calculate_surface_smoothness,
-    compute_ela,
-    detect_inpainting_and_manipulation,
-    detect_screenshot,
-    extract_image_metadata,
-    generate_spatial_manipulation_heatmap,
-)
-from image_detector.learner import ImageSelfImprover
-from image_detector.models.backbone import build_image_classifier
-from image_detector.pipeline import ImageForensicPipeline
-from image_detector.profiler import (
-    ImageProfiler,
-    compute_file_hashes,
-    compute_pixel_entropy,
-    extract_all_image_details,
-    rgb_to_color_name,
-)
-from image_detector.provenance import ImageProvenanceValidator
-from image_detector.schemas import (
-    ImageBenchmarkMetrics,
-    ImageFeedbackRecord,
-    ImageForensicResult,
-    ImageModalityScore,
-    ImageTaxonomyState,
-    ImageValidationResult,
-)
-from image_detector.scoring import (
-    calculate_image_epistemic_uncertainty,
-    normalize_percentages,
-    pool_bayesian_log_odds,
-)
-from image_detector.feature_store import (
-    FeatureBankDataset,
-    FeatureClassifierHead,
-    FeatureStore,
-)
-from image_detector.trainer import ImageDetectorTrainer
-from image_detector.validator import ImageValidator, analyze_image
+from core.lazy import install_lazy_exports
+
+_LAZY_EXPORTS = {
+    "FaceDeepfakeDetector": ("image_detector.face", "FaceDeepfakeDetector"),
+    "FeatureBankDataset": ("image_detector.feature_store", "FeatureBankDataset"),
+    "FeatureClassifierHead": ("image_detector.feature_store", "FeatureClassifierHead"),
+    "FeatureStore": ("image_detector.feature_store", "FeatureStore"),
+    "ImageAIDetector": ("image_detector.detector", "ImageAIDetector"),
+    "ImageBatchProcessor": ("image_detector.batch", "ImageBatchProcessor"),
+    "ImageBenchmarkMetrics": ("image_detector.schemas", "ImageBenchmarkMetrics"),
+    "ImageBenchmarkSuite": ("image_detector.benchmarks", "ImageBenchmarkSuite"),
+    "ImageContentAnalyzer": ("image_detector.content", "ImageContentAnalyzer"),
+    "ImageDetectorTrainer": ("image_detector.trainer", "ImageDetectorTrainer"),
+    "ImageDownloader": ("image_detector.downloader", "ImageDownloader"),
+    "ImageFeedbackRecord": ("image_detector.schemas", "ImageFeedbackRecord"),
+    "ImageForensicPipeline": ("image_detector.pipeline", "ImageForensicPipeline"),
+    "ImageForensicResult": ("image_detector.schemas", "ImageForensicResult"),
+    "ImageModalityScore": ("image_detector.schemas", "ImageModalityScore"),
+    "ImageModelAttributionEngine": ("image_detector.attribution", "ImageModelAttributionEngine"),
+    "ImageProfiler": ("image_detector.profiler", "ImageProfiler"),
+    "ImageProvenanceValidator": ("image_detector.provenance", "ImageProvenanceValidator"),
+    "ImageSelfImprover": ("image_detector.learner", "ImageSelfImprover"),
+    "ImageTaxonomyState": ("image_detector.schemas", "ImageTaxonomyState"),
+    "ImageValidationResult": ("image_detector.schemas", "ImageValidationResult"),
+    "ImageValidator": ("image_detector.validator", "ImageValidator"),
+    "analyze_fft_radial_power_spectrum": ("image_detector.features", "analyze_fft_radial_power_spectrum"),
+    "analyze_image": ("image_detector.validator", "analyze_image"),
+    "build_image_classifier": ("image_detector.models.backbone", "build_image_classifier"),
+    "build_nine_dimensions_dossier": ("image_detector.explain", "build_nine_dimensions_dossier"),
+    "calculate_image_epistemic_uncertainty": ("image_detector.scoring", "calculate_image_epistemic_uncertainty"),
+    "calculate_sensor_noise_profile": ("image_detector.features", "calculate_sensor_noise_profile"),
+    "calculate_surface_smoothness": ("image_detector.features", "calculate_surface_smoothness"),
+    "compute_ela": ("image_detector.features", "compute_ela"),
+    "compute_file_hashes": ("image_detector.profiler", "compute_file_hashes"),
+    "compute_pixel_entropy": ("image_detector.profiler", "compute_pixel_entropy"),
+    "detect_inpainting_and_manipulation": ("image_detector.features", "detect_inpainting_and_manipulation"),
+    "detect_screenshot": ("image_detector.features", "detect_screenshot"),
+    "extract_all_image_details": ("image_detector.profiler", "extract_all_image_details"),
+    "extract_image_metadata": ("image_detector.features", "extract_image_metadata"),
+    "generate_newbie_explanation": ("image_detector.explain", "generate_newbie_explanation"),
+    "generate_spatial_manipulation_heatmap": ("image_detector.features", "generate_spatial_manipulation_heatmap"),
+    "normalize_percentages": ("image_detector.scoring", "normalize_percentages"),
+    "pool_bayesian_log_odds": ("image_detector.scoring", "pool_bayesian_log_odds"),
+    "rgb_to_color_name": ("image_detector.profiler", "rgb_to_color_name"),
+}
+install_lazy_exports(__name__, _LAZY_EXPORTS, globals())
 
 __all__ = [
     # Core Engines & Pipelines

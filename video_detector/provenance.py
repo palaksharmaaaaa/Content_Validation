@@ -7,7 +7,9 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
+
+from core.provenance_view import build_c2pa_block, build_exif_block, build_provenance_view
 
 logger = logging.getLogger("video_detector.provenance")
 
@@ -39,6 +41,15 @@ class VideoProvenanceValidator:
 
     def __init__(self):
         pass
+
+    @staticmethod
+    def _container_camera_brand(head: bytes) -> Optional[str]:
+        """Camera/device brand string found in the first container bytes (unauthenticated; None if absent)."""
+        low = head.lower()
+        for brand in (b"Apple", b"GoPro", b"DJI", b"Sony", b"Canon", b"Nikon", b"Samsung", b"Panasonic"):
+            if brand.lower() in low:
+                return brand.decode("ascii")
+        return None
 
     def scan_c2pa(self, file_path: str | Path) -> Dict[str, Any]:
         """Scans video binary for C2PA JUMBF boxes."""
@@ -109,7 +120,7 @@ class VideoProvenanceValidator:
         cues = []
         if c2pa_res["c2pa_present"]:
             status = "C2PA_PROVENANCE_PRESENT"
-            cues.append("Cryptographic C2PA Content Credentials found in video container.")
+            cues.append("C2PA Content Credentials markers found in video container (presence only; not cryptographically verified).")
         elif atoms_found:
             status = "STANDARD_CONTAINER_ATOMS"
             cues.append(f"Standard video atoms verified: {', '.join(atoms_found)}")
@@ -117,8 +128,15 @@ class VideoProvenanceValidator:
             status = "UNKNOWN_CONTAINER"
             cues.append("Non-standard or stripped container atoms.")
 
+        camera_make = self._container_camera_brand(head)
+        view = build_provenance_view(
+            build_c2pa_block(c2pa_res["c2pa_present"], c2pa_res.get("manifests_found", [])),
+            build_exif_block(camera_make=camera_make),
+        )
         return {
+            **view,
             "c2pa_present": c2pa_res["c2pa_present"],
+            "camera_make": camera_make,
             "provenance_status": status,
             "container_atoms": atoms_found,
             "vendor_signatures_found": vendor_signatures_found,

@@ -2,38 +2,25 @@
 ui.validators: Unified multi-modal validation and URL ingestion for Streamlit UI.
 Provides:
 1. File format, container, and size validation across Image, Video, and Audio.
-2. Cryptographic C2PA and EXIF hardware provenance analysis.
+2. Provenance dispatch to the per-modality validators (C2PA marker presence only; no cryptographic verification).
 3. Safe URL validation, platform detection, and remote streaming media ingestion.
 Completely self-contained with zero external directory dependencies.
 """
 from __future__ import annotations
 
-import io
-import ipaddress
 import logging
 from pathlib import Path
-import re
-import socket
-import tempfile
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 from urllib.parse import urlparse
 
-import cv2
 from PIL import Image
-from PIL.ExifTags import TAGS
-import requests
 
 logger = logging.getLogger("ui.validators")
 
 from audio_detector import AudioValidator
 from image_detector.validator import ImageValidator
 from video_detector.validator import VideoValidator
-from core.security import (
-    SAFE_MAX_IMAGE_PIXELS,
-    SecureUrlFetcher,
-    sanitize_filename,
-    validate_secure_url,
-)
+from core.security import SAFE_MAX_IMAGE_PIXELS, SecureUrlFetcher, validate_secure_url
 
 Image.MAX_IMAGE_PIXELS = SAFE_MAX_IMAGE_PIXELS
 
@@ -65,22 +52,6 @@ SUPPORTED_AUDIO_EXTENSIONS = {
     ".ogg",
     ".wma",
 }
-
-KNOWN_AI_SOFTWARE_SIGNATURES = [
-    "midjourney", "dall-e", "dalle", "stable diffusion", "stablediffusion",
-    "photoshop", "firefly", "comfyui", "automatic1111", "flux", "novelai",
-    "sdxl", "sora", "runway", "kling", "luma", "pika", "seedance",
-]
-
-C2PA_JUMBF_SIGNATURES = [
-    b"urn:c2pa",
-    b"c2pa",
-    b"c2ma",
-    b"c2cs",
-    b"application/c2pa",
-    b"image/jumd",
-    b"http://c2pa.org",
-]
 
 PLATFORM_DOMAINS = {
     "Instagram": [
@@ -215,187 +186,20 @@ def validate_file(file_path: str | Path) -> Dict[str, Any]:
     return result
 
 
-def scan_c2pa_markers(file_path: str | Path) -> Dict[str, Any]:
-    """Scans binary containers for C2PA JUMBF manifests."""
-    file_path = Path(file_path)
-    if not file_path.is_file():
-        return {
-            "c2pa_present": False,
-            "status": "UNKNOWN",
-            "details": "File does not exist.",
-            "manifests_found": [],
-        }
-
-    manifests = []
-    has_c2pa = False
-    is_signed = False
-    creation_tool = None
-    ai_declaration = False
-
-    try:
-        file_size = file_path.stat().st_size
-        read_size = min(file_size, 2 * 1024 * 1024)
-        with open(file_path, "rb") as f:
-            head = f.read(read_size)
-            if file_size > read_size:
-                f.seek(max(0, file_size - (512 * 1024)))
-                tail = f.read(512 * 1024)
-            else:
-                tail = b""
-
-        full_buf = head + tail
-        for sig in C2PA_JUMBF_SIGNATURES:
-            if sig in full_buf:
-                has_c2pa = True
-                manifests.append(sig.decode("ascii", errors="ignore"))
-
-        if b"c2pa.signature" in full_buf or b"c2pa.claim" in full_buf:
-            is_signed = True
-        if b"c2pa.actions" in full_buf and (b"c2pa.created" in full_buf or b"c2pa.placed" in full_buf):
-            pass
-
-        ai_match = re.search(
-            rb'(?:c2pa\.generator|softwareAgent|action)\s*[:=]\s*["\']?([^"\'\r\n]{3,60})',
-            full_buf,
-            re.IGNORECASE,
-        )
-        if ai_match:
-            creation_tool = ai_match.group(1).decode("ascii", errors="ignore").strip()
-
-        for term in [b"synthetic", b"generative", b"dall-e", b"midjourney", b"stable diffusion", b"firefly"]:
-            if term in full_buf.lower():
-                ai_declaration = True
-                break
-
-    except Exception:
-        pass
-
-    if has_c2pa:
-        if is_signed and not ai_declaration:
-            status = "VERIFIED_AUTHENTIC_CREDENTIALS"
-            details = "Cryptographically signed C2PA manifest found."
-        elif ai_declaration:
-            status = "AI_DECLARED_CREDENTIALS"
-            details = f"C2PA manifest declares AI generation/synthesis ({creation_tool or 'Generative AI'})."
-        else:
-            status = "UNVERIFIED_MANIFEST"
-            details = "C2PA markers detected but cryptographic signature was not verified."
-    else:
-        status = "NO_C2PA"
-        details = "No C2PA Content Credentials manifest detected."
-
-    return {
-        "c2pa_present": has_c2pa,
-        "is_signed": is_signed,
-        "creation_tool": creation_tool,
-        "ai_declaration": ai_declaration,
-        "status": status,
-        "details": details,
-        "manifests_found": manifests,
-    }
-
-
-def extract_exif_metadata(file_path: str | Path) -> Dict[str, Any]:
-    file_path = Path(file_path)
-    result: Dict[str, Any] = {
-        "has_exif": False,
-        "camera_make": None,
-        "camera_model": None,
-        "software": None,
-        "datetime_original": None,
-        "ai_signature_found": False,
-        "signature_details": None,
-        "raw_tags": {},
-    }
-    if not file_path.is_file():
-        return result
-
-    try:
-        with Image.open(file_path) as img:
-            exif = img.getexif()
-            if not exif:
-                return result
-
-            result["has_exif"] = True
-            for tag_id, val in exif.items():
-                tag_name = TAGS.get(tag_id, str(tag_id))
-                tag_str = str(val).strip()
-                result["raw_tags"][tag_name] = tag_str
-
-                if tag_name == "Make":
-                    result["camera_make"] = tag_str
-                elif tag_name == "Model":
-                    result["camera_model"] = tag_str
-                elif tag_name == "Software":
-                    result["software"] = tag_str
-                elif tag_name in ("DateTimeOriginal", "DateTime"):
-                    result["datetime_original"] = tag_str
-
-            software_field = (result["software"] or "").lower()
-            model_field = (result["camera_model"] or "").lower()
-            make_field = (result["camera_make"] or "").lower()
-            combined = f"{software_field} {model_field} {make_field}"
-
-            for sig in KNOWN_AI_SOFTWARE_SIGNATURES:
-                if sig in combined:
-                    result["ai_signature_found"] = True
-                    result["signature_details"] = f"Known AI software footprint detected: '{sig}'"
-                    break
-
-    except Exception as exc:
-        logger.debug("EXIF parsing bypassed for %s: %s", file_path, exc)
-    return result
-
-
 def analyze_provenance(file_path: str | Path) -> Dict[str, Any]:
-    """Unified provenance analysis examining C2PA, EXIF hardware tags, and software creation signatures."""
-    c2pa_res = scan_c2pa_markers(file_path)
-    exif_details = extract_exif_metadata(file_path)
+    """Provenance for any supported media file, via the owning package's validator (single source of truth).
 
-    # Secondary container scan for MP4/MOV if EXIF absent
-    ext = Path(file_path).suffix.lower()
-    if not exif_details["has_exif"] and ext in (".mp4", ".mov", ".m4v"):
-        try:
-            with open(file_path, "rb") as vf:
-                vhead = vf.read(128 * 1024)
-            for brand in [b"Apple", b"GoPro", b"DJI", b"Sony", b"Canon", b"Nikon", b"Samsung", b"Panasonic"]:
-                if brand.lower() in vhead.lower():
-                    exif_details["has_exif"] = True
-                    exif_details["camera_make"] = brand.decode("ascii", errors="ignore")
-                    break
-        except Exception:
-            pass
-
-    if c2pa_res["c2pa_present"]:
-        if c2pa_res["ai_declaration"]:
-            provenance_verdict = "C2PA_DECLARED_SYNTHETIC"
-            provenance_ai_confidence = 0.98
-        elif c2pa_res["is_signed"]:
-            provenance_verdict = "C2PA_VERIFIED_AUTHENTIC"
-            provenance_ai_confidence = 0.05
-        else:
-            provenance_verdict = "C2PA_PRESENT_UNVERIFIED"
-            provenance_ai_confidence = 0.50
-    elif exif_details["ai_signature_found"]:
-        provenance_verdict = "METADATA_DECLARED_SYNTHETIC"
-        provenance_ai_confidence = 0.95
-    elif exif_details.get("camera_make") and exif_details.get("camera_model"):
-        provenance_verdict = "HARDWARE_EXIF_PRESENT"
-        provenance_ai_confidence = 0.25
+    The result carries the nested ``c2pa`` / ``exif`` / ``provenance_verdict`` view plus the package's flat keys.
+    C2PA is marker presence only (never cryptographically verified).
+    """
+    media_type = detect_media_type(file_path)
+    if media_type == "image":
+        from image_detector.provenance import ImageProvenanceValidator as Validator
+    elif media_type == "video":
+        from video_detector.provenance import VideoProvenanceValidator as Validator
     else:
-        provenance_verdict = "PROVENANCE_UNKNOWN"
-        provenance_ai_confidence = 0.50
-
-    return {
-        "c2pa": c2pa_res,
-        "exif": exif_details,
-        "provenance_verdict": provenance_verdict,
-        "provenance_ai_confidence": provenance_ai_confidence,
-        "provenance_rule": (
-            "NIST Rule: Absence of C2PA metadata indicates UNKNOWN provenance, "
-            "not authenticity. Strong conclusions require cryptographic verification."
-        ),
-    }
+        from audio_detector.provenance import AudioProvenanceValidator as Validator
+    return Validator().analyze_provenance(file_path)
 
 
 def normalize_domain(domain: str) -> str:

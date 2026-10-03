@@ -1,4 +1,6 @@
 """
+(Manual smoke script - run with `python manual_pipeline_smoke.py`; not collected by pytest. The automated suites live in the */tests directories.)
+
 Automated Test & Verification Suite for Multi-Modal Media Content, AI Detection,
 Forensic Media Profiler, C2PA Provenance, Parallel Content Understanding,
 Cross-Modal Synchronization, Feedback Memory Bank, and Continual Auto-Learning Pipeline.
@@ -27,7 +29,8 @@ from image_detector import (
     analyze_image,
 )
 from video_detector import evaluate_cross_modal_consistency
-from ui.feedback_ui import generate_final_decision, profile_media
+from core.decision import generate_final_decision
+from ui.feedback_ui import profile_media
 from ui.validators import analyze_provenance, validate_file
 
 

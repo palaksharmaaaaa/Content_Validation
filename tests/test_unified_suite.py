@@ -36,14 +36,48 @@ class TestCoreDecision(unittest.TestCase):
         self.assertAlmostEqual(p_ai + p_real + p_und, 100.0, places=1)
         self.assertEqual(p_ai, 0.0)
 
-    def test_generate_final_decision_human_override(self):
+    def test_camera_exif_alone_is_not_scored(self):
+        """Unauthenticated camera EXIF is forgeable: with no other evidence the verdict stays undetermined."""
         decision = generate_final_decision(
             file_validation={'readable': True},
-            quality_result={'authenticity_score': 0.05, 'ai_percentage': 5.0, 'real_percentage': 95.0},
+            quality_result={},
             provenance_result={'camera_make': 'Sony', 'exif_valid': True},
         )
-        self.assertIn('AUTHENTIC', decision['final_status'])
-        self.assertGreater(decision['authenticity_probabilities']['p_real'], 50.0)
+        self.assertEqual(decision['final_status'], 'UNDETERMINED')
+        self.assertEqual(decision['authenticity_probabilities']['p_undecided'], 100.0)
+        self.assertTrue(any('not scored' in e for e in decision.get('evidence_trail', [])) or decision['final_status'] == 'UNDETERMINED')
+
+    def test_video_result_drives_video_verdict_not_keyframe(self):
+        decision = generate_final_decision(
+            file_validation={'readable': True},
+            quality_result={},
+            video_result={'ai_percentage': 93.0, 'real_percentage': 5.0, 'forensic_cues': ['flicker']},
+            ai_result={'ai_percentage': 4.0, 'real_percentage': 94.0, 'taxonomy_state': 'AUTHENTIC_REAL_PHOTOGRAPH', 'label': 'LIKELY REAL'},
+        )
+        self.assertEqual(decision['decision_mode'], 'fused')
+        self.assertNotEqual(decision['final_status'], 'LIKELY REAL')  # keyframe label must not override the video verdict
+        only_video = generate_final_decision(
+            file_validation={'readable': True}, quality_result={},
+            video_result={'ai_percentage': 93.0, 'real_percentage': 5.0})
+        self.assertEqual(only_video['final_status'], 'LIKELY_SYNTHETIC')
+        self.assertGreater(only_video['authenticity_probabilities']['p_ai'], 65.0)
+
+    def test_image_result_is_authoritative_and_marked_uncalibrated(self):
+        decision = generate_final_decision(
+            file_validation={'readable': True},
+            quality_result={},
+            ai_result={'ai_percentage': 12.0, 'real_percentage': 80.0, 'undecided_percentage': 8.0,
+                       'taxonomy_state': 'AUTHENTIC_REAL_PHOTOGRAPH', 'label': 'LIKELY REAL'},
+        )
+        self.assertEqual(decision['decision_mode'], 'image_authoritative')
+        self.assertEqual(decision['calibration_status'], 'UNCALIBRATED_HEURISTIC')
+
+    def test_attribution_is_explanation_not_evidence(self):
+        base = dict(file_validation={'readable': True}, quality_result={},
+                    video_result={'ai_percentage': 60.0, 'real_percentage': 35.0})
+        a = generate_final_decision(**base)
+        b = generate_final_decision(**base, attribution_result={'attribution_confidence': 0.95, 'model_key': 'sora', 'attributed_model': 'Sora'})
+        self.assertEqual(a['authenticity_probabilities'], b['authenticity_probabilities'])
 
     def test_generate_final_decision_ai_detected(self):
         decision = generate_final_decision(
@@ -124,7 +158,7 @@ class TestVideoLearnerAtomic(unittest.TestCase):
     def test_atomic_persistence(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             memory_file = Path(tmp_dir) / "video_feedback.json"
-            learner = VideoSelfImprover(memory_file=memory_file)
+            learner = VideoSelfImprover(memory_file=memory_file, calibration_file=Path(tmp_dir) / "video_calibration.json")
             res = learner.record_feedback(
                 video_path="test_clip.mp4",
                 user_label="ai_generated",
@@ -140,7 +174,7 @@ class TestVideoLearnerAtomic(unittest.TestCase):
 
 from audio_detector.validator import AudioValidator
 from video_detector.face import VideoFaceDeepfakeDetector
-from core.forensic_service import ForensicService
+from services.forensic_service import ForensicService
 import numpy as np
 
 

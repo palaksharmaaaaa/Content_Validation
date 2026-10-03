@@ -10,56 +10,23 @@ from core.security import SAFE_MAX_IMAGE_PIXELS
 Image.MAX_IMAGE_PIXELS = SAFE_MAX_IMAGE_PIXELS
 ImageFile.LOAD_TRUNCATED_IMAGES = False
 
-from core.forensic_service import ForensicService
-from audio_detector import AudioAIDetector
-from image_detector import (
-    FaceDeepfakeDetector,
-    ImageAIDetector,
-    ImageContentAnalyzer as ContentAnalyzer,
-    ImageModelAttributionEngine as ModelAttributionEngine,
-    analyze_image,
-)
-from video_detector import VideoAIDetector, analyze_video, evaluate_cross_modal_consistency
-from ui.batch_ui import (
-    process_single_audio,
-    process_single_image,
-    process_single_video,
-    render_batch_file_selector,
-    render_batch_overview_table,
-    render_batch_summary_dashboard,
-    run_batch_pipeline,
-)
-from core.decision import generate_final_decision
-from ui.feedback_ui import (
-    profile_media,
-    render_analysis_right_panel,
-    render_bottom_feedback_panel,
-    render_feedback_box,
-    render_forensic_dossier,
-    render_learning_dashboard,
-    render_linear_audio_pipeline_results,
-    render_linear_image_pipeline_results,
-    render_linear_video_pipeline_results,
-    render_media_specs,
-    render_pre_analysis_specifications,
-    render_scene_and_content_intelligence,
-)
-from ui.validators import (
-    analyze_provenance,
-    cleanup_url_download,
-    fetch_media_from_url,
-    validate_expected_platform,
-    validate_file,
-)
+from services.forensic_service import ForensicService
+from ui.batch_ui import render_batch_file_selector, render_batch_overview_table, render_batch_summary_dashboard, run_batch_pipeline
+from ui.feedback_ui import render_learning_dashboard, render_linear_audio_pipeline_results, render_linear_image_pipeline_results, render_linear_video_pipeline_results
+from ui.validators import fetch_media_from_url, validate_expected_platform
 
 
 DETECTOR_CHECKPOINT = Path(__file__).resolve().parent / "image_detector" / "models" / "ai_detector.pt"
 
-from core.atomic_io import get_ephemeral_cache_dir, purge_ephemeral_cache
+import uuid
 
-# Cross-platform ephemeral scratch space in OS temporary swap (e.g. %TEMP% or /tmp).
-# Guarantees ZERO media retention inside the project repository directory.
-SESSION_CACHE_DIR = get_ephemeral_cache_dir()
+from core.atomic_io import get_session_cache_dir, purge_ephemeral_cache
+
+# Per-session scratch space in the OS temp directory (never inside the repository), so one
+# user's uploads are neither readable by nor wiped by another user's session.
+if "session_id" not in st.session_state:
+    st.session_state["session_id"] = uuid.uuid4().hex
+SESSION_CACHE_DIR = get_session_cache_dir(st.session_state["session_id"])
 
 
 @st.cache_resource
@@ -132,7 +99,7 @@ st.sidebar.info(
 st.sidebar.markdown("---")
 st.sidebar.subheader("💾 Zero-Disk Storage Manager")
 if st.sidebar.button("🧹 Wipe Transient Media Cache"):
-    purged = purge_ephemeral_cache()
+    purged = purge_ephemeral_cache(SESSION_CACHE_DIR)
     st.sidebar.success(f"Wiped {purged} transient media file(s) (0 bytes on disk)!")
 
 st.title("🔍 OmniForensics: Multi-Modal Media Authenticity Engine")

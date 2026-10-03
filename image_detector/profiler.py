@@ -12,10 +12,11 @@ Completely self-contained with zero outside dependencies.
 """
 from __future__ import annotations
 
-import hashlib
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
+
+from core.hashing import file_digests
 
 import cv2
 import numpy as np
@@ -25,18 +26,8 @@ logger = logging.getLogger("image_detector.profiler")
 
 
 def compute_file_hashes(file_path: str | Path) -> Tuple[str, str, int]:
-    """Calculates SHA-256, MD5, and exact file size in bytes."""
-    sha256 = hashlib.sha256()
-    md5 = hashlib.md5()
-    total_bytes = 0
-
-    with open(file_path, "rb") as f:
-        while chunk := f.read(65536):
-            sha256.update(chunk)
-            md5.update(chunk)
-            total_bytes += len(chunk)
-
-    return sha256.hexdigest(), md5.hexdigest(), total_bytes
+    """Calculates SHA-256, MD5, and exact file size in bytes (shared cached implementation)."""
+    return file_digests(file_path)
 
 
 def compute_pixel_entropy(image_bgr: np.ndarray) -> float:
@@ -148,6 +139,242 @@ def parse_gps_info(gps_dict: dict) -> Dict[str, Any]:
     return {"has_gps": False, "latitude": None, "longitude": None, "altitude_m": None, "coordinates_str": "Not Embedded"}
 
 
+def _blank_exif_info() -> Dict[str, Any]:
+    return {
+        "has_exif": False,
+        "camera_make": None,
+        "camera_model": None,
+        "lens_model": None,
+        "software": None,
+        "date_time": None,
+        "exposure_time": None,
+        "aperture": None,
+        "iso": None,
+        "focal_length": None,
+        "flash": "Not Fired",
+        "white_balance": "Auto",
+        "metering_mode": "Standard",
+        "exposure_bias": "0.0 EV",
+        "gps_embedded": False,
+        "gps_details": {"has_gps": False, "coordinates_str": "Not Embedded"},
+        "orientation_tag": "Normal (1)",
+        "color_space_tag": "sRGB",
+    }
+
+
+_METERING_MODES = {1: "Average", 2: "CenterWeightedAverage", 3: "Spot", 4: "MultiSpot", 5: "Pattern", 6: "Partial"}
+
+
+def _apply_exif_tag(stag: str, sv: Any, exif_info: Dict[str, Any]) -> None:
+    if stag == "ExposureTime":
+        val = float(sv)
+        exif_info["exposure_time"] = f"1/{round(1.0 / val)}s" if val < 1.0 else f"{val:.2f}s"
+    elif stag == "FNumber":
+        exif_info["aperture"] = f"f/{float(sv):.1f}"
+    elif stag == "ISOSpeedRatings":
+        exif_info["iso"] = int(sv)
+    elif stag == "FocalLength":
+        exif_info["focal_length"] = f"{float(sv):.1f}mm"
+    elif stag == "LensModel":
+        exif_info["lens_model"] = str(sv)
+    elif stag == "Flash":
+        exif_info["flash"] = "Fired" if (int(sv) & 1) else "Did not fire"
+    elif stag == "WhiteBalance":
+        exif_info["white_balance"] = "Manual" if int(sv) == 1 else "Auto"
+    elif stag == "MeteringMode":
+        exif_info["metering_mode"] = _METERING_MODES.get(int(sv), f"Mode {sv}")
+    elif stag == "ExposureBiasValue":
+        exif_info["exposure_bias"] = f"{float(sv):+.1f} EV"
+    elif stag == "ColorSpace":
+        exif_info["color_space_tag"] = "sRGB" if int(sv) == 1 else ("Adobe RGB" if int(sv) == 2 else "Uncalibrated")
+
+
+def _apply_sub_ifd(exif_data: Any, exif_info: Dict[str, Any]) -> None:
+    """Fills exposure/optics/GPS fields from the Exif (0x8769) and GPS (0x8825) sub-IFDs."""
+    from PIL.ExifTags import TAGS
+
+    try:
+        if not hasattr(exif_data, "get_ifd"):
+            return
+        for sk, sv in exif_data.get_ifd(0x8769).items():
+            try:  # one malformed tag must not discard the remaining tags
+                _apply_exif_tag(TAGS.get(sk, str(sk)), sv, exif_info)
+            except (TypeError, ValueError, ZeroDivisionError, OverflowError) as e:
+                logger.debug("Skipping malformed EXIF tag %s: %s", sk, e)
+
+        gps_ifd = exif_data.get_ifd(0x8825)
+        if gps_ifd:
+            gps_parsed = parse_gps_info(gps_ifd)
+            exif_info["gps_details"] = gps_parsed
+            exif_info["gps_embedded"] = gps_parsed.get("has_gps", False)
+    except Exception as e:
+        logger.debug("Sub-IFD EXIF extraction exception: %s", e)
+
+
+def _read_container_info(path: Path) -> Dict[str, Any]:
+    """PIL-level container facts: colour mode, ICC, DPI and EXIF acquisition metadata."""
+    info: Dict[str, Any] = {
+        "dpi_x": 72.0, "dpi_y": 72.0, "color_mode": "RGB", "has_icc": False,
+        "icc_profile_name": "Standard sRGB", "exif_info": _blank_exif_info(),
+    }
+    exif_info = info["exif_info"]
+    try:
+        with Image.open(path) as pil_img:
+            info["color_mode"] = pil_img.mode
+            if pil_img.info.get("icc_profile"):
+                info["has_icc"] = True
+                info["icc_profile_name"] = "ICC Profile Embedded"
+            raw_dpi = pil_img.info.get("dpi")
+            if raw_dpi and isinstance(raw_dpi, (tuple, list)):
+                info["dpi_x"] = float(raw_dpi[0])
+                info["dpi_y"] = float(raw_dpi[1]) if len(raw_dpi) > 1 else info["dpi_x"]
+
+            exif_data = pil_img.getexif()
+            if exif_data:
+                from PIL.ExifTags import TAGS
+
+                raw_tags = {TAGS.get(k, str(k)): v for k, v in exif_data.items()}
+                if raw_tags.get("Make") or raw_tags.get("Model") or len(raw_tags) > 2:
+                    exif_info["has_exif"] = True
+                    exif_info["camera_make"] = raw_tags.get("Make")
+                    exif_info["camera_model"] = raw_tags.get("Model")
+                    exif_info["software"] = raw_tags.get("Software")
+                    exif_info["date_time"] = raw_tags.get("DateTime")
+                    if "Orientation" in raw_tags:
+                        exif_info["orientation_tag"] = f"Tag {raw_tags['Orientation']}"
+                    if "XResolution" in raw_tags and isinstance(raw_tags["XResolution"], (int, float)):
+                        info["dpi_x"] = float(raw_tags["XResolution"])
+                    if "YResolution" in raw_tags and isinstance(raw_tags["YResolution"], (int, float)):
+                        info["dpi_y"] = float(raw_tags["YResolution"])
+                    _apply_sub_ifd(exif_data, exif_info)
+    except Exception as e:
+        logger.debug("PIL inspection error: %s", e)
+    return info
+
+
+def _orientation_and_aspect(ratio: float) -> Tuple[str, str]:
+    if ratio > 1.08:
+        orientation = "Landscape (Horizontal)"
+    elif ratio < 0.92:
+        orientation = "Portrait (Vertical)"
+    else:
+        orientation = "Square (1:1)"
+    for lo, hi, text in _ASPECT_LABELS:
+        if lo <= ratio <= hi:
+            return orientation, text
+    return orientation, f"{ratio:.2f}:1 Ratio"
+
+
+_ASPECT_LABELS = (
+    (0.96, 1.04, "1:1 (Square Diffusion Canvas)"),
+    (0.54, 0.59, "9:16 (Vertical Mobile Wallpaper)"),
+    (1.70, 1.82, "16:9 (Landscape Widescreen)"),
+    (0.72, 0.78, "3:4 (Vertical Portrait)"),
+    (1.30, 1.36, "4:3 (Standard Photo)"),
+    (0.64, 0.69, "2:3 (Vertical 35mm)"),
+    (1.45, 1.55, "3:2 (Horizontal 35mm)"),
+)
+
+
+def _channel_statistics(img_bgr: np.ndarray, channels: int) -> Tuple[np.ndarray, Dict[str, Dict[str, Any]]]:
+    """Returns (gray plane, {means, stds, mins, maxs}) for colour or single-channel images."""
+    if channels >= 3:
+        b, g, r = img_bgr[:, :, 0], img_bgr[:, :, 1], img_bgr[:, :, 2]
+        gray = cv2.cvtColor(img_bgr[:, :, :3], cv2.COLOR_BGR2GRAY)
+        named = (("red", r), ("green", g), ("blue", b))
+    else:
+        gray = img_bgr
+        named = (("luminance", gray),)
+    return gray, {
+        "means": {n: round(float(np.mean(a)), 1) for n, a in named},
+        "stds": {n: round(float(np.std(a)), 1) for n, a in named},
+        "mins": {n: int(np.min(a)) for n, a in named},
+        "maxs": {n: int(np.max(a)) for n, a in named},
+    }
+
+
+def _luminance_statistics(gray: np.ndarray) -> Dict[str, Any]:
+    lum_min, lum_max = int(np.min(gray)), int(np.max(gray))
+    hi = int(np.sum(gray >= 252))
+    lo = int(np.sum(gray <= 4))
+    return {
+        "luminance_mean": round(float(np.mean(gray)), 1),
+        "luminance_median": round(float(np.median(gray)), 1),
+        "luminance_std": round(float(np.std(gray)), 1),
+        "luminance_min": lum_min,
+        "luminance_max": lum_max,
+        "dynamic_range": lum_max - lum_min,
+        "highlight_clipped_count": hi,
+        "highlight_clipped_pct": round(float(hi / gray.size * 100.0), 2),
+        "shadow_crushed_count": lo,
+        "shadow_crushed_pct": round(float(lo / gray.size * 100.0), 2),
+    }
+
+
+def _dominant_palette(img_bgr: np.ndarray, gray: np.ndarray, channels: int) -> Tuple[List[Dict[str, Any]], int]:
+    """Top-6 quantised colour swatches with human names; also returns the number of unique quantised colours."""
+    small = cv2.resize(
+        img_bgr[:, :, :3] if channels >= 3 else cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR),
+        (100, 100), interpolation=cv2.INTER_AREA,
+    )
+    pixels = small.reshape(-1, 3)
+    colors, counts = np.unique((pixels // 32) * 32, axis=0, return_counts=True)
+    palette = []
+    for idx in np.argsort(counts)[::-1][:6]:
+        pb, pg, pr = colors[idx]
+        palette.append({
+            "hex": f"#{int(pr):02x}{int(pg):02x}{int(pb):02x}",
+            "rgb": (int(pr), int(pg), int(pb)),
+            "color_name": rgb_to_color_name(int(pr), int(pg), int(pb)),
+            "coverage_pct": round(float(counts[idx] / len(pixels) * 100.0), 1),
+        })
+    return palette, len(colors)
+
+
+def _fft_decay_alpha(sample_gray: np.ndarray) -> float:
+    """Slope of the radially averaged Fourier magnitude spectrum in log-log space (default 2.05 on failure)."""
+    try:
+        mag_spec = np.abs(np.fft.fftshift(np.fft.fft2(sample_gray.astype(np.float32))))
+        cy, cx = sample_gray.shape[0] // 2, sample_gray.shape[1] // 2
+        y_mesh, x_mesh = np.ogrid[:sample_gray.shape[0], :sample_gray.shape[1]]
+        r_mesh = np.hypot(x_mesh - cx, y_mesh - cy).astype(int)
+        r_max = min(cx, cy) - 1
+        profile = [float(mag_spec[r_mesh == r].mean()) for r in range(5, max(6, r_max))]
+        if len(profile) > 5:
+            freqs = np.arange(5, 5 + len(profile))
+            return float(-np.polyfit(np.log(freqs), np.log(np.maximum(1e-6, profile)), 1)[0])
+    except Exception:
+        pass
+    return 2.05
+
+
+def _raw_physical_signals(gray: np.ndarray) -> Dict[str, Any]:
+    """PRNU-style noise residuals, bilateral smoothness, spectral decay, edge density and sharpness."""
+    h, w = gray.shape[:2]
+    sample = gray
+    if max(h, w) > 1024:
+        scale = 1024.0 / max(h, w)
+        sample = cv2.resize(gray, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
+
+    diff_med = cv2.absdiff(sample, cv2.medianBlur(sample, 3)).astype(np.float32)
+    grad_mag = cv2.magnitude(cv2.Sobel(sample, cv2.CV_32F, 1, 0), cv2.Sobel(sample, cv2.CV_32F, 0, 1))
+    flat_mask = grad_mag < 15.0
+    flat_noise = float(np.mean(diff_med[flat_mask])) if np.sum(flat_mask) > 100 else float(np.mean(diff_med))
+    smoothness = float(np.mean(cv2.absdiff(sample, cv2.bilateralFilter(sample, 9, 75, 75))))
+    edges = cv2.Canny(sample, 50, 150)
+    dark_edges = (sample < 50) & (edges > 0)
+    return {
+        "prnu_noise_mean": round(float(np.mean(diff_med)), 3),
+        "prnu_noise_std": round(float(np.std(diff_med)), 3),
+        "flat_region_noise_mean": round(flat_noise, 3),
+        "surface_smoothness_index": round(smoothness, 3),
+        "fft_decay_alpha": round(_fft_decay_alpha(sample), 3),
+        "canny_edge_pct": round(float(np.sum(edges > 0) / max(1, edges.size) * 100.0), 2),
+        "dark_line_art_pct": round(float(np.sum(dark_edges) / max(1, edges.size) * 100.0), 2),
+        "laplacian_sharpness_var": round(float(cv2.Laplacian(sample, cv2.CV_64F).var()), 1),
+    }
+
+
 class ImageProfiler:
     """
     Comprehensive technical specs, dimensions, DPI, pixel-by-pixel statistics,
@@ -164,274 +391,33 @@ class ImageProfiler:
             return {"valid": False, "error": f"File not found: {path}"}
 
         sha256, md5, size_bytes = compute_file_hashes(path)
-        size_kb = size_bytes / 1024.0
         size_mb = size_bytes / (1024.0 * 1024.0)
+        container = _read_container_info(path)
 
-        # 1. PIL Container & Acquisition Metadata Inspection
-        dpi_x, dpi_y = 72.0, 72.0
-        color_mode = "RGB"
-        has_icc = False
-        icc_profile_name = "Standard sRGB"
-        exif_info: Dict[str, Any] = {
-            "has_exif": False,
-            "camera_make": None,
-            "camera_model": None,
-            "lens_model": None,
-            "software": None,
-            "date_time": None,
-            "exposure_time": None,
-            "aperture": None,
-            "iso": None,
-            "focal_length": None,
-            "flash": "Not Fired",
-            "white_balance": "Auto",
-            "metering_mode": "Standard",
-            "exposure_bias": "0.0 EV",
-            "gps_embedded": False,
-            "gps_details": {"has_gps": False, "coordinates_str": "Not Embedded"},
-            "orientation_tag": "Normal (1)",
-            "color_space_tag": "sRGB",
-        }
-
-        try:
-            with Image.open(path) as pil_img:
-                color_mode = pil_img.mode
-                if pil_img.info.get("icc_profile"):
-                    has_icc = True
-                    icc_profile_name = "ICC Profile Embedded"
-                raw_dpi = pil_img.info.get("dpi")
-                if raw_dpi and isinstance(raw_dpi, (tuple, list)):
-                    dpi_x = float(raw_dpi[0])
-                    dpi_y = float(raw_dpi[1]) if len(raw_dpi) > 1 else dpi_x
-
-                # EXIF tags
-                exif_data = pil_img.getexif()
-                if exif_data:
-                    from PIL.ExifTags import TAGS
-                    raw_tags = {TAGS.get(k, str(k)): v for k, v in exif_data.items()}
-                    if raw_tags.get("Make") or raw_tags.get("Model") or len(raw_tags) > 2:
-                        exif_info["has_exif"] = True
-                        exif_info["camera_make"] = raw_tags.get("Make")
-                        exif_info["camera_model"] = raw_tags.get("Model")
-                        exif_info["software"] = raw_tags.get("Software")
-                        exif_info["date_time"] = raw_tags.get("DateTime")
-                        if "Orientation" in raw_tags:
-                            exif_info["orientation_tag"] = f"Tag {raw_tags['Orientation']}"
-                        if "XResolution" in raw_tags and isinstance(raw_tags["XResolution"], (int, float)):
-                            dpi_x = float(raw_tags["XResolution"])
-                        if "YResolution" in raw_tags and isinstance(raw_tags["YResolution"], (int, float)):
-                            dpi_y = float(raw_tags["YResolution"])
-
-                        # Extended Exif sub-IFD (0x8769)
-                        try:
-                            if hasattr(exif_data, "get_ifd"):
-                                sub_exif = exif_data.get_ifd(0x8769)
-                                for sk, sv in sub_exif.items():
-                                    stag = TAGS.get(sk, str(sk))
-                                    if stag == "ExposureTime":
-                                        val = float(sv)
-                                        exif_info["exposure_time"] = f"1/{round(1.0 / val)}s" if val < 1.0 else f"{val:.2f}s"
-                                    elif stag == "FNumber":
-                                        exif_info["aperture"] = f"f/{float(sv):.1f}"
-                                    elif stag == "ISOSpeedRatings":
-                                        exif_info["iso"] = int(sv)
-                                    elif stag == "FocalLength":
-                                        exif_info["focal_length"] = f"{float(sv):.1f}mm"
-                                    elif stag == "LensModel":
-                                        exif_info["lens_model"] = str(sv)
-                                    elif stag == "Flash":
-                                        exif_info["flash"] = "Fired" if (int(sv) & 1) else "Did not fire"
-                                    elif stag == "WhiteBalance":
-                                        exif_info["white_balance"] = "Manual" if int(sv) == 1 else "Auto"
-                                    elif stag == "MeteringMode":
-                                        metering_map = {1: "Average", 2: "CenterWeightedAverage", 3: "Spot", 4: "MultiSpot", 5: "Pattern", 6: "Partial"}
-                                        exif_info["metering_mode"] = metering_map.get(int(sv), f"Mode {sv}")
-                                    elif stag == "ExposureBiasValue":
-                                        exif_info["exposure_bias"] = f"{float(sv):+.1f} EV"
-                                    elif stag == "ColorSpace":
-                                        exif_info["color_space_tag"] = "sRGB" if int(sv) == 1 else ("Adobe RGB" if int(sv) == 2 else "Uncalibrated")
-
-                                # GPS IFD (0x8825)
-                                gps_ifd = exif_data.get_ifd(0x8825)
-                                if gps_ifd:
-                                    gps_parsed = parse_gps_info(gps_ifd)
-                                    exif_info["gps_details"] = gps_parsed
-                                    exif_info["gps_embedded"] = gps_parsed.get("has_gps", False)
-                        except Exception as e:
-                            logger.debug("Sub-IFD EXIF extraction exception: %s", e)
-        except Exception as e:
-            logger.debug("PIL inspection error: %s", e)
-
-        # 2. OpenCV Pixel Array Decoding & Geometric Analysis
         img_bgr = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
         if img_bgr is None:
             return {
-                "valid": False,
-                "filename": path.name,
-                "source": source,
-                "file_size_mb": round(size_mb, 3),
-                "sha256": sha256,
-                "md5": md5,
+                "valid": False, "filename": path.name, "source": source,
+                "file_size_mb": round(size_mb, 3), "sha256": sha256, "md5": md5,
                 "error": "Failed to decode image data into pixel array.",
             }
 
         h, w = img_bgr.shape[:2]
         channels = img_bgr.shape[2] if img_bgr.ndim == 3 else 1
-        has_alpha = channels == 4
-        megapixels = round((w * h) / 1_000_000.0, 2)
-        total_pixels = int(w * h)
-        aspect_ratio_dec = round(float(w) / max(1.0, float(h)), 3)
+        aspect = round(float(w) / max(1.0, float(h)), 3)
+        orientation, aspect_str = _orientation_and_aspect(aspect)
 
-        # Orientation classification
-        if aspect_ratio_dec > 1.08:
-            orientation = "Landscape (Horizontal)"
-        elif aspect_ratio_dec < 0.92:
-            orientation = "Portrait (Vertical)"
-        else:
-            orientation = "Square (1:1)"
-
-        # Standard aspect ratio string description
-        if 0.96 <= aspect_ratio_dec <= 1.04:
-            aspect_ratio_str = "1:1 (Square Diffusion Canvas)"
-        elif 0.54 <= aspect_ratio_dec <= 0.59:
-            aspect_ratio_str = "9:16 (Vertical Mobile Wallpaper)"
-        elif 1.70 <= aspect_ratio_dec <= 1.82:
-            aspect_ratio_str = "16:9 (Landscape Widescreen)"
-        elif 0.72 <= aspect_ratio_dec <= 0.78:
-            aspect_ratio_str = "3:4 (Vertical Portrait)"
-        elif 1.30 <= aspect_ratio_dec <= 1.36:
-            aspect_ratio_str = "4:3 (Standard Photo)"
-        elif 0.64 <= aspect_ratio_dec <= 0.69:
-            aspect_ratio_str = "2:3 (Vertical 35mm)"
-        elif 1.45 <= aspect_ratio_dec <= 1.55:
-            aspect_ratio_str = "3:2 (Horizontal 35mm)"
-        else:
-            aspect_ratio_str = f"{aspect_ratio_dec:.2f}:1 Ratio"
-
-        # 3. Pixel-by-Pixel Color & Photometric Statistics
-        if channels >= 3:
-            b, g, r = img_bgr[:, :, 0], img_bgr[:, :, 1], img_bgr[:, :, 2]
-            rgb_3ch = img_bgr[:, :, :3]
-            gray = cv2.cvtColor(rgb_3ch, cv2.COLOR_BGR2GRAY)
-            channel_means = {
-                "red": round(float(np.mean(r)), 1),
-                "green": round(float(np.mean(g)), 1),
-                "blue": round(float(np.mean(b)), 1),
-            }
-            channel_stds = {
-                "red": round(float(np.std(r)), 1),
-                "green": round(float(np.std(g)), 1),
-                "blue": round(float(np.std(b)), 1),
-            }
-            channel_mins = {
-                "red": int(np.min(r)),
-                "green": int(np.min(g)),
-                "blue": int(np.min(b)),
-            }
-            channel_maxs = {
-                "red": int(np.max(r)),
-                "green": int(np.max(g)),
-                "blue": int(np.max(b)),
-            }
-        else:
-            gray = img_bgr
-            channel_means = {"luminance": round(float(np.mean(gray)), 1)}
-            channel_stds = {"luminance": round(float(np.std(gray)), 1)}
-            channel_mins = {"luminance": int(np.min(gray))}
-            channel_maxs = {"luminance": int(np.max(gray))}
-
+        gray, stats = _channel_statistics(img_bgr, channels)
         entropy = compute_pixel_entropy(img_bgr)
-
-        # Luminance dynamic range & pixel clipping
-        lum_mean = round(float(np.mean(gray)), 1)
-        lum_std = round(float(np.std(gray)), 1)
-        lum_median = round(float(np.median(gray)), 1)
-        lum_min = int(np.min(gray))
-        lum_max = int(np.max(gray))
-        dynamic_range = lum_max - lum_min
-        highlight_clipped_count = int(np.sum(gray >= 252))
-        highlight_clipped_pct = round(float(highlight_clipped_count / gray.size * 100.0), 2)
-        shadow_crushed_count = int(np.sum(gray <= 4))
-        shadow_crushed_pct = round(float(shadow_crushed_count / gray.size * 100.0), 2)
-
-        # Dominant Palette Extraction (Top 6 Color Swatches with Human Names)
-        small_sample = cv2.resize(
-            img_bgr[:, :, :3] if channels >= 3 else cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR),
-            (100, 100),
-            interpolation=cv2.INTER_AREA,
-        )
-        pixels = small_sample.reshape(-1, 3)
-        q_pixels = (pixels // 32) * 32
-        colors, counts = np.unique(q_pixels, axis=0, return_counts=True)
-        top_indices = np.argsort(counts)[::-1][:6]
-        dominant_palette = []
-        for idx in top_indices:
-            pb, pg, pr = colors[idx]
-            hex_val = f"#{int(pr):02x}{int(pg):02x}{int(pb):02x}"
-            pct_val = round(float(counts[idx] / len(pixels) * 100.0), 1)
-            c_name = rgb_to_color_name(int(pr), int(pg), int(pb))
-            dominant_palette.append({
-                "hex": hex_val,
-                "rgb": (int(pr), int(pg), int(pb)),
-                "color_name": c_name,
-                "coverage_pct": pct_val,
-            })
-
-        # 4. Raw Physical Signals & Sensor Noise Residuals
-        sample_gray = gray
-        if max(h, w) > 1024:
-            scale_sc = 1024.0 / max(h, w)
-            sample_gray = cv2.resize(gray, (int(w * scale_sc), int(h * scale_sc)), interpolation=cv2.INTER_AREA)
-
-        blurred_med = cv2.medianBlur(sample_gray, 3)
-        diff_med = cv2.absdiff(sample_gray, blurred_med).astype(np.float32)
-        grad_mag = cv2.magnitude(cv2.Sobel(sample_gray, cv2.CV_32F, 1, 0), cv2.Sobel(sample_gray, cv2.CV_32F, 0, 1))
-        flat_mask = grad_mag < 15.0
-        flat_region_noise = float(np.mean(diff_med[flat_mask])) if np.sum(flat_mask) > 100 else float(np.mean(diff_med))
-
-        prnu_noise_mean = float(np.mean(diff_med))
-        prnu_noise_std = float(np.std(diff_med))
-
-        # Surface Bilateral Smoothness index
-        bilateral_flt = cv2.bilateralFilter(sample_gray, 9, 75, 75)
-        diff_bilateral = cv2.absdiff(sample_gray, bilateral_flt)
-        surface_smoothness = float(np.mean(diff_bilateral))
-
-        # Fourier Spectral Decay Alpha
-        try:
-            dft = np.fft.fft2(sample_gray.astype(np.float32))
-            dft_shift = np.fft.fftshift(dft)
-            mag_spec = np.abs(dft_shift)
-            cy_fft, cx_fft = sample_gray.shape[0] // 2, sample_gray.shape[1] // 2
-            y_mesh, x_mesh = np.ogrid[:sample_gray.shape[0], :sample_gray.shape[1]]
-            r_mesh = np.hypot(x_mesh - cx_fft, y_mesh - cy_fft).astype(int)
-            r_max = min(cx_fft, cy_fft) - 1
-            rad_profile = [float(mag_spec[r_mesh == r_idx].mean()) for r_idx in range(5, max(6, r_max))]
-            if len(rad_profile) > 5:
-                freqs = np.arange(5, 5 + len(rad_profile))
-                log_f = np.log(freqs)
-                log_p = np.log(np.maximum(1e-6, rad_profile))
-                fft_alpha = float(-np.polyfit(log_f, log_p, 1)[0])
-            else:
-                fft_alpha = 2.05
-        except Exception:
-            fft_alpha = 2.05
-
-        # Canny edge density & dark line-art contours
-        edges = cv2.Canny(sample_gray, 50, 150)
-        canny_edge_pct = round(float(np.sum(edges > 0) / max(1, edges.size) * 100.0), 2)
-        dark_edges = (sample_gray < 50) & (edges > 0)
-        dark_line_art_pct = round(float(np.sum(dark_edges) / max(1, edges.size) * 100.0), 2)
-
-        # Focus / blur sharpness (Laplacian variance)
-        laplacian_var = round(float(cv2.Laplacian(sample_gray, cv2.CV_64F).var()), 1)
+        palette, n_colors = _dominant_palette(img_bgr, gray, channels)
+        dpi_x, dpi_y = container["dpi_x"], container["dpi_y"]
 
         return {
             "valid": True,
             "filename": path.name,
             "source": source,
             "file_size_bytes": size_bytes,
-            "file_size_kb": round(size_kb, 1),
+            "file_size_kb": round(size_bytes / 1024.0, 1),
             "file_size_mb": round(size_mb, 3),
             "sha256": sha256,
             "md5": md5,
@@ -439,23 +425,23 @@ class ImageProfiler:
             "mime_type": f"image/{path.suffix.lstrip('.').lower()}",
             "width": w,
             "height": h,
-            "aspect_ratio": aspect_ratio_dec,
-            "aspect_ratio_str": aspect_ratio_str,
+            "aspect_ratio": aspect,
+            "aspect_ratio_str": aspect_str,
             "orientation": orientation,
             "channels": channels,
             "pixel_entropy": entropy,
             "channel_variances": {
-                "blue_std": channel_stds.get("blue", 0.0),
-                "green_std": channel_stds.get("green", 0.0),
-                "red_std": channel_stds.get("red", 0.0),
+                "blue_std": stats["stds"].get("blue", 0.0),
+                "green_std": stats["stds"].get("green", 0.0),
+                "red_std": stats["stds"].get("red", 0.0),
             },
             "spatial_geometry": {
                 "width": w,
                 "height": h,
-                "megapixels": megapixels,
-                "total_pixels": total_pixels,
-                "aspect_ratio": aspect_ratio_dec,
-                "aspect_ratio_str": aspect_ratio_str,
+                "megapixels": round((w * h) / 1_000_000.0, 2),
+                "total_pixels": int(w * h),
+                "aspect_ratio": aspect,
+                "aspect_ratio_str": aspect_str,
                 "orientation": orientation,
             },
             "display_attributes": {
@@ -464,40 +450,22 @@ class ImageProfiler:
                 "dpi_str": f"{int(dpi_x)} x {int(dpi_y)} DPI",
                 "bit_depth": f"{8 * channels}-bit ({channels} channels x 8-bit)",
                 "bits_per_channel": 8,
-                "color_mode": color_mode,
-                "color_space": icc_profile_name if has_icc else "Standard sRGB",
-                "has_alpha_channel": has_alpha,
+                "color_mode": container["color_mode"],
+                "color_space": container["icc_profile_name"] if container["has_icc"] else "Standard sRGB",
+                "has_alpha_channel": channels == 4,
             },
             "pixel_color_profile": {
-                "channel_means": channel_means,
-                "channel_stds": channel_stds,
-                "channel_mins": channel_mins,
-                "channel_maxs": channel_maxs,
-                "luminance_mean": lum_mean,
-                "luminance_median": lum_median,
-                "luminance_std": lum_std,
-                "luminance_min": lum_min,
-                "luminance_max": lum_max,
-                "dynamic_range": dynamic_range,
-                "highlight_clipped_count": highlight_clipped_count,
-                "highlight_clipped_pct": highlight_clipped_pct,
-                "shadow_crushed_count": shadow_crushed_count,
-                "shadow_crushed_pct": shadow_crushed_pct,
+                "channel_means": stats["means"],
+                "channel_stds": stats["stds"],
+                "channel_mins": stats["mins"],
+                "channel_maxs": stats["maxs"],
+                **_luminance_statistics(gray),
                 "shannon_entropy_bpp": entropy,
-                "unique_quantized_colors": len(colors),
-                "dominant_palette": dominant_palette,
+                "unique_quantized_colors": n_colors,
+                "dominant_palette": palette,
             },
-            "exif_device_details": exif_info,
-            "raw_physical_signals": {
-                "prnu_noise_mean": round(prnu_noise_mean, 3),
-                "prnu_noise_std": round(prnu_noise_std, 3),
-                "flat_region_noise_mean": round(flat_region_noise, 3),
-                "surface_smoothness_index": round(surface_smoothness, 3),
-                "fft_decay_alpha": round(fft_alpha, 3),
-                "canny_edge_pct": canny_edge_pct,
-                "dark_line_art_pct": dark_line_art_pct,
-                "laplacian_sharpness_var": laplacian_var,
-            },
+            "exif_device_details": container["exif_info"],
+            "raw_physical_signals": _raw_physical_signals(gray),
         }
 
 

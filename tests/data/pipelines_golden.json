@@ -1,0 +1,4425 @@
+{
+ "aud": {
+  "acoustic_forensics": {
+   "acoustic_features": {
+    "cutoff_freq_hz": 7781.2,
+    "digital_silence_ratio": 0.0,
+    "has_vocoder_cutoff": true,
+    "high_freq_ratio": 0.1986,
+    "p_audio_ai": 0.75,
+    "spectral_flatness": 0.551714
+   },
+   "ai_duration_pct": 100.0,
+   "ai_percentage": 50.2,
+   "confidence": 0.59,
+   "cutoff_freq_hz": 7781.2,
+   "details": {
+    "duration_seconds": 2.0,
+    "status": "Audible track extracted and evaluated.",
+    "temporal_segments": [
+     {
+      "ai_prob": 0.75,
+      "duration_seconds": 2.0,
+      "end_seconds": 2.0,
+      "has_vocoder_cutoff": true,
+      "label": "LIKELY AI-GENERATED",
+      "start_seconds": 0.0
+     }
+    ]
+   },
+   "digital_silence_ratio": 0.0,
+   "duration_seconds": 2.0,
+   "error": null,
+   "filename": "a.wav",
+   "forensic_cues": [
+    "Sharp vocoder brick-wall frequency cutoff at 7781.2 Hz (indicative of ElevenLabs, Suno, CosyVoice)"
+   ],
+   "has_audio_track": true,
+   "has_vocoder_cutoff": true,
+   "high_freq_ratio": 0.1986,
+   "label": "UNDECIDED",
+   "metadata": {},
+   "prediction": "UNDECIDED",
+   "real_percentage": 34.9,
+   "sample_rate": 16000,
+   "spectral_features": {
+    "cutoff_freq_hz": 7781.2,
+    "digital_silence_ratio": 0.0,
+    "has_vocoder_cutoff": true,
+    "high_freq_ratio": 0.1986,
+    "p_audio_ai": 0.75,
+    "spectral_flatness": 0.551714
+   },
+   "spectral_flatness": 0.551714,
+   "spectrogram_image": "<ndarray>",
+   "temporal_segments": [
+    {
+     "ai_prob": 0.75,
+     "duration_seconds": 2.0,
+     "end_seconds": 2.0,
+     "has_vocoder_cutoff": true,
+     "label": "LIKELY AI-GENERATED",
+     "start_seconds": 0.0
+    }
+   ],
+   "undecided_percentage": 14.9,
+   "valid": true
+  },
+  "ai_detected": true,
+  "attribution_open_set": {
+   "model_key": "elevenlabs",
+   "note": "",
+   "unknown_source": false
+  },
+  "authenticity_probabilities": {
+   "p_ai": 57.2,
+   "p_real": 39.8,
+   "p_undecided": 3.0
+  },
+  "confidence": 0.59,
+  "confidence_band": {
+   "band": "INCONCLUSIVE",
+   "label": "Inconclusive / Indeterminate Evidence",
+   "p_ai_percent": 50.2
+  },
+  "content_valid": true,
+  "decision": {
+   "ai_detected": true,
+   "authenticity_probabilities": {
+    "p_ai": 57.2,
+    "p_real": 39.8,
+    "p_undecided": 3.0
+   },
+   "calibration_status": "UNCALIBRATED_HEURISTIC",
+   "content_inventory": {
+    "acoustic_environment": "N/A",
+    "animal_types": [],
+    "animals_detected": false,
+    "atmospheric_mood": "Balanced",
+    "audio_speakers": 0,
+    "color_tone": "Neutral",
+    "depiction_summary": "",
+    "dominant_audio_type": "N/A",
+    "estimated_daytime": "Daylight",
+    "faces_count": 0,
+    "identified_items": [],
+    "lighting_style": "Ambient",
+    "location_context": "N/A",
+    "persons_count": 0,
+    "photographic_purpose": "General Depiction",
+    "scene_type": "General Scene",
+    "setting_type": "General Scene",
+    "text_regions_count": 0,
+    "vehicle_types": [],
+    "vehicles_detected": false,
+    "vocal_tone": "N/A"
+   },
+   "content_valid": true,
+   "cross_modal": {},
+   "decision_mode": "fused",
+   "evidence_trail": [
+    "[Audio Forensic] Sharp vocoder brick-wall frequency cutoff at 7781.2 Hz (indicative of ElevenLabs, Suno, CosyVoice)"
+   ],
+   "final_status": "PARTIALLY_SYNTHETIC_OR_EDITED",
+   "forensic_modality_results": {
+    "audio_ai_pct": 50.2,
+    "image_ai_pct": null,
+    "video_ai_pct": null
+   },
+   "localization": {
+    "suspicious_audio_duration_pct": 100.0,
+    "suspicious_image_area_pct": 0.0,
+    "suspicious_video_duration_pct": 0.0
+   },
+   "model_attribution": {
+    "attributed_model": "ElevenLabs Speech Synthesis",
+    "attribution_confidence": 0.31,
+    "confidence": 0.31,
+    "cues": [
+     "Sharp brick-wall vocoder cutoff at 7781 Hz (typical of ElevenLabs / CosyVoice)"
+    ],
+    "model_key": "elevenlabs",
+    "provider": "ElevenLabs",
+    "region_of_origin": "United States",
+    "top_candidates": [
+     {
+      "confidence": 0.31,
+      "model": "ElevenLabs Speech Synthesis"
+     },
+     {
+      "confidence": 0.27,
+      "model": "Alibaba CosyVoice (1.0 / 2.0)"
+     },
+     {
+      "confidence": 0.04,
+      "model": "2Noise ChatTTS"
+     }
+    ],
+    "watermark_detected": false
+   },
+   "provenance": {
+    "ai_declared_in_c2pa": false,
+    "c2pa_present": false,
+    "c2pa_signature": "Absent",
+    "hardware_make": null,
+    "hardware_model": null,
+    "provenance_verdict": "PROVENANCE_UNKNOWN",
+    "software": null
+   },
+   "reason": "Significant forensic anomalies detected; partial synthesis or post-processing likely.",
+   "taxonomy_description": "Authentic base media augmented with neural synthesis, voice cloning, or deepfake manipulation.",
+   "taxonomy_label": "AI-Enhanced / Composite (Mix)",
+   "taxonomy_reasons": [],
+   "taxonomy_state": "AI_ENHANCED_COMPOSITE",
+   "what_it_represents": "Standard visual capture"
+  },
+  "dimension_report": {
+   "attribution_open_set": {
+    "model_key": "elevenlabs",
+    "note": "",
+    "unknown_source": false
+   },
+   "confidence_band": {
+    "band": "INCONCLUSIVE",
+    "label": "Inconclusive / Indeterminate Evidence",
+    "p_ai_percent": 50.2
+   },
+   "findings_by_stage": {
+    "container": [
+     {
+      "check_id": "id3_tags",
+      "data": {},
+      "detail": "ID3v2 not applicable to format 'wav'.",
+      "dimension": "Section20",
+      "evidence_class": "METADATA_WEAK",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "container",
+      "status": "NOT_APPLICABLE",
+      "title": "ID3v2 tag forensics"
+     },
+     {
+      "check_id": "riff_structure",
+      "data": {
+       "bext": null,
+       "chunks": [
+        "fmt ",
+        "data"
+       ],
+       "format": {
+        "bits": 16,
+        "channels": 1,
+        "format_tag": 1,
+        "sample_rate": 16000
+       },
+       "generator": null,
+       "info": {},
+       "issues": []
+      },
+      "detail": "Well-formed RIFF/WAVE with chunks fmt , data. Chunk metadata is unauthenticated.",
+      "dimension": "Section20",
+      "evidence_class": "METADATA_WEAK",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "container",
+      "status": "INFO",
+      "title": "RIFF / WAV structure"
+     },
+     {
+      "check_id": "flac_md5",
+      "data": {},
+      "detail": "Not a FLAC file.",
+      "dimension": "Section20",
+      "evidence_class": "METADATA_WEAK",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "container",
+      "status": "NOT_APPLICABLE",
+      "title": "FLAC embedded MD5 signature"
+     },
+     {
+      "check_id": "mp3_encoder_tag",
+      "data": {},
+      "detail": "Not an MP3 file.",
+      "dimension": "Section20",
+      "evidence_class": "METADATA_WEAK",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "container",
+      "status": "NOT_APPLICABLE",
+      "title": "MP3 encoder / Xing-LAME tag"
+     },
+     {
+      "check_id": "ogg_structure",
+      "data": {},
+      "detail": "Not an Ogg stream.",
+      "dimension": "Section20",
+      "evidence_class": "METADATA_WEAK",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "container",
+      "status": "NOT_APPLICABLE",
+      "title": "Ogg page integrity"
+     }
+    ],
+    "context": [
+     {
+      "check_id": "audio_fingerprint",
+      "data": {
+       "fingerprint_frames": 54,
+       "index_loaded": false,
+       "matches": []
+      },
+      "detail": "Fingerprint computed. No local reference index is configured, so re-use cannot be checked here (set OMNI_AUDIO_FP_INDEX).",
+      "dimension": "Section21.3",
+      "evidence_class": "CONTEXT",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "context",
+      "status": "INFO",
+      "title": "Reuse / context fingerprint"
+     }
+    ],
+    "file_integrity": [
+     {
+      "check_id": "format_sniff",
+      "data": {
+       "declared": "wav",
+       "detected": "wav"
+      },
+      "detail": "File content matches its extension (wav).",
+      "dimension": "P",
+      "evidence_class": "SECURITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "file_integrity",
+      "status": "PASS",
+      "title": "True format vs. extension"
+     },
+     {
+      "check_id": "trailing_data",
+      "data": {
+       "declared_end": 64044,
+       "format": "wav",
+       "trailing_bytes": 0
+      },
+      "detail": "No data after the declared end of the audio container.",
+      "dimension": "P",
+      "evidence_class": "SECURITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "file_integrity",
+      "status": "PASS",
+      "title": "Bytes beyond declared end of audio"
+     },
+     {
+      "check_id": "polyglot_signatures",
+      "data": {
+       "signatures": []
+      },
+      "detail": "No archive, executable or script signatures found.",
+      "dimension": "P",
+      "evidence_class": "SECURITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "file_integrity",
+      "status": "PASS",
+      "title": "Embedded executable / archive / script signatures"
+     },
+     {
+      "check_id": "prompt_injection_text",
+      "data": {
+       "matches": []
+      },
+      "detail": "Scanned 0 free-text metadata field(s); no instruction-like text found.",
+      "dimension": "P",
+      "evidence_class": "SECURITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "file_integrity",
+      "status": "PASS",
+      "title": "Instruction-like text in metadata"
+     }
+    ],
+    "legal": [
+     {
+      "check_id": "rights_notice",
+      "data": {
+       "copyright": "",
+       "publisher": ""
+      },
+      "detail": "No embedded rights notice (absence does not mean the audio is free to use).",
+      "dimension": "Section21.2",
+      "evidence_class": "LEGAL_FLAG",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "legal",
+      "status": "INFO",
+      "title": "Rights / licence notice"
+     },
+     {
+      "check_id": "voice_biometric_notice",
+      "data": {
+       "speech": true
+      },
+      "detail": "The recording is speech-dominant. Voiceprints are biometric data under GDPR Art. 9, Illinois BIPA and Texas CUBI; consent and likeness rights may apply to processing or publishing it.",
+      "dimension": "Section21.2",
+      "evidence_class": "LEGAL_FLAG",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "MEDIUM",
+      "stage": "legal",
+      "status": "INFO",
+      "title": "Voice recording of a person"
+     },
+     {
+      "check_id": "ai_disclosure_label",
+      "data": {
+       "labelled": null
+      },
+      "detail": "Not applicable: audio is not judged AI-leaning.",
+      "dimension": "Section21.2",
+      "evidence_class": "LEGAL_FLAG",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "legal",
+      "status": "NOT_APPLICABLE",
+      "title": "AI-content disclosure label"
+     },
+     {
+      "check_id": "synthetic_voice_advisory",
+      "data": {},
+      "detail": "Not applicable (not AI-leaning speech).",
+      "dimension": "Section21.2",
+      "evidence_class": "LEGAL_FLAG",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "legal",
+      "status": "NOT_APPLICABLE",
+      "title": "Synthetic voice: likeness & telephony rules"
+     }
+    ],
+    "lifecycle": [
+     {
+      "check_id": "transcoding_cascade",
+      "data": {
+       "cues": [],
+       "likelihood": 0.0,
+       "likelihood_level": "LOW"
+      },
+      "detail": "Likelihood of multi-generation lossy transcoding: LOW (0.00). No transcoding cues.",
+      "dimension": "Section21.5",
+      "evidence_class": "RELIABILITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "lifecycle",
+      "status": "INFO",
+      "title": "Transcoding-cascade likelihood"
+     }
+    ],
+    "reliability": [
+     {
+      "check_id": "confidence_limiters",
+      "data": {
+       "level": "REDUCED",
+       "limiters": [
+        "Very short recording (2.0 s): temporal and spectral statistics are unstable"
+       ]
+      },
+      "detail": "Reliability REDUCED: Very short recording (2.0 s): temporal and spectral statistics are unstable.",
+      "dimension": "Section21.7",
+      "evidence_class": "RELIABILITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "LOW",
+      "stage": "reliability",
+      "status": "WARN",
+      "title": "Confidence limiters"
+     }
+    ],
+    "signal": [
+     {
+      "check_id": "enf_trace",
+      "data": {},
+      "detail": "Recording is shorter than about 12 s; ENF tracking needs a longer signal.",
+      "dimension": "O",
+      "evidence_class": "PHYSICAL_SIGNAL",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "signal",
+      "status": "NOT_APPLICABLE",
+      "title": "Electrical Network Frequency (ENF) trace"
+     },
+     {
+      "check_id": "fake_hires",
+      "data": {
+       "bits": 16,
+       "cutoff_hz": null,
+       "padded_bits": false,
+       "sample_rate": 16000,
+       "verdict": "NO_ANOMALY"
+      },
+      "detail": "Spectral content extends across the band expected for the container rate; no padding detected.",
+      "dimension": "L",
+      "evidence_class": "PHYSICAL_SIGNAL",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "signal",
+      "status": "PASS",
+      "title": "Fake hi-res / bit-depth padding"
+     },
+     {
+      "check_id": "telephony_channel",
+      "data": {
+       "band_limited_4k": false,
+       "hf_ratio_db": -23.6,
+       "lf_ratio_db": -36.9,
+       "narrowband_telephony": false
+      },
+      "detail": "No telephony-style band-limiting detected.",
+      "dimension": "L",
+      "evidence_class": "PHYSICAL_SIGNAL",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "signal",
+      "status": "PASS",
+      "title": "Telephony band-limiting"
+     },
+     {
+      "check_id": "loudness_dynamics",
+      "data": {
+       "clipping_ratio": 0.0,
+       "crest_db": 4.8,
+       "dc_offset": 0.0001,
+       "note": "RMS-based figures; not ITU-R BS.1770 integrated loudness (LUFS).",
+       "over_compressed": true,
+       "peak_dbfs": -8.6,
+       "rms_dbfs": -13.4,
+       "true_peak_dbfs_approx": -8.4
+      },
+      "detail": "RMS -13.4 dBFS, peak -8.6 dBFS, crest 4.8 dB. Crest factor below 6 dB indicates heavy compression/limiting.",
+      "dimension": "M",
+      "evidence_class": "PHYSICAL_SIGNAL",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "signal",
+      "status": "INFO",
+      "title": "Loudness & dynamics"
+     }
+    ]
+   },
+   "gates": {
+    "final_status": null,
+    "hard_block": {
+     "sha256": "27a82e354a934167a2a755d97950a7f8e2ff36cc97130e469e370aa87d84d91d",
+     "status": "INACTIVE",
+     "triggered": false
+    },
+    "recognition": null,
+    "triggered": false
+   },
+   "ood": {
+    "distance": null,
+    "note": "OOD gate is not fitted; fit it from your audio library to enable out-of-distribution detection.",
+    "status": "NOT_CALIBRATED",
+    "threshold": null
+   },
+   "reliability": {
+    "level": "REDUCED",
+    "limiters": [
+     "Very short recording (2.0 s): temporal and spectral statistics are unstable"
+    ]
+   },
+   "score_terms": {},
+   "summary": {
+    "by_status": {
+     "INFO": 6,
+     "NOT_APPLICABLE": 7,
+     "PASS": 6,
+     "WARN": 1
+    },
+    "total": 20
+   }
+  },
+  "evidence_trail": [
+   "Sharp vocoder brick-wall frequency cutoff at 7781.2 Hz (indicative of ElevenLabs, Suno, CosyVoice)",
+   "Voice Synthesizer Fingerprint: ElevenLabs Speech Synthesis (31% confidence)"
+  ],
+  "file_profile": {
+   "crest_factor": 1.74,
+   "duration_seconds": 2.0,
+   "dynamic_range_db": 4.8,
+   "file_size_bytes": 64044,
+   "file_size_mb": 0.061,
+   "filename": "a.wav",
+   "format": "WAV",
+   "is_clipped": false,
+   "is_silent": false,
+   "md5": "056379a8bf5fa887bd0e48c41be22607",
+   "peak_amplitude": 0.37,
+   "rms_energy": 0.2129,
+   "sample_rate": 16000,
+   "sha256": "27a82e354a934167a2a755d97950a7f8e2ff36cc97130e469e370aa87d84d91d",
+   "total_samples": 32000,
+   "valid": true
+  },
+  "filename": "a.wav",
+  "final_status": "PARTIALLY_SYNTHETIC_OR_EDITED",
+  "gate": {
+   "final_status": null,
+   "hard_block": {
+    "sha256": "27a82e354a934167a2a755d97950a7f8e2ff36cc97130e469e370aa87d84d91d",
+    "status": "INACTIVE",
+    "triggered": false
+   },
+   "recognition": null,
+   "triggered": false
+  },
+  "model_attribution": {
+   "attributed_model": "ElevenLabs Speech Synthesis",
+   "attribution_confidence": 0.31,
+   "confidence": 0.31,
+   "cues": [
+    "Sharp brick-wall vocoder cutoff at 7781 Hz (typical of ElevenLabs / CosyVoice)"
+   ],
+   "model_key": "elevenlabs",
+   "provider": "ElevenLabs",
+   "region_of_origin": "United States",
+   "top_candidates": [
+    {
+     "confidence": 0.31,
+     "model": "ElevenLabs Speech Synthesis"
+    },
+    {
+     "confidence": 0.27,
+     "model": "Alibaba CosyVoice (1.0 / 2.0)"
+    },
+    {
+     "confidence": 0.04,
+     "model": "2Noise ChatTTS"
+    }
+   ],
+   "watermark_detected": false
+  },
+  "newbie_explanation": "### \ud83c\udf99\ufe0f What We Identified in this Audio Track\n\nThis file (`a.wav`) is a **0.0-second audio recording** sampled at **16,000 Hz**. Acoustically, it features **1 speaker** delivering **vocal speech**.\n\n### \ud83d\udca1 How Would You Explain This to a Newbie?\n\n**The Simple Takeaway:** Our forensic acoustic engine's heuristic (uncalibrated) score is **57.2% AI-likelihood**, indicating this audio was most likely **created by an AI voice generator or clone** (such as ElevenLabs, OpenAI Voice, or Tortoise) rather than spoken by a live human.\n\n**Think of it like this:** When a real person speaks into a microphone, air passes through vocal cords, bounces around the mouth and chest, and catches subtle human imperfections \u2014 like tiny breaths, tongue clicks, and the natural echo of the room you are standing in. An AI voice model, on the other hand, calculates speech mathematically using a digital vocoder. When we analyze the sound waves under our forensic microscope, the speech harmonics are unnaturally smooth, the sound abruptly cuts off at a digital ceiling (the vocoder brickwall), and the silent gaps between words are pure mathematical zeros rather than real-world room ambience. Even though it sounds uncannily like a real person, the acoustic evidence points to a computer-generated origin.",
+  "nine_dimensions_dossier": {
+   "dimension_1_hardware_provenance": {
+    "c2pa_status": "Absent (Neutral)",
+    "container_format": "WAV",
+    "description": "Inspects audio container headers (WAV/RIFF, MP3 frame sync), metadata tags, and C2PA manifests.",
+    "dimension_id": 1,
+    "provenance_verdict": "NO_ENCODER_METADATA",
+    "title": "Dimension 1: Acoustic Hardware & Container Provenance"
+   },
+   "dimension_2_pixel_architecture": {
+    "bit_depth": "16-bit PCM",
+    "channels": "Mono (1 Ch)",
+    "description": "Examines sampling rate, bit depth, duration, and channel spatial configuration.",
+    "dimension_id": 2,
+    "duration": "0.00 seconds",
+    "sample_rate": "16,000 Hz",
+    "title": "Dimension 2: Acoustic Temporal Geometry & Bandwidth Sampling"
+   },
+   "dimension_3_prnu_sensor_noise": {
+    "description": "Detects sharp artificial frequency drop-offs characteristic of neural speech synthesizers (16kHz/24kHz).",
+    "detected_cutoff_hz": "None (Full Bandwidth)",
+    "diagnosis": "Sharp vocoder brickwall cutoff detected at 0 Hz; common signature of ElevenLabs / VITS neural models.",
+    "dimension_id": 3,
+    "is_brickwalled": true,
+    "title": "Dimension 3: Neural Vocoder High-Frequency Cutoff (Brickwalling)"
+   },
+   "dimension_4_surface_smoothness": {
+    "description": "Measures resonant tonality versus unnatural mathematical smoothing across speech formants.",
+    "diagnosis": "Natural human vocal tract resonance and acoustic turbulence preserved.",
+    "dimension_id": 4,
+    "is_unnaturally_smooth": false,
+    "spectral_flatness": 0.05,
+    "title": "Dimension 4: Wiener Spectral Flatness & Harmonic Continuity"
+   },
+   "dimension_5_fourier_fft_decay": {
+    "description": "Verifies background room tone versus digital zero-silence between spoken utterances.",
+    "diagnosis": "Natural continuous acoustic room tone and microphone floor noise present.",
+    "dimension_id": 5,
+    "has_digital_dead_silence": false,
+    "silence_ratio": "8.0%",
+    "title": "Dimension 5: Silence Profile & Environmental Room Ambience"
+   },
+   "dimension_6_subject_genre": {
+    "description": "Catalogs estimated speakers, speaking cadence, and acoustic recording environment.",
+    "dimension_id": 6,
+    "dominant_type": "Spoken Voice",
+    "environment": "Studio / Isolated Recording",
+    "estimated_speakers": 1,
+    "title": "Dimension 6: Vocal Entities & Acoustic Environment",
+    "vocal_tone": "Natural Cadence"
+   },
+   "dimension_7_visual_medium": {
+    "description": "Distinguishes human physical vocal cords from neural text-to-speech, voice conversion, or singing synthesis.",
+    "dimension_id": 7,
+    "is_synthetic_voice": false,
+    "synthesis_medium": "Human Speech",
+    "title": "Dimension 7: Audio Synthesis Medium & Generation Paradigm"
+   },
+   "dimension_8_sensor_spectrum": {
+    "description": "Assesses frequency range from sub-bass (20Hz) through presence (10kHz-20kHz).",
+    "dimension_id": 8,
+    "effective_bandwidth": "8,000 Hz",
+    "nyquist_frequency": "8,000 Hz",
+    "title": "Dimension 8: Frequency Spectrum Bandwidth & Nyquist Coverage"
+   },
+   "dimension_9_generative_attribution": {
+    "attributed_generator": "ElevenLabs Speech Synthesis",
+    "attribution_confidence": "31%",
+    "description": "Identifies voice cloning engines (ElevenLabs, OpenAI Voice, Tortoise, Bark, VITS) and watermark markers.",
+    "dimension_id": 9,
+    "suspicious_duration_pct": "100.0%",
+    "title": "Dimension 9: Foundation Voice Model Attribution & Watermarking",
+    "watermark_detected": false
+   }
+  },
+  "ood": {
+   "distance": null,
+   "note": "OOD gate is not fitted; fit it from your audio library to enable out-of-distribution detection.",
+   "status": "NOT_CALIBRATED",
+   "threshold": null
+  },
+  "provenance": {
+   "c2pa": {
+    "ai_declaration": false,
+    "c2pa_present": false,
+    "creation_tool": null,
+    "details": "No C2PA Content Credentials manifest detected.",
+    "is_signed": false,
+    "manifests_found": [],
+    "status": "NO_C2PA"
+   },
+   "c2pa_present": false,
+   "cues": [
+    "No encoder software metadata found (neutral/stripped stream)."
+   ],
+   "encoder": null,
+   "exif": {
+    "ai_signature_found": false,
+    "camera_make": null,
+    "camera_model": null,
+    "datetime_original": null,
+    "has_exif": false,
+    "raw_tags": {},
+    "signature_details": null,
+    "software": null
+   },
+   "metadata": {
+    "encoder": null
+   },
+   "provenance_ai_confidence": 0.5,
+   "provenance_rule": "NIST Rule: Absence of C2PA metadata indicates UNKNOWN provenance, not authenticity. Strong conclusions require cryptographic verification.",
+   "provenance_status": "NO_ENCODER_METADATA",
+   "provenance_verdict": "PROVENANCE_UNKNOWN"
+  },
+  "scene_and_tone": {
+   "crest_factor": 1.74,
+   "delivery_style": "Compressed / Commercial Voiceover",
+   "dominant_modality": "Vocal Speech",
+   "rms_energy": 0.2129,
+   "setting": "Isolated Studio Recording",
+   "speech_ratio": 0.68
+  },
+  "stream_validation": {
+   "channels": 1,
+   "duration_seconds": 2.0,
+   "error": null,
+   "file_hash_sha256": "27a82e354a934167a2a755d97950a7f8e2ff36cc97130e469e370aa87d84d91d",
+   "file_size_mb": 0.061,
+   "filename": "a.wav",
+   "format": "WAV",
+   "is_clipped": false,
+   "is_silent": false,
+   "readable": true,
+   "sample_rate": 16000,
+   "valid": true
+  }
+ },
+ "img_a.jpg": {
+  "ai_detected": false,
+  "ai_detection": {
+   "ai_percentage": 0.1,
+   "ai_spatial_area_pct": 0.0,
+   "backend": "hybrid_deep_learning_and_statistical",
+   "background_cutout_detected": false,
+   "confidence": 1.0,
+   "digital_art_detected": false,
+   "document_layout": "None (Standard Visual Content)",
+   "error": null,
+   "face_swap_detected": false,
+   "forensic_cues": [
+    "Genuine camera hardware detected (Canon Canon EOS R5)",
+    "Natural optical camera sensor shot noise preserved (36.95)",
+    "Natural fine-grained surface micro-textures preserved (27.04)",
+    "Abnormal Fourier spectral decay alpha (0.02)"
+   ],
+   "forensic_metrics": {
+    "is_canonical_gen": false,
+    "is_cutout": false,
+    "is_digital_art": false,
+    "is_face_swap": false,
+    "is_inpainted_or_composite": false,
+    "is_scanned": false,
+    "is_screen_recaptured": false,
+    "is_screenshot": false,
+    "noise_residual_mean": 36.951,
+    "screenshot_device": "Laptop / Desktop",
+    "screenshot_orientation": "Landscape",
+    "sensor_spectrum": "Visible Spectrum (Bayer RGB)",
+    "spectral_decay_alpha": 0.023,
+    "surface_smoothness": 27.043,
+    "visual_medium": "Photographic Capture"
+   },
+   "heatmap_rgb": "<ndarray>",
+   "inpainting_details": {
+    "confidence": 0.0,
+    "details": null,
+    "is_manipulated": false,
+    "manipulation_type": null,
+    "noise_inconsistency": 0.0
+   },
+   "inpainting_detected": false,
+   "is_available": true,
+   "label": "LIKELY REAL",
+   "log_likelihood_ratios": {
+    "exif_hardware": -1.4,
+    "fft_power_decay": 0.288,
+    "neural_backbone": -0.053,
+    "sensor_noise": -1.067,
+    "surface_smoothness": -0.923
+   },
+   "neural_enhancer_detected": false,
+   "posterior_log_odds": -2.878,
+   "prediction": "LIKELY REAL",
+   "real_percentage": 97.0,
+   "scanned_photo_detected": false,
+   "screen_recapture_details": {
+    "confidence": 0.0,
+    "details": null,
+    "is_screen_recapture": false,
+    "moire_score": 0.31,
+    "peak_ratio": 1.07
+   },
+   "screen_recapture_detected": false,
+   "screenshot_details": {
+    "confidence": 0.0,
+    "details": null,
+    "device_type": "Laptop / Desktop",
+    "is_screenshot": false,
+    "orientation": "Landscape",
+    "screen_resolution": "320x256",
+    "ui_elements_detected": []
+   },
+   "screenshot_detected": false,
+   "sensor_spectrum": "Visible Spectrum (Bayer RGB)",
+   "subject_genre": "Unspecified General Scene",
+   "taxonomy_description": "Authentic camera or mobile-phone photographic capture containing natural sensor noise (PRNU), coherent optical properties, genuine lens depth-of-field, and unmanipulated physical geometry and EXIF metadata.",
+   "taxonomy_label": "Authentic Real Photograph",
+   "taxonomy_reasons": [
+    "Camera hardware EXIF tags: Canon Canon EOS R5",
+    "Natural camera sensor Poisson shot noise (PRNU residual: 36.95)",
+    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
+   ],
+   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
+   "undecided_percentage": 2.9,
+   "visual_medium": "Photographic Capture",
+   "watermark_details": null,
+   "watermark_detected": false
+  },
+  "attribution_open_set": {
+   "model_key": "none_authentic",
+   "note": "",
+   "unknown_source": false
+  },
+  "authenticity_probabilities": {
+   "p_ai": 0.1,
+   "p_real": 97.0,
+   "p_undecided": 2.9
+  },
+  "background_cutout_detected": false,
+  "category_identification": {
+   "document_layout": "None (Standard Visual Content)",
+   "iptc_digital_source_type": "digitalsourcetype:digitalCapture (Original Physical Capture)",
+   "primary_genre": "General Scene",
+   "sensor_spectrum": "Visible Spectrum (Bayer RGB)",
+   "taxonomy_description": "Authentic camera or mobile-phone photographic capture containing natural sensor noise (PRNU), coherent optical properties, genuine lens depth-of-field, and unmanipulated physical geometry and EXIF metadata.",
+   "taxonomy_label": "Authentic Real Photograph",
+   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
+   "visual_medium": "Photographic Capture"
+  },
+  "confidence": 1.0,
+  "confidence_band": {
+   "band": "HIGH_CONFIDENCE_AUTHENTIC",
+   "label": "High-Confidence Authentic Physical Capture",
+   "p_ai_percent": 0.1
+  },
+  "content_inventory": {
+   "contents_and_items": {
+    "count": 0,
+    "details": [],
+    "detected": false,
+    "identified_items": [],
+    "items": [],
+    "text_regions_count": 0
+   },
+   "entities": {
+    "animals": {
+     "animal_types": [],
+     "count": 0,
+     "details": [],
+     "detected": false,
+     "types": []
+    },
+    "humans": {
+     "bounding_boxes": [],
+     "count": 0,
+     "deepfake_analysis": {
+      "confidence": 0.0,
+      "details": [],
+      "risk": "NO_FACES_DETECTED"
+     },
+     "faces": 0,
+     "faces_count": 0,
+     "is_stylized_character": false,
+     "person_boxes": [],
+     "persons_count": 0
+    }
+   },
+   "environment": {
+    "setting": "Outdoor / Nature",
+    "setting_type": "Outdoor / Nature",
+    "sky_water_ratio": 0.18,
+    "vegetation_ratio": 0.222
+   },
+   "environment_and_surroundings": {
+    "setting": "Outdoor / Nature",
+    "setting_type": "Outdoor / Nature",
+    "sky_water_ratio": 0.18,
+    "vegetation_ratio": 0.222
+   },
+   "faces_count": 0,
+   "items_and_objects": {
+    "count": 0,
+    "details": [],
+    "detected": false,
+    "identified_items": [],
+    "items": [],
+    "text_regions_count": 0
+   },
+   "lighting_and_daytime": {
+    "daytime": "Daylight",
+    "estimated_daytime": "Daylight",
+    "lighting_quality": "Diffuse Daylight",
+    "lighting_style": "Diffuse Daylight",
+    "luminance_dynamic_range": 49.3,
+    "mean_luminance": 127.0
+   },
+   "living_entities": {
+    "animals": {
+     "animal_types": [],
+     "count": 0,
+     "details": [],
+     "detected": false,
+     "types": []
+    },
+    "humans": {
+     "bounding_boxes": [],
+     "count": 0,
+     "deepfake_analysis": {
+      "confidence": 0.0,
+      "details": [],
+      "risk": "NO_FACES_DETECTED"
+     },
+     "faces": 0,
+     "faces_count": 0,
+     "is_stylized_character": false,
+     "person_boxes": [],
+     "persons_count": 0
+    }
+   },
+   "persons_count": 0,
+   "purpose_and_depiction": {
+    "aspect_ratio": 1.25,
+    "document_layout": "None (Standard Visual Content)",
+    "photographic_purpose": "General Scene",
+    "primary_genre": "General Scene"
+   },
+   "scene_type": "Outdoor / Nature",
+   "tone_and_mood": {
+    "atmospheric_mood": "Balanced Contrast",
+    "channel_means": {
+     "blue": 127.4,
+     "green": 126.9,
+     "red": 127.1
+    },
+    "color_temperature": "Neutral",
+    "color_tone": "Neutral",
+    "contrast_profile": "Balanced Contrast"
+   },
+   "vehicles": {
+    "count": 0,
+    "details": [],
+    "detected": false,
+    "types": [],
+    "vehicle_types": []
+   }
+  },
+  "content_valid": true,
+  "decision": {
+   "ai_detected": false,
+   "authenticity_probabilities": {
+    "p_ai": 0.1,
+    "p_real": 97.0,
+    "p_undecided": 2.9
+   },
+   "calibration_status": "UNCALIBRATED_HEURISTIC",
+   "content_inventory": {
+    "acoustic_environment": "N/A",
+    "animal_types": [],
+    "animals_detected": false,
+    "atmospheric_mood": "Balanced Contrast",
+    "audio_speakers": 0,
+    "color_tone": "Neutral",
+    "depiction_summary": "",
+    "dominant_audio_type": "N/A",
+    "estimated_daytime": "Daylight",
+    "faces_count": 0,
+    "identified_items": [],
+    "lighting_style": "Diffuse Daylight",
+    "location_context": "N/A",
+    "persons_count": 0,
+    "photographic_purpose": "General Scene",
+    "scene_type": "Outdoor / Nature",
+    "setting_type": "Outdoor / Nature",
+    "text_regions_count": 0,
+    "vehicle_types": [],
+    "vehicles_detected": false,
+    "vocal_tone": "N/A"
+   },
+   "content_valid": true,
+   "cross_modal": {},
+   "decision_mode": "image_authoritative",
+   "evidence_trail": [
+    "[Image Forensic] Genuine camera hardware detected (Canon Canon EOS R5)",
+    "[Image Forensic] Natural optical camera sensor shot noise preserved (36.95)",
+    "[Image Forensic] Natural fine-grained surface micro-textures preserved (27.04)",
+    "[Image Forensic] Abnormal Fourier spectral decay alpha (0.02)",
+    "[Hardware Provenance] Camera hardware EXIF tags present (unauthenticated, not scored): Canon Canon EOS R5"
+   ],
+   "final_status": "LIKELY REAL",
+   "forensic_modality_results": {
+    "audio_ai_pct": null,
+    "image_ai_pct": 0.1,
+    "video_ai_pct": null
+   },
+   "localization": {
+    "suspicious_audio_duration_pct": 0.0,
+    "suspicious_image_area_pct": 0.0,
+    "suspicious_video_duration_pct": 0.0
+   },
+   "model_attribution": {
+    "attributed_model": "None (Authentic Capture)",
+    "attribution_confidence": 0.0,
+    "attribution_cues": [
+     "Camera-like sensor noise and optical properties observed (heuristic; metadata is unauthenticated)."
+    ],
+    "model_key": "none_authentic",
+    "region_of_origin": "Physical Sensor / Camera",
+    "top_candidates": []
+   },
+   "provenance": {
+    "ai_declared_in_c2pa": false,
+    "c2pa_present": false,
+    "c2pa_signature": "Absent",
+    "hardware_make": "Canon",
+    "hardware_model": "Canon EOS R5",
+    "provenance_verdict": "HARDWARE_EXIF_PRESENT",
+    "software": null
+   },
+   "reason": "Physical sensor noise, natural optics, and provenance support authentic capture.",
+   "taxonomy_description": "Authentic camera or mobile-phone photographic capture containing natural sensor noise (PRNU), coherent optical properties, genuine lens depth-of-field, and unmanipulated physical geometry and EXIF metadata.",
+   "taxonomy_label": "Authentic Real Photograph",
+   "taxonomy_reasons": [
+    "Camera hardware EXIF tags: Canon Canon EOS R5",
+    "Natural camera sensor Poisson shot noise (PRNU residual: 36.95)",
+    "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
+   ],
+   "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
+   "what_it_represents": "Outdoor / Nature setting"
+  },
+  "digital_art_detected": false,
+  "dimension_report": {
+   "attribution_open_set": {
+    "model_key": "none_authentic",
+    "note": "",
+    "unknown_source": false
+   },
+   "confidence_band": {
+    "band": "HIGH_CONFIDENCE_AUTHENTIC",
+    "label": "High-Confidence Authentic Physical Capture",
+    "p_ai_percent": 0.1
+   },
+   "findings_by_stage": {
+    "context": [
+     {
+      "check_id": "perceptual_hash",
+      "data": {
+       "dhash": "8b035a4e24ce8727",
+       "index_loaded": false,
+       "matches": [],
+       "phash": "a79be8d69a03139a"
+      },
+      "detail": "Hashes computed. No local reference index is configured, so context re-use cannot be checked here (set OMNI_CONTEXT_HASH_INDEX).",
+      "dimension": "Section22.3",
+      "evidence_class": "CONTEXT",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "context",
+      "status": "INFO",
+      "title": "Reuse / context fingerprint"
+     }
+    ],
+    "file_integrity": [
+     {
+      "check_id": "format_sniff",
+      "data": {
+       "declared": "jpeg",
+       "detected": "jpeg"
+      },
+      "detail": "File content matches its extension (jpeg).",
+      "dimension": "Q",
+      "evidence_class": "SECURITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "file_integrity",
+      "status": "PASS",
+      "title": "True format vs. extension"
+     },
+     {
+      "check_id": "trailing_data",
+      "data": {
+       "format": "jpeg",
+       "image_end_offset": 74065,
+       "trailing_bytes": 0
+      },
+      "detail": "No data after the image's end marker.",
+      "dimension": "Q",
+      "evidence_class": "SECURITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "file_integrity",
+      "status": "PASS",
+      "title": "Bytes after image end marker"
+     },
+     {
+      "check_id": "polyglot_signatures",
+      "data": {
+       "signatures": []
+      },
+      "detail": "No archive, executable or script signatures found.",
+      "dimension": "Q",
+      "evidence_class": "SECURITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "file_integrity",
+      "status": "PASS",
+      "title": "Embedded executable / archive / script signatures"
+     },
+     {
+      "check_id": "svg_active_content",
+      "data": {},
+      "detail": "Not an SVG/XML document.",
+      "dimension": "Q",
+      "evidence_class": "SECURITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "file_integrity",
+      "status": "NOT_APPLICABLE",
+      "title": "SVG active content"
+     },
+     {
+      "check_id": "prompt_injection_text",
+      "data": {
+       "matches": []
+      },
+      "detail": "Scanned 0 free-text metadata field(s); no instruction-like text found.",
+      "dimension": "Q",
+      "evidence_class": "SECURITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "file_integrity",
+      "status": "PASS",
+      "title": "Instruction-like text in metadata"
+     }
+    ],
+    "formats": [
+     {
+      "check_id": "jpeg_quant_tables",
+      "data": {
+       "estimated_quality": 90,
+       "progressive": false,
+       "standard_libjpeg": true,
+       "subsampling": "4:2:0",
+       "table_count": 2
+      },
+      "detail": "Standard libjpeg-scaled tables (quality about 90): typical of a software re-save or web export.",
+      "dimension": "O",
+      "evidence_class": "METADATA_WEAK",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "formats",
+      "status": "INFO",
+      "title": "JPEG quantization tables"
+     },
+     {
+      "check_id": "png_chunks",
+      "data": {},
+      "detail": "Not a PNG file.",
+      "dimension": "O",
+      "evidence_class": "METADATA_WEAK",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "formats",
+      "status": "NOT_APPLICABLE",
+      "title": "PNG chunk inventory"
+     }
+    ],
+    "legal": [
+     {
+      "check_id": "rights_notice",
+      "data": {
+       "artist": "",
+       "copyright": "",
+       "xmp_markers": []
+      },
+      "detail": "No embedded rights or licence notice (absence does not mean the image is free to use).",
+      "dimension": "Section22.2",
+      "evidence_class": "LEGAL_FLAG",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "legal",
+      "status": "INFO",
+      "title": "Rights / licence notice"
+     },
+     {
+      "check_id": "location_privacy",
+      "data": {
+       "gps_present": false
+      },
+      "detail": "No GPS location embedded.",
+      "dimension": "Section22.2",
+      "evidence_class": "LEGAL_FLAG",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "legal",
+      "status": "PASS",
+      "title": "Embedded location data"
+     },
+     {
+      "check_id": "biometric_notice",
+      "data": {
+       "faces_count": 0
+      },
+      "detail": "No faces detected.",
+      "dimension": "Section22.2",
+      "evidence_class": "LEGAL_FLAG",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "legal",
+      "status": "NOT_APPLICABLE",
+      "title": "Identifiable people"
+     },
+     {
+      "check_id": "ai_disclosure_label",
+      "data": {
+       "labelled": null
+      },
+      "detail": "Not applicable: image is not judged AI-leaning.",
+      "dimension": "Section22.2",
+      "evidence_class": "LEGAL_FLAG",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "legal",
+      "status": "NOT_APPLICABLE",
+      "title": "AI-content disclosure label"
+     }
+    ],
+    "lifecycle": [
+     {
+      "check_id": "platform_reencode",
+      "data": {
+       "cues": [
+        "4:2:0 chroma subsampling"
+       ],
+       "likelihood": 0.15,
+       "likelihood_level": "LOW"
+      },
+      "detail": "Likelihood of social/messaging re-encode: LOW (0.15). Cues: 4:2:0 chroma subsampling. Sensor-noise and compression traces may be degraded.",
+      "dimension": "Section22.5",
+      "evidence_class": "RELIABILITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "lifecycle",
+      "status": "INFO",
+      "title": "Platform re-encode likelihood"
+     }
+    ],
+    "metadata": [
+     {
+      "check_id": "exif_consistency",
+      "data": {
+       "make": "Canon",
+       "model": "Canon EOS R5",
+       "present": {
+        "DateTimeOriginal": false,
+        "ExposureTime": false,
+        "FNumber": false,
+        "FocalLength": false,
+        "ISO": false,
+        "Make": true,
+        "Model": true
+       }
+      },
+      "detail": "EXIF is partial; coherent as far as present, no inference drawn.",
+      "dimension": "Section21",
+      "evidence_class": "METADATA_WEAK",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "metadata",
+      "status": "INFO",
+      "title": "EXIF coherence"
+     },
+     {
+      "check_id": "timestamp_sanity",
+      "data": {},
+      "detail": "No EXIF timestamps present.",
+      "dimension": "Section21",
+      "evidence_class": "METADATA_WEAK",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "metadata",
+      "status": "NOT_APPLICABLE",
+      "title": "Timestamp plausibility"
+     },
+     {
+      "check_id": "thumbnail_match",
+      "data": {},
+      "detail": "No embedded EXIF thumbnail.",
+      "dimension": "Section21",
+      "evidence_class": "PHYSICAL_SIGNAL",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "metadata",
+      "status": "NOT_APPLICABLE",
+      "title": "Embedded thumbnail vs. main image"
+     },
+     {
+      "check_id": "icc_profile",
+      "data": {
+       "present": false
+      },
+      "detail": "No embedded ICC profile (common for screenshots, web exports and stripped files).",
+      "dimension": "Section21",
+      "evidence_class": "METADATA_WEAK",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "metadata",
+      "status": "INFO",
+      "title": "ICC color profile"
+     }
+    ],
+    "reliability": [
+     {
+      "check_id": "confidence_limiters",
+      "data": {
+       "level": "NORMAL",
+       "limiters": []
+      },
+      "detail": "No known confidence limiters; the detectors are operating in their normal envelope.",
+      "dimension": "Section22.6",
+      "evidence_class": "RELIABILITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "reliability",
+      "status": "PASS",
+      "title": "Confidence limiters"
+     }
+    ]
+   },
+   "gates": {
+    "final_status": null,
+    "hard_block": {
+     "sha256": "e89a6997556457f0fdc7a5e4549eca728cd8626ef8b800282132dbd335b93bcf",
+     "status": "INACTIVE",
+     "triggered": false
+    },
+    "recognition": null,
+    "triggered": false
+   },
+   "ood": {
+    "distance": null,
+    "note": "OOD gate is not fitted; fit it from your media library to enable out-of-distribution detection.",
+    "status": "NOT_CALIBRATED",
+    "threshold": null
+   },
+   "reliability": {
+    "level": "NORMAL",
+    "limiters": []
+   },
+   "score_terms": {},
+   "summary": {
+    "by_status": {
+     "INFO": 6,
+     "NOT_APPLICABLE": 6,
+     "PASS": 6
+    },
+    "total": 18
+   }
+  },
+  "document_layout": "None (Standard Visual Content)",
+  "evidence_trail": [
+   "Camera hardware EXIF tags present (unauthenticated metadata): Canon Canon EOS R5",
+   "Genuine camera hardware detected (Canon Canon EOS R5)",
+   "Natural optical camera sensor shot noise preserved (36.95)",
+   "Natural fine-grained surface micro-textures preserved (27.04)",
+   "Abnormal Fourier spectral decay alpha (0.02)"
+  ],
+  "face_swap_detected": false,
+  "file_profile": {
+   "aspect_ratio": 1.25,
+   "aspect_ratio_str": "1.25:1 Ratio",
+   "channel_variances": {
+    "blue_std": 50.9,
+    "green_std": 52.9,
+    "red_std": 51.7
+   },
+   "channels": 3,
+   "display_attributes": {
+    "bit_depth": "24-bit (3 channels x 8-bit)",
+    "bits_per_channel": 8,
+    "color_mode": "RGB",
+    "color_space": "Standard sRGB",
+    "dpi_str": "72 x 72 DPI",
+    "dpi_x": 72.0,
+    "dpi_y": 72.0,
+    "has_alpha_channel": false
+   },
+   "exif_device_details": {
+    "aperture": null,
+    "camera_make": "Canon",
+    "camera_model": "Canon EOS R5",
+    "color_space_tag": "sRGB",
+    "date_time": null,
+    "exposure_bias": "0.0 EV",
+    "exposure_time": null,
+    "flash": "Not Fired",
+    "focal_length": null,
+    "gps_details": {
+     "coordinates_str": "Not Embedded",
+     "has_gps": false
+    },
+    "gps_embedded": false,
+    "has_exif": true,
+    "iso": null,
+    "lens_model": null,
+    "metering_mode": "Standard",
+    "orientation_tag": "Normal (1)",
+    "software": null,
+    "white_balance": "Auto"
+   },
+   "file_size_bytes": 74065,
+   "file_size_kb": 72.3,
+   "file_size_mb": 0.071,
+   "filename": "a.jpg",
+   "format": "JPG",
+   "height": 256,
+   "md5": "833ad88e71bf0edf5cec0f17e0e47af7",
+   "mime_type": "image/jpg",
+   "orientation": "Landscape (Horizontal)",
+   "pixel_color_profile": {
+    "channel_maxs": {
+     "blue": 255,
+     "green": 255,
+     "red": 255
+    },
+    "channel_means": {
+     "blue": 127.4,
+     "green": 126.9,
+     "red": 127.1
+    },
+    "channel_mins": {
+     "blue": 0,
+     "green": 0,
+     "red": 0
+    },
+    "channel_stds": {
+     "blue": 50.9,
+     "green": 52.9,
+     "red": 51.7
+    },
+    "dominant_palette": [
+     {
+      "color_name": "Medium Neutral Gray",
+      "coverage_pct": 12.3,
+      "hex": "#606060",
+      "rgb": [
+       96,
+       96,
+       96
+      ]
+     },
+     {
+      "color_name": "Medium Neutral Gray",
+      "coverage_pct": 11.8,
+      "hex": "#808080",
+      "rgb": [
+       128,
+       128,
+       128
+      ]
+     },
+     {
+      "color_name": "Cobalt / Sapphire Blue",
+      "coverage_pct": 9.0,
+      "hex": "#606080",
+      "rgb": [
+       96,
+       96,
+       128
+      ]
+     },
+     {
+      "color_name": "Deep Crimson Red",
+      "coverage_pct": 8.7,
+      "hex": "#806060",
+      "rgb": [
+       128,
+       96,
+       96
+      ]
+     },
+     {
+      "color_name": "Teal / Aquamarine",
+      "coverage_pct": 8.3,
+      "hex": "#608080",
+      "rgb": [
+       96,
+       128,
+       128
+      ]
+     },
+     {
+      "color_name": "Warm Rust / Brown",
+      "coverage_pct": 8.2,
+      "hex": "#808060",
+      "rgb": [
+       128,
+       128,
+       96
+      ]
+     }
+    ],
+    "dynamic_range": 247,
+    "highlight_clipped_count": 0,
+    "highlight_clipped_pct": 0.0,
+    "luminance_max": 250,
+    "luminance_mean": 127.0,
+    "luminance_median": 127.0,
+    "luminance_min": 3,
+    "luminance_std": 49.3,
+    "shadow_crushed_count": 3,
+    "shadow_crushed_pct": 0.0,
+    "shannon_entropy_bpp": 7.625,
+    "unique_quantized_colors": 71
+   },
+   "pixel_entropy": 7.625,
+   "raw_physical_signals": {
+    "canny_edge_pct": 37.09,
+    "dark_line_art_pct": 1.64,
+    "fft_decay_alpha": -0.012,
+    "flat_region_noise_mean": 37.348,
+    "laplacian_sharpness_var": 48919.2,
+    "prnu_noise_mean": 36.951,
+    "prnu_noise_std": 30.783,
+    "surface_smoothness_index": 27.298
+   },
+   "sha256": "e89a6997556457f0fdc7a5e4549eca728cd8626ef8b800282132dbd335b93bcf",
+   "source": "User Upload",
+   "spatial_geometry": {
+    "aspect_ratio": 1.25,
+    "aspect_ratio_str": "1.25:1 Ratio",
+    "height": 256,
+    "megapixels": 0.08,
+    "orientation": "Landscape (Horizontal)",
+    "total_pixels": 81920,
+    "width": 320
+   },
+   "valid": true,
+   "width": 320
+  },
+  "filename": "a.jpg",
+  "final_status": "LIKELY REAL",
+  "gate": {
+   "final_status": null,
+   "hard_block": {
+    "sha256": "e89a6997556457f0fdc7a5e4549eca728cd8626ef8b800282132dbd335b93bcf",
+    "status": "INACTIVE",
+    "triggered": false
+   },
+   "recognition": null,
+   "triggered": false
+  },
+  "inpainting_analysis": {
+   "confidence": 0.0,
+   "details": null,
+   "is_manipulated": false,
+   "manipulation_type": null,
+   "noise_inconsistency": 0.0
+  },
+  "inpainting_detected": false,
+  "model_attribution": {
+   "attributed_model": "None (Authentic Capture)",
+   "attribution_confidence": 0.0,
+   "confidence": 0.0,
+   "cues": [
+    "Authentic media capture - no generative foundation model detected."
+   ],
+   "model_key": "none_authentic",
+   "provider": "Physical Optical Camera",
+   "region_of_origin": "N/A",
+   "top_candidates": [],
+   "watermark_detected": false
+  },
+  "newbie_explanation": "### \ud83d\uddbc\ufe0f What We Identified in this Image\n\nThis file (`a.jpg`) is a **320 \u00d7 256 pixel** visual asset formatted in **1.25:1 Ratio** at **72 x 72 DPI**. Visually, it depicts **a visual scene composed as a general scene** set in a **daylight** environment with an evocative **balanced contrast** atmosphere, with the palette predominantly shaped by Medium Neutral Gray tones (#606060 covering 12.3% of the image). The visual style is characterized as **Photographic Capture**.\n\n### \ud83d\udca1 How Would You Explain This to a Newbie?\n\n**The Simple Takeaway:** This image is **consistent with a genuine real-world photograph** captured through an optical glass camera lens (Authentic Real Photograph); the heuristic (uncalibrated) estimate is **97.0%**, which is a ranking aid, not proof.\n\n**Think of it like this:** Everything about this file matches real-world optical physics. When light bounced off the subject and entered the camera lens, it left behind authentic physical sensor grain (PRNU score: **37.35**), natural organic skin and fabric micro-textures, and optical depth-of-field (where the focus gently falls off naturally in a way computers struggle to replicate). No generative AI alterations or deceptive digital manipulations were detected.",
+  "nine_dimensions_dossier": {
+   "dimension_1_hardware_provenance": {
+    "c2pa_status": "Absent (Neutral)",
+    "camera_hardware": "Canon Canon EOS R5",
+    "date_taken": "Unknown / Stripped",
+    "description": "Examines physical camera sensor origin, hardware EXIF authenticity, C2PA manifest markers (presence only), and IPTC Digital Source Type mapping.",
+    "dimension_id": 1,
+    "exposure_parameters": {
+     "aperture": "N/A",
+     "flash": "Not Fired",
+     "focal_length": "N/A",
+     "iso": "N/A",
+     "shutter_speed": "N/A",
+     "white_balance": "Auto"
+    },
+    "gps_coordinates": "Not Embedded",
+    "iptc_digital_source_type": "digitalsourcetype:digitalCapture (Original Physical Capture)",
+    "lens_model": "N/A",
+    "provenance_verdict": "Camera hardware EXIF present (unauthenticated)",
+    "software_signature": "None (Clean)",
+    "title": "Dimension 1: Acquisition Hardware & Provenance Identity Spectrum"
+   },
+   "dimension_2_pixel_architecture": {
+    "aspect_ratio": "1.25:1 Ratio",
+    "bit_depth": "24-bit (3 channels x 8-bit)",
+    "clipping_profile": "Highlights: 0.0% (0 px) | Shadows: 0.0% (3 px)",
+    "color_space": "Standard sRGB",
+    "description": "Inspects pixel geometry, resolution aspect ratio, DPI resolution, bit depth, Shannon entropy, dynamic range, and dominant color palette.",
+    "dimension_id": 2,
+    "dominant_palette": [
+     {
+      "color_name": "Medium Neutral Gray",
+      "coverage_pct": 12.3,
+      "hex": "#606060",
+      "rgb": [
+       96,
+       96,
+       96
+      ]
+     },
+     {
+      "color_name": "Medium Neutral Gray",
+      "coverage_pct": 11.8,
+      "hex": "#808080",
+      "rgb": [
+       128,
+       128,
+       128
+      ]
+     },
+     {
+      "color_name": "Cobalt / Sapphire Blue",
+      "coverage_pct": 9.0,
+      "hex": "#606080",
+      "rgb": [
+       96,
+       96,
+       128
+      ]
+     },
+     {
+      "color_name": "Deep Crimson Red",
+      "coverage_pct": 8.7,
+      "hex": "#806060",
+      "rgb": [
+       128,
+       96,
+       96
+      ]
+     },
+     {
+      "color_name": "Teal / Aquamarine",
+      "coverage_pct": 8.3,
+      "hex": "#608080",
+      "rgb": [
+       96,
+       128,
+       128
+      ]
+     },
+     {
+      "color_name": "Warm Rust / Brown",
+      "coverage_pct": 8.2,
+      "hex": "#808060",
+      "rgb": [
+       128,
+       128,
+       96
+      ]
+     }
+    ],
+    "dpi": "72 x 72 DPI",
+    "geometry": "320 x 256 px (0.08 MP, 81,920 total pixels)",
+    "luminance_dynamic_range": "127.0 mean (span: 3..250, median: 127.0)",
+    "orientation": "Landscape (Horizontal)",
+    "shannon_entropy": "7.625 bits/px",
+    "title": "Dimension 2: Photometric, Spatial Geometry & Colorimetric Architecture",
+    "unique_colors_quantized": 71
+   },
+   "dimension_3_prnu_sensor_noise": {
+    "description": "Calculates Photo-Response Non-Uniformity (PRNU) and Poisson-Gaussian sensor shot noise residual (sigma_PRNU >= 1.45 for optical capture).",
+    "diagnosis": "Natural Poisson-Gaussian sensor shot noise grain preserved (score: 37.35)",
+    "dimension_id": 3,
+    "flat_region_noise": 37.348,
+    "is_natural_shot_noise": true,
+    "mathematical_physics": "sigma^2_PRNU = (1/|M|) * sum((W(x,y) - mu_W)^2) >= 1.45 (NIST OpenMFC)",
+    "prnu_residual_mean": 37.348,
+    "title": "Dimension 3: Physical Sensor PRNU Noise Residual"
+   },
+   "dimension_4_surface_smoothness": {
+    "description": "Measures micro-texture continuity against bilateral filter smoothing to expose plastic diffusion skin and synthetic surfaces.",
+    "diagnosis": "Natural organic surface micro-textures and physical lens MTF sharpness preserved (index: 27.30)",
+    "dimension_id": 4,
+    "is_diffusion_smoothed": false,
+    "smoothness_index": 27.298,
+    "title": "Dimension 4: Bilateral Surface Smoothness & Spatial Texture Variance"
+   },
+   "dimension_5_fourier_fft_decay": {
+    "description": "Verifies natural optical power-law decay P(f) proportional to f^(-alpha), where natural optical captures exhibit alpha in [1.8, 2.2].",
+    "diagnosis": "Anomalous Fourier spectral slope (alpha=-0.01); deviates from physical optical decay",
+    "dimension_id": 5,
+    "is_anomalous_decay": true,
+    "mathematical_physics": "P(f) ~ f^(-alpha). Natural optical: alpha in [1.8, 2.2]. Synthetic: alpha < 1.4 or alpha > 3.4.",
+    "spectral_decay_alpha": -0.012,
+    "title": "Dimension 5: 2D Fourier FFT Frequency Power Spectrum Decay"
+   },
+   "dimension_6_subject_genre": {
+    "animal_types": [],
+    "animals_count": 0,
+    "atmospheric_mood": "Balanced Contrast",
+    "description": "Categorizes visual scene into human portraiture, nature, cosmic, architectural, commercial, or documentary genres.",
+    "dimension_id": 6,
+    "face_bounding_boxes": [],
+    "faces_count": 0,
+    "identified_items": [],
+    "is_stylized_character": false,
+    "lighting_and_daytime": "Daylight (Diffuse Daylight)",
+    "persons_count": 0,
+    "primary_genre": "General Scene",
+    "setting_and_environment": "Outdoor / Nature \u2022 Outdoor / Nature",
+    "title": "Dimension 6: Visual Genre & Semantic Subject-Matter Catalog",
+    "vehicle_types": [],
+    "vehicles_count": 0
+   },
+   "dimension_7_visual_medium": {
+    "canny_edge_density_pct": 37.09,
+    "dark_line_contours_pct": 1.64,
+    "description": "Distinguishes photographic optical capture from traditional painting (oil, watercolor), vector art, anime/manga, pixel art, or 3D CGI.",
+    "diagnosis": "Visual style categorized as Photographic Capture",
+    "dimension_id": 7,
+    "is_digital_art": false,
+    "laplacian_focus_sharpness": 48919.2,
+    "title": "Dimension 7: Visual Art Mediums & Creative Styles Catalog",
+    "visual_medium": "Photographic Capture"
+   },
+   "dimension_8_sensor_spectrum": {
+    "color_channels": 3,
+    "description": "Identifies imaging wavelength: Visible Bayer RGB (400-700nm), Monochrome, Infrared (NIR/LWIR), UV, Biomedical (X-Ray/SEM), or Satellite/SAR.",
+    "diagnosis": "Acquisition modality operates in Visible Spectrum (Bayer RGB)",
+    "dimension_id": 8,
+    "sensor_spectrum": "Visible Spectrum (Bayer RGB)",
+    "title": "Dimension 8: Electromagnetic Spectrum & Acquisition Modalities"
+   },
+   "dimension_9_generative_attribution": {
+    "attributed_model": "None (Authentic Capture)",
+    "attribution_confidence": 0.0,
+    "description": "Detects foundation model synthesis (Flux.1, Midjourney, SD 3.5, Gemini/Imagen 3, DALL-E 3), neural inpainting, deepfake face-swapping, and watermarks.",
+    "dimension_id": 9,
+    "region_of_origin": "N/A",
+    "spatial_manipulated_area_pct": 0.0,
+    "title": "Dimension 9: Generative AI Frontier & Attribution Fingerprint",
+    "top_candidates": [],
+    "watermark_details": "No synthetic watermark detected",
+    "watermark_detected": false
+   }
+  },
+  "ood": {
+   "distance": null,
+   "note": "OOD gate is not fitted; fit it from your media library to enable out-of-distribution detection.",
+   "status": "NOT_CALIBRATED",
+   "threshold": null
+  },
+  "pre_analysis_details": {
+   "aspect_ratio": 1.25,
+   "aspect_ratio_str": "1.25:1 Ratio",
+   "channel_variances": {
+    "blue_std": 50.9,
+    "green_std": 52.9,
+    "red_std": 51.7
+   },
+   "channels": 3,
+   "display_attributes": {
+    "bit_depth": "24-bit (3 channels x 8-bit)",
+    "bits_per_channel": 8,
+    "color_mode": "RGB",
+    "color_space": "Standard sRGB",
+    "dpi_str": "72 x 72 DPI",
+    "dpi_x": 72.0,
+    "dpi_y": 72.0,
+    "has_alpha_channel": false
+   },
+   "exif_device_details": {
+    "aperture": null,
+    "camera_make": "Canon",
+    "camera_model": "Canon EOS R5",
+    "color_space_tag": "sRGB",
+    "date_time": null,
+    "exposure_bias": "0.0 EV",
+    "exposure_time": null,
+    "flash": "Not Fired",
+    "focal_length": null,
+    "gps_details": {
+     "coordinates_str": "Not Embedded",
+     "has_gps": false
+    },
+    "gps_embedded": false,
+    "has_exif": true,
+    "iso": null,
+    "lens_model": null,
+    "metering_mode": "Standard",
+    "orientation_tag": "Normal (1)",
+    "software": null,
+    "white_balance": "Auto"
+   },
+   "file_size_bytes": 74065,
+   "file_size_kb": 72.3,
+   "file_size_mb": 0.071,
+   "filename": "a.jpg",
+   "format": "JPG",
+   "height": 256,
+   "md5": "833ad88e71bf0edf5cec0f17e0e47af7",
+   "mime_type": "image/jpg",
+   "orientation": "Landscape (Horizontal)",
+   "pixel_color_profile": {
+    "channel_maxs": {
+     "blue": 255,
+     "green": 255,
+     "red": 255
+    },
+    "channel_means": {
+     "blue": 127.4,
+     "green": 126.9,
+     "red": 127.1
+    },
+    "channel_mins": {
+     "blue": 0,
+     "green": 0,
+     "red": 0
+    },
+    "channel_stds": {
+     "blue": 50.9,
+     "green": 52.9,
+     "red": 51.7
+    },
+    "dominant_palette": [
+     {
+      "color_name": "Medium Neutral Gray",
+      "coverage_pct": 12.3,
+      "hex": "#606060",
+      "rgb": [
+       96,
+       96,
+       96
+      ]
+     },
+     {
+      "color_name": "Medium Neutral Gray",
+      "coverage_pct": 11.8,
+      "hex": "#808080",
+      "rgb": [
+       128,
+       128,
+       128
+      ]
+     },
+     {
+      "color_name": "Cobalt / Sapphire Blue",
+      "coverage_pct": 9.0,
+      "hex": "#606080",
+      "rgb": [
+       96,
+       96,
+       128
+      ]
+     },
+     {
+      "color_name": "Deep Crimson Red",
+      "coverage_pct": 8.7,
+      "hex": "#806060",
+      "rgb": [
+       128,
+       96,
+       96
+      ]
+     },
+     {
+      "color_name": "Teal / Aquamarine",
+      "coverage_pct": 8.3,
+      "hex": "#608080",
+      "rgb": [
+       96,
+       128,
+       128
+      ]
+     },
+     {
+      "color_name": "Warm Rust / Brown",
+      "coverage_pct": 8.2,
+      "hex": "#808060",
+      "rgb": [
+       128,
+       128,
+       96
+      ]
+     }
+    ],
+    "dynamic_range": 247,
+    "highlight_clipped_count": 0,
+    "highlight_clipped_pct": 0.0,
+    "luminance_max": 250,
+    "luminance_mean": 127.0,
+    "luminance_median": 127.0,
+    "luminance_min": 3,
+    "luminance_std": 49.3,
+    "shadow_crushed_count": 3,
+    "shadow_crushed_pct": 0.0,
+    "shannon_entropy_bpp": 7.625,
+    "unique_quantized_colors": 71
+   },
+   "pixel_entropy": 7.625,
+   "raw_physical_signals": {
+    "canny_edge_pct": 37.09,
+    "dark_line_art_pct": 1.64,
+    "fft_decay_alpha": -0.012,
+    "flat_region_noise_mean": 37.348,
+    "laplacian_sharpness_var": 48919.2,
+    "prnu_noise_mean": 36.951,
+    "prnu_noise_std": 30.783,
+    "surface_smoothness_index": 27.298
+   },
+   "sha256": "e89a6997556457f0fdc7a5e4549eca728cd8626ef8b800282132dbd335b93bcf",
+   "source": "User Upload",
+   "spatial_geometry": {
+    "aspect_ratio": 1.25,
+    "aspect_ratio_str": "1.25:1 Ratio",
+    "height": 256,
+    "megapixels": 0.08,
+    "orientation": "Landscape (Horizontal)",
+    "total_pixels": 81920,
+    "width": 320
+   },
+   "valid": true,
+   "width": 320
+  },
+  "provenance": {
+   "c2pa": {
+    "ai_declaration": false,
+    "c2pa_present": false,
+    "creation_tool": null,
+    "details": "No C2PA Content Credentials manifest detected.",
+    "is_signed": false,
+    "manifests_found": [],
+    "status": "NO_C2PA"
+   },
+   "c2pa_present": false,
+   "camera_make": "Canon",
+   "camera_model": "Canon EOS R5",
+   "creator_tool": null,
+   "cues": [
+    "Physical camera hardware tags present: CANON CANON EOS R5"
+   ],
+   "exif": {
+    "ai_signature_found": false,
+    "camera_make": "Canon",
+    "camera_model": "Canon EOS R5",
+    "datetime_original": null,
+    "has_exif": true,
+    "raw_tags": {
+     "Make": "Canon",
+     "Model": "Canon EOS R5"
+    },
+    "signature_details": null,
+    "software": null
+   },
+   "has_camera_hardware": true,
+   "is_ai_enhanced": false,
+   "is_graphic_edit": false,
+   "is_synthetic": false,
+   "metadata": {
+    "ai_enhancer_signature_found": false,
+    "ai_signature_found": false,
+    "camera_make": "Canon",
+    "camera_model": "Canon EOS R5",
+    "creator_tool": null,
+    "date_time": null,
+    "exposure_time": null,
+    "f_number": null,
+    "focal_length": null,
+    "graphic_editor_signature_found": false,
+    "has_exif": true,
+    "has_optical_parameters": false,
+    "iptc_digital_source_type": null,
+    "iso": null,
+    "lens_model": null,
+    "photoshop_credit": null,
+    "raw_tags": {
+     "Make": "Canon",
+     "Model": "Canon EOS R5"
+    },
+    "screenshot_software_found": false,
+    "screenshot_software_name": null,
+    "signature_details": null,
+    "software": null,
+    "xmp_summary": {}
+   },
+   "provenance_ai_confidence": 0.25,
+   "provenance_rule": "NIST Rule: Absence of C2PA metadata indicates UNKNOWN provenance, not authenticity. Strong conclusions require cryptographic verification.",
+   "provenance_status": "AUTHENTIC_HARDWARE_TAGS",
+   "provenance_verdict": "HARDWARE_EXIF_PRESENT",
+   "software": null
+  },
+  "quality_validation": {
+   "aspect_ratio": 1.25,
+   "color_mode": "RGB",
+   "error": null,
+   "file_hash_sha256": "e89a6997556457f0fdc7a5e4549eca728cd8626ef8b800282132dbd335b93bcf",
+   "file_size_mb": 0.071,
+   "filename": "a.jpg",
+   "format": "JPG",
+   "height": 256,
+   "quality": {
+    "contrast_std": 49.26,
+    "is_blurry": false,
+    "is_overexposed": false,
+    "is_underexposed": false,
+    "mean_luminance": 127.0,
+    "quality_score": 1.0,
+    "sharpness_laplacian": 48919.17
+   },
+   "valid": true,
+   "width": 320
+  },
+  "quantified_inventory": {
+   "authenticity_probabilities": {
+    "p_ai_percentage": 0.1,
+    "p_real_percentage": 97.0,
+    "p_undecided_percentage": 2.9
+   },
+   "color_palette_percentages": [
+    {
+     "color_name": "Medium Neutral Gray",
+     "coverage_pct": 12.3,
+     "hex": "#606060",
+     "rgb": [
+      96,
+      96,
+      96
+     ]
+    },
+    {
+     "color_name": "Medium Neutral Gray",
+     "coverage_pct": 11.8,
+     "hex": "#808080",
+     "rgb": [
+      128,
+      128,
+      128
+     ]
+    },
+    {
+     "color_name": "Cobalt / Sapphire Blue",
+     "coverage_pct": 9.0,
+     "hex": "#606080",
+     "rgb": [
+      96,
+      96,
+      128
+     ]
+    },
+    {
+     "color_name": "Deep Crimson Red",
+     "coverage_pct": 8.7,
+     "hex": "#806060",
+     "rgb": [
+      128,
+      96,
+      96
+     ]
+    },
+    {
+     "color_name": "Teal / Aquamarine",
+     "coverage_pct": 8.3,
+     "hex": "#608080",
+     "rgb": [
+      96,
+      128,
+      128
+     ]
+    },
+    {
+     "color_name": "Warm Rust / Brown",
+     "coverage_pct": 8.2,
+     "hex": "#808060",
+     "rgb": [
+      128,
+      128,
+      96
+     ]
+    }
+   ],
+   "living_entities": {
+    "animal_types": [],
+    "animals_count": 0,
+    "faces_count": 0,
+    "is_stylized_character": false,
+    "persons_count": 0
+   },
+   "objects_and_items": {
+    "identified_items": [],
+    "items_count": 0
+   },
+   "pixel_physics_metrics": {
+    "flat_region_noise": 37.348,
+    "fourier_fft_alpha": -0.012,
+    "highlight_clipped_pct": 0.0,
+    "prnu_noise_mean": 36.951,
+    "shadow_crushed_pct": 0.0,
+    "surface_smoothness": 27.298
+   },
+   "spatial_anomaly_manipulated_area_pct": 0.0,
+   "text_and_typography": {
+    "text_regions_count": 0
+   },
+   "vehicles": {
+    "vehicle_types": [],
+    "vehicles_count": 0
+   }
+  },
+  "screen_recapture_analysis": {
+   "confidence": 0.0,
+   "details": null,
+   "is_screen_recapture": false,
+   "moire_score": 0.31,
+   "peak_ratio": 1.07
+  },
+  "screen_recapture_detected": false,
+  "screenshot_analysis": {
+   "confidence": 0.0,
+   "details": null,
+   "device_type": "Laptop / Desktop",
+   "is_screenshot": false,
+   "orientation": "Landscape",
+   "screen_resolution": "320x256",
+   "ui_elements_detected": []
+  },
+  "screenshot_detected": false,
+  "sensor_spectrum": "Visible Spectrum (Bayer RGB)",
+  "subject_genre": "General Scene",
+  "taxonomy_description": "Authentic camera or mobile-phone photographic capture containing natural sensor noise (PRNU), coherent optical properties, genuine lens depth-of-field, and unmanipulated physical geometry and EXIF metadata.",
+  "taxonomy_label": "Authentic Real Photograph",
+  "taxonomy_reasons": [
+   "Camera hardware EXIF tags: Canon Canon EOS R5",
+   "Natural camera sensor Poisson shot noise (PRNU residual: 36.95)",
+   "Natural optical depth of field, coherent lighting, and unmanipulated geometry"
+  ],
+  "taxonomy_state": "AUTHENTIC_REAL_PHOTOGRAPH",
+  "visual_medium": "Photographic Capture",
+  "watermark_detected": false
+ },
+ "img_b.png": {
+  "ai_detected": true,
+  "ai_detection": {
+   "ai_percentage": 96.3,
+   "ai_spatial_area_pct": 100.0,
+   "backend": "hybrid_deep_learning_and_statistical",
+   "background_cutout_detected": false,
+   "confidence": 0.99,
+   "digital_art_detected": false,
+   "document_layout": "None (Standard Visual Content)",
+   "error": null,
+   "face_swap_detected": false,
+   "forensic_cues": [
+    "No camera hardware tags, AI/enhancer signature, or C2PA manifest found -- metadata is absent or stripped. Treated as neutral, not as evidence of synthesis (this is the normal state for downloaded, re-shared, or platform-processed images).",
+    "Synthetic latent space denoising detected (PRNU residual: 0.00)",
+    "Synthetic bilateral surface over-smoothing detected (index: 0.00)",
+    "Abnormal Fourier spectral decay alpha (5.69)",
+    "Canonical AI generative canvas geometry: 512x512"
+   ],
+   "forensic_metrics": {
+    "is_canonical_gen": true,
+    "is_cutout": false,
+    "is_digital_art": false,
+    "is_face_swap": false,
+    "is_inpainted_or_composite": false,
+    "is_scanned": false,
+    "is_screen_recaptured": false,
+    "is_screenshot": false,
+    "noise_residual_mean": 0.0,
+    "screenshot_device": "None",
+    "screenshot_orientation": "Square",
+    "sensor_spectrum": "Monochrome / Grayscale Sensor",
+    "spectral_decay_alpha": 5.693,
+    "surface_smoothness": 0.0,
+    "visual_medium": "Photographic Capture"
+   },
+   "heatmap_rgb": "<ndarray>",
+   "inpainting_details": {
+    "confidence": 0.0,
+    "details": null,
+    "is_manipulated": false,
+    "manipulation_type": null,
+    "noise_inconsistency": 0.0
+   },
+   "inpainting_detected": false,
+   "is_available": true,
+   "label": "LIKELY AI-GENERATED",
+   "log_likelihood_ratios": {
+    "canonical_dimensions": 0.45,
+    "fft_power_decay": 0.288,
+    "metadata_absent": 0.0,
+    "neural_backbone": -0.102,
+    "sensor_noise": 0.898,
+    "surface_smoothness": 0.792
+   },
+   "neural_enhancer_detected": false,
+   "posterior_log_odds": 2.089,
+   "prediction": "LIKELY AI-GENERATED",
+   "real_percentage": 0.8,
+   "scanned_photo_detected": false,
+   "screen_recapture_details": {
+    "confidence": 0.0,
+    "details": null,
+    "is_screen_recapture": false,
+    "moire_score": 0.02,
+    "peak_ratio": 0.06
+   },
+   "screen_recapture_detected": false,
+   "screenshot_details": {
+    "confidence": 0.0,
+    "details": null,
+    "device_type": "None",
+    "is_screenshot": false,
+    "orientation": "Square",
+    "screen_resolution": "512x512",
+    "ui_elements_detected": []
+   },
+   "screenshot_detected": false,
+   "sensor_spectrum": "Monochrome / Grayscale Sensor",
+   "subject_genre": "Unspecified General Scene",
+   "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
+   "taxonomy_label": "Fully AI Generated",
+   "taxonomy_reasons": [
+    "High posterior probability of generative synthesis (96.3% AI)",
+    "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
+    "Canvas dimensions match standard generative model diffusion canvas"
+   ],
+   "taxonomy_state": "FULLY_AI_GENERATED",
+   "undecided_percentage": 2.9,
+   "visual_medium": "Photographic Capture",
+   "watermark_details": null,
+   "watermark_detected": false
+  },
+  "attribution_open_set": {
+   "model_key": "unknown",
+   "note": "AI-leaning image whose generator matches no known profile: UNKNOWN_SOURCE / possible novel generator.",
+   "unknown_source": true
+  },
+  "authenticity_probabilities": {
+   "p_ai": 96.3,
+   "p_real": 0.8,
+   "p_undecided": 2.9
+  },
+  "background_cutout_detected": false,
+  "category_identification": {
+   "document_layout": "None (Standard Visual Content)",
+   "iptc_digital_source_type": "digitalsourcetype:trainedAlgorithmicMedia (Synthesized via Foundation Model)",
+   "primary_genre": "General Scene",
+   "sensor_spectrum": "Monochrome / Grayscale Sensor",
+   "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
+   "taxonomy_label": "Fully AI Generated",
+   "taxonomy_state": "FULLY_AI_GENERATED",
+   "visual_medium": "Photographic Capture"
+  },
+  "confidence": 0.99,
+  "confidence_band": {
+   "band": "LEANING_SYNTHETIC",
+   "label": "Leaning Synthetic / Flagged for Review",
+   "p_ai_percent": 96.3
+  },
+  "content_inventory": {
+   "contents_and_items": {
+    "count": 0,
+    "details": [],
+    "detected": false,
+    "identified_items": [],
+    "items": [],
+    "text_regions_count": 0
+   },
+   "entities": {
+    "animals": {
+     "animal_types": [],
+     "count": 0,
+     "details": [],
+     "detected": false,
+     "types": []
+    },
+    "humans": {
+     "bounding_boxes": [],
+     "count": 0,
+     "deepfake_analysis": {
+      "confidence": 0.0,
+      "details": [],
+      "risk": "NO_FACES_DETECTED"
+     },
+     "faces": 0,
+     "faces_count": 0,
+     "is_stylized_character": false,
+     "person_boxes": [],
+     "persons_count": 0
+    }
+   },
+   "environment": {
+    "setting": "Studio / Isolated",
+    "setting_type": "Studio / Isolated",
+    "sky_water_ratio": 0.0,
+    "vegetation_ratio": 0.0
+   },
+   "environment_and_surroundings": {
+    "setting": "Studio / Isolated",
+    "setting_type": "Studio / Isolated",
+    "sky_water_ratio": 0.0,
+    "vegetation_ratio": 0.0
+   },
+   "faces_count": 0,
+   "items_and_objects": {
+    "count": 0,
+    "details": [],
+    "detected": false,
+    "identified_items": [],
+    "items": [],
+    "text_regions_count": 0
+   },
+   "lighting_and_daytime": {
+    "daytime": "Daylight",
+    "estimated_daytime": "Daylight",
+    "lighting_quality": "Diffuse Daylight",
+    "lighting_style": "Diffuse Daylight",
+    "luminance_dynamic_range": 0.0,
+    "mean_luminance": 120.0
+   },
+   "living_entities": {
+    "animals": {
+     "animal_types": [],
+     "count": 0,
+     "details": [],
+     "detected": false,
+     "types": []
+    },
+    "humans": {
+     "bounding_boxes": [],
+     "count": 0,
+     "deepfake_analysis": {
+      "confidence": 0.0,
+      "details": [],
+      "risk": "NO_FACES_DETECTED"
+     },
+     "faces": 0,
+     "faces_count": 0,
+     "is_stylized_character": false,
+     "person_boxes": [],
+     "persons_count": 0
+    }
+   },
+   "persons_count": 0,
+   "purpose_and_depiction": {
+    "aspect_ratio": 1.0,
+    "document_layout": "None (Standard Visual Content)",
+    "photographic_purpose": "General Scene",
+    "primary_genre": "General Scene"
+   },
+   "scene_type": "Studio / Isolated",
+   "tone_and_mood": {
+    "atmospheric_mood": "Low Contrast / Soft",
+    "channel_means": {
+     "blue": 120.0,
+     "green": 120.0,
+     "red": 120.0
+    },
+    "color_temperature": "Neutral",
+    "color_tone": "Neutral",
+    "contrast_profile": "Low Contrast / Soft"
+   },
+   "vehicles": {
+    "count": 0,
+    "details": [],
+    "detected": false,
+    "types": [],
+    "vehicle_types": []
+   }
+  },
+  "content_valid": true,
+  "decision": {
+   "ai_detected": true,
+   "authenticity_probabilities": {
+    "p_ai": 96.3,
+    "p_real": 0.8,
+    "p_undecided": 2.9
+   },
+   "calibration_status": "UNCALIBRATED_HEURISTIC",
+   "content_inventory": {
+    "acoustic_environment": "N/A",
+    "animal_types": [],
+    "animals_detected": false,
+    "atmospheric_mood": "Low Contrast / Soft",
+    "audio_speakers": 0,
+    "color_tone": "Neutral",
+    "depiction_summary": "",
+    "dominant_audio_type": "N/A",
+    "estimated_daytime": "Daylight",
+    "faces_count": 0,
+    "identified_items": [],
+    "lighting_style": "Diffuse Daylight",
+    "location_context": "N/A",
+    "persons_count": 0,
+    "photographic_purpose": "General Scene",
+    "scene_type": "Studio / Isolated",
+    "setting_type": "Studio / Isolated",
+    "text_regions_count": 0,
+    "vehicle_types": [],
+    "vehicles_detected": false,
+    "vocal_tone": "N/A"
+   },
+   "content_valid": true,
+   "cross_modal": {},
+   "decision_mode": "image_authoritative",
+   "evidence_trail": [
+    "[Image Forensic] No camera hardware tags, AI/enhancer signature, or C2PA manifest found -- metadata is absent or stripped. Treated as neutral, not as evidence of synthesis (this is the normal state for downloaded, re-shared, or platform-processed images).",
+    "[Image Forensic] Synthetic latent space denoising detected (PRNU residual: 0.00)",
+    "[Image Forensic] Synthetic bilateral surface over-smoothing detected (index: 0.00)",
+    "[Image Forensic] Abnormal Fourier spectral decay alpha (5.69)",
+    "[Image Forensic] Canonical AI generative canvas geometry: 512x512"
+   ],
+   "final_status": "LIKELY AI-GENERATED",
+   "forensic_modality_results": {
+    "audio_ai_pct": null,
+    "image_ai_pct": 96.3,
+    "video_ai_pct": null
+   },
+   "localization": {
+    "suspicious_audio_duration_pct": 0.0,
+    "suspicious_image_area_pct": 100.0,
+    "suspicious_video_duration_pct": 0.0
+   },
+   "model_attribution": {
+    "attributed_model": "Unknown / Generic Diffusion",
+    "confidence": 0.14,
+    "cues": [
+     "Exact match with canonical native output resolution (512x512) of Stability AI Stable Diffusion (SDXL / SD 3)",
+     "Exact match with canonical native output resolution (512x512) of Neural Face Swap (InsightFace / ReActor / Roop)"
+    ],
+    "model_key": "unknown",
+    "top_candidates": [
+     {
+      "confidence": 0.14,
+      "model": "Midjourney (v5 / v6)"
+     },
+     {
+      "confidence": 0.14,
+      "model": "Stability AI Stable Diffusion (SDXL / SD 3)"
+     },
+     {
+      "confidence": 0.14,
+      "model": "Neural Face Swap (InsightFace / ReActor / Roop)"
+     }
+    ]
+   },
+   "provenance": {
+    "ai_declared_in_c2pa": false,
+    "c2pa_present": false,
+    "c2pa_signature": "Absent",
+    "hardware_make": null,
+    "hardware_model": null,
+    "provenance_verdict": "PROVENANCE_UNKNOWN",
+    "software": null
+   },
+   "reason": "Forensic signals indicate high likelihood of synthetic/generative AI creation.",
+   "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
+   "taxonomy_label": "Fully AI Generated",
+   "taxonomy_reasons": [
+    "High posterior probability of generative synthesis (96.3% AI)",
+    "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
+    "Canvas dimensions match standard generative model diffusion canvas"
+   ],
+   "taxonomy_state": "FULLY_AI_GENERATED",
+   "what_it_represents": "Studio / Isolated setting"
+  },
+  "digital_art_detected": false,
+  "dimension_report": {
+   "attribution_open_set": {
+    "model_key": "unknown",
+    "note": "AI-leaning image whose generator matches no known profile: UNKNOWN_SOURCE / possible novel generator.",
+    "unknown_source": true
+   },
+   "confidence_band": {
+    "band": "LEANING_SYNTHETIC",
+    "label": "Leaning Synthetic / Flagged for Review",
+    "p_ai_percent": 96.3
+   },
+   "findings_by_stage": {
+    "context": [
+     {
+      "check_id": "perceptual_hash",
+      "data": {
+       "dhash": "0000000000000000",
+       "index_loaded": false,
+       "matches": [],
+       "phash": "8000000000000000"
+      },
+      "detail": "Hashes computed. No local reference index is configured, so context re-use cannot be checked here (set OMNI_CONTEXT_HASH_INDEX).",
+      "dimension": "Section22.3",
+      "evidence_class": "CONTEXT",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "context",
+      "status": "INFO",
+      "title": "Reuse / context fingerprint"
+     }
+    ],
+    "file_integrity": [
+     {
+      "check_id": "format_sniff",
+      "data": {
+       "declared": "png",
+       "detected": "png"
+      },
+      "detail": "File content matches its extension (png).",
+      "dimension": "Q",
+      "evidence_class": "SECURITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "file_integrity",
+      "status": "PASS",
+      "title": "True format vs. extension"
+     },
+     {
+      "check_id": "trailing_data",
+      "data": {
+       "format": "png",
+       "image_end_offset": 1878,
+       "trailing_bytes": 0
+      },
+      "detail": "No data after the image's end marker.",
+      "dimension": "Q",
+      "evidence_class": "SECURITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "file_integrity",
+      "status": "PASS",
+      "title": "Bytes after image end marker"
+     },
+     {
+      "check_id": "polyglot_signatures",
+      "data": {
+       "signatures": []
+      },
+      "detail": "No archive, executable or script signatures found.",
+      "dimension": "Q",
+      "evidence_class": "SECURITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "file_integrity",
+      "status": "PASS",
+      "title": "Embedded executable / archive / script signatures"
+     },
+     {
+      "check_id": "svg_active_content",
+      "data": {},
+      "detail": "Not an SVG/XML document.",
+      "dimension": "Q",
+      "evidence_class": "SECURITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "file_integrity",
+      "status": "NOT_APPLICABLE",
+      "title": "SVG active content"
+     },
+     {
+      "check_id": "prompt_injection_text",
+      "data": {
+       "matches": []
+      },
+      "detail": "Scanned 0 free-text metadata field(s); no instruction-like text found.",
+      "dimension": "Q",
+      "evidence_class": "SECURITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "file_integrity",
+      "status": "PASS",
+      "title": "Instruction-like text in metadata"
+     }
+    ],
+    "formats": [
+     {
+      "check_id": "jpeg_quant_tables",
+      "data": {},
+      "detail": "Not a JPEG file.",
+      "dimension": "O",
+      "evidence_class": "METADATA_WEAK",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "formats",
+      "status": "NOT_APPLICABLE",
+      "title": "JPEG quantization tables"
+     },
+     {
+      "check_id": "png_chunks",
+      "data": {
+       "chunks": {
+        "IDAT": 1,
+        "IEND": 1,
+        "IHDR": 1
+       },
+       "generator": null,
+       "text_keys": []
+      },
+      "detail": "3 chunk(s); no generator parameter text found.",
+      "dimension": "O",
+      "evidence_class": "METADATA_WEAK",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "formats",
+      "status": "INFO",
+      "title": "PNG chunk inventory"
+     }
+    ],
+    "legal": [
+     {
+      "check_id": "rights_notice",
+      "data": {
+       "artist": "",
+       "copyright": "",
+       "xmp_markers": []
+      },
+      "detail": "No embedded rights or licence notice (absence does not mean the image is free to use).",
+      "dimension": "Section22.2",
+      "evidence_class": "LEGAL_FLAG",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "legal",
+      "status": "INFO",
+      "title": "Rights / licence notice"
+     },
+     {
+      "check_id": "location_privacy",
+      "data": {
+       "gps_present": false
+      },
+      "detail": "No GPS location embedded.",
+      "dimension": "Section22.2",
+      "evidence_class": "LEGAL_FLAG",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "legal",
+      "status": "PASS",
+      "title": "Embedded location data"
+     },
+     {
+      "check_id": "biometric_notice",
+      "data": {
+       "faces_count": 0
+      },
+      "detail": "No faces detected.",
+      "dimension": "Section22.2",
+      "evidence_class": "LEGAL_FLAG",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "legal",
+      "status": "NOT_APPLICABLE",
+      "title": "Identifiable people"
+     },
+     {
+      "check_id": "ai_disclosure_label",
+      "data": {
+       "labelled": false
+      },
+      "detail": "Image is judged AI-leaning but carries no machine-readable AI disclosure (C2PA / IPTC digitalSourceType); EU AI Act Art. 50 expects providers of synthetic media to mark outputs.",
+      "dimension": "Section22.2",
+      "evidence_class": "LEGAL_FLAG",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "LOW",
+      "stage": "legal",
+      "status": "WARN",
+      "title": "AI-content disclosure label"
+     }
+    ],
+    "lifecycle": [
+     {
+      "check_id": "platform_reencode",
+      "data": {
+       "cues": [],
+       "likelihood": 0.0,
+       "likelihood_level": "LOW"
+      },
+      "detail": "Likelihood of social/messaging re-encode: LOW (0.00). No re-encode cues.",
+      "dimension": "Section22.5",
+      "evidence_class": "RELIABILITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "lifecycle",
+      "status": "INFO",
+      "title": "Platform re-encode likelihood"
+     }
+    ],
+    "metadata": [
+     {
+      "check_id": "exif_consistency",
+      "data": {
+       "make": "",
+       "model": "",
+       "present": {
+        "DateTimeOriginal": false,
+        "ExposureTime": false,
+        "FNumber": false,
+        "FocalLength": false,
+        "ISO": false,
+        "Make": false,
+        "Model": false
+       }
+      },
+      "detail": "No camera EXIF present (common after platform re-encoding); no inference drawn.",
+      "dimension": "Section21",
+      "evidence_class": "METADATA_WEAK",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "metadata",
+      "status": "INFO",
+      "title": "EXIF coherence"
+     },
+     {
+      "check_id": "timestamp_sanity",
+      "data": {},
+      "detail": "No EXIF timestamps present.",
+      "dimension": "Section21",
+      "evidence_class": "METADATA_WEAK",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "metadata",
+      "status": "NOT_APPLICABLE",
+      "title": "Timestamp plausibility"
+     },
+     {
+      "check_id": "thumbnail_match",
+      "data": {},
+      "detail": "Not a JPEG.",
+      "dimension": "Section21",
+      "evidence_class": "PHYSICAL_SIGNAL",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "metadata",
+      "status": "NOT_APPLICABLE",
+      "title": "Embedded thumbnail vs. main image"
+     },
+     {
+      "check_id": "icc_profile",
+      "data": {
+       "present": false
+      },
+      "detail": "No embedded ICC profile (common for screenshots, web exports and stripped files).",
+      "dimension": "Section21",
+      "evidence_class": "METADATA_WEAK",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "metadata",
+      "status": "INFO",
+      "title": "ICC color profile"
+     }
+    ],
+    "reliability": [
+     {
+      "check_id": "confidence_limiters",
+      "data": {
+       "level": "NORMAL",
+       "limiters": []
+      },
+      "detail": "No known confidence limiters; the detectors are operating in their normal envelope.",
+      "dimension": "Section22.6",
+      "evidence_class": "RELIABILITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "reliability",
+      "status": "PASS",
+      "title": "Confidence limiters"
+     }
+    ]
+   },
+   "gates": {
+    "final_status": null,
+    "hard_block": {
+     "sha256": "56e37173fa572f993328a6bb2b4687e0b263e25219a9df57fed06359c584e9e2",
+     "status": "INACTIVE",
+     "triggered": false
+    },
+    "recognition": null,
+    "triggered": false
+   },
+   "ood": {
+    "distance": null,
+    "note": "OOD gate is not fitted; fit it from your media library to enable out-of-distribution detection.",
+    "status": "NOT_CALIBRATED",
+    "threshold": null
+   },
+   "reliability": {
+    "level": "NORMAL",
+    "limiters": []
+   },
+   "score_terms": {},
+   "summary": {
+    "by_status": {
+     "INFO": 6,
+     "NOT_APPLICABLE": 5,
+     "PASS": 6,
+     "WARN": 1
+    },
+    "total": 18
+   }
+  },
+  "document_layout": "None (Standard Visual Content)",
+  "evidence_trail": [
+   "No camera hardware tags, AI/enhancer signature, or C2PA manifest found -- metadata is absent or stripped. Treated as neutral, not as evidence of synthesis (this is the normal state for downloaded, re-shared, or platform-processed images).",
+   "Synthetic latent space denoising detected (PRNU residual: 0.00)",
+   "Synthetic bilateral surface over-smoothing detected (index: 0.00)",
+   "Abnormal Fourier spectral decay alpha (5.69)",
+   "Canonical AI generative canvas geometry: 512x512"
+  ],
+  "face_swap_detected": false,
+  "file_profile": {
+   "aspect_ratio": 1.0,
+   "aspect_ratio_str": "1:1 (Square Diffusion Canvas)",
+   "channel_variances": {
+    "blue_std": 0.0,
+    "green_std": 0.0,
+    "red_std": 0.0
+   },
+   "channels": 3,
+   "display_attributes": {
+    "bit_depth": "24-bit (3 channels x 8-bit)",
+    "bits_per_channel": 8,
+    "color_mode": "RGB",
+    "color_space": "Standard sRGB",
+    "dpi_str": "72 x 72 DPI",
+    "dpi_x": 72.0,
+    "dpi_y": 72.0,
+    "has_alpha_channel": false
+   },
+   "exif_device_details": {
+    "aperture": null,
+    "camera_make": null,
+    "camera_model": null,
+    "color_space_tag": "sRGB",
+    "date_time": null,
+    "exposure_bias": "0.0 EV",
+    "exposure_time": null,
+    "flash": "Not Fired",
+    "focal_length": null,
+    "gps_details": {
+     "coordinates_str": "Not Embedded",
+     "has_gps": false
+    },
+    "gps_embedded": false,
+    "has_exif": false,
+    "iso": null,
+    "lens_model": null,
+    "metering_mode": "Standard",
+    "orientation_tag": "Normal (1)",
+    "software": null,
+    "white_balance": "Auto"
+   },
+   "file_size_bytes": 1878,
+   "file_size_kb": 1.8,
+   "file_size_mb": 0.002,
+   "filename": "b.png",
+   "format": "PNG",
+   "height": 512,
+   "md5": "b271132ff42779c1c93e1b13a91b8889",
+   "mime_type": "image/png",
+   "orientation": "Square (1:1)",
+   "pixel_color_profile": {
+    "channel_maxs": {
+     "blue": 120,
+     "green": 120,
+     "red": 120
+    },
+    "channel_means": {
+     "blue": 120.0,
+     "green": 120.0,
+     "red": 120.0
+    },
+    "channel_mins": {
+     "blue": 120,
+     "green": 120,
+     "red": 120
+    },
+    "channel_stds": {
+     "blue": 0.0,
+     "green": 0.0,
+     "red": 0.0
+    },
+    "dominant_palette": [
+     {
+      "color_name": "Medium Neutral Gray",
+      "coverage_pct": 100.0,
+      "hex": "#606060",
+      "rgb": [
+       96,
+       96,
+       96
+      ]
+     }
+    ],
+    "dynamic_range": 0,
+    "highlight_clipped_count": 0,
+    "highlight_clipped_pct": 0.0,
+    "luminance_max": 120,
+    "luminance_mean": 120.0,
+    "luminance_median": 120.0,
+    "luminance_min": 120,
+    "luminance_std": 0.0,
+    "shadow_crushed_count": 0,
+    "shadow_crushed_pct": 0.0,
+    "shannon_entropy_bpp": -0.0,
+    "unique_quantized_colors": 1
+   },
+   "pixel_entropy": -0.0,
+   "raw_physical_signals": {
+    "canny_edge_pct": 0.0,
+    "dark_line_art_pct": 0.0,
+    "fft_decay_alpha": -0.0,
+    "flat_region_noise_mean": 0.0,
+    "laplacian_sharpness_var": 0.0,
+    "prnu_noise_mean": 0.0,
+    "prnu_noise_std": 0.0,
+    "surface_smoothness_index": 0.0
+   },
+   "sha256": "56e37173fa572f993328a6bb2b4687e0b263e25219a9df57fed06359c584e9e2",
+   "source": "User Upload",
+   "spatial_geometry": {
+    "aspect_ratio": 1.0,
+    "aspect_ratio_str": "1:1 (Square Diffusion Canvas)",
+    "height": 512,
+    "megapixels": 0.26,
+    "orientation": "Square (1:1)",
+    "total_pixels": 262144,
+    "width": 512
+   },
+   "valid": true,
+   "width": 512
+  },
+  "filename": "b.png",
+  "final_status": "LIKELY AI-GENERATED",
+  "gate": {
+   "final_status": null,
+   "hard_block": {
+    "sha256": "56e37173fa572f993328a6bb2b4687e0b263e25219a9df57fed06359c584e9e2",
+    "status": "INACTIVE",
+    "triggered": false
+   },
+   "recognition": null,
+   "triggered": false
+  },
+  "inpainting_analysis": {
+   "confidence": 0.0,
+   "details": null,
+   "is_manipulated": false,
+   "manipulation_type": null,
+   "noise_inconsistency": 0.0
+  },
+  "inpainting_detected": false,
+  "model_attribution": {
+   "attributed_model": "Unknown / Generic Diffusion",
+   "confidence": 0.14,
+   "cues": [
+    "Exact match with canonical native output resolution (512x512) of Stability AI Stable Diffusion (SDXL / SD 3)",
+    "Exact match with canonical native output resolution (512x512) of Neural Face Swap (InsightFace / ReActor / Roop)"
+   ],
+   "model_key": "unknown",
+   "top_candidates": [
+    {
+     "confidence": 0.14,
+     "model": "Midjourney (v5 / v6)"
+    },
+    {
+     "confidence": 0.14,
+     "model": "Stability AI Stable Diffusion (SDXL / SD 3)"
+    },
+    {
+     "confidence": 0.14,
+     "model": "Neural Face Swap (InsightFace / ReActor / Roop)"
+    }
+   ]
+  },
+  "newbie_explanation": "### \ud83d\uddbc\ufe0f What We Identified in this Image\n\nThis file (`b.png`) is a **512 \u00d7 512 pixel** visual asset formatted in **1:1 (Square Diffusion Canvas)** at **72 x 72 DPI**. Visually, it depicts **a visual scene composed as a general scene** set in a **daylight** environment with an evocative **low contrast / soft** atmosphere, with the palette predominantly shaped by Medium Neutral Gray tones (#606060 covering 100.0% of the image). The visual style is characterized as **Photographic Capture**.\n\n### \ud83d\udca1 How Would You Explain This to a Newbie?\n\n**The Simple Takeaway:** Our forensic engine's heuristic (uncalibrated) score is **96.3% AI-likelihood**, indicating this image was most likely **created by generative Artificial Intelligence** (Fully AI Generated) rather than captured by a physical camera.\n\n**Think of it like this:** When a real camera takes a photo, millions of physical light particles (photons) strike a silicon sensor chip. Because the physical world has microscopic imperfections and heat, every authentic photo has a natural, fine grain \u2014 very much like the tiny grains of sand you see on photographic film. Forensic experts call this *sensor shot noise*.\n\nIn this image, that natural camera grain is completely missing (the measured sensor noise is only **0.00**, whereas real camera photos usually score between 1.20 and 2.50+). Instead of real light hitting a lens, a computer algorithm (a neural diffusion network like Midjourney, Flux, or Gemini) mathematically calculated and smoothed each pixel (surface smoothness index: **0.00**). While it looks impressive to the naked eye, the physics under the microscope reveal that it was painted by math, not light.",
+  "nine_dimensions_dossier": {
+   "dimension_1_hardware_provenance": {
+    "c2pa_status": "Absent (Neutral)",
+    "camera_hardware": "None None",
+    "date_taken": "Unknown / Stripped",
+    "description": "Examines physical camera sensor origin, hardware EXIF authenticity, C2PA manifest markers (presence only), and IPTC Digital Source Type mapping.",
+    "dimension_id": 1,
+    "exposure_parameters": {
+     "aperture": "N/A",
+     "flash": "Not Fired",
+     "focal_length": "N/A",
+     "iso": "N/A",
+     "shutter_speed": "N/A",
+     "white_balance": "Auto"
+    },
+    "gps_coordinates": "Not Embedded",
+    "iptc_digital_source_type": "digitalsourcetype:trainedAlgorithmicMedia (Synthesized via Foundation Model)",
+    "lens_model": "N/A",
+    "provenance_verdict": "Web Container / Metadata Stripped",
+    "software_signature": "None (Clean)",
+    "title": "Dimension 1: Acquisition Hardware & Provenance Identity Spectrum"
+   },
+   "dimension_2_pixel_architecture": {
+    "aspect_ratio": "1:1 (Square Diffusion Canvas)",
+    "bit_depth": "24-bit (3 channels x 8-bit)",
+    "clipping_profile": "Highlights: 0.0% (0 px) | Shadows: 0.0% (0 px)",
+    "color_space": "Standard sRGB",
+    "description": "Inspects pixel geometry, resolution aspect ratio, DPI resolution, bit depth, Shannon entropy, dynamic range, and dominant color palette.",
+    "dimension_id": 2,
+    "dominant_palette": [
+     {
+      "color_name": "Medium Neutral Gray",
+      "coverage_pct": 100.0,
+      "hex": "#606060",
+      "rgb": [
+       96,
+       96,
+       96
+      ]
+     }
+    ],
+    "dpi": "72 x 72 DPI",
+    "geometry": "512 x 512 px (0.26 MP, 262,144 total pixels)",
+    "luminance_dynamic_range": "120.0 mean (span: 120..120, median: 120.0)",
+    "orientation": "Square (1:1)",
+    "shannon_entropy": "-0.000 bits/px",
+    "title": "Dimension 2: Photometric, Spatial Geometry & Colorimetric Architecture",
+    "unique_colors_quantized": 1
+   },
+   "dimension_3_prnu_sensor_noise": {
+    "description": "Calculates Photo-Response Non-Uniformity (PRNU) and Poisson-Gaussian sensor shot noise residual (sigma_PRNU >= 1.45 for optical capture).",
+    "diagnosis": "Absence of physical camera sensor grain; synthetic mathematical smoothing detected (score: 0.00)",
+    "dimension_id": 3,
+    "flat_region_noise": 0.0,
+    "is_natural_shot_noise": false,
+    "mathematical_physics": "sigma^2_PRNU = (1/|M|) * sum((W(x,y) - mu_W)^2) >= 1.45 (NIST OpenMFC)",
+    "prnu_residual_mean": 0.0,
+    "title": "Dimension 3: Physical Sensor PRNU Noise Residual"
+   },
+   "dimension_4_surface_smoothness": {
+    "description": "Measures micro-texture continuity against bilateral filter smoothing to expose plastic diffusion skin and synthetic surfaces.",
+    "diagnosis": "Diffusion latent space bilateral over-smoothing detected across surfaces (index: 0.00)",
+    "dimension_id": 4,
+    "is_diffusion_smoothed": true,
+    "smoothness_index": 0.0,
+    "title": "Dimension 4: Bilateral Surface Smoothness & Spatial Texture Variance"
+   },
+   "dimension_5_fourier_fft_decay": {
+    "description": "Verifies natural optical power-law decay P(f) proportional to f^(-alpha), where natural optical captures exhibit alpha in [1.8, 2.2].",
+    "diagnosis": "Anomalous Fourier spectral slope (alpha=-0.00); deviates from physical optical decay",
+    "dimension_id": 5,
+    "is_anomalous_decay": true,
+    "mathematical_physics": "P(f) ~ f^(-alpha). Natural optical: alpha in [1.8, 2.2]. Synthetic: alpha < 1.4 or alpha > 3.4.",
+    "spectral_decay_alpha": -0.0,
+    "title": "Dimension 5: 2D Fourier FFT Frequency Power Spectrum Decay"
+   },
+   "dimension_6_subject_genre": {
+    "animal_types": [],
+    "animals_count": 0,
+    "atmospheric_mood": "Low Contrast / Soft",
+    "description": "Categorizes visual scene into human portraiture, nature, cosmic, architectural, commercial, or documentary genres.",
+    "dimension_id": 6,
+    "face_bounding_boxes": [],
+    "faces_count": 0,
+    "identified_items": [],
+    "is_stylized_character": false,
+    "lighting_and_daytime": "Daylight (Diffuse Daylight)",
+    "persons_count": 0,
+    "primary_genre": "General Scene",
+    "setting_and_environment": "Studio / Isolated \u2022 Studio / Isolated",
+    "title": "Dimension 6: Visual Genre & Semantic Subject-Matter Catalog",
+    "vehicle_types": [],
+    "vehicles_count": 0
+   },
+   "dimension_7_visual_medium": {
+    "canny_edge_density_pct": 0.0,
+    "dark_line_contours_pct": 0.0,
+    "description": "Distinguishes photographic optical capture from traditional painting (oil, watercolor), vector art, anime/manga, pixel art, or 3D CGI.",
+    "diagnosis": "Visual style categorized as Photographic Capture",
+    "dimension_id": 7,
+    "is_digital_art": false,
+    "laplacian_focus_sharpness": 0.0,
+    "title": "Dimension 7: Visual Art Mediums & Creative Styles Catalog",
+    "visual_medium": "Photographic Capture"
+   },
+   "dimension_8_sensor_spectrum": {
+    "color_channels": 3,
+    "description": "Identifies imaging wavelength: Visible Bayer RGB (400-700nm), Monochrome, Infrared (NIR/LWIR), UV, Biomedical (X-Ray/SEM), or Satellite/SAR.",
+    "diagnosis": "Acquisition modality operates in Monochrome / Grayscale Sensor",
+    "dimension_id": 8,
+    "sensor_spectrum": "Monochrome / Grayscale Sensor",
+    "title": "Dimension 8: Electromagnetic Spectrum & Acquisition Modalities"
+   },
+   "dimension_9_generative_attribution": {
+    "attributed_model": "Unknown / Generic Diffusion",
+    "attribution_confidence": 0.14,
+    "description": "Detects foundation model synthesis (Flux.1, Midjourney, SD 3.5, Gemini/Imagen 3, DALL-E 3), neural inpainting, deepfake face-swapping, and watermarks.",
+    "dimension_id": 9,
+    "region_of_origin": "Global",
+    "spatial_manipulated_area_pct": 100.0,
+    "title": "Dimension 9: Generative AI Frontier & Attribution Fingerprint",
+    "top_candidates": [
+     {
+      "confidence": 0.14,
+      "model": "Midjourney (v5 / v6)"
+     },
+     {
+      "confidence": 0.14,
+      "model": "Stability AI Stable Diffusion (SDXL / SD 3)"
+     },
+     {
+      "confidence": 0.14,
+      "model": "Neural Face Swap (InsightFace / ReActor / Roop)"
+     }
+    ],
+    "watermark_details": "No synthetic watermark detected",
+    "watermark_detected": false
+   }
+  },
+  "ood": {
+   "distance": null,
+   "note": "OOD gate is not fitted; fit it from your media library to enable out-of-distribution detection.",
+   "status": "NOT_CALIBRATED",
+   "threshold": null
+  },
+  "pre_analysis_details": {
+   "aspect_ratio": 1.0,
+   "aspect_ratio_str": "1:1 (Square Diffusion Canvas)",
+   "channel_variances": {
+    "blue_std": 0.0,
+    "green_std": 0.0,
+    "red_std": 0.0
+   },
+   "channels": 3,
+   "display_attributes": {
+    "bit_depth": "24-bit (3 channels x 8-bit)",
+    "bits_per_channel": 8,
+    "color_mode": "RGB",
+    "color_space": "Standard sRGB",
+    "dpi_str": "72 x 72 DPI",
+    "dpi_x": 72.0,
+    "dpi_y": 72.0,
+    "has_alpha_channel": false
+   },
+   "exif_device_details": {
+    "aperture": null,
+    "camera_make": null,
+    "camera_model": null,
+    "color_space_tag": "sRGB",
+    "date_time": null,
+    "exposure_bias": "0.0 EV",
+    "exposure_time": null,
+    "flash": "Not Fired",
+    "focal_length": null,
+    "gps_details": {
+     "coordinates_str": "Not Embedded",
+     "has_gps": false
+    },
+    "gps_embedded": false,
+    "has_exif": false,
+    "iso": null,
+    "lens_model": null,
+    "metering_mode": "Standard",
+    "orientation_tag": "Normal (1)",
+    "software": null,
+    "white_balance": "Auto"
+   },
+   "file_size_bytes": 1878,
+   "file_size_kb": 1.8,
+   "file_size_mb": 0.002,
+   "filename": "b.png",
+   "format": "PNG",
+   "height": 512,
+   "md5": "b271132ff42779c1c93e1b13a91b8889",
+   "mime_type": "image/png",
+   "orientation": "Square (1:1)",
+   "pixel_color_profile": {
+    "channel_maxs": {
+     "blue": 120,
+     "green": 120,
+     "red": 120
+    },
+    "channel_means": {
+     "blue": 120.0,
+     "green": 120.0,
+     "red": 120.0
+    },
+    "channel_mins": {
+     "blue": 120,
+     "green": 120,
+     "red": 120
+    },
+    "channel_stds": {
+     "blue": 0.0,
+     "green": 0.0,
+     "red": 0.0
+    },
+    "dominant_palette": [
+     {
+      "color_name": "Medium Neutral Gray",
+      "coverage_pct": 100.0,
+      "hex": "#606060",
+      "rgb": [
+       96,
+       96,
+       96
+      ]
+     }
+    ],
+    "dynamic_range": 0,
+    "highlight_clipped_count": 0,
+    "highlight_clipped_pct": 0.0,
+    "luminance_max": 120,
+    "luminance_mean": 120.0,
+    "luminance_median": 120.0,
+    "luminance_min": 120,
+    "luminance_std": 0.0,
+    "shadow_crushed_count": 0,
+    "shadow_crushed_pct": 0.0,
+    "shannon_entropy_bpp": -0.0,
+    "unique_quantized_colors": 1
+   },
+   "pixel_entropy": -0.0,
+   "raw_physical_signals": {
+    "canny_edge_pct": 0.0,
+    "dark_line_art_pct": 0.0,
+    "fft_decay_alpha": -0.0,
+    "flat_region_noise_mean": 0.0,
+    "laplacian_sharpness_var": 0.0,
+    "prnu_noise_mean": 0.0,
+    "prnu_noise_std": 0.0,
+    "surface_smoothness_index": 0.0
+   },
+   "sha256": "56e37173fa572f993328a6bb2b4687e0b263e25219a9df57fed06359c584e9e2",
+   "source": "User Upload",
+   "spatial_geometry": {
+    "aspect_ratio": 1.0,
+    "aspect_ratio_str": "1:1 (Square Diffusion Canvas)",
+    "height": 512,
+    "megapixels": 0.26,
+    "orientation": "Square (1:1)",
+    "total_pixels": 262144,
+    "width": 512
+   },
+   "valid": true,
+   "width": 512
+  },
+  "provenance": {
+   "c2pa": {
+    "ai_declaration": false,
+    "c2pa_present": false,
+    "creation_tool": null,
+    "details": "No C2PA Content Credentials manifest detected.",
+    "is_signed": false,
+    "manifests_found": [],
+    "status": "NO_C2PA"
+   },
+   "c2pa_present": false,
+   "camera_make": null,
+   "camera_model": null,
+   "creator_tool": null,
+   "cues": [
+    "No hardware metadata or Content Credentials found (neutral/stripped)."
+   ],
+   "exif": {
+    "ai_signature_found": false,
+    "camera_make": null,
+    "camera_model": null,
+    "datetime_original": null,
+    "has_exif": false,
+    "raw_tags": {},
+    "signature_details": null,
+    "software": null
+   },
+   "has_camera_hardware": false,
+   "is_ai_enhanced": false,
+   "is_graphic_edit": false,
+   "is_synthetic": false,
+   "metadata": {
+    "ai_enhancer_signature_found": false,
+    "ai_signature_found": false,
+    "camera_make": null,
+    "camera_model": null,
+    "creator_tool": null,
+    "date_time": null,
+    "exposure_time": null,
+    "f_number": null,
+    "focal_length": null,
+    "graphic_editor_signature_found": false,
+    "has_exif": false,
+    "has_optical_parameters": false,
+    "iptc_digital_source_type": null,
+    "iso": null,
+    "lens_model": null,
+    "photoshop_credit": null,
+    "raw_tags": {},
+    "screenshot_software_found": false,
+    "screenshot_software_name": null,
+    "signature_details": null,
+    "software": null,
+    "xmp_summary": {}
+   },
+   "provenance_ai_confidence": 0.5,
+   "provenance_rule": "NIST Rule: Absence of C2PA metadata indicates UNKNOWN provenance, not authenticity. Strong conclusions require cryptographic verification.",
+   "provenance_status": "NO_PROVENANCE_METADATA",
+   "provenance_verdict": "PROVENANCE_UNKNOWN",
+   "software": null
+  },
+  "quality_validation": {
+   "aspect_ratio": 1.0,
+   "color_mode": "RGB",
+   "error": null,
+   "file_hash_sha256": "56e37173fa572f993328a6bb2b4687e0b263e25219a9df57fed06359c584e9e2",
+   "file_size_mb": 0.002,
+   "filename": "b.png",
+   "format": "PNG",
+   "height": 512,
+   "quality": {
+    "contrast_std": 0.0,
+    "is_blurry": true,
+    "is_overexposed": false,
+    "is_underexposed": false,
+    "mean_luminance": 120.0,
+    "quality_score": 0.5,
+    "sharpness_laplacian": 0.0
+   },
+   "valid": true,
+   "width": 512
+  },
+  "quantified_inventory": {
+   "authenticity_probabilities": {
+    "p_ai_percentage": 96.3,
+    "p_real_percentage": 0.8,
+    "p_undecided_percentage": 2.9
+   },
+   "color_palette_percentages": [
+    {
+     "color_name": "Medium Neutral Gray",
+     "coverage_pct": 100.0,
+     "hex": "#606060",
+     "rgb": [
+      96,
+      96,
+      96
+     ]
+    }
+   ],
+   "living_entities": {
+    "animal_types": [],
+    "animals_count": 0,
+    "faces_count": 0,
+    "is_stylized_character": false,
+    "persons_count": 0
+   },
+   "objects_and_items": {
+    "identified_items": [],
+    "items_count": 0
+   },
+   "pixel_physics_metrics": {
+    "flat_region_noise": 0.0,
+    "fourier_fft_alpha": -0.0,
+    "highlight_clipped_pct": 0.0,
+    "prnu_noise_mean": 0.0,
+    "shadow_crushed_pct": 0.0,
+    "surface_smoothness": 0.0
+   },
+   "spatial_anomaly_manipulated_area_pct": 100.0,
+   "text_and_typography": {
+    "text_regions_count": 0
+   },
+   "vehicles": {
+    "vehicle_types": [],
+    "vehicles_count": 0
+   }
+  },
+  "screen_recapture_analysis": {
+   "confidence": 0.0,
+   "details": null,
+   "is_screen_recapture": false,
+   "moire_score": 0.02,
+   "peak_ratio": 0.06
+  },
+  "screen_recapture_detected": false,
+  "screenshot_analysis": {
+   "confidence": 0.0,
+   "details": null,
+   "device_type": "None",
+   "is_screenshot": false,
+   "orientation": "Square",
+   "screen_resolution": "512x512",
+   "ui_elements_detected": []
+  },
+  "screenshot_detected": false,
+  "sensor_spectrum": "Monochrome / Grayscale Sensor",
+  "subject_genre": "General Scene",
+  "taxonomy_description": "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata.",
+  "taxonomy_label": "Fully AI Generated",
+  "taxonomy_reasons": [
+   "High posterior probability of generative synthesis (96.3% AI)",
+   "Synthetic bilateral surface over-smoothing and absence of Poisson sensor noise",
+   "Canvas dimensions match standard generative model diffusion canvas"
+  ],
+  "taxonomy_state": "FULLY_AI_GENERATED",
+  "visual_medium": "Photographic Capture",
+  "watermark_detected": false
+ },
+ "img_missing": {
+  "ai_detected": false,
+  "authenticity_probabilities": {
+   "p_ai": 0.0,
+   "p_real": 0.0,
+   "p_undecided": 100.0
+  },
+  "content_valid": false,
+  "evidence_trail": [
+   "File not found on filesystem."
+  ],
+  "final_status": "INVALID_FILE",
+  "reason": "missing"
+ },
+ "vid": {
+  "ai_detected": true,
+  "attribution_open_set": {
+   "model_key": "unknown",
+   "note": "AI-leaning video whose generator matches no known profile: UNKNOWN_SOURCE / possible novel generator.",
+   "unknown_source": true
+  },
+  "authenticity_probabilities": {
+   "p_ai": 86.6,
+   "p_real": 10.4,
+   "p_undecided": 3.0
+  },
+  "confidence": 0.85,
+  "confidence_band": {
+   "band": "LEANING_SYNTHETIC",
+   "label": "Leaning Synthetic / Flagged for Review",
+   "p_ai_percent": 76.3
+  },
+  "container_validation": {
+   "aspect_ratio": 1.33,
+   "codec": "FMP4",
+   "duration_seconds": 3.0,
+   "error": null,
+   "file_hash_sha256": "fb1536f3bf10f896e7948c5f76e4ef5d6b4a541d7dca69011d9a7ef169d9dcbc",
+   "file_size_mb": 0.004,
+   "filename": "v.mp4",
+   "fps": 10.0,
+   "height": 96,
+   "total_frames": 30,
+   "valid": true,
+   "width": 128
+  },
+  "content_inventory": {
+   "contents_and_items": {
+    "count": 0,
+    "details": [],
+    "detected": false,
+    "identified_items": [],
+    "items": [],
+    "text_regions_count": 0
+   },
+   "entities": {
+    "animals": {
+     "animal_types": [],
+     "count": 0,
+     "details": [],
+     "detected": false,
+     "types": []
+    },
+    "humans": {
+     "bounding_boxes": [],
+     "count": 0,
+     "deepfake_analysis": {
+      "confidence": 0.0,
+      "details": [],
+      "risk": "NO_FACES_DETECTED"
+     },
+     "faces": 0,
+     "faces_count": 0,
+     "is_stylized_character": false,
+     "person_boxes": [],
+     "persons_count": 0
+    }
+   },
+   "environment": {
+    "setting": "Studio / Isolated",
+    "setting_type": "Studio / Isolated",
+    "sky_water_ratio": 0.0,
+    "vegetation_ratio": 0.078
+   },
+   "environment_and_surroundings": {
+    "setting": "Studio / Isolated",
+    "setting_type": "Studio / Isolated",
+    "sky_water_ratio": 0.0,
+    "vegetation_ratio": 0.078
+   },
+   "faces_count": 0,
+   "items_and_objects": {
+    "count": 0,
+    "details": [],
+    "detected": false,
+    "identified_items": [],
+    "items": [],
+    "text_regions_count": 0
+   },
+   "lighting_and_daytime": {
+    "daytime": "Daylight",
+    "estimated_daytime": "Daylight",
+    "lighting_quality": "Diffuse Daylight",
+    "lighting_style": "Diffuse Daylight",
+    "luminance_dynamic_range": 12.0,
+    "mean_luminance": 104.8
+   },
+   "living_entities": {
+    "animals": {
+     "animal_types": [],
+     "count": 0,
+     "details": [],
+     "detected": false,
+     "types": []
+    },
+    "humans": {
+     "bounding_boxes": [],
+     "count": 0,
+     "deepfake_analysis": {
+      "confidence": 0.0,
+      "details": [],
+      "risk": "NO_FACES_DETECTED"
+     },
+     "faces": 0,
+     "faces_count": 0,
+     "is_stylized_character": false,
+     "person_boxes": [],
+     "persons_count": 0
+    }
+   },
+   "persons_count": 0,
+   "purpose_and_depiction": {
+    "aspect_ratio": 1.33,
+    "document_layout": "None (Standard Visual Content)",
+    "photographic_purpose": "General Scene",
+    "primary_genre": "General Scene"
+   },
+   "scene_type": "Studio / Isolated",
+   "tone_and_mood": {
+    "atmospheric_mood": "Low Contrast / Soft",
+    "channel_means": {
+     "blue": 94.7,
+     "green": 109.3,
+     "red": 100.1
+    },
+    "color_temperature": "Neutral",
+    "color_tone": "Neutral",
+    "contrast_profile": "Low Contrast / Soft"
+   },
+   "vehicles": {
+    "count": 0,
+    "details": [],
+    "detected": false,
+    "types": [],
+    "vehicle_types": []
+   }
+  },
+  "content_valid": true,
+  "cross_modal_consistency": {
+   "asymmetry_score": 0.0,
+   "cross_modal_status": "SINGLE_MODALITY_VIDEO",
+   "cues": [
+    "Media contains video only; cross-modal synchronization skipped."
+   ],
+   "is_consistent": true,
+   "is_multimodal": false,
+   "status": "SINGLE_MODALITY_VIDEO",
+   "tampering_risk": "LOW"
+  },
+  "decision": {
+   "ai_detected": true,
+   "authenticity_probabilities": {
+    "p_ai": 86.6,
+    "p_real": 10.4,
+    "p_undecided": 3.0
+   },
+   "calibration_status": "UNCALIBRATED_HEURISTIC",
+   "content_inventory": {
+    "acoustic_environment": "N/A",
+    "animal_types": [],
+    "animals_detected": false,
+    "atmospheric_mood": "Low Contrast / Soft",
+    "audio_speakers": 0,
+    "color_tone": "Neutral",
+    "depiction_summary": "",
+    "dominant_audio_type": "N/A",
+    "estimated_daytime": "Daylight",
+    "faces_count": 0,
+    "identified_items": [],
+    "lighting_style": "Diffuse Daylight",
+    "location_context": "N/A",
+    "persons_count": 0,
+    "photographic_purpose": "General Scene",
+    "scene_type": "Studio / Isolated",
+    "setting_type": "Studio / Isolated",
+    "text_regions_count": 0,
+    "vehicle_types": [],
+    "vehicles_detected": false,
+    "vocal_tone": "N/A"
+   },
+   "content_valid": true,
+   "cross_modal": {
+    "asymmetry_score": 0.0,
+    "cross_modal_status": "SINGLE_MODALITY_VIDEO",
+    "cues": [
+     "Media contains video only; cross-modal synchronization skipped."
+    ],
+    "is_consistent": true,
+    "is_multimodal": false,
+    "status": "SINGLE_MODALITY_VIDEO",
+    "tampering_risk": "LOW"
+   },
+   "decision_mode": "fused",
+   "evidence_trail": [
+    "[Video Forensic] Unnatural frame-to-frame stillness detected (motion variance: 0.02)",
+    "[Video Forensic] High spatial synthetic artifact ratio across frames (96.9%)",
+    "[Audio Forensic] No audio track found or audio stream unreadable."
+   ],
+   "final_status": "LIKELY_SYNTHETIC",
+   "forensic_modality_results": {
+    "audio_ai_pct": null,
+    "image_ai_pct": null,
+    "video_ai_pct": 76.3
+   },
+   "localization": {
+    "suspicious_audio_duration_pct": 0.0,
+    "suspicious_image_area_pct": 0.0,
+    "suspicious_video_duration_pct": 0.0
+   },
+   "model_attribution": {
+    "attributed_model": "Unknown / Generic Video Diffusion",
+    "confidence": 0.07,
+    "cues": [
+     "No distinctive video foundation model fingerprints isolated."
+    ],
+    "model_key": "unknown",
+    "top_candidates": [
+     {
+      "confidence": 0.07,
+      "model": "ByteDance Seedance / Jimeng AI (\u5373\u68a6)"
+     },
+     {
+      "confidence": 0.07,
+      "model": "Kuaishou Kling AI (\u53ef\u7075)"
+     },
+     {
+      "confidence": 0.07,
+      "model": "OpenAI Sora"
+     }
+    ]
+   },
+   "provenance": {
+    "ai_declared_in_c2pa": false,
+    "c2pa_present": false,
+    "c2pa_signature": "Absent",
+    "hardware_make": null,
+    "hardware_model": null,
+    "provenance_verdict": "PROVENANCE_UNKNOWN",
+    "software": null
+   },
+   "reason": "Forensic signals indicate high likelihood of synthetic/generative AI creation.",
+   "taxonomy_description": "Synthesized end-to-end via generative diffusion or deep neural models.",
+   "taxonomy_label": "Fully AI Generated",
+   "taxonomy_reasons": [],
+   "taxonomy_state": "FULLY_AI_GENERATED",
+   "what_it_represents": "Studio / Isolated setting"
+  },
+  "dimension_report": {
+   "attribution_open_set": {
+    "model_key": "unknown",
+    "note": "AI-leaning video whose generator matches no known profile: UNKNOWN_SOURCE / possible novel generator.",
+    "unknown_source": true
+   },
+   "confidence_band": {
+    "band": "LEANING_SYNTHETIC",
+    "label": "Leaning Synthetic / Flagged for Review",
+    "p_ai_percent": 76.3
+   },
+   "findings_by_stage": {
+    "container": [
+     {
+      "check_id": "isobmff_boxes",
+      "data": {
+       "box_types": [
+        "ftyp",
+        "free",
+        "mdat",
+        "moov"
+       ],
+       "c2pa_box": false,
+       "compatible_brands": [
+        "isom",
+        "iso2",
+        "mp41"
+       ],
+       "fragmented": false,
+       "issues": [],
+       "layout": "MOOV_AT_END",
+       "major_brand": "isom"
+      },
+      "detail": "Brand 'isom', moov after mdat (typical of direct camera/phone recording or default ffmpeg muxing). Box layout is weak evidence of origin only.",
+      "dimension": "Section20",
+      "evidence_class": "METADATA_WEAK",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "container",
+      "status": "INFO",
+      "title": "ISOBMFF box structure"
+     },
+     {
+      "check_id": "isobmff_tables",
+      "data": {
+       "tracks": [
+        {
+         "cfr": true,
+         "duration_s": 3.0,
+         "fps": 10.0,
+         "issues": [],
+         "samples": 30,
+         "timescale": 10240
+        }
+       ]
+      },
+      "detail": "Sample tables are consistent; constant frame rate about 10.0 fps.",
+      "dimension": "Section20",
+      "evidence_class": "METADATA_WEAK",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "container",
+      "status": "PASS",
+      "title": "Sample-table consistency"
+     },
+     {
+      "check_id": "mp4_metadata",
+      "data": {
+       "capture_tools": [],
+       "creation": null,
+       "editors": [],
+       "generator": null,
+       "handler_names": [
+        "VideoHandler"
+       ],
+       "libraries": [
+        "libavformat"
+       ],
+       "modification": null,
+       "paradoxes": [],
+       "text_keys": [
+        "\u00a9too"
+       ],
+       "tools": [
+        "libavformat"
+       ]
+      },
+      "detail": "Muxer/encoder libraries: libavformat; creation time is unset (stripped or machine-produced). Strings are forgeable and often rewritten by platforms.",
+      "dimension": "Section20",
+      "evidence_class": "METADATA_WEAK",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "container",
+      "status": "INFO",
+      "title": "MP4/MOV metadata & tool strings"
+     },
+     {
+      "check_id": "telemetry_tracks",
+      "data": {
+       "location": null,
+       "telemetry": []
+      },
+      "detail": "No hardware telemetry tracks (absence is common and is not evidence of synthesis).",
+      "dimension": "Section20",
+      "evidence_class": "METADATA_WEAK",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "container",
+      "status": "INFO",
+      "title": "Hardware telemetry tracks"
+     },
+     {
+      "check_id": "encoder_sei",
+      "data": {
+       "encoders": {
+        "libavcodec": "Lavc61.19.100"
+       }
+      },
+      "detail": "Software encoder string(s) embedded in the stream: libavcodec. Hardware camera encoders usually carry none; re-encoded or exported files often do.",
+      "dimension": "Section20",
+      "evidence_class": "METADATA_WEAK",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "container",
+      "status": "INFO",
+      "title": "Encoder strings in the bitstream"
+     },
+     {
+      "check_id": "ebml_info",
+      "data": {},
+      "detail": "Not a Matroska/WebM file.",
+      "dimension": "Section20",
+      "evidence_class": "METADATA_WEAK",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "container",
+      "status": "NOT_APPLICABLE",
+      "title": "Matroska/WebM writer strings"
+     }
+    ],
+    "context": [
+     {
+      "check_id": "video_fingerprint",
+      "data": {
+       "frames": 16,
+       "index_loaded": false,
+       "matches": [],
+       "phashes": [
+        "fefe030303ff0303",
+        "fcfc0707073f0703",
+        "f8f0070f072f0f0f",
+        "f0f00f0f0f270f0f",
+        "e0e01f1f1f041f1f",
+        "e1e11e1e1e2e1e1e",
+        "c3c33c3c1e3e3c1c",
+        "c3c33c3c3c3c3c3c",
+        "c7c7383c383c3c3c",
+        "c7c7383838bf3838",
+        "c6c6393939b23939",
+        "cece313131bf3131",
+        "cccc333333333333",
+        "cccc333333333333",
+        "cccc333333273333",
+        "9999666666276666"
+       ]
+      },
+      "detail": "Frame hashes computed. No local reference index is configured, so re-use cannot be checked here (set OMNI_VIDEO_FP_INDEX).",
+      "dimension": "Section21.3",
+      "evidence_class": "CONTEXT",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "context",
+      "status": "INFO",
+      "title": "Reuse / context fingerprint"
+     }
+    ],
+    "file_integrity": [
+     {
+      "check_id": "format_sniff",
+      "data": {
+       "declared": "mp4",
+       "detected": "mp4"
+      },
+      "detail": "File content matches its extension (mp4).",
+      "dimension": "P",
+      "evidence_class": "SECURITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "file_integrity",
+      "status": "PASS",
+      "title": "True format vs. extension"
+     },
+     {
+      "check_id": "trailing_data",
+      "data": {
+       "declared_end": 3835,
+       "format": "mp4",
+       "trailing_bytes": 0
+      },
+      "detail": "No data after the declared end of the container.",
+      "dimension": "P",
+      "evidence_class": "SECURITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "file_integrity",
+      "status": "PASS",
+      "title": "Bytes beyond declared end of video container"
+     },
+     {
+      "check_id": "polyglot_signatures",
+      "data": {
+       "signatures": []
+      },
+      "detail": "No archive, executable or script signatures found.",
+      "dimension": "P",
+      "evidence_class": "SECURITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "file_integrity",
+      "status": "PASS",
+      "title": "Embedded executable / archive / script signatures"
+     },
+     {
+      "check_id": "prompt_injection_text",
+      "data": {
+       "matches": []
+      },
+      "detail": "Scanned 1 free-text metadata field(s); no instruction-like text found.",
+      "dimension": "P",
+      "evidence_class": "SECURITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "file_integrity",
+      "status": "PASS",
+      "title": "Instruction-like text in metadata"
+     }
+    ],
+    "legal": [
+     {
+      "check_id": "rights_notice",
+      "data": {
+       "author": "",
+       "copyright": ""
+      },
+      "detail": "No embedded rights notice (absence does not mean the footage is free to use).",
+      "dimension": "Section21.2",
+      "evidence_class": "LEGAL_FLAG",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "legal",
+      "status": "INFO",
+      "title": "Rights / licence notice"
+     },
+     {
+      "check_id": "location_privacy",
+      "data": {
+       "location": "",
+       "telemetry_tracks": []
+      },
+      "detail": "No embedded location data found.",
+      "dimension": "Section21.2",
+      "evidence_class": "LEGAL_FLAG",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "legal",
+      "status": "PASS",
+      "title": "Embedded location data"
+     },
+     {
+      "check_id": "biometric_notice",
+      "data": {
+       "faces_count": 0
+      },
+      "detail": "No faces detected.",
+      "dimension": "Section21.2",
+      "evidence_class": "LEGAL_FLAG",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "legal",
+      "status": "NOT_APPLICABLE",
+      "title": "Identifiable people"
+     },
+     {
+      "check_id": "ai_disclosure_label",
+      "data": {
+       "labelled": false
+      },
+      "detail": "Video is judged AI-leaning but carries no machine-readable AI disclosure; EU AI Act Art. 50 expects providers of synthetic video to mark outputs and deployers of deepfakes to disclose them.",
+      "dimension": "Section21.2",
+      "evidence_class": "LEGAL_FLAG",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "LOW",
+      "stage": "legal",
+      "status": "WARN",
+      "title": "AI-content disclosure label"
+     }
+    ],
+    "lifecycle": [
+     {
+      "check_id": "transcoding_cascade",
+      "data": {
+       "cues": [
+        "low bitrate (0.083 bits per pixel per frame)"
+       ],
+       "likelihood": 0.15,
+       "likelihood_level": "LOW"
+      },
+      "detail": "Likelihood of multi-generation re-encoding: LOW (0.15). Cues: low bitrate (0.083 bits per pixel per frame). Sensor-noise, flicker and motion cues may be degraded.",
+      "dimension": "Section21.5",
+      "evidence_class": "RELIABILITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "lifecycle",
+      "status": "INFO",
+      "title": "Transcoding-cascade likelihood"
+     }
+    ],
+    "reliability": [
+     {
+      "check_id": "confidence_limiters",
+      "data": {
+       "level": "REDUCED",
+       "limiters": [
+        "Low resolution (128x96): pixel-level and noise cues are unreliable"
+       ]
+      },
+      "detail": "Reliability REDUCED: Low resolution (128x96): pixel-level and noise cues are unreliable.",
+      "dimension": "Section21.7",
+      "evidence_class": "RELIABILITY",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "LOW",
+      "stage": "reliability",
+      "status": "WARN",
+      "title": "Confidence limiters"
+     }
+    ],
+    "signal": [
+     {
+      "check_id": "interlacing",
+      "data": {
+       "combed": false,
+       "combing_ratio": 0.55,
+       "container_fiel": null,
+       "moving_frames": 29
+      },
+      "detail": "No combing measured (ratio 0.55); consistent with progressive capture.",
+      "dimension": "K",
+      "evidence_class": "PHYSICAL_SIGNAL",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "signal",
+      "status": "PASS",
+      "title": "Interlacing / combing"
+     },
+     {
+      "check_id": "temporal_cadence",
+      "data": {
+       "hard_cuts": 0,
+       "pattern": "NONE",
+       "period": null,
+       "repeat_fraction": 0.0,
+       "repeat_frames": 0
+      },
+      "detail": "No duplicate-frame cadence detected in the first frames.",
+      "dimension": "K",
+      "evidence_class": "PHYSICAL_SIGNAL",
+      "llr": null,
+      "llr_cap": 0.25,
+      "severity": "NONE",
+      "stage": "signal",
+      "status": "PASS",
+      "title": "Frame cadence (duplicates / pulldown)"
+     }
+    ]
+   },
+   "gates": {
+    "final_status": null,
+    "hard_block": {
+     "sha256": "fb1536f3bf10f896e7948c5f76e4ef5d6b4a541d7dca69011d9a7ef169d9dcbc",
+     "status": "INACTIVE",
+     "triggered": false
+    },
+    "recognition": null,
+    "triggered": false
+   },
+   "ood": {
+    "distance": null,
+    "note": "OOD gate is not fitted; fit it from your video library to enable out-of-distribution detection.",
+    "status": "NOT_CALIBRATED",
+    "threshold": null
+   },
+   "reliability": {
+    "level": "REDUCED",
+    "limiters": [
+     "Low resolution (128x96): pixel-level and noise cues are unreliable"
+    ]
+   },
+   "score_terms": {},
+   "summary": {
+    "by_status": {
+     "INFO": 7,
+     "NOT_APPLICABLE": 2,
+     "PASS": 8,
+     "WARN": 2
+    },
+    "total": 19
+   }
+  },
+  "evidence_trail": [
+   "Unnatural frame-to-frame stillness detected (motion variance: 0.02)",
+   "High spatial synthetic artifact ratio across frames (96.9%)",
+   "Video Generator Fingerprint: Unknown / Generic Video Diffusion (7% confidence)"
+  ],
+  "file_profile": {
+   "aspect_ratio": 1.33,
+   "codec": "FMP4",
+   "container_format": "MP4",
+   "duration_seconds": 3.0,
+   "file_size_bytes": 3835,
+   "file_size_mb": 0.004,
+   "filename": "v.mp4",
+   "fps": 10.0,
+   "height": 96,
+   "md5": "99bc8db507725bedb5c603041d670dc7",
+   "sha256": "fb1536f3bf10f896e7948c5f76e4ef5d6b4a541d7dca69011d9a7ef169d9dcbc",
+   "total_frames": 30,
+   "valid": true,
+   "width": 128
+  },
+  "filename": "v.mp4",
+  "final_status": "LIKELY_SYNTHETIC",
+  "gate": {
+   "final_status": null,
+   "hard_block": {
+    "sha256": "fb1536f3bf10f896e7948c5f76e4ef5d6b4a541d7dca69011d9a7ef169d9dcbc",
+    "status": "INACTIVE",
+    "triggered": false
+   },
+   "recognition": null,
+   "triggered": false
+  },
+  "model_attribution": {
+   "attributed_model": "Unknown / Generic Video Diffusion",
+   "confidence": 0.07,
+   "cues": [
+    "No distinctive video foundation model fingerprints isolated."
+   ],
+   "model_key": "unknown",
+   "top_candidates": [
+    {
+     "confidence": 0.07,
+     "model": "ByteDance Seedance / Jimeng AI (\u5373\u68a6)"
+    },
+    {
+     "confidence": 0.07,
+     "model": "Kuaishou Kling AI (\u53ef\u7075)"
+    },
+    {
+     "confidence": 0.07,
+     "model": "OpenAI Sora"
+    }
+   ]
+  },
+  "newbie_explanation": "### \ud83d\udcf9 What We Identified in this Video\n\nThis file (`v.mp4`) is a **0.0-second video recording** formatted at **0 \u00d7 0 pixels** running at **0.0 frames per second**. The video depicts **a visual landscape or scene**.\n\n### \ud83d\udca1 How Would You Explain This to a Newbie?\n\n**The Simple Takeaway:** Our forensic engine's heuristic (uncalibrated) score is **86.6% AI-likelihood**, indicating this video was most likely **generated by Artificial Intelligence** (such as Sora, Runway, Kling, or Luma) rather than captured by a real physical video camera.\n\n**Think of it like this:** When a real video camera shoots a scene, light continuously hits a physical sensor chip 24 to 60 times every second. Because physical objects obey Newtonian physics, moving hands, hair, and backgrounds transition smoothly without distorting. However, AI video models generate clips by 'dreaming' one frame after another. When you look closely under the forensic microscope, the background slightly warps, micro-textures flicker unnaturally between frames, and the natural camera sensor grain is missing. It looks convincing at first glance, but the temporal physics reveal it was computed mathematically, not filmed optically.",
+  "nine_dimensions_dossier": {
+   "dimension_1_hardware_provenance": {
+    "c2pa_status": "Absent (Neutral)",
+    "container_atoms": [
+     "ftyp",
+     "moov",
+     "mdat",
+     "udta",
+     "meta",
+     "mvhd",
+     "trak"
+    ],
+    "description": "Inspects container atom structure (moov, mvhd, udta), encoder signatures, and C2PA manifests.",
+    "dimension_id": 1,
+    "hardware_origin": "Unspecified Camera Hardware / Web Export",
+    "provenance_verdict": "STANDARD_CONTAINER_ATOMS",
+    "title": "Dimension 1: Acquisition Hardware & Video Container Provenance"
+   },
+   "dimension_2_pixel_architecture": {
+    "aspect_ratio": "0.00:1",
+    "bitrate_kbps": 0.0,
+    "description": "Examines resolution, frame rate (FPS), duration, aspect ratio, and total frame buffer depth.",
+    "dimension_id": 2,
+    "dimensions": "0 x 0 px",
+    "duration": "0.00 seconds (0 frames)",
+    "frame_rate": "0.00 FPS",
+    "title": "Dimension 2: Spatial Geometry & Temporal Framing Architecture"
+   },
+   "dimension_3_prnu_sensor_noise": {
+    "description": "Monitors photon shot noise and PRNU stability across temporal frame samples.",
+    "diagnosis": "Authentic camera sensor shot noise preserved across sampled frames.",
+    "dimension_id": 3,
+    "is_natural_noise": true,
+    "noise_score": 1.8,
+    "title": "Dimension 3: Sensor Shot Noise & Micro-Grain Consistency"
+   },
+   "dimension_4_surface_smoothness": {
+    "description": "Tracks optical flow continuity to detect liquid limb morphing and unnatural physics.",
+    "diagnosis": "Unnatural frame-to-frame stillness detected (UNNATURAL_FREEZE); inconsistent with live motion capture.",
+    "dimension_id": 4,
+    "motion_variance": 0.02,
+    "title": "Dimension 4: Inter-Frame Motion Vectors & Morphological Warping",
+    "warping_risk": "UNNATURAL_FREEZE"
+   },
+   "dimension_5_fourier_fft_decay": {
+    "description": "Detects high-frequency luminance fluctuations characteristic of frame-by-frame diffusion generation.",
+    "diagnosis": "Temporal luminance stability aligns with physical camera shutter exposure.",
+    "dimension_id": 5,
+    "flicker_score": 20.0,
+    "has_diffusion_flicker": false,
+    "title": "Dimension 5: Temporal Diffusion Flickering & Latent Drift"
+   },
+   "dimension_6_subject_genre": {
+    "description": "Catalogs entities, persons, faces, scene settings, and environmental lighting.",
+    "dimension_id": 6,
+    "faces_count": 0,
+    "identified_items": [],
+    "lighting": "Daylight",
+    "persons_count": 0,
+    "setting": "Studio / Isolated \u2022 Studio / Isolated",
+    "title": "Dimension 6: Visual Genre & Semantic Subject-Matter Catalog"
+   },
+   "dimension_7_visual_medium": {
+    "description": "Distinguishes physical camera capture from Sora, Runway Gen-2/Gen-3, Kling, Luma, or 3D CGI.",
+    "dimension_id": 7,
+    "is_ai_video": false,
+    "title": "Dimension 7: Video Synthesis Medium & Generative Model Archetype",
+    "visual_medium": "Video Capture"
+   },
+   "dimension_8_sensor_spectrum": {
+    "color_channels": 3,
+    "description": "Evaluates color dynamics, dynamic range, and highlight/shadow preservation across frames.",
+    "dimension_id": 8,
+    "sensor_modality": "Standard RGB Video Stream",
+    "title": "Dimension 8: Sensor Spectrum & Dynamic Range"
+   },
+   "dimension_9_generative_attribution": {
+    "attributed_generator": "Unknown / Generic Video Diffusion",
+    "confidence": "0%",
+    "description": "Matches forensic fingerprints against known video foundation generators (Sora, Runway, Pika, Kling, Luma).",
+    "dimension_id": 9,
+    "suspicious_duration_pct": "0.0%",
+    "title": "Dimension 9: Foundation Model Attribution & Watermarking",
+    "watermark_detected": false
+   }
+  },
+  "ood": {
+   "distance": null,
+   "note": "OOD gate is not fitted; fit it from your video library to enable out-of-distribution detection.",
+   "status": "NOT_CALIBRATED",
+   "threshold": null
+  },
+  "provenance": {
+   "c2pa": {
+    "ai_declaration": false,
+    "c2pa_present": false,
+    "creation_tool": null,
+    "details": "No C2PA Content Credentials manifest detected.",
+    "is_signed": false,
+    "manifests_found": [],
+    "status": "NO_C2PA"
+   },
+   "c2pa_present": false,
+   "camera_make": null,
+   "container_atoms": [
+    "ftyp",
+    "moov",
+    "mdat",
+    "udta",
+    "meta",
+    "mvhd",
+    "trak"
+   ],
+   "cues": [
+    "Standard video atoms verified: ftyp, moov, mdat, udta, meta, mvhd, trak"
+   ],
+   "exif": {
+    "ai_signature_found": false,
+    "camera_make": null,
+    "camera_model": null,
+    "datetime_original": null,
+    "has_exif": false,
+    "raw_tags": {},
+    "signature_details": null,
+    "software": null
+   },
+   "provenance_ai_confidence": 0.5,
+   "provenance_rule": "NIST Rule: Absence of C2PA metadata indicates UNKNOWN provenance, not authenticity. Strong conclusions require cryptographic verification.",
+   "provenance_status": "STANDARD_CONTAINER_ATOMS",
+   "provenance_verdict": "PROVENANCE_UNKNOWN",
+   "vendor_signatures_found": []
+  },
+  "temporal_forensics": {
+   "ai_percentage": 76.3,
+   "confidence": 0.85,
+   "diffusion_flicker": {
+    "flicker_ratio": 0.43,
+    "flicker_score": 0.0,
+    "has_diffusion_flicker": false,
+    "mean_lum_jump": 0.03
+   },
+   "duration_seconds": 3.0,
+   "error": null,
+   "filename": "v.mp4",
+   "forensic_cues": [
+    "Unnatural frame-to-frame stillness detected (motion variance: 0.02)",
+    "High spatial synthetic artifact ratio across frames (96.9%)"
+   ],
+   "keyframes": [
+    "<ndarray>",
+    "<ndarray>",
+    "<ndarray>",
+    "<ndarray>",
+    "<ndarray>",
+    "<ndarray>",
+    "<ndarray>",
+    "<ndarray>",
+    "<ndarray>",
+    "<ndarray>",
+    "<ndarray>",
+    "<ndarray>"
+   ],
+   "label": "LIKELY AI-GENERATED",
+   "metadata": {
+    "aspect_ratio": 1.33,
+    "codec": "FMP4",
+    "duration_seconds": 3.0,
+    "file_size_mb": 0.004,
+    "filename": "v.mp4",
+    "fps": 10.0,
+    "height": 96,
+    "total_frames": 30,
+    "width": 128
+   },
+   "prediction": "LIKELY AI-GENERATED",
+   "real_percentage": 13.0,
+   "sampled_frames_count": 30,
+   "temporal_consistency": {
+    "is_anomalous_motion": true,
+    "mean_motion_delta": 0.8,
+    "motion_variance": 0.02,
+    "temporal_warping_risk": "UNNATURAL_FREEZE"
+   },
+   "temporal_segments": [
+    {
+     "duration_seconds": 3.0,
+     "end_seconds": 3.0,
+     "frame_count": 30,
+     "label": "LIKELY AI-GENERATED",
+     "start_seconds": 0.0
+    }
+   ],
+   "total_frames": 30,
+   "undecided_percentage": 10.7,
+   "valid": true
+  }
+ }
+}

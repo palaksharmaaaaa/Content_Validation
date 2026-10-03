@@ -115,7 +115,8 @@ class TestZeroRetentionFeatureStore(unittest.TestCase):
 
     def test_training_from_feature_bank(self):
         """Verifies training neural classification head directly from .npz with zero media files."""
-        trainer = ImageDetectorTrainer()
+        # Hermetic: never let the head trained on random vectors overwrite the live checkpoint.
+        trainer = ImageDetectorTrainer(checkpoint_path=self.temp_path / "head_test.pt")
         out_npz = self.temp_path / "train_bank.npz"
 
         # Create 10 dummy feature samples directly in npz

@@ -8,11 +8,12 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 from PIL import Image
 from PIL.ExifTags import TAGS
 
-from image_detector.config import KNOWN_AI_SOFTWARE_SIGNATURES
+
+from core.provenance_view import build_c2pa_block, build_exif_block, build_provenance_view
 
 logger = logging.getLogger("image_detector.provenance")
 
@@ -105,12 +106,30 @@ class ImageProvenanceValidator:
             prov_status = "GRAPHIC_EDITOR_TAGS"
         elif c2pa_res["c2pa_present"]:
             prov_status = "C2PA_PROVENANCE_PRESENT"
-            cues.append("Content Credentials cryptographic manifest verified.")
+            cues.append("Content Credentials markers present (presence only; not cryptographically verified).")
         else:
             prov_status = "NO_PROVENANCE_METADATA"
             cues.append("No hardware metadata or Content Credentials found (neutral/stripped).")
 
+        ai_declared = bool(
+            meta_extracted.get("ai_signature_found")
+            or meta_extracted.get("iptc_digital_source_type") == "trainedAlgorithmicMedia"
+        )
+        view = build_provenance_view(
+            build_c2pa_block(c2pa_res["c2pa_present"], c2pa_res.get("manifests_found", []), ai_declaration=ai_declared),
+            build_exif_block(
+                camera_make=meta_extracted.get("camera_make"),
+                camera_model=meta_extracted.get("camera_model"),
+                software=meta_extracted.get("software"),
+                datetime_original=meta_extracted.get("date_time"),
+                ai_signature_found=bool(meta_extracted.get("ai_signature_found")),
+                signature_details=meta_extracted.get("signature_details"),
+                raw_tags=meta_extracted.get("raw_tags"),
+                has_exif=meta_extracted.get("has_exif"),
+            ),
+        )
         return {
+            **view,
             "c2pa_present": c2pa_res["c2pa_present"],
             "provenance_status": prov_status,
             "has_camera_hardware": has_hardware,

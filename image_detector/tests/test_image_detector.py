@@ -546,3 +546,24 @@ if __name__ == "__main__":
 
 
 
+
+
+def test_profiler_reads_exif_optics_with_real_rationals_and_survives_bad_tag(tmp_path):
+    import numpy as np
+    from PIL import Image
+    from PIL.TiffImagePlugin import IFDRational
+
+    from image_detector.profiler import ImageProfiler
+
+    ex = Image.Exif()
+    ex[271], ex[272] = "Canon", "EOS R5"
+    sub = ex.get_ifd(0x8769)
+    sub[0x829A] = (1, 250)  # malformed (tuple, not a rational): must not discard the tags below
+    sub[0x829D] = IFDRational(28, 10)
+    sub[0x8827] = 100
+    sub[0x920A] = IFDRational(50, 1)
+    p = tmp_path / "e.jpg"
+    Image.fromarray(np.zeros((64, 64, 3), np.uint8)).save(p, "JPEG", exif=ex)
+    info = ImageProfiler().profile_image(p)["exif_device_details"]
+    assert info["aperture"] == "f/2.8" and info["iso"] == 100 and info["focal_length"] == "50.0mm"
+    assert info["exposure_time"] is None

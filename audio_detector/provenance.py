@@ -7,8 +7,9 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-import wave
+from typing import Any, Dict
+
+from core.provenance_view import build_c2pa_block, build_exif_block, build_provenance_view
 
 logger = logging.getLogger("audio_detector.provenance")
 
@@ -88,7 +89,12 @@ class AudioProvenanceValidator:
             status = "NO_ENCODER_METADATA"
             cues.append("No encoder software metadata found (neutral/stripped stream).")
 
+        view = build_provenance_view(
+            build_c2pa_block(c2pa_res["c2pa_present"], c2pa_res.get("manifests_found", [])),
+            build_exif_block(),
+        )
         return {
+            **view,
             "c2pa_present": c2pa_res["c2pa_present"],
             "provenance_status": status,
             "encoder": encoder_found,

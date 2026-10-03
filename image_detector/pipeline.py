@@ -11,19 +11,115 @@ Completely self-contained with zero outside dependencies.
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
+from core.decision import generate_final_decision
 from image_detector.attribution import ImageModelAttributionEngine
 from image_detector.content import ImageContentAnalyzer
 from image_detector.detector import ImageAIDetector
+from image_detector.dimension_checks import (
+    ImageDimensionAnalysis,
+    check_image_gates,
+    gate_short_circuit_result,
+    summarize_for_evidence_trail,
+)
 from image_detector.explain import build_nine_dimensions_dossier, generate_newbie_explanation
-from image_detector.face import FaceDeepfakeDetector
 from image_detector.profiler import ImageProfiler
 from image_detector.provenance import ImageProvenanceValidator
 from image_detector.validator import ImageValidator
 
 logger = logging.getLogger("image_detector.pipeline")
+
+
+def _quantified_inventory(
+    ai_res: Dict[str, Any], content_res: Dict[str, Any], profile_res: Dict[str, Any],
+    ai_percentage: float, real_percentage: float, undecided_percentage: float,
+) -> Dict[str, Any]:
+    """Quantified inventory summary (percentages, counts, pixel-physics metrics)."""
+    return {
+        "authenticity_probabilities": {
+            "p_ai_percentage": ai_percentage,
+            "p_real_percentage": real_percentage,
+            "p_undecided_percentage": undecided_percentage,
+        },
+        "spatial_anomaly_manipulated_area_pct": ai_res.get("ai_spatial_area_pct", 0.0),
+        "living_entities": {
+            "persons_count": content_res.get("persons_count", 0),
+            "faces_count": content_res.get("faces_count", 0),
+            "is_stylized_character": content_res.get("living_entities", {}).get("humans", {}).get("is_stylized_character", False),
+            "animals_count": content_res.get("living_entities", {}).get("animals", {}).get("count", 0),
+            "animal_types": content_res.get("living_entities", {}).get("animals", {}).get("animal_types", []),
+        },
+        "vehicles": {
+            "vehicles_count": content_res.get("vehicles", {}).get("count", 0),
+            "vehicle_types": content_res.get("vehicles", {}).get("types", []),
+        },
+        "objects_and_items": {
+            "items_count": len(content_res.get("contents_and_items", {}).get("identified_items", [])),
+            "identified_items": content_res.get("contents_and_items", {}).get("identified_items", []),
+        },
+        "text_and_typography": {
+            "text_regions_count": content_res.get("contents_and_items", {}).get("text_regions_count", 0),
+        },
+        "color_palette_percentages": profile_res.get("pixel_color_profile", {}).get("dominant_palette", []),
+        "pixel_physics_metrics": {
+            "prnu_noise_mean": profile_res.get("raw_physical_signals", {}).get("prnu_noise_mean", 0.0),
+            "flat_region_noise": profile_res.get("raw_physical_signals", {}).get("flat_region_noise_mean", 0.0),
+            "surface_smoothness": profile_res.get("raw_physical_signals", {}).get("surface_smoothness_index", 0.0),
+            "fourier_fft_alpha": profile_res.get("raw_physical_signals", {}).get("fft_decay_alpha", 2.05),
+            "highlight_clipped_pct": profile_res.get("pixel_color_profile", {}).get("highlight_clipped_pct", 0.0),
+            "shadow_crushed_pct": profile_res.get("pixel_color_profile", {}).get("shadow_crushed_pct", 0.0),
+        },
+    }
+
+
+def _evidence_trail(
+    provenance_res: Dict[str, Any], ai_res: Dict[str, Any], attribution_res: Dict[str, Any], dimension_report: Dict[str, Any]
+) -> List[str]:
+    evidence_trail: List[str] = []
+    if provenance_res.get("c2pa_present"):
+        evidence_trail.append("C2PA Content Credentials markers found in file (presence only; not cryptographically verified).")
+    if provenance_res.get("has_camera_hardware"):
+        make = provenance_res.get("camera_make", "")
+        model = provenance_res.get("camera_model", "")
+        evidence_trail.append(f"Camera hardware EXIF tags present (unauthenticated metadata): {make} {model}")
+    for cue in ai_res.get("forensic_cues", []):
+        evidence_trail.append(cue)
+    attr_model = attribution_res.get("attributed_model", "")
+    attr_conf = float(attribution_res.get("confidence", 0.0))
+    if attr_model and not attr_model.startswith("None") and not attr_model.startswith("Unknown") and attr_conf > 0.0:
+        evidence_trail.append(f"Generative fingerprint matched: {attr_model} ({int(attr_conf * 100)}% match)")
+
+    evidence_trail.extend(summarize_for_evidence_trail(dimension_report))
+    return evidence_trail
+
+
+@dataclass
+class ImageRun:
+    """Every intermediate of one image analysis; consumed by the headless report and by the Streamlit adapter."""
+
+    path: Path
+    gates: Dict[str, Any]
+    profile: Dict[str, Any]
+    provenance: Dict[str, Any]
+    quality: Dict[str, Any]
+    ai_result: Dict[str, Any]
+    content: Dict[str, Any]
+    attribution: Dict[str, Any]
+    dimension_report: Dict[str, Any]
+    decision: Dict[str, Any]
+    nine_dimensions: Dict[str, Any]
+    newbie_explanation: str
+
+
+def _flat_quality(validation: Any) -> Dict[str, Any]:
+    """Validator result as one flat dict (the nested ``quality`` block is merged up, as the decision layer expects)."""
+    flat = validation.to_dict()
+    if isinstance(flat.get("quality"), dict):
+        flat.update(flat["quality"])
+    return flat
 
 
 class ImageForensicPipeline:
@@ -55,167 +151,106 @@ class ImageForensicPipeline:
         """
         return self.profiler.profile_image(image_path, source=source)
 
+    def run(
+        self,
+        image_path: str | Path,
+        *,
+        sensitivity: str = "balanced",
+        source: str = "User Upload",
+        filename: Optional[str] = None,
+        gates: Optional[Dict[str, Any]] = None,
+        quality: Optional[Dict[str, Any]] = None,
+    ) -> ImageRun:
+        """The one analysis sequence. Callers handle gate/validation short-circuits before calling this."""
+        path = Path(image_path)
+        gates = gates if gates is not None else check_image_gates(path)
+
+        profile = self.extract_pre_analysis_details(path, source=source)
+        provenance = self.provenance.analyze_provenance(path)
+
+        # Dimension checks (integrity / format / metadata) -> capped score terms
+        dim_analysis = ImageDimensionAnalysis(path, profile=profile, provenance=provenance)
+        dim_terms = dim_analysis.run_pre()
+
+        ai_result = self.detector.predict(path, sensitivity=sensitivity, provenance=provenance, extra_log_lrs=dim_terms)
+        content = self.content_analyzer.analyze_image_content(path)
+        attribution = self.attribution_engine.attribute_image(
+            path, forensic_data=ai_result, profile_data=profile, provenance_data=provenance
+        )
+        # Post-detector dimension checks (legal / context / lifecycle / reliability), band, OOD, open-set
+        dimension_report = dim_analysis.run_post(content=content, ai_result=ai_result, attribution=attribution, gates=gates)
+
+        quality = quality if quality is not None else _flat_quality(self.validator.validate(path))
+        decision = generate_final_decision(
+            file_validation={"readable": True},
+            quality_result=quality,
+            ai_result=ai_result,
+            content_inventory=content,
+            provenance_result=provenance,
+            attribution_result=attribution,
+        )
+        nine_dimensions = build_nine_dimensions_dossier(
+            profile_data=profile, ai_result=ai_result, content_inventory=content,
+            provenance_result=provenance, attribution_result=attribution,
+        )
+        newbie = generate_newbie_explanation(
+            filename=filename or path.name, profile_data=profile, content_inventory=content,
+            ai_result=ai_result, decision=decision,
+        )
+        return ImageRun(path, gates, profile, provenance, quality, ai_result, content, attribution,
+                        dimension_report, decision, nine_dimensions, newbie)
+
     def analyze(
         self,
         image_path: str | Path,
         sensitivity: str = "balanced",
         source: str = "User Upload",
     ) -> Dict[str, Any]:
-        """Runs the entire end-to-end linear image forensic analysis pipeline."""
+        """Runs the entire end-to-end linear image forensic analysis pipeline and returns the headless report."""
         path = Path(image_path)
         if not path.is_file():
-            return {
-                "content_valid": False,
-                "final_status": "INVALID_FILE",
-                "reason": f"File does not exist: {path}",
-                "ai_detected": False,
-                "authenticity_probabilities": {"p_ai": 0.0, "p_real": 0.0, "p_undecided": 100.0},
-                "evidence_trail": ["File not found on filesystem."],
-            }
+            return _terminal_report("INVALID_FILE", f"File does not exist: {path}", "File not found on filesystem.")
 
-        # 1. Quality & Format Validation
+        # Pre-analysis gates (before decoding): hard-block hash list + out-of-scope scientific formats.
+        gates = check_image_gates(path)
+        if gates["triggered"]:
+            return gate_short_circuit_result(path, gates)
+
         val_res = self.validator.validate(path)
         if not val_res.valid:
-            return {
-                "content_valid": False,
-                "final_status": "CORRUPT_OR_UNREADABLE",
-                "reason": val_res.error or "Image stream corrupted or unreadable.",
-                "ai_detected": False,
-                "authenticity_probabilities": {"p_ai": 0.0, "p_real": 0.0, "p_undecided": 100.0},
-                "evidence_trail": [val_res.error or "File format failure."],
-            }
+            return _terminal_report(
+                "CORRUPT_OR_UNREADABLE", val_res.error or "Image stream corrupted or unreadable.",
+                val_res.error or "File format failure.",
+            )
 
-        # 2. Stage 1: Pre-Analysis Feature & Metadata Extraction
-        profile_res = self.extract_pre_analysis_details(path, source=source)
+        r = self.run(path, sensitivity=sensitivity, source=source, gates=gates, quality=_flat_quality(val_res))
+        return self._report(r, val_res.to_dict())
 
-        # 3. Provenance & Cryptographic C2PA Verification
-        provenance_res = self.provenance.analyze_provenance(path)
-
-        # 4. Deep Learning & Statistical Sensor Noise AI Detection
-        ai_res = self.detector.predict(path, sensitivity=sensitivity, provenance=provenance_res)
-
-        # 5. Scene & Content Intelligence (Living entities, objects, text regions)
-        content_res = self.content_analyzer.analyze_image_content(path)
-
-        # 6. Foundation Model Attribution & Watermarking
-        attribution_res = self.attribution_engine.attribute_image(
-            path,
-            forensic_data=ai_res,
-            profile_data=profile_res,
-            provenance_data=provenance_res,
-        )
-
-        ai_percentage = float(ai_res.get("ai_percentage", 0.0))
-        real_percentage = float(ai_res.get("real_percentage", 0.0))
-        undecided_percentage = float(ai_res.get("undecided_percentage", 0.0))
-        final_label = ai_res.get("label", "UNDECIDED")
-        is_ai = final_label == "LIKELY AI-GENERATED"
-
-        # Evidence Trail Compilation
-        evidence_trail = []
-        if provenance_res.get("c2pa_present"):
-            evidence_trail.append("Cryptographic C2PA Content Credentials found in file.")
-        if provenance_res.get("has_camera_hardware"):
-            make = provenance_res.get("camera_make", "")
-            model = provenance_res.get("camera_model", "")
-            evidence_trail.append(f"Authentic camera hardware tags verified: {make} {model}")
-        for cue in ai_res.get("forensic_cues", []):
-            evidence_trail.append(cue)
-        attr_model = attribution_res.get("attributed_model", "")
-        attr_conf = float(attribution_res.get("confidence", 0.0))
-        if attr_model and not attr_model.startswith("None") and not attr_model.startswith("Unknown") and attr_conf > 0.0:
-            evidence_trail.append(f"Generative fingerprint matched: {attr_model} ({int(attr_conf * 100)}% match)")
-
-        # 7. Stage 2: 9-Dimensional NIST Forensic Dossier
-        decision_stub = {
-            "final_status": final_label,
-            "taxonomy_label": ai_res.get("taxonomy_label"),
-            "authenticity_probabilities": {
-                "p_ai": ai_percentage,
-                "p_real": real_percentage,
-                "p_undecided": undecided_percentage,
-            },
-        }
-        nine_dims = build_nine_dimensions_dossier(
-            profile_data=profile_res,
-            ai_result=ai_res,
-            content_inventory=content_res,
-            provenance_result=provenance_res,
-            attribution_result=attribution_res,
-        )
-
-        # 8. Stage 5: Plain-English Newbie Narrative Explanation
-        newbie_expl = generate_newbie_explanation(
-            filename=path.name,
-            profile_data=profile_res,
-            content_inventory=content_res,
-            ai_result=ai_res,
-            decision=decision_stub,
-        )
-
-        # Quantified Inventory Summary (Percentages & Counts)
-        quantified_inventory = {
-            "authenticity_probabilities": {
-                "p_ai_percentage": ai_percentage,
-                "p_real_percentage": real_percentage,
-                "p_undecided_percentage": undecided_percentage,
-            },
-            "spatial_anomaly_manipulated_area_pct": ai_res.get("ai_spatial_area_pct", 0.0),
-            "living_entities": {
-                "persons_count": content_res.get("persons_count", 0),
-                "faces_count": content_res.get("faces_count", 0),
-                "is_stylized_character": content_res.get("living_entities", {}).get("humans", {}).get("is_stylized_character", False),
-                "animals_count": content_res.get("living_entities", {}).get("animals", {}).get("count", 0),
-                "animal_types": content_res.get("living_entities", {}).get("animals", {}).get("animal_types", []),
-            },
-            "vehicles": {
-                "vehicles_count": content_res.get("vehicles", {}).get("count", 0),
-                "vehicle_types": content_res.get("vehicles", {}).get("types", []),
-            },
-            "objects_and_items": {
-                "items_count": len(content_res.get("contents_and_items", {}).get("identified_items", [])),
-                "identified_items": content_res.get("contents_and_items", {}).get("identified_items", []),
-            },
-            "text_and_typography": {
-                "text_regions_count": content_res.get("contents_and_items", {}).get("text_regions_count", 0),
-            },
-            "color_palette_percentages": profile_res.get("pixel_color_profile", {}).get("dominant_palette", []),
-            "pixel_physics_metrics": {
-                "prnu_noise_mean": profile_res.get("raw_physical_signals", {}).get("prnu_noise_mean", 0.0),
-                "flat_region_noise": profile_res.get("raw_physical_signals", {}).get("flat_region_noise_mean", 0.0),
-                "surface_smoothness": profile_res.get("raw_physical_signals", {}).get("surface_smoothness_index", 0.0),
-                "fourier_fft_alpha": profile_res.get("raw_physical_signals", {}).get("fft_decay_alpha", 2.05),
-                "highlight_clipped_pct": profile_res.get("pixel_color_profile", {}).get("highlight_clipped_pct", 0.0),
-                "shadow_crushed_pct": profile_res.get("pixel_color_profile", {}).get("shadow_crushed_pct", 0.0),
-            },
-        }
-
-        # Category and Type Identification
+    @staticmethod
+    def _report(r: ImageRun, quality_validation: Dict[str, Any]) -> Dict[str, Any]:
+        ai_res, content_res, decision = r.ai_result, r.content, r.decision
+        probs = decision["authenticity_probabilities"]
         category_identification = {
             "taxonomy_state": ai_res.get("taxonomy_state"),
             "taxonomy_label": ai_res.get("taxonomy_label"),
             "taxonomy_description": ai_res.get("taxonomy_description"),
-            "iptc_digital_source_type": nine_dims["dimension_1_hardware_provenance"]["iptc_digital_source_type"],
+            "iptc_digital_source_type": r.nine_dimensions["dimension_1_hardware_provenance"]["iptc_digital_source_type"],
             "primary_genre": content_res.get("purpose_and_depiction", {}).get("primary_genre", ai_res.get("subject_genre", "General Scene")),
             "visual_medium": ai_res.get("visual_medium", "Photographic Capture"),
             "sensor_spectrum": ai_res.get("sensor_spectrum", "Visible Spectrum (Bayer RGB)"),
             "document_layout": content_res.get("purpose_and_depiction", {}).get("document_layout", "None (Standard Visual Content)"),
         }
-
         return {
             "content_valid": True,
-            "filename": path.name,
-            "path": str(path),
-            "final_status": final_label,
-            "ai_detected": is_ai,
+            "filename": r.path.name,
+            "path": str(r.path),
+            "final_status": decision["final_status"],
+            "ai_detected": decision["ai_detected"],
+            "decision": decision,
             "confidence": ai_res.get("confidence", 0.0),
-            "authenticity_probabilities": {
-                "p_ai": ai_percentage,
-                "p_real": real_percentage,
-                "p_undecided": undecided_percentage,
-            },
-            "pre_analysis_details": profile_res,
-            "file_profile": profile_res,
+            "authenticity_probabilities": {"p_ai": probs["p_ai"], "p_real": probs["p_real"], "p_undecided": probs["p_undecided"]},
+            "pre_analysis_details": r.profile,
+            "file_profile": r.profile,
             "category_identification": category_identification,
             "taxonomy_state": ai_res.get("taxonomy_state"),
             "taxonomy_label": ai_res.get("taxonomy_label"),
@@ -225,9 +260,11 @@ class ImageForensicPipeline:
             "visual_medium": category_identification["visual_medium"],
             "sensor_spectrum": category_identification["sensor_spectrum"],
             "document_layout": category_identification["document_layout"],
-            "quantified_inventory": quantified_inventory,
-            "nine_dimensions_dossier": nine_dims,
-            "newbie_explanation": newbie_expl,
+            "quantified_inventory": _quantified_inventory(
+                ai_res, content_res, r.profile, probs["p_ai"], probs["p_real"], probs["p_undecided"]
+            ),
+            "nine_dimensions_dossier": r.nine_dimensions,
+            "newbie_explanation": r.newbie_explanation,
             "watermark_detected": ai_res.get("watermark_detected", False),
             "background_cutout_detected": ai_res.get("background_cutout_detected", False),
             "screen_recapture_detected": ai_res.get("screen_recapture_detected", False),
@@ -238,10 +275,26 @@ class ImageForensicPipeline:
             "screenshot_analysis": ai_res.get("screenshot_details", {}),
             "inpainting_detected": ai_res.get("inpainting_detected", False),
             "inpainting_analysis": ai_res.get("inpainting_details", {}),
-            "quality_validation": val_res.to_dict(),
-            "provenance": provenance_res,
+            "quality_validation": quality_validation,
+            "provenance": r.provenance,
             "ai_detection": ai_res,
             "content_inventory": content_res,
-            "model_attribution": attribution_res,
-            "evidence_trail": evidence_trail,
+            "model_attribution": r.attribution,
+            "dimension_report": r.dimension_report,
+            "confidence_band": r.dimension_report.get("confidence_band"),
+            "ood": r.dimension_report.get("ood"),
+            "attribution_open_set": r.dimension_report.get("attribution_open_set"),
+            "gate": r.gates,
+            "evidence_trail": _evidence_trail(r.provenance, ai_res, r.attribution, r.dimension_report),
         }
+
+
+def _terminal_report(status: str, reason: str, trail_line: str) -> Dict[str, Any]:
+    return {
+        "content_valid": False,
+        "final_status": status,
+        "reason": reason,
+        "ai_detected": False,
+        "authenticity_probabilities": {"p_ai": 0.0, "p_real": 0.0, "p_undecided": 100.0},
+        "evidence_trail": [trail_line],
+    }

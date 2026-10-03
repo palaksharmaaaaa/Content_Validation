@@ -12,35 +12,21 @@ import json
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
-import cv2
 import pandas as pd
 import streamlit as st
 
-from audio_detector import (
-    AudioAIDetector,
-    AudioValidator,
-    build_audio_nine_dimensions_dossier,
-    generate_audio_newbie_explanation,
-    generate_spectrogram_image,
-)
-from image_detector import (
-    ImageAIDetector,
-    ImageContentAnalyzer as ContentAnalyzer,
-    ImageModelAttributionEngine as ModelAttributionEngine,
-    analyze_image,
-    build_nine_dimensions_dossier,
-    generate_newbie_explanation,
-)
-from video_detector import (
-    VideoAIDetector,
-    analyze_video,
-    build_video_nine_dimensions_dossier,
-    evaluate_cross_modal_consistency,
-    generate_video_newbie_explanation,
-)
-from core.decision import generate_final_decision
-from ui.feedback_ui import profile_media
-from ui.validators import analyze_provenance, validate_file
+from audio_detector import AudioAIDetector
+from image_detector import ImageAIDetector, ImageContentAnalyzer as ContentAnalyzer, ImageModelAttributionEngine as ModelAttributionEngine
+from video_detector import VideoAIDetector
+from audio_detector.dimension_checks import check_audio_gates, gate_short_circuit_result as audio_gate_short_circuit_result, summarize_for_evidence_trail as audio_summarize_for_evidence_trail
+from video_detector.dimension_checks import check_video_gates, gate_short_circuit_result as video_gate_short_circuit_result, summarize_for_evidence_trail as video_summarize_for_evidence_trail
+from image_detector.dimension_checks import check_image_gates, gate_short_circuit_result, summarize_for_evidence_trail
+from audio_detector.pipeline import AudioForensicPipeline
+from image_detector.pipeline import ImageForensicPipeline
+from video_detector.content import VideoContentAnalyzer
+from video_detector.pipeline import VideoForensicPipeline
+from ui.profile_view import add_ui_profile_blocks
+from ui.validators import validate_file
 
 
 def process_single_image(
@@ -53,6 +39,21 @@ def process_single_image(
     source: str = "User Upload",
 ) -> Dict[str, Any]:
     """Runs end-to-end NIST-aligned forensic pipeline on a single image."""
+    # 0. Pre-analysis gates (before decoding): hard-block hash list + out-of-scope scientific formats.
+    gates = check_image_gates(img_path)
+    if gates["triggered"]:
+        stub = gate_short_circuit_result(img_path, gates)
+        return {
+            "filename": filename,
+            "path": img_path,
+            "source": source,
+            "success": True,
+            "gate_blocked": True,
+            "gate": gates,
+            "decision": stub,
+            "file_res": {"readable": True},
+        }
+
     file_res = validate_file(img_path)
     if not file_res.get("readable"):
         return {
@@ -64,56 +65,9 @@ def process_single_image(
             "file_res": file_res,
         }
 
-    # 1. Stage 1: Pre-Analysis Feature & Metadata Extraction FIRST
-    img_profile = profile_media(img_path, modality="image", source=source)
-
-    # 2. Provenance & Cryptographic C2PA Verification
-    provenance_res = analyze_provenance(img_path)
-
-    # 3. Deep Learning & Statistical Sensor Noise AI Detection
-    ai_result = detector.predict(img_path, sensitivity=sensitivity)
-
-    # 4. Scene & Content Intelligence (Living entities, objects, text regions)
-    content_res = content_analyzer.analyze_image_content(img_path)
-
-    # 5. Foundation Model Attribution
-    attribution_res = attribution_engine.attribute_media(
-        img_path,
-        modality="image",
-        forensic_data=ai_result,
-        profile_data=img_profile,
-        provenance_data=provenance_res,
-    )
-
-    image_result = analyze_image(img_path)
-
-    # 6. Multi-evidence Bayesian Decision & Taxonomy Assignment
-    decision = generate_final_decision(
-        file_validation=file_res,
-        quality_result=image_result,
-        ai_result=ai_result,
-        content_inventory=content_res,
-        provenance_result=provenance_res,
-        attribution_result=attribution_res,
-    )
-
-    # 7. Stage 2: 9-Dimensional NIST Forensic Dossier
-    nine_dims = build_nine_dimensions_dossier(
-        profile_data=img_profile,
-        ai_result=ai_result,
-        content_inventory=content_res,
-        provenance_result=provenance_res,
-        attribution_result=attribution_res,
-    )
-
-    # 8. Stage 5: Plain-English Newbie Narrative Explanation
-    newbie_expl = generate_newbie_explanation(
-        filename=filename,
-        profile_data=img_profile,
-        content_inventory=content_res,
-        ai_result=ai_result,
-        decision=decision,
-    )
+    pipeline = ImageForensicPipeline(detector=detector, content_analyzer=content_analyzer, attribution_engine=attribution_engine)
+    run = pipeline.run(img_path, sensitivity=sensitivity, source=source, filename=filename, gates=gates)
+    img_profile = add_ui_profile_blocks("image", run.profile)
 
     return {
         "filename": filename,
@@ -121,15 +75,21 @@ def process_single_image(
         "source": source,
         "success": True,
         "file_res": file_res,
-        "image_result": image_result,
-        "ai_result": ai_result,
-        "content_res": content_res,
-        "provenance_res": provenance_res,
-        "attribution_res": attribution_res,
-        "decision": decision,
+        "image_result": run.quality,
+        "ai_result": run.ai_result,
+        "content_res": run.content,
+        "provenance_res": run.provenance,
+        "attribution_res": run.attribution,
+        "decision": run.decision,
         "img_profile": img_profile,
-        "nine_dimensions_dossier": nine_dims,
-        "newbie_explanation": newbie_expl,
+        "nine_dimensions_dossier": run.nine_dimensions,
+        "newbie_explanation": run.newbie_explanation,
+        "dimension_report": run.dimension_report,
+        "confidence_band": run.dimension_report.get("confidence_band"),
+        "ood": run.dimension_report.get("ood"),
+        "attribution_open_set": run.dimension_report.get("attribution_open_set"),
+        "gate": gates,
+        "dimension_evidence_lines": summarize_for_evidence_trail(run.dimension_report),
     }
 
 
@@ -145,6 +105,19 @@ def process_single_video(
     video_detector: Optional[VideoAIDetector] = None,
 ) -> Dict[str, Any]:
     """Runs end-to-end NIST-aligned forensic pipeline on a single video."""
+    # 0. Pre-analysis gates (before decoding): hard-block hash list + scientific-format recognition.
+    gates = check_video_gates(vid_path)
+    if gates["triggered"]:
+        return {
+            "filename": filename,
+            "path": vid_path,
+            "success": True,
+            "gate_blocked": True,
+            "gate": gates,
+            "decision": video_gate_short_circuit_result(vid_path, gates),
+            "file_res": {"readable": True},
+        }
+
     file_res = validate_file(vid_path)
     if not file_res.get("readable"):
         return {
@@ -155,95 +128,36 @@ def process_single_video(
             "file_res": file_res,
         }
 
-    provenance_res = analyze_provenance(vid_path)
-    if video_detector is not None:
-        video_result = video_detector.analyze_video(vid_path, sensitivity=sensitivity)
-    else:
-        video_result = analyze_video(
-            vid_path,
-            sample_count=24,
-            ai_detector=detector,
-            sensitivity=sensitivity,
-        )
-    audio_result = audio_detector.analyze_audio_file(vid_path, sensitivity=sensitivity)
-
-    # Sample representative keyframe (~15% timeline) for scene content inventory & spatial anomaly
-    cap = cv2.VideoCapture(vid_path)
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    target_kf_idx = max(0, int(total_frames * 0.15)) if total_frames > 5 else 0
-    cap.set(cv2.CAP_PROP_POS_FRAMES, target_kf_idx)
-    ret, sample_frame = cap.read()
-    if (not ret or sample_frame is None) and target_kf_idx > 0:
-        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-        ret, sample_frame = cap.read()
-    cap.release()
-
-    content_res = {}
-    tmp_kf_path = None
-    kf_ai = None
-
-    if ret and sample_frame is not None:
-        target_dir = cache_dir if cache_dir else Path(vid_path).parent
-        stem = Path(filename).stem
-        tmp_kf = target_dir / f"kf_{stem}.jpg"
-        cv2.imwrite(str(tmp_kf), sample_frame)
-        tmp_kf_path = str(tmp_kf)
-        content_res = content_analyzer.analyze_image_content(tmp_kf_path)
-        kf_ai = detector.predict(tmp_kf_path, sensitivity=sensitivity)
-
-    cross_modal_res = evaluate_cross_modal_consistency(video_result, audio_result, content_res)
-    vid_profile = profile_media(vid_path, modality="video")
-    attribution_res = attribution_engine.attribute_media(
-        vid_path,
-        modality="video",
-        forensic_data=video_result.get("ai_video_rating", {}),
-        profile_data=vid_profile,
-        provenance_data=provenance_res,
+    pipeline = VideoForensicPipeline(
+        detector=video_detector or VideoAIDetector(frame_detector=detector),
+        content_analyzer=VideoContentAnalyzer(image_content_analyzer=content_analyzer),
+        audio_detector=audio_detector,
     )
-    decision = generate_final_decision(
-        file_validation=file_res,
-        quality_result=video_result,
-        ai_result=kf_ai,
-        audio_result=audio_result,
-        content_inventory=content_res,
-        provenance_result=provenance_res,
-        cross_modal_result=cross_modal_res,
-        attribution_result=attribution_res,
-    )
-
-    nine_dims = build_video_nine_dimensions_dossier(
-        profile_data=vid_profile,
-        video_result=video_result,
-        content_inventory=content_res,
-        provenance_result=provenance_res,
-        attribution_result=attribution_res,
-        cross_modal_result=cross_modal_res,
-    )
-    newbie_expl = generate_video_newbie_explanation(
-        filename=filename,
-        profile_data=vid_profile,
-        content_inventory=content_res,
-        video_result=video_result,
-        decision=decision,
-    )
+    run = pipeline.run(vid_path, sensitivity=sensitivity, filename=filename, gates=gates, cache_dir=cache_dir or Path(vid_path).parent)
 
     return {
         "filename": filename,
         "path": vid_path,
         "success": True,
         "file_res": file_res,
-        "video_result": video_result,
-        "audio_result": audio_result,
-        "content_res": content_res,
-        "provenance_res": provenance_res,
-        "attribution_res": attribution_res,
-        "cross_modal_res": cross_modal_res,
-        "decision": decision,
-        "vid_profile": vid_profile,
-        "tmp_kf_path": tmp_kf_path,
-        "kf_ai": kf_ai,
-        "nine_dimensions_dossier": nine_dims,
-        "newbie_explanation": newbie_expl,
+        "video_result": run.video_result,
+        "audio_result": run.audio_result,
+        "content_res": run.content,
+        "provenance_res": run.provenance,
+        "attribution_res": run.attribution,
+        "cross_modal_res": run.cross_modal,
+        "decision": run.decision,
+        "vid_profile": add_ui_profile_blocks("video", run.profile),
+        "tmp_kf_path": run.keyframe_path,
+        "kf_ai": run.keyframe_ai,
+        "nine_dimensions_dossier": run.nine_dimensions,
+        "newbie_explanation": run.newbie_explanation,
+        "dimension_report": run.dimension_report,
+        "confidence_band": run.dimension_report.get("confidence_band"),
+        "ood": run.dimension_report.get("ood"),
+        "attribution_open_set": run.dimension_report.get("attribution_open_set"),
+        "gate": gates,
+        "dimension_evidence_lines": video_summarize_for_evidence_trail(run.dimension_report),
     }
 
 
@@ -256,6 +170,19 @@ def process_single_audio(
     sensitivity: str = "balanced",
 ) -> Dict[str, Any]:
     """Runs end-to-end NIST-aligned forensic pipeline on a single audio file."""
+    # 0. Pre-analysis gates (before decoding): hard-block hash list + symbolic-music recognition.
+    gates = check_audio_gates(aud_path)
+    if gates["triggered"]:
+        return {
+            "filename": filename,
+            "path": aud_path,
+            "success": True,
+            "gate_blocked": True,
+            "gate": gates,
+            "decision": audio_gate_short_circuit_result(aud_path, gates),
+            "file_res": {"readable": True},
+        }
+
     file_res = validate_file(aud_path)
     if not file_res.get("readable"):
         return {
@@ -266,66 +193,32 @@ def process_single_audio(
             "file_res": file_res,
         }
 
-    samples, sr, duration = AudioValidator().extract_pcm_samples(aud_path)
-    provenance_res = analyze_provenance(aud_path)
-    content_res = content_analyzer.analyze_audio_content(samples, sr, duration)
-    audio_result = audio_detector.analyze_audio_file(
-        aud_path,
-        sensitivity=sensitivity,
-        pre_extracted=(samples, sr, duration),
-    )
-    aud_profile = profile_media(aud_path, modality="audio")
-    attribution_res = attribution_engine.attribute_media(
-        aud_path,
-        modality="audio",
-        forensic_data=audio_result,
-        profile_data=aud_profile,
-        provenance_data=provenance_res,
-    )
-    decision = generate_final_decision(
-        file_validation=file_res,
-        quality_result={},
-        audio_result=audio_result,
-        content_inventory=content_res,
-        provenance_result=provenance_res,
-        attribution_result=attribution_res,
-    )
-
-    spec_img = None
-    if samples is not None and len(samples) > 0:
-        spec_img = generate_spectrogram_image(samples, sr)
-
-    nine_dims = build_audio_nine_dimensions_dossier(
-        profile_data=aud_profile,
-        audio_result=audio_result,
-        content_inventory=content_res,
-        provenance_result=provenance_res,
-        attribution_result=attribution_res,
-    )
-    newbie_expl = generate_audio_newbie_explanation(
-        filename=filename,
-        profile_data=aud_profile,
-        content_inventory=content_res,
-        audio_result=audio_result,
-        decision=decision,
-    )
+    pipeline = AudioForensicPipeline(detector=audio_detector, content_analyzer=content_analyzer, attribution_engine=attribution_engine)
+    run = pipeline.run(aud_path, sensitivity=sensitivity, filename=filename, gates=gates)
+    aud_profile = add_ui_profile_blocks("audio", run.profile)
 
     return {
         "filename": filename,
         "path": aud_path,
         "success": True,
         "file_res": file_res,
-        "sr": sr,
-        "duration": duration,
-        "provenance_res": provenance_res,
-        "content_res": content_res,
-        "audio_result": audio_result,
+        "sr": run.sample_rate,
+        "duration": run.duration,
+        "provenance_res": run.provenance,
+        "content_res": run.scene,
+        "audio_result": run.ai_result,
         "aud_profile": aud_profile,
-        "attribution_res": attribution_res,
-        "decision": decision,
-        "spec_img": spec_img,
-        "nine_dimensions_dossier": nine_dims,
-        "newbie_explanation": newbie_expl,
+        "attribution_res": run.attribution,
+        "decision": run.decision,
+        "spec_img": run.ai_result.get("spectrogram_image"),
+        "nine_dimensions_dossier": run.nine_dimensions,
+        "newbie_explanation": run.newbie_explanation,
+        "dimension_report": run.dimension_report,
+        "confidence_band": run.dimension_report.get("confidence_band"),
+        "ood": run.dimension_report.get("ood"),
+        "attribution_open_set": run.dimension_report.get("attribution_open_set"),
+        "gate": gates,
+        "dimension_evidence_lines": audio_summarize_for_evidence_trail(run.dimension_report),
     }
 
 
@@ -489,7 +382,7 @@ def render_batch_overview_table(batch_results: List[Dict[str, Any]], modality: s
             continue
 
         decision = r.get("decision", {})
-        status = decision.get("final_status", "UNDETERMINED_OOD")
+        status = decision.get("final_status", "UNDETERMINED")
         probs = decision.get("authenticity_probabilities", {})
         p_ai = probs.get("p_ai", 0.0)
         p_real = probs.get("p_real", 0.0)

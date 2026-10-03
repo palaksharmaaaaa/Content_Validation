@@ -12,13 +12,13 @@ image_detector/audio_detector/video_detector).
 from __future__ import annotations
 
 import argparse
-import hashlib
 import logging
 import os
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 from core.atomic_io import atomic_read_json, atomic_write_json
+from core.hashing import file_sha256
 
 logger = logging.getLogger("core.media_library")
 
@@ -27,12 +27,8 @@ _VAL_DENOMINATOR = 5  # sha-derived bucket: 1 in 5 files (~20%) is validation, a
 
 
 def compute_file_sha256(path: str | Path, chunk_size: int = 1024 * 1024) -> str:
-    """Streams the file once and returns its hex SHA-256 (constant memory, any file size)."""
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(chunk_size), b""):
-            h.update(chunk)
-    return h.hexdigest()
+    """Streams the file and returns its hex SHA-256 (uncached: callers rely on a fresh read)."""
+    return file_sha256(path, cached=False)
 
 
 def partition(sha256: str) -> str:

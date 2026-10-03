@@ -8,28 +8,19 @@ Completely self-contained with zero outside dependencies.
 """
 from __future__ import annotations
 
-import hashlib
 import logging
 from pathlib import Path
 from typing import Any, Dict, Tuple
+
+from core.hashing import file_digests
 import cv2
 
 logger = logging.getLogger("video_detector.profiler")
 
 
 def compute_file_hashes(file_path: str | Path) -> Tuple[str, str, int]:
-    """Calculates SHA-256, MD5, and exact file size in bytes."""
-    sha256 = hashlib.sha256()
-    md5 = hashlib.md5()
-    total_bytes = 0
-
-    with open(file_path, "rb") as f:
-        while chunk := f.read(65536):
-            sha256.update(chunk)
-            md5.update(chunk)
-            total_bytes += len(chunk)
-
-    return sha256.hexdigest(), md5.hexdigest(), total_bytes
+    """Calculates SHA-256, MD5, and exact file size in bytes (shared cached implementation)."""
+    return file_digests(file_path)
 
 
 class VideoProfiler:

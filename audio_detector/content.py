@@ -9,8 +9,7 @@ Completely self-contained with zero outside dependencies.
 from __future__ import annotations
 
 import logging
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 import numpy as np
 
 logger = logging.getLogger("audio_detector.content")

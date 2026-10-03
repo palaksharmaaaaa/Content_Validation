@@ -1,5 +1,5 @@
 """
-core.forensic_service: Unified Enterprise Forensic Service Orchestration Layer.
+services.forensic_service: Unified Enterprise Forensic Service Orchestration Layer.
 Decouples core analytical capabilities from presentation frameworks (Streamlit/FastAPI/CLI).
 Provides:
 1. Unified lifecycle management for image, video, and audio forensic engines.
@@ -9,31 +9,26 @@ Provides:
 """
 from __future__ import annotations
 
-import gc
 import logging
 from pathlib import Path
 import threading
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from audio_detector.detector import AudioAIDetector
 from audio_detector.learner import AudioSelfImprover
 from audio_detector.pipeline import AudioForensicPipeline
-from audio_detector.validator import AudioValidator
 from image_detector.attribution import ImageModelAttributionEngine
 from image_detector.content import ImageContentAnalyzer
 from image_detector.detector import ImageAIDetector
 from image_detector.face import FaceDeepfakeDetector
 from image_detector.learner import ImageSelfImprover
 from image_detector.pipeline import ImageForensicPipeline
-from image_detector.profiler import ImageProfiler
-from image_detector.provenance import ImageProvenanceValidator
-from image_detector.validator import ImageValidator
+from video_detector.content import VideoContentAnalyzer
 from video_detector.detector import VideoAIDetector
 from video_detector.learner import VideoSelfImprover
 from video_detector.pipeline import VideoForensicPipeline
-from video_detector.profiler import VideoProfiler
 
-logger = logging.getLogger("core.forensic_service")
+logger = logging.getLogger("services.forensic_service")
 
 
 class ForensicService:
@@ -150,6 +145,8 @@ class ForensicService:
             if self._video_pipeline is None:
                 self._video_pipeline = VideoForensicPipeline(
                     detector=self.video_detector,
+                    content_analyzer=VideoContentAnalyzer(image_content_analyzer=self.content_analyzer),
+                    audio_detector=self.audio_detector,
                 )
             return self._video_pipeline
 
@@ -253,21 +250,21 @@ class ForensicService:
             return self.image_improver.record_feedback(
                 image_path=str(media_path),
                 user_label=user_label,
-                forensic_metrics=metrics or {},
+                metrics=metrics or {},
                 notes=notes,
             )
         elif mod == "audio":
             return self.audio_improver.record_feedback(
                 audio_path=str(media_path),
                 user_label=user_label,
-                acoustic_metrics=metrics or {},
+                metrics=metrics or {},
                 notes=notes,
             )
         elif mod == "video":
             return self.video_improver.record_feedback(
                 video_path=str(media_path),
                 user_label=user_label,
-                temporal_metrics=metrics or {},
+                metrics=metrics or {},
                 notes=notes,
             )
         else:

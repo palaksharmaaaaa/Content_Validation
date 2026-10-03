@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import io
 import logging
-import os
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -23,22 +22,13 @@ import cv2
 import numpy as np
 from PIL import Image
 import torch
-from torch import nn, optim
-from torch.utils.data import DataLoader, Dataset
+from torch import nn
+from torch.utils.data import Dataset
 from torchvision import transforms
 
 from core.media_library import compute_file_sha256
 from image_detector.config import DEFAULT_CHECKPOINT, IMAGE_SIZE
-from image_detector.features import (
-    analyze_fft_radial_power_spectrum,
-    calculate_sensor_noise_profile,
-    calculate_surface_smoothness,
-    compute_ela,
-    detect_ai_watermark,
-    detect_inpainting_and_manipulation,
-    detect_screenshot,
-    extract_image_metadata,
-)
+from image_detector.features import analyze_fft_radial_power_spectrum, calculate_sensor_noise_profile, calculate_surface_smoothness, compute_ela, detect_inpainting_and_manipulation, detect_screenshot
 from image_detector.models.backbone import build_image_classifier
 
 logger = logging.getLogger("image_detector.feature_store")

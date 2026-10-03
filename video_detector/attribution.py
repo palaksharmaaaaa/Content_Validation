@@ -26,10 +26,10 @@ metadata (see provenance.py's vendor_signatures_found), with no dedicated motion
 heuristic yet. Add real calibration for them only once backed by actual sample analysis.
 """
 from __future__ import annotations
-
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from core.shared_results import unknown_attribution
 
 logger = logging.getLogger("video_detector.attribution")
 
@@ -112,6 +112,67 @@ KNOWN_VIDEO_GENERATORS = {
 }
 
 
+# (needles in the lower-cased vendor string, generator key, cue). First matching row wins per signature.
+_VENDOR_SIGNATURES = (
+    (("bytedance", "jimeng"), "bytedance_seedance", "ByteDance video metadata signature detected"),
+    (("kling", "kuaishou"), "kuaishou_kling", "Kling metadata signature detected"),
+    (("runway", "gen-2", "gen-3"), "runway_gen", "Runway metadata identifier detected"),
+    (("sora", "openai"), "openai_sora", "OpenAI Sora metadata signature detected"),
+    (("veo", "deepmind"), "google_veo", "Google Veo metadata signature detected"),
+    (("luma", "dream machine"), "luma_dream_machine", "Luma Dream Machine metadata signature detected"),
+    (("pika",), "pika", "Pika Labs metadata signature detected"),
+    (("hailuo", "minimax"), "minimax_hailuo", "MiniMax Hailuo metadata signature detected"),
+    (("tongyi", "wanxiang"), "alibaba_wan", "Alibaba Wan/Tongyi Wanxiang metadata signature detected"),
+    (("hunyuan",), "tencent_hunyuan", "Tencent Hunyuan Video metadata signature detected"),
+    (("vidu", "shengshu"), "vidu", "Vidu metadata signature detected"),
+    (("pixverse",), "pixverse", "Pixverse metadata signature detected"),
+    (("movie gen", "moviegen"), "meta_movie_gen", "Meta Movie Gen metadata signature detected"),
+    (("firefly",), "adobe_firefly_video", "Adobe Firefly Video metadata signature detected"),
+    (("nova reel", "novareel"), "amazon_nova_reel", "Amazon Nova Reel metadata signature detected"),
+)
+_CHINA = ("bytedance_seedance", "kuaishou_kling", "minimax_hailuo", "alibaba_wan", "tencent_hunyuan", "vidu")
+_UNITED_STATES = ("openai_sora", "google_veo", "runway_gen", "luma_dream_machine", "luma_dream", "pika",
+                  "meta_movie_gen", "adobe_firefly_video", "amazon_nova_reel")
+
+
+def _region_for(model_key: str) -> str:
+    if model_key in _CHINA:
+        return "China"
+    return "United States" if model_key in _UNITED_STATES else "Global"
+
+
+def _score_vendor_signatures(provenance_data: Dict[str, Any], scores: Dict[str, float], cues: List[str]) -> None:
+    """Vendor strings found in container metadata (unauthenticated claims: they steer the guess, never the verdict).
+
+    container_atoms only ever holds generic MP4 box type names and can never contain a vendor identifier; vendor
+    strings are scanned separately into vendor_signatures_found.
+    """
+    for sig in provenance_data.get("vendor_signatures_found", []):
+        sig_str = str(sig).lower()
+        for needles, key, cue in _VENDOR_SIGNATURES:
+            if any(n in sig_str for n in needles):
+                scores[key] += 0.85
+                cues.append(cue)
+                break
+    if provenance_data.get("c2pa_present"):
+        scores["openai_sora"] += 0.45
+        scores["google_veo"] += 0.35
+        cues.append("C2PA Content Credentials markers present in video stream (unverified)")
+
+
+def _score_temporal_characteristics(temporal_data: Dict[str, Any], scores: Dict[str, float]) -> None:
+    m_var = float(temporal_data.get("temporal_consistency", {}).get("motion_variance", 0.0))
+    if m_var > 140.0:
+        scores["luma_dream_machine"] += 0.25
+        scores["runway_gen"] += 0.20
+    elif 5.0 < m_var < 30.0:
+        scores["bytedance_seedance"] += 0.20
+        scores["google_veo"] += 0.20
+    if temporal_data.get("diffusion_flicker", {}).get("has_diffusion_flicker"):
+        scores["pika"] += 0.25
+        scores["kuaishou_kling"] += 0.20
+
+
 class VideoModelAttributionEngine:
     """Attributes synthetic videos to specific video generative models and foundation engines."""
 
@@ -133,80 +194,10 @@ class VideoModelAttributionEngine:
         scores: Dict[str, float] = {k: 0.05 for k in KNOWN_VIDEO_GENERATORS}
         cues: List[str] = []
 
-        # 1. Provenance / Vendor Metadata Signatures
-        # NOTE: container_atoms only ever holds generic MP4 box type names (ftyp, moov, ...)
-        # and can never contain a vendor identifier -- the actual vendor/generator name
-        # strings (when present) are scanned separately into vendor_signatures_found.
         if provenance_data:
-            vendor_sigs = provenance_data.get("vendor_signatures_found", [])
-            for sig in vendor_sigs:
-                sig_str = str(sig).lower()
-                if "bytedance" in sig_str or "jimeng" in sig_str:
-                    scores["bytedance_seedance"] += 0.85
-                    cues.append("ByteDance video metadata signature detected")
-                elif "kling" in sig_str or "kuaishou" in sig_str:
-                    scores["kuaishou_kling"] += 0.85
-                    cues.append("Kling metadata signature detected")
-                elif "runway" in sig_str or "gen-2" in sig_str or "gen-3" in sig_str:
-                    scores["runway_gen"] += 0.85
-                    cues.append("Runway metadata identifier detected")
-                elif "sora" in sig_str or "openai" in sig_str:
-                    scores["openai_sora"] += 0.85
-                    cues.append("OpenAI Sora metadata signature detected")
-                elif "veo" in sig_str or "deepmind" in sig_str:
-                    scores["google_veo"] += 0.85
-                    cues.append("Google Veo metadata signature detected")
-                elif "luma" in sig_str or "dream machine" in sig_str:
-                    scores["luma_dream_machine"] += 0.85
-                    cues.append("Luma Dream Machine metadata signature detected")
-                elif "pika" in sig_str:
-                    scores["pika"] += 0.85
-                    cues.append("Pika Labs metadata signature detected")
-                elif "hailuo" in sig_str or "minimax" in sig_str:
-                    scores["minimax_hailuo"] += 0.85
-                    cues.append("MiniMax Hailuo metadata signature detected")
-                elif "tongyi" in sig_str or "wanxiang" in sig_str:
-                    scores["alibaba_wan"] += 0.85
-                    cues.append("Alibaba Wan/Tongyi Wanxiang metadata signature detected")
-                elif "hunyuan" in sig_str:
-                    scores["tencent_hunyuan"] += 0.85
-                    cues.append("Tencent Hunyuan Video metadata signature detected")
-                elif "vidu" in sig_str or "shengshu" in sig_str:
-                    scores["vidu"] += 0.85
-                    cues.append("Vidu metadata signature detected")
-                elif "pixverse" in sig_str:
-                    scores["pixverse"] += 0.85
-                    cues.append("Pixverse metadata signature detected")
-                elif "movie gen" in sig_str or "moviegen" in sig_str:
-                    scores["meta_movie_gen"] += 0.85
-                    cues.append("Meta Movie Gen metadata signature detected")
-                elif "firefly" in sig_str:
-                    scores["adobe_firefly_video"] += 0.85
-                    cues.append("Adobe Firefly Video metadata signature detected")
-                elif "nova reel" in sig_str or "novareel" in sig_str:
-                    scores["amazon_nova_reel"] += 0.85
-                    cues.append("Amazon Nova Reel metadata signature detected")
-
-            if provenance_data.get("c2pa_present"):
-                scores["openai_sora"] += 0.45
-                scores["google_veo"] += 0.35
-                cues.append("C2PA Content Credentials signature detected in video stream")
-
-        # 2. Temporal & Motion Characteristics
+            _score_vendor_signatures(provenance_data, scores, cues)
         if temporal_data:
-            tc = temporal_data.get("temporal_consistency", {})
-            m_var = float(tc.get("motion_variance", 0.0))
-            if m_var > 140.0:
-                scores["luma_dream_machine"] += 0.25
-                scores["runway_gen"] += 0.20
-            elif m_var < 30.0 and m_var > 5.0:
-                scores["bytedance_seedance"] += 0.20
-                scores["google_veo"] += 0.20
-
-            flicker = temporal_data.get("diffusion_flicker", {})
-            if flicker.get("has_diffusion_flicker"):
-                scores["pika"] += 0.25
-                scores["kuaishou_kling"] += 0.20
+            _score_temporal_characteristics(temporal_data, scores)
 
         # Normalize scores
         total = sum(scores.values())
@@ -225,18 +216,7 @@ class VideoModelAttributionEngine:
 
         best_info = KNOWN_VIDEO_GENERATORS[best_key]
         conf = round(best_score, 2)
-        region = (
-            "China" if best_key in (
-                "bytedance_seedance", "kuaishou_kling", "minimax_hailuo",
-                "alibaba_wan", "tencent_hunyuan", "vidu",
-            )
-            else "United States" if best_key in (
-                "openai_sora", "google_veo", "runway_gen", "luma_dream_machine",
-                "luma_dream", "pika", "meta_movie_gen", "adobe_firefly_video",
-                "amazon_nova_reel",
-            )
-            else "Global"
-        )
+        region = _region_for(best_key)
         return {
             "attributed_model": best_info["name"],
             "model_key": best_key,
@@ -266,13 +246,4 @@ class VideoModelAttributionEngine:
         )
 
     def _unknown_attribution(self, reason: str) -> Dict[str, Any]:
-        return {
-            "attributed_model": "Unknown",
-            "model_key": "unknown",
-            "confidence": 0.0,
-            "attribution_confidence": 0.0,
-            "region_of_origin": "Unknown",
-            "watermark_detected": False,
-            "cues": [reason],
-            "top_candidates": [],
-        }
+        return unknown_attribution(reason)

@@ -19,10 +19,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import torch
 
-from audio_detector.config import (
-    DEFAULT_AUDIO_CHECKPOINT,
-    MODELS_DIR,
-)
+from core.shared_results import shift_probability_by_log_odds
+from audio_detector.config import DEFAULT_AUDIO_CHECKPOINT
 from audio_detector.features import (
     compute_spectral_features,
     generate_spectrogram_image,
@@ -30,7 +28,7 @@ from audio_detector.features import (
 )
 from audio_detector.learner import AudioSelfImprover
 from audio_detector.models.backbone import AudioClassifierNet, build_audio_classifier
-from audio_detector.schemas import AudioForensicResult, AudioModalityScore
+from audio_detector.schemas import AudioForensicResult
 from audio_detector.scoring import (
     calculate_audio_epistemic_uncertainty,
     evaluate_audio_decision,
@@ -77,15 +75,108 @@ class AudioAIDetector:
         self._is_loaded = True
         return True
 
+    def _neural_probability(self, spectral_feats: Dict[str, Any]) -> Optional[float]:
+        """P(AI) from the optional neural head over five spectral features (None if unavailable or failing)."""
+        if self.model is None or self.device is None:
+            return None
+        try:
+            feat_vec = torch.tensor([[
+                float(spectral_feats["has_vocoder_cutoff"]),
+                spectral_feats["cutoff_freq_hz"] / 10000.0,
+                spectral_feats["spectral_flatness"] * 100.0,
+                spectral_feats["digital_silence_ratio"],
+                spectral_feats["high_freq_ratio"],
+            ]], dtype=torch.float32).to(self.device)
+            with torch.no_grad():
+                probs = torch.softmax(self.model(feat_vec), dim=1)[0]
+                return float(probs[0].item())
+        except Exception as e:
+            logger.debug("Neural inference bypassed: %s", e)
+            return None
+
+    @staticmethod
+    def _forensic_cues(spectral_feats: Dict[str, Any], thresh: Dict[str, Any]) -> List[str]:
+        cues: List[str] = []
+        if spectral_feats.get("has_vocoder_cutoff"):
+            cues.append(
+                f"Sharp vocoder brick-wall frequency cutoff at {spectral_feats['cutoff_freq_hz']} Hz (indicative of ElevenLabs, Suno, CosyVoice)"
+            )
+        if spectral_feats.get("spectral_flatness", 1.0) < thresh.get("flatness_synthetic_max", 0.002):
+            cues.append("Unnaturally smooth Wiener spectral flatness (synthetic voice harmonic profile)")
+        if spectral_feats.get("digital_silence_ratio", 0.0) > thresh.get("silence_synthetic_min", 0.12):
+            cues.append("Digital zero inter-phoneme silence gaps (absence of natural room tone)")
+        return cues
+
+    @staticmethod
+    def _failure_result(path: Path, label: str, cue: str, status: str, error: str) -> Dict[str, Any]:
+        """Result dict for unreadable / empty audio and for unexpected errors (same shape as a normal result)."""
+        res = AudioForensicResult(
+            valid=False, filename=path.name, label=label, prediction=label, forensic_cues=[cue], error=error,
+        ).to_dict()
+        res.update({
+            "has_audio_track": False,
+            "ai_duration_pct": 0.0,
+            "spectral_features": {},
+            "details": {"duration_seconds": 0.0, "status": status, "temporal_segments": []},
+        })
+        return res
+
+    @staticmethod
+    def _success_result(
+        path: Path, sr: int, duration: float, spectral_feats: Dict[str, Any], temporal_segments: List[Dict[str, Any]],
+        cues: List[str], spectrogram_img: Any, *, p_ai: float, p_real: float,
+        percentages: Tuple[float, float, float], label: str,
+    ) -> Dict[str, Any]:
+        """The full result dict for an analysed track (typed result plus the legacy flat keys consumers read)."""
+        ai_pct, real_pct, undecided_pct = percentages
+        ai_duration_sec = sum(seg["duration_seconds"] for seg in temporal_segments if seg.get("label") == "LIKELY AI-GENERATED")
+        ai_duration_pct = (ai_duration_sec / max(0.01, duration)) * 100.0 if duration > 0 else 0.0
+        res = AudioForensicResult(
+            valid=True,
+            filename=path.name,
+            duration_seconds=round(duration, 2),
+            sample_rate=sr,
+            ai_percentage=ai_pct,
+            real_percentage=real_pct,
+            undecided_percentage=undecided_pct,
+            confidence=round(max(p_ai, p_real), 2),
+            label=label,
+            prediction=label,
+            has_vocoder_cutoff=spectral_feats.get("has_vocoder_cutoff", False),
+            cutoff_freq_hz=spectral_feats.get("cutoff_freq_hz", 0.0),
+            spectral_flatness=spectral_feats.get("spectral_flatness", 0.0),
+            digital_silence_ratio=spectral_feats.get("digital_silence_ratio", 0.0),
+            high_freq_ratio=spectral_feats.get("high_freq_ratio", 0.0),
+            acoustic_features=spectral_feats,
+            temporal_segments=temporal_segments,
+            forensic_cues=cues,
+            spectrogram_image=spectrogram_img,
+        ).to_dict()
+        res.update({
+            "has_audio_track": True,
+            "ai_duration_pct": round(ai_duration_pct, 1),
+            "spectral_features": spectral_feats,
+            "spectrogram_image": spectrogram_img,
+            "details": {
+                "duration_seconds": round(duration, 2),
+                "status": "Audible track extracted and evaluated.",
+                "temporal_segments": temporal_segments,
+            },
+        })
+        return res
+
     def analyze_audio_file(
         self,
         file_path: str | Path,
         sensitivity: str = "balanced",
         pre_extracted: Optional[Tuple[Optional[np.ndarray], int, float]] = None,
         generate_spectrogram: bool = False,
+        extra_log_lrs: Optional[Dict[str, float]] = None,
     ) -> Dict[str, Any]:
         """
         Runs comprehensive acoustic AI voice clone and speech synthesis detection.
+        ``extra_log_lrs``: optional capped base-10 log-odds terms from the dimension checks
+        (see audio_detector.dimension_checks); None/empty leaves behavior unchanged.
         """
         self.load()
         path = Path(file_path)
@@ -97,22 +188,8 @@ class AudioAIDetector:
                 samples, sr, duration = self.validator.extract_pcm_samples(path)
 
             if samples is None or len(samples) < 1000:
-                result = AudioForensicResult(
-                    valid=False,
-                    filename=path.name,
-                    label="NO_AUDIO",
-                    prediction="NO_AUDIO",
-                    forensic_cues=["No audio track found or audio stream unreadable."],
-                    error="No audio track found or audio stream unreadable.",
-                )
-                res_dict = result.to_dict()
-                res_dict.update({
-                    "has_audio_track": False,
-                    "ai_duration_pct": 0.0,
-                    "spectral_features": {},
-                    "details": {"duration_seconds": 0.0, "status": "No audio track found.", "temporal_segments": []},
-                })
-                return res_dict
+                return self._failure_result(path, "NO_AUDIO", "No audio track found or audio stream unreadable.",
+                                            "No audio track found.", "No audio track found or audio stream unreadable.")
 
             # 1. Dynamic Calibration from AudioSelfImprover
             calib = self.self_improver.load_calibration()
@@ -125,22 +202,7 @@ class AudioAIDetector:
             temporal_segments = segment_audio_temporal(samples, sr, window_sec=3.0)
 
             # 3. Neural Classifier Inference (if model available)
-            neural_ai_prob = None
-            if self.model is not None and self.device is not None:
-                try:
-                    feat_vec = torch.tensor([[
-                        float(spectral_feats["has_vocoder_cutoff"]),
-                        spectral_feats["cutoff_freq_hz"] / 10000.0,
-                        spectral_feats["spectral_flatness"] * 100.0,
-                        spectral_feats["digital_silence_ratio"],
-                        spectral_feats["high_freq_ratio"],
-                    ]], dtype=torch.float32).to(self.device)
-                    with torch.no_grad():
-                        logits = self.model(feat_vec)
-                        probs = torch.softmax(logits, dim=1)[0]
-                        neural_ai_prob = float(probs[0].item())
-                except Exception as e:
-                    logger.debug("Neural inference bypassed: %s", e)
+            neural_ai_prob = self._neural_probability(spectral_feats)
 
             # 4. Score Evidence Pooling
             sensitivity_offset = 0.0
@@ -157,6 +219,8 @@ class AudioAIDetector:
                 thresholds=thresh,
             )
 
+            p_ai, p_real, extra_cues = shift_probability_by_log_odds(p_ai, extra_log_lrs)
+
             # Epistemic Uncertainty via Shannon entropy
             entropy = calculate_audio_epistemic_uncertainty(p_ai)
             target_undecided = max(3.0, min(22.0, entropy * 18.0))
@@ -171,82 +235,16 @@ class AudioAIDetector:
 
             label = evaluate_audio_decision(ai_pct=ai_pct, real_pct=real_pct, sensitivity=sensitivity)
 
-            # Timeline statistics
-            ai_duration_sec = sum(
-                s["duration_seconds"] for s in temporal_segments if s.get("label") == "LIKELY AI-GENERATED"
-            )
-            ai_duration_pct = (ai_duration_sec / max(0.01, duration)) * 100.0 if duration > 0 else 0.0
-
-            # Forensic Cues
-            cues = []
-            if spectral_feats.get("has_vocoder_cutoff"):
-                cues.append(
-                    f"Sharp vocoder brick-wall frequency cutoff at {spectral_feats['cutoff_freq_hz']} Hz (indicative of ElevenLabs, Suno, CosyVoice)"
-                )
-            if spectral_feats.get("spectral_flatness", 1.0) < thresh.get("flatness_synthetic_max", 0.002):
-                cues.append("Unnaturally smooth Wiener spectral flatness (synthetic voice harmonic profile)")
-            if spectral_feats.get("digital_silence_ratio", 0.0) > thresh.get("silence_synthetic_min", 0.12):
-                cues.append("Digital zero inter-phoneme silence gaps (absence of natural room tone)")
-
-            # Optional spectrogram visualization
+            cues = self._forensic_cues(spectral_feats, thresh) + extra_cues
             spectrogram_img = generate_spectrogram_image(samples, sr) if generate_spectrogram else None
-
-            confidence = round(max(p_ai, p_real), 2)
-
-            forensic_result = AudioForensicResult(
-                valid=True,
-                filename=path.name,
-                duration_seconds=round(duration, 2),
-                sample_rate=sr,
-                ai_percentage=ai_pct,
-                real_percentage=real_pct,
-                undecided_percentage=undecided_pct,
-                confidence=confidence,
-                label=label,
-                prediction=label,
-                has_vocoder_cutoff=spectral_feats.get("has_vocoder_cutoff", False),
-                cutoff_freq_hz=spectral_feats.get("cutoff_freq_hz", 0.0),
-                spectral_flatness=spectral_feats.get("spectral_flatness", 0.0),
-                digital_silence_ratio=spectral_feats.get("digital_silence_ratio", 0.0),
-                high_freq_ratio=spectral_feats.get("high_freq_ratio", 0.0),
-                acoustic_features=spectral_feats,
-                temporal_segments=temporal_segments,
-                forensic_cues=cues,
-                spectrogram_image=spectrogram_img,
+            return self._success_result(
+                path, sr, duration, spectral_feats, temporal_segments, cues, spectrogram_img,
+                p_ai=p_ai, p_real=p_real, percentages=(ai_pct, real_pct, undecided_pct), label=label,
             )
-
-            res_dict = forensic_result.to_dict()
-            res_dict.update({
-                "has_audio_track": True,
-                "ai_duration_pct": round(ai_duration_pct, 1),
-                "spectral_features": spectral_feats,
-                "spectrogram_image": spectrogram_img,
-                "details": {
-                    "duration_seconds": round(duration, 2),
-                    "status": "Audible track extracted and evaluated.",
-                    "temporal_segments": temporal_segments,
-                },
-            })
-            return res_dict
 
         except Exception as exc:
             logger.error("Audio detection error on %s: %s", file_path, exc)
-            err_result = AudioForensicResult(
-                valid=False,
-                filename=path.name,
-                label="ERROR",
-                prediction="ERROR",
-                forensic_cues=[f"Audio processing error: {exc}"],
-                error=str(exc),
-            )
-            res_dict = err_result.to_dict()
-            res_dict.update({
-                "has_audio_track": False,
-                "ai_duration_pct": 0.0,
-                "spectral_features": {},
-                "details": {"duration_seconds": 0.0, "status": f"Error: {exc}", "temporal_segments": []},
-            })
-            return res_dict
+            return self._failure_result(path, "ERROR", f"Audio processing error: {exc}", f"Error: {exc}", str(exc))
 
     predict = analyze_audio_file
     predict_audio = analyze_audio_file

@@ -17,13 +17,13 @@ Completely self-contained with zero outside dependencies.
 from __future__ import annotations
 
 from datetime import datetime
-import json
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from audio_detector.config import CALIBRATION_FILE, DATA_DIR, MEMORY_FILE
 from audio_detector.schemas import AudioFeedbackRecord
+from core.metrics_util import sanitize_metric_value
 from core.atomic_io import atomic_read_json, atomic_write_json
 from core.media_library import MediaLibrary, library_for, register_feedback
 
@@ -92,36 +92,26 @@ class AudioSelfImprover:
         self,
         audio_path: str,
         user_label: str,  # 'REAL' or 'AI'
-        acoustic_metrics: Dict[str, Any],
+        acoustic_metrics: Optional[Dict[str, Any]] = None,
         voice_generator_tag: Optional[str] = None,
         notes: str = "",
+        *,
+        metrics: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Registers audio ground truth feedback and recalibrates acoustic thresholds.
+        ``metrics`` is the modality-neutral alias of ``acoustic_metrics``.
         """
+        acoustic_metrics = acoustic_metrics or metrics or {}
         memory = self.load_memory()
         calib = self.load_calibration()
         register_feedback(self.library, audio_path, user_label)
-
-        def _sanitize_val(val: Any) -> Any:
-            if hasattr(val, "shape"):
-                return None
-            if isinstance(val, (float, int, str, bool)):
-                return val
-            if hasattr(val, "item") and getattr(val, "size", 1) == 1:
-                return val.item()
-            if isinstance(val, dict):
-                return {str(dk): _sanitize_val(dv) for dk, dv in val.items() if _sanitize_val(dv) is not None}
-            if isinstance(val, (list, tuple)):
-                clean = [_sanitize_val(x) for x in val]
-                return [x for x in clean if x is not None]
-            return None
 
         sanitized_metrics = {}
         for k, v in acoustic_metrics.items():
             if k in ("spectrogram_image", "samples", "waveform"):
                 continue
-            s_val = _sanitize_val(v)
+            s_val = sanitize_metric_value(v)
             if s_val is not None:
                 sanitized_metrics[k] = s_val
 

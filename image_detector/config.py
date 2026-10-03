@@ -163,3 +163,12 @@ SENSITIVITY_PRIORS = {
 AI_THRESHOLD_HIGH = 50.0
 AI_THRESHOLD_BALANCED = 55.0
 REAL_THRESHOLD = 55.0
+
+
+# Unauthenticated-metadata trust policy. Camera EXIF is trivially forgeable, so it must not be allowed to cancel
+# strong physical evidence. When the raw (pre-discount) sensor-noise + surface-smoothness evidence leans synthetic
+# by at least EXIF_CONTRADICTION_LR (base-10 log-odds), camera EXIF is treated as UNTRUSTED: the physical-signal
+# discount is not applied and the hardware credit shrinks from EXIF_TRUSTED_CREDIT to EXIF_UNTRUSTED_CREDIT.
+EXIF_CONTRADICTION_LR = 2.0
+EXIF_TRUSTED_CREDIT = -1.4
+EXIF_UNTRUSTED_CREDIT = -0.3

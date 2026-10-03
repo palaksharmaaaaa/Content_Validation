@@ -19,7 +19,7 @@ import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader, Dataset
 
-from audio_detector.config import DEFAULT_AUDIO_CHECKPOINT, MODELS_DIR, SUPPORTED_EXTENSIONS
+from audio_detector.config import DEFAULT_AUDIO_CHECKPOINT, SUPPORTED_EXTENSIONS
 from audio_detector.features import compute_spectral_features
 from audio_detector.models.backbone import AudioClassifierNet
 from audio_detector.validator import AudioValidator

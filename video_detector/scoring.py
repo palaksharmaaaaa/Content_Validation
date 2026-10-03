@@ -9,11 +9,12 @@ Contains:
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 import numpy as np
 
 from core.decision import normalize_percentages
+from core.shared_results import three_way_label
 from video_detector.config import (
     AI_THRESHOLD_BALANCED,
     AI_THRESHOLD_HIGH,
@@ -88,10 +89,4 @@ def evaluate_video_decision(
     ai_pct: float, real_pct: float, sensitivity: str = "balanced"
 ) -> str:
     """Classifies final decision label based on calibrated thresholds."""
-    thresh = AI_THRESHOLD_HIGH if sensitivity.lower() in ("high", "aggressive") else AI_THRESHOLD_BALANCED
-    if ai_pct >= thresh:
-        return "LIKELY AI-GENERATED"
-    elif real_pct >= REAL_THRESHOLD:
-        return "LIKELY REAL"
-    else:
-        return "UNDECIDED"
+    return three_way_label(ai_pct, real_pct, sensitivity, AI_THRESHOLD_BALANCED, AI_THRESHOLD_HIGH, REAL_THRESHOLD)
