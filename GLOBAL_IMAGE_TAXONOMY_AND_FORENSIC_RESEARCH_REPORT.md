@@ -19,7 +19,7 @@
 | **REV3** | 2026-10-02T13:20:00+05:30 | Added formats/codecs, presentation attack detection, and cross-cutting legal/safety axes. |
 | **REV4** | 2026-10-02T14:20:00+05:30 | **Definitive 17-Dimensional Ontology (A–Q)**: Harmonized TOC and ontology; resolved duplicate headings; decoupled OOD from probability bands; added dedicated metadata/container forensics (EXIF/XMP/ICC/MakerNotes); integrated SVG script injection attack vectors; added demographic bias/recalibration frameworks and open-set source attribution. |
 | **REV5** | 2026-10-02 | **Consistency Pass:** Repaired TOC anchors (Dimensions D–K, P, Section 22); replaced off-topic IEEE 3333.1 with ISO/IEC 30107-3; corrected ICC container locations (APP2/iCCP/colr); added metadata evidentiary-weight caveat; added engine-state rows (OOD, INCONCLUSIVE, UNKNOWN_SOURCE, HARD_BLOCK) to Appendix A; added orthogonal-channel note to probability bands; clarified that pipeline stages are target-architecture. |
-| **REV6** | 2026-10-02 | **Implementation Release (image):** Added Appendix D (implementation status per dimension). The image pipeline now implements the shared dimension-check foundation: hard-block and recognition gates, file-integrity/format/metadata findings with capped hybrid scoring, legal/context/lifecycle/reliability advisory stages, five probability bands, OOD gate (uncalibrated until fitted), and open-set `UNKNOWN_SOURCE`. The Streamlit image flow gained Stages 1b, 3b, 4b and 6b. |
+| **REV6** | 2026-10-02 | **Implementation Release (image):** Added Appendix D (implementation status per dimension). The image pipeline now implements the shared dimension-check foundation: hard-block and recognition gates, file-integrity/format/metadata findings with capped hybrid scoring, legal/context/lifecycle/reliability advisory stages, five probability bands, OOD gate (uncalibrated until fitted), and open-set `UNKNOWN_SOURCE`. Findings, band and reliability appear on the Evidence tab of the image result page (the earlier numbered Stage 1b/3b/4b/6b layout was replaced by a verdict card with Overview, Evidence, Details and Feedback tabs). |
 
 ---
 
@@ -634,7 +634,7 @@ Status key: **Implemented** (code + tests), **Partial** (some sub-items), **Reco
 
 **Hybrid scoring (as built):** only `PHYSICAL_SIGNAL` / `METADATA_WEAK` findings may add log-odds (base-10, positive = toward AI): per-finding cap 0.25 (explicit generator-parameter PNG chunk 0.40), total clamp +/-0.40, absence never scored. They enter the detector as `dim_<check_id>` terms through `ImageAIDetector.predict(extra_log_lrs=...)`.
 
-**Not yet implemented for this modality:** see the rows marked Spec-only/Partial above. Audio and video wiring of the shared foundation follows in later cycles (Appendix F of those reports).
+**Not implemented for this modality:** the rows marked Spec-only are research scope, not planned work, and no coverage is claimed for them; Partial rows list what is missing. Audio and video are wired to the same foundation (see Appendix F of those reports).
 
 
 **Post-audit corrections (2026-10-03), all covered by tests:**

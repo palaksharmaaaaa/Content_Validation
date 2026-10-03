@@ -1,0 +1,42 @@
+# Testing
+
+```bash
+pytest                                   # whole suite (about two minutes on a laptop CPU)
+pytest tests/test_system_status.py -q    # one file
+```
+
+`pytest.ini` collects `core/tests`, `image_detector/tests`, `audio_detector/tests`, `video_detector/tests` and `tests`. The root `manual_pipeline_smoke.py` is a manual script, not part of the suite (`python manual_pipeline_smoke.py`).
+
+## What is covered
+
+- **Unit tests** for each module (security, atomic I/O, scoring, dimension checks, media library, retraining engine).
+- **End-to-end UI tests** drive the real `app.py` through Streamlit's `AppTest`: upload an image, a recording and a video, and assert the result page renders without exceptions. Another test checks that the session cache is keyed by file content.
+- **Golden regression tests** pin the output of decision fusion, `predict`, taxonomy, attribution, dossiers, narratives, metadata, faces, screenshots, digital art, audio/video analysis, headless pipelines and the rendered result pages.
+- **Audit regression tests** (`tests/test_audit_regressions.py`) keep every verified bug from the old audit fixed.
+- **Isolation guard**: the root `conftest.py` fingerprints model, data and calibration files before and after the run and fails the session if any test changed them.
+
+All inputs are synthetic (tones, noise, drawn shapes, generated clips). The suite proves the code behaves as designed; it does **not** measure detection accuracy. See [Limitations](LIMITATIONS.md).
+
+## Golden files
+
+Goldens live in `tests/data/<name>.digests.json` as per-case SHA-256 digests, so a change shows up as a short diff.
+
+When a behaviour change is intended:
+
+```bash
+UPDATE_GOLDEN=1 pytest path/to/test_file.py     # PowerShell: $env:UPDATE_GOLDEN=1; pytest ...
+git diff tests/data                              # review: only the cases you expected should change
+```
+
+Goldens that depend on learned state (calibration files, a checkpoint) are recorded on a blank project and skip themselves, with a message, when such state exists. Run the suite on a clean checkout to exercise them.
+
+## Adding a check
+
+1. Implement it as an isolated function in the modality's `dimension_checks/` package and register it. A failing check must return an `ERROR` finding, never raise.
+2. Add a unit test with a minimal synthetic file that triggers it and one that does not.
+3. Decide whether it may add log-odds. Only `PHYSICAL_SIGNAL` and `METADATA_WEAK` findings may, and only as small capped terms; everything else is advisory.
+4. Regenerate the affected goldens as above and review the diff.
+
+## Continuous integration
+
+`.github/workflows/tests.yml` installs CPU PyTorch plus `requirements.lock.txt` and runs `pytest`. It has been written but not yet observed running on GitHub.

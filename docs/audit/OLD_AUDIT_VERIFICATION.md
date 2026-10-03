@@ -19,7 +19,7 @@ claim does not hold · **Open** = valid, deliberately not changed (reason given)
 ## High
 | ID | Verdict | Notes |
 |---|---|---|
-| H-1 Skin-colour "face detection" | **Open** | Valid. Replacing it with a Haar/DNN detector cannot be validated here (no labelled face images, no network); a blind swap could lower recall on real faces. Do it together with the calibration tool once labelled data exists. |
+| H-1 Skin-colour "face detection" | **Open (documented)** | Valid; listed in [Limitations](../LIMITATIONS.md). Replacing it with a Haar/DNN detector cannot be validated here (no labelled face images, no network); a blind swap could lower recall on real faces. Do it together with the calibration tool once labelled data exists. |
 | H-2 Vocoder cutoff false positives | **Fixed now** | A cutoff within 8 % of Nyquist is ordinary anti-aliasing and no longer counts. |
 | H-3 Undecided-margin scale | **Fixed now** | Gap was on a 0-100 scale but clamped as 0-1, so the margin was always the 3 % floor. |
 | H-4 Fusion overwritten by image result | Already fixed | `decision_mode` (`image_authoritative` vs `fused`); video verdict comes from the video detector. |
@@ -35,7 +35,7 @@ claim does not hold · **Open** = valid, deliberately not changed (reason given)
 | ID | Verdict | Notes |
 |---|---|---|
 | M-1 Session cache collisions | Already fixed | Per-session scratch directories; wipe is session-scoped. |
-| M-2 Triple copy-paste in `app.py` | **Fixed now** | One `ui/media_tab.py` driven by a spec; `app.py` 497 -> ~230 lines. |
+| M-2 Triple copy-paste in `app.py` | **Fixed now** | One `ui/media_tab.py` driven by a spec; `app.py` 497 -> about 100 lines. |
 | M-3 Name+size cache signature | **Fixed now** | Content hash; end-to-end test uploads same-name files with different bytes. |
 | M-4 One lock for all lazy properties | **Fixed now** | Per-component locks. |
 | M-5 Object detector CPU-only | **Fixed now** | Uses CUDA when present (CPU path unchanged and tested; GPU path not exercised here). |
@@ -51,14 +51,13 @@ claim does not hold · **Open** = valid, deliberately not changed (reason given)
 ## Low
 L-2 (docstring claims), L-3 (dead branch), L-4 (crest factor vs dynamic range: now both, correctly named), L-5 (mid-file imports),
 L-6 (dead `pass`), L-7 (dead key), L-8/L-9 (silent exceptions: now logged), L-10 (duplicated feedback panel) are **fixed**.
-L-1 / L-11 (audio and video dossiers reuse image-style key names such as `dimension_3`) are **open**: the keys are a
-public contract of the dossier consumed by the UI; titles/labels are correct, so renaming was not worth the breakage.
+L-1 / L-11 (audio and video dossiers reused image-style key names such as `dimension_3`) are **fixed**: dossier keys are now modality-neutral.
 
 ## Architecture / ML section
 - "No pretrained checkpoint is shipped; 100 % heuristics on a fresh install": **true, and now deliberate** (the project ships blank).
 - "PRNU is a median-filter residual, not real PRNU": **true**; documented as a heuristic.
 - "Test coverage zero for detection paths": **no longer true** (seeded golden tests for faces, ELA/metadata, screenshots, art,
   taxonomy, attribution, dossiers, pipelines, rendered UI, end-to-end app).
-- CI/CD: workflow added (`.github/workflows/tests.yml`, not yet run on GitHub). Dependencies: exact versions in `requirements.lock.txt`.
+- CI/CD: workflow added (`.github/workflows/tests.yml`; written and verified locally, never observed running on GitHub). Dependencies: exact versions in `requirements.lock.txt`.
 - "Pervasive `except Exception: pass`": reduced where findings pointed (hashing, attribution); many broad handlers remain by design in
   feature extractors that must never crash the pipeline.

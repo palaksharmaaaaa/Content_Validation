@@ -294,24 +294,30 @@ class ForensicService:
         else:
             raise ValueError(f"Unsupported modality '{modality}'. Expected image, video, or audio.")
 
+    _COMPONENTS = (
+        "image_pipeline", "video_pipeline", "audio_pipeline", "image_detector", "video_detector",
+        "audio_detector", "face_detector", "content_analyzer", "attribution_engine",
+    )
+
     def health_check(self) -> Dict[str, Any]:
-        """Returns overall health, uptime diagnostics, and component status."""
-        return {
-            "status": "HEALTHY",
-            "components": {
-                "image_pipeline": "READY",
-                "video_pipeline": "READY",
-                "audio_pipeline": "READY",
-                "image_detector": "READY",
-                "video_detector": "READY",
-                "audio_detector": "READY",
-                "face_detector": "READY",
-                "content_analyzer": "READY",
-                "attribution_engine": "READY",
-            },
-            "security": {
-                "anti_ssrf": "ACTIVE",
-                "decompression_bomb_protection": "ACTIVE",
-                "atomic_storage": "ACTIVE",
-            },
+        """Builds every component (loading models on first use) and reports which ones are usable.
+
+        ``status`` is ``HEALTHY`` only if all components initialise and the security guards are in place.
+        """
+        components: Dict[str, str] = {}
+        for name in self._COMPONENTS:
+            try:
+                getattr(self, name)
+                components[name] = "READY"
+            except Exception as exc:  # report, never raise: this is a diagnostic
+                logger.warning("health_check: %s failed to initialise: %s", name, exc)
+                components[name] = f"ERROR: {type(exc).__name__}"
+        from PIL import Image
+        from core.security import SecureUrlFetcher  # noqa: F401  (import proves the SSRF guard is available)
+        security = {
+            "anti_ssrf": "ACTIVE",
+            "decompression_bomb_protection": "ACTIVE" if Image.MAX_IMAGE_PIXELS else "INACTIVE",
+            "atomic_storage": "ACTIVE",
         }
+        healthy = all(v == "READY" for v in components.values()) and all(v == "ACTIVE" for v in security.values())
+        return {"status": "HEALTHY" if healthy else "DEGRADED", "components": components, "security": security}
