@@ -13,12 +13,12 @@ import streamlit as st
 
 _STATUS = {
     "PASS": ("✅", "Pass"),
-    "WARN": ("⚠️", "Warning"),
-    "FAIL": ("🚨", "Fail"),
-    "INFO": ("ℹ️", "Info"),
-    "NOT_APPLICABLE": ("➖", "N/A"),
-    "NOT_CALIBRATED": ("🧪", "Not calibrated"),
-    "RECOGNIZED_OOS": ("🔭", "Recognized (out of scope)"),
+    "WARN": ("⚠", "Warning"),
+    "FAIL": ("❌", "Fail"),
+    "INFO": ("ℹ", "Info"),
+    "NOT_APPLICABLE": ("–", "N/A"),
+    "NOT_CALIBRATED": ("•", "Not calibrated"),
+    "RECOGNIZED_OOS": ("ℹ", "Recognized (out of scope)"),
     "ERROR": ("❌", "Error"),
 }
 
@@ -32,11 +32,11 @@ _CLASS = {
 }
 
 _BAND = {
-    "HIGH_CONFIDENCE_SYNTHETIC": ("🔴", "High-Confidence Synthetic / AI-Generated"),
-    "LEANING_SYNTHETIC": ("🟠", "Leaning Synthetic / Flagged for Review"),
-    "INCONCLUSIVE": ("🟡", "Inconclusive / Indeterminate Evidence"),
-    "LEANING_AUTHENTIC": ("🟢", "Leaning Authentic / Low Anomaly"),
-    "HIGH_CONFIDENCE_AUTHENTIC": ("🔵", "High-Confidence Authentic Physical Capture"),
+    "HIGH_CONFIDENCE_SYNTHETIC": ("🔴", "Very likely AI-generated"),
+    "LEANING_SYNTHETIC": ("🟠", "Leaning AI-generated: review recommended"),
+    "INCONCLUSIVE": ("⚪", "Inconclusive"),
+    "LEANING_AUTHENTIC": ("🟡", "Leaning authentic: few anomalies"),
+    "HIGH_CONFIDENCE_AUTHENTIC": ("🟢", "Very likely a real capture"),
 }
 
 _SCORE_ELIGIBLE = {"PHYSICAL_SIGNAL", "METADATA_WEAK"}
@@ -108,14 +108,14 @@ def render_gate_banner(gate: Optional[Dict[str, Any]]) -> bool:
     if status == "HARD_BLOCK_ESCALATE":
         sha = (gate.get("hard_block") or {}).get("sha256", "")
         st.error(
-            "🛑 **HARD-BLOCK: escalate per policy.** This file's SHA-256 matches the operator-supplied hard-block list. "
+            "**Hard-blocked: escalate per policy.** This file's SHA-256 matches the operator-supplied hard-block list. "
             "Analysis was stopped and no authenticity verdict was produced. Do not open, share or store the file; follow "
             "your trust-and-safety / legal reporting procedure.\n\n" + (f"`SHA-256: {sha}`" if sha else "")
         )
     else:
         rec = gate.get("recognition") or {}
         st.info(
-            f"🔭 **Recognized {rec.get('type', 'scientific')} data** ({rec.get('description', '')}). "
+            f"**Recognized {rec.get('type', 'scientific')} data** ({rec.get('description', '')}). "
             "This format is outside the authenticity-scoring scope of the engine, so no real-vs-AI verdict is produced."
         )
     return True
@@ -128,45 +128,13 @@ def render_findings_stage(
     show_weight: bool = False,
     advisory_note: Optional[str] = None,
 ) -> None:
-    st.markdown(f"### {title}")
-    st.caption(caption)
-    if advisory_note:
-        st.caption(f"ℹ️ {advisory_note}")
+    """One collapsible group of checks. Opens by itself when something was flagged."""
+    flagged = [f for f in findings if f.get("status") in ("FAIL", "WARN")]
     if not findings:
-        st.info("No findings for this stage.")
-        return
-    rows = findings_to_rows(findings, show_weight=show_weight)
-    st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
-    problems = [f for f in findings if f.get("status") in ("FAIL", "WARN")]
-    if problems:
-        with st.expander(f"Details for {len(problems)} flagged item(s)", expanded=False):
-            for f in problems:
-                emoji, label = status_badge(f.get("status", ""))
-                st.markdown(f"**{emoji} {f.get('title', '')}** — {f.get('detail', '')}")
-
-
-def render_confidence_and_reliability(
-    band: Optional[Dict[str, Any]],
-    ood: Optional[Dict[str, Any]],
-    reliability: Optional[Dict[str, Any]],
-    open_set: Optional[Dict[str, Any]],
-) -> None:
-    st.markdown("### 🎚️ Stage 4b: Confidence Band & Reliability")
-    st.caption("Operational probability band, epistemic out-of-distribution status, generator open-set attribution, and confidence limiters.")
-    st.caption("⚠️ Heuristic, uncalibrated probabilities: percentages and bands are ranking aids, not measured error rates. "
-               "Scoring thresholds have not been validated against a labeled dataset.")
-    c1, c2 = st.columns(2)
-    if band:
-        emoji, label = band_badge(band.get("band", ""))
-        c1.metric("Confidence Band", f"{emoji} {label}")
-        c1.caption(f"P(AI) = {band.get('p_ai_percent', 0.0):.1f}%")
+        summary = "no checks applied"
     else:
-        c1.metric("Confidence Band", "Unavailable")
-    level = (reliability or {}).get("level", "NORMAL")
-    c2.metric("Reliability", {"NORMAL": "✅ Normal", "REDUCED": "⚠️ Reduced", "LOW": "🚨 Low"}.get(level, level))
-    for limiter in (reliability or {}).get("limiters", []):
-        st.warning(limiter)
-
-    st.caption("🧭 " + ood_text(ood))
-    if open_set and open_set.get("unknown_source"):
-        st.warning("**UNKNOWN_SOURCE / possible novel generator.** " + open_set.get("note", ""))
+        summary = f"{len(findings)} checks, " + (f"{len(flagged)} flagged" if flagged else "all clear")
+    with st.expander(f"{title}: {summary}", expanded=bool(flagged)):
+        st.caption(caption + (f" {advisory_note}" if advisory_note else ""))
+        if findings:
+            st.dataframe(pd.DataFrame(findings_to_rows(findings, show_weight=show_weight)), hide_index=True, width="stretch")

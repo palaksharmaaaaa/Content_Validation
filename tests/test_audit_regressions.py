@@ -42,7 +42,7 @@ def test_image_category_page_renders_without_nine_dimensions():
     from streamlit.testing.v1 import AppTest
 
     def page():
-        from ui.feedback_ui import render_image_type_and_category
+        from ui.results.content import render_image_type_and_category
 
         render_image_type_and_category({"taxonomy_state": "FULLY_AI_GENERATED"}, {}, {}, nine_dims=None)
 

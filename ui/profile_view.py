@@ -1,7 +1,12 @@
 """ui.profile_view: adds the display-oriented blocks the Streamlit renderers read to a modality profile dict."""
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, Dict
+
+from audio_detector import AudioProfiler
+from image_detector import ImageProfiler
+from video_detector import VideoProfiler
 
 _MIME_DEFAULT = {"image": "png", "video": "mp4", "audio": "wav"}
 _FORMAT_KEY = {"image": "format", "video": "container_format", "audio": "format"}
@@ -32,3 +37,15 @@ def add_ui_profile_blocks(modality: str, res: Dict[str, Any]) -> Dict[str, Any]:
     }
     res.update(_spec_block(modality, res))
     return res
+
+
+def profile_media(file_path: str | Path, modality: str = "auto", source: str = "User Upload") -> Dict[str, Any]:
+    p = Path(file_path)
+    suffix = p.suffix.lower()
+    if modality == "image" or (modality == "auto" and suffix in (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff")):
+        return add_ui_profile_blocks("image", ImageProfiler().profile_image(file_path, source=source))
+    if modality == "video" or (modality == "auto" and suffix in (".mp4", ".mov", ".avi", ".mkv", ".webm")):
+        return add_ui_profile_blocks("video", VideoProfiler().profile_video(file_path))
+    if modality == "audio" or (modality == "auto" and suffix in (".wav", ".mp3", ".aac", ".flac", ".ogg", ".m4a")):
+        return add_ui_profile_blocks("audio", AudioProfiler().profile_audio(file_path))
+    return {"success": False, "error": f"Unknown format: {suffix}"}

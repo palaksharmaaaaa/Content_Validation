@@ -30,7 +30,7 @@ from image_detector import (
 )
 from video_detector import evaluate_cross_modal_consistency
 from core.decision import generate_final_decision
-from ui.feedback_ui import profile_media
+from ui.profile_view import profile_media
 from ui.validators import analyze_provenance, validate_file
 
 

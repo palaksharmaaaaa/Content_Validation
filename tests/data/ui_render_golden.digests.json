@@ -1,17 +1,9 @@
 {
  "items": {
-  "decision_aud": "536cfe5d0a5b66da953c",
-  "decision_img_a.jpg": "4c6dc1ce59535e653fdf",
-  "decision_img_b.png": "2adf4d8d08f8a7a22bc6",
-  "decision_vid": "0720ebfc8a4953fea3ca",
-  "dossier_aud": "8a5aac92156f277165a8",
-  "dossier_img_a.jpg": "41f67790ef6aaada0ea9",
-  "dossier_img_b.png": "787e158905d494d7ae42",
-  "dossier_vid": "7ce521dad8ee0cf83a7a",
-  "linear_aud": "d2ae4d55f2ceada47743",
-  "linear_img_a.jpg": "9754289afbb04403a1c9",
-  "linear_img_b.png": "5ef7401b63c17ce150fc",
-  "linear_vid": "85314b8f908f34b55813"
+  "page_aud": "398fab91fc97e6858fbc",
+  "page_img_a.jpg": "935037f6ee8982a1ed24",
+  "page_img_b.png": "a69313186cc3083aa12d",
+  "page_vid": "c8aff4fc3bc25a666e9c"
  },
  "kind": "dict"
 }

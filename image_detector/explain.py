@@ -278,15 +278,15 @@ def build_nine_dimensions_dossier(
     """
     c = _DossierContext.build(profile_data, ai_result, content_inventory, provenance_result, attribution_result)
     return {
-        "dimension_1_hardware_provenance": _dimension_1(c),
-        "dimension_2_pixel_architecture": _dimension_2(c),
-        "dimension_3_prnu_sensor_noise": _dimension_3(c),
-        "dimension_4_surface_smoothness": _dimension_4(c),
-        "dimension_5_fourier_fft_decay": _dimension_5(c),
-        "dimension_6_subject_genre": _dimension_6(c),
-        "dimension_7_visual_medium": _dimension_7(c),
-        "dimension_8_sensor_spectrum": _dimension_8(c),
-        "dimension_9_generative_attribution": _dimension_9(c),
+        "dimension_1": _dimension_1(c),
+        "dimension_2": _dimension_2(c),
+        "dimension_3": _dimension_3(c),
+        "dimension_4": _dimension_4(c),
+        "dimension_5": _dimension_5(c),
+        "dimension_6": _dimension_6(c),
+        "dimension_7": _dimension_7(c),
+        "dimension_8": _dimension_8(c),
+        "dimension_9": _dimension_9(c),
     }
 
 

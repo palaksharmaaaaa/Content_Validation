@@ -51,7 +51,7 @@ claim does not hold · **Open** = valid, deliberately not changed (reason given)
 ## Low
 L-2 (docstring claims), L-3 (dead branch), L-4 (crest factor vs dynamic range: now both, correctly named), L-5 (mid-file imports),
 L-6 (dead `pass`), L-7 (dead key), L-8/L-9 (silent exceptions: now logged), L-10 (duplicated feedback panel) are **fixed**.
-L-1 / L-11 (audio and video dossiers reuse image-style key names such as `dimension_3_prnu_sensor_noise`) are **open**: the keys are a
+L-1 / L-11 (audio and video dossiers reuse image-style key names such as `dimension_3`) are **open**: the keys are a
 public contract of the dossier consumed by the UI; titles/labels are correct, so renaming was not worth the breakage.
 
 ## Architecture / ML section

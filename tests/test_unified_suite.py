@@ -99,8 +99,8 @@ class TestModalExplainers(unittest.TestCase):
         }
         dossier = build_audio_nine_dimensions_dossier(prof, aud_res)
         self.assertEqual(len(dossier), 9)
-        self.assertIn('dimension_1_hardware_provenance', dossier)
-        self.assertIn('dimension_9_generative_attribution', dossier)
+        self.assertIn('dimension_1', dossier)
+        self.assertIn('dimension_9', dossier)
 
         narrative = generate_audio_newbie_explanation('test.wav', prof, {}, aud_res, decision)
         self.assertIsInstance(narrative, str)
@@ -116,8 +116,8 @@ class TestModalExplainers(unittest.TestCase):
         }
         dossier = build_video_nine_dimensions_dossier(prof, vid_res)
         self.assertEqual(len(dossier), 9)
-        self.assertIn('dimension_1_hardware_provenance', dossier)
-        self.assertIn('dimension_9_generative_attribution', dossier)
+        self.assertIn('dimension_1', dossier)
+        self.assertIn('dimension_9', dossier)
 
         narrative = generate_video_newbie_explanation('test.mp4', prof, {}, vid_res, decision)
         self.assertIsInstance(narrative, str)

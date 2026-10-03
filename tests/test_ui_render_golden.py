@@ -1,4 +1,4 @@
-"""Golden for the Streamlit renderers: the element tree (types and text) of every stage for image/audio/video items."""
+"""Golden for the Streamlit result pages: the element tree (types and text) for image/audio/video items."""
 import hashlib
 import json
 import pytest
@@ -14,32 +14,22 @@ from audio_detector import AudioContentAnalyzer, AudioModelAttributionEngine
 from audio_detector.tests.audio_fixtures import tone, write_wav
 from services.forensic_service import ForensicService
 from tests.golden_support import assert_golden, skip_unless_state_matches
-from ui.batch_ui import process_single_audio, process_single_image, process_single_video
+from ui.adapters import process_single_audio, process_single_image, process_single_video
 
 
 def r_image(item):
-    from ui.feedback_ui import render_linear_image_pipeline_results
-    render_linear_image_pipeline_results(item)
+    from ui.results import render_image_result
+    render_image_result(item)
 
 
 def r_audio(item):
-    from ui.feedback_ui import render_linear_audio_pipeline_results
-    render_linear_audio_pipeline_results(item)
+    from ui.results import render_audio_result
+    render_audio_result(item)
 
 
 def r_video(item):
-    from ui.feedback_ui import render_linear_video_pipeline_results
-    render_linear_video_pipeline_results(item)
-
-
-def r_decision(item):
-    from ui.feedback_ui import render_analysis_right_panel
-    render_analysis_right_panel(item["decision"], item.get("content_res", {}), modality=item["modality"])
-
-
-def r_dossier(item):
-    from ui.feedback_ui import render_forensic_dossier
-    render_forensic_dossier(item["decision"])
+    from ui.results import render_video_result
+    render_video_result(item)
 
 
 def dump(node, out, depth=0):
@@ -102,9 +92,6 @@ def test_ui_renders_match_golden(tmp_path):
     res = {}
     fns = {"image": r_image, "audio": r_audio, "video": r_video}
     for k, (mod, item) in items.items():
-        res["linear_" + k] = render(fns[mod], item, tmp)
-        d = dict(item); d["modality"] = mod
-        res["decision_" + k] = render(r_decision, d, tmp)
-        res["dossier_" + k] = render(r_dossier, d, tmp)
+        res["page_" + k] = render(fns[mod], item, tmp)
     assert not [k for k, v in res.items() if "EXCEPTION" in v]
     assert_golden("ui_render_golden", res)

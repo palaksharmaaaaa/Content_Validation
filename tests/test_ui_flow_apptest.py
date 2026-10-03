@@ -9,7 +9,7 @@ from streamlit.testing.v1 import AppTest
 from audio_detector import AudioContentAnalyzer, AudioModelAttributionEngine
 from audio_detector.tests.audio_fixtures import tone, write_wav
 from services.forensic_service import ForensicService
-from ui.batch_ui import process_single_audio, process_single_image, process_single_video
+from ui.adapters import process_single_audio, process_single_image, process_single_video
 
 CHECKPOINT = Path(__file__).resolve().parents[1] / "image_detector" / "models" / "ai_detector.pt"
 
@@ -20,15 +20,15 @@ def service():
 
 
 def _render_image(item):
-    from ui.feedback_ui import render_linear_image_pipeline_results
+    from ui.results import render_image_result
 
-    render_linear_image_pipeline_results(item)
+    render_image_result(item)
 
 
 def _render_audio(item):
-    from ui.feedback_ui import render_linear_audio_pipeline_results
+    from ui.results import render_audio_result
 
-    render_linear_audio_pipeline_results(item)
+    render_audio_result(item)
 
 
 def _run(fn, item):
@@ -45,7 +45,7 @@ def test_image_flow_renders_every_stage(service, tmp_path):
     assert item["decision"]["decision_mode"] == "image_authoritative"
     at = _run(_render_image, item)
     text = " ".join(m.value for m in at.markdown) + " ".join(c.value for c in at.caption)
-    assert "Stage 1b" in text and "uncalibrated" in text.lower()
+    assert "uncalibrated" in text.lower()
 
 
 def test_audio_flow_renders_every_stage(service, tmp_path):
@@ -54,7 +54,7 @@ def test_audio_flow_renders_every_stage(service, tmp_path):
     assert item["success"]
     at = _run(_render_audio, item)
     text = " ".join(m.value for m in at.markdown)
-    assert "Stage 1b" in text
+    assert "In plain English" in text
 
 
 def test_hardblock_gate_short_circuits_ui(service, tmp_path, monkeypatch):
@@ -72,9 +72,9 @@ def test_hardblock_gate_short_circuits_ui(service, tmp_path, monkeypatch):
 
 
 def _render_video(item):
-    from ui.feedback_ui import render_linear_video_pipeline_results
+    from ui.results import render_video_result
 
-    render_linear_video_pipeline_results(item)
+    render_video_result(item)
 
 
 def test_video_flow_renders_and_uses_video_verdict(service, tmp_path):

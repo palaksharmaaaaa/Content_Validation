@@ -234,7 +234,7 @@ class ImageForensicPipeline:
             "taxonomy_state": ai_res.get("taxonomy_state"),
             "taxonomy_label": ai_res.get("taxonomy_label"),
             "taxonomy_description": ai_res.get("taxonomy_description"),
-            "iptc_digital_source_type": r.nine_dimensions["dimension_1_hardware_provenance"]["iptc_digital_source_type"],
+            "iptc_digital_source_type": r.nine_dimensions["dimension_1"]["iptc_digital_source_type"],
             "primary_genre": content_res.get("purpose_and_depiction", {}).get("primary_genre", ai_res.get("subject_genre", "General Scene")),
             "visual_medium": ai_res.get("visual_medium", "Photographic Capture"),
             "sensor_spectrum": ai_res.get("sensor_spectrum", "Visible Spectrum (Bayer RGB)"),

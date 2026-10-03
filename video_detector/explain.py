@@ -205,15 +205,15 @@ def build_video_nine_dimensions_dossier(
 
     c = _VideoDossierContext(prof=prof, geom=geom, vid_res=vid_res, prov=prov, attr=attr, inv=inv, entities=entities, humans=humans, env=env, light=light, tone=tone, temp=temp, w=w, h=h, fps=fps, duration=duration, total_frames=total_frames)
     return {
-        "dimension_1_hardware_provenance": _video_dimension_1(c),
-        "dimension_2_pixel_architecture": _video_dimension_2(c),
-        "dimension_3_prnu_sensor_noise": _video_dimension_3(c),
-        "dimension_4_surface_smoothness": _video_dimension_4(c),
-        "dimension_5_fourier_fft_decay": _video_dimension_5(c),
-        "dimension_6_subject_genre": _video_dimension_6(c),
-        "dimension_7_visual_medium": _video_dimension_7(c),
-        "dimension_8_sensor_spectrum": _video_dimension_8(c),
-        "dimension_9_generative_attribution": _video_dimension_9(c),
+        "dimension_1": _video_dimension_1(c),
+        "dimension_2": _video_dimension_2(c),
+        "dimension_3": _video_dimension_3(c),
+        "dimension_4": _video_dimension_4(c),
+        "dimension_5": _video_dimension_5(c),
+        "dimension_6": _video_dimension_6(c),
+        "dimension_7": _video_dimension_7(c),
+        "dimension_8": _video_dimension_8(c),
+        "dimension_9": _video_dimension_9(c),
     }
 
 

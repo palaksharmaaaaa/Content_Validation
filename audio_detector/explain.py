@@ -188,15 +188,15 @@ def build_audio_nine_dimensions_dossier(
     cutoff_hz = acoustics.get("vocoder_cutoff_hz", 0)
     c = _AudioDossierContext(prof=prof, geom=geom, aud_res=aud_res, prov=prov, attr=attr, inv=inv, acoustics=acoustics, sr=sr, duration=duration, channels=channels, cutoff_hz=cutoff_hz)
     return {
-        "dimension_1_hardware_provenance": _audio_dimension_1(c),
-        "dimension_2_pixel_architecture": _audio_dimension_2(c),
-        "dimension_3_prnu_sensor_noise": _audio_dimension_3(c),
-        "dimension_4_surface_smoothness": _audio_dimension_4(c),
-        "dimension_5_fourier_fft_decay": _audio_dimension_5(c),
-        "dimension_6_subject_genre": _audio_dimension_6(c),
-        "dimension_7_visual_medium": _audio_dimension_7(c),
-        "dimension_8_sensor_spectrum": _audio_dimension_8(c),
-        "dimension_9_generative_attribution": _audio_dimension_9(c),
+        "dimension_1": _audio_dimension_1(c),
+        "dimension_2": _audio_dimension_2(c),
+        "dimension_3": _audio_dimension_3(c),
+        "dimension_4": _audio_dimension_4(c),
+        "dimension_5": _audio_dimension_5(c),
+        "dimension_6": _audio_dimension_6(c),
+        "dimension_7": _audio_dimension_7(c),
+        "dimension_8": _audio_dimension_8(c),
+        "dimension_9": _audio_dimension_9(c),
     }
 
 
