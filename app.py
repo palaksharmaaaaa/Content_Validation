@@ -121,7 +121,7 @@ audio_detectors_map = {
 
 MEDIA_TABS = (
     (tab_image, MediaTabSpec(
-        key="img", modality="image", noun="Image", file_types=["jpg", "jpeg", "png", "webp", "bmp", "tiff"],
+        key="img", modality="image", noun="Image", file_types=["jpg", "jpeg", "jfif", "png", "webp", "bmp", "tif", "tiff"],
         hint="Looks at pixels, noise, metadata and provenance. JPG, PNG, WebP, BMP or TIFF.",
         url_placeholder="https://example.com/photo.jpg", render_result=render_image_result, tag_upload_source=True,
     ), image_detectors_map),

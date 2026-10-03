@@ -27,6 +27,7 @@ import numpy as np
 from PIL import Image
 
 from core.hashing import file_sha256
+from core.imageio import imread
 from core.media_library import partition
 from image_detector.face_authenticity import CHECKPOINT, INPUT_SIZE, build_model, crop_face, crop_region, to_tensor
 
@@ -54,28 +55,45 @@ def _jpeg(img: Image.Image, quality: int) -> Image.Image:
     return Image.open(buf).convert("RGB")
 
 
-def find_boxes(files: List[Path]) -> Dict[str, Tuple[int, int, int, int]]:
-    """The most confident face box per file, found with the same detector inference uses. Files with no face are omitted."""
+MIN_TRAIN_FACE = 48
+MAX_SIDE = 2000      # same downscale the Faces check applies at inference, so box sizes match
+
+
+def _load(path: str):
+    """The image as the Faces check sees it: BGR, downscaled to at most MAX_SIDE. Returns (image, scale)."""
     import cv2
 
+    img = imread(str(path), cv2.IMREAD_COLOR)
+    if img is None:
+        return None, 1.0
+    scale = MAX_SIDE / max(img.shape[:2])
+    if scale < 1.0:
+        return cv2.resize(img, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA), scale
+    return img, 1.0
+
+
+def find_boxes(files: List[Path]) -> Dict[str, Tuple[str, Tuple[int, int, int, int]]]:
+    """Every face of at least MIN_TRAIN_FACE px, found with the detector inference uses, as
+    ``{"<path>#<n>": (path, box)}`` with boxes in the downscaled image. Files with no usable face are omitted."""
     from core.face_detection import get_face_finder
 
     finder, boxes = get_face_finder(), {}
     for p in files:
-        img = cv2.imread(str(p), cv2.IMREAD_COLOR)
-        faces = finder.find(img) if img is not None else []
-        if faces:
-            boxes[str(p)] = tuple(int(v) for v in faces[0][:4])
+        img, _scale = _load(str(p))
+        if img is None:
+            continue
+        for i, face in enumerate(f for f in finder.find(img) if min(f[2], f[3]) >= MIN_TRAIN_FACE):
+            boxes[f"{p}#{i}"] = (str(p), tuple(int(v) for v in face[:4]))
     return boxes
 
 
-def prepare(path: Path, box: Tuple[int, int, int, int], train: bool, stress: bool = False) -> np.ndarray:
+def prepare(path: Path, box: Tuple[int, int, int, int], train: bool, stress: bool = False, seed: str = "") -> np.ndarray:
     """The INPUT_SIZE RGB face crop for one training/validation image, built exactly as at inference
     (detector box + margin, ``crop_region``), plus the shortcut-removing degradations when requested."""
     import cv2
 
-    rng = random.Random() if train else random.Random(str(path))
-    img = cv2.imread(str(path), cv2.IMREAD_COLOR)
+    rng = random.Random() if train else random.Random(seed or str(path))
+    img, _scale = _load(str(path))
     x, y, w, h = box
     if train:                                             # box jitter: the detector's box is never identical twice
         s = rng.uniform(0.88, 1.15)
@@ -94,17 +112,18 @@ def prepare(path: Path, box: Tuple[int, int, int, int], train: bool, stress: boo
 
 
 class FaceSet:
-    """A list of (path, label) as a torch dataset."""
+    """A list of (face key, label) as a torch dataset; ``boxes`` maps each key to (image path, face box)."""
 
-    def __init__(self, items: List[Tuple[Path, int]], boxes: Dict[str, Tuple[int, int, int, int]], train: bool, stress: bool = False):
+    def __init__(self, items: List[Tuple[str, int]], boxes: Dict[str, Tuple[str, Tuple[int, int, int, int]]], train: bool, stress: bool = False):
         self.items, self.boxes, self.train, self.stress = items, boxes, train, stress
 
     def __len__(self):
         return len(self.items)
 
     def __getitem__(self, i):
-        path, label = self.items[i]
-        return to_tensor(prepare(path, self.boxes[str(path)], self.train, self.stress)), label
+        key, label = self.items[i]
+        path, box = self.boxes[key]
+        return to_tensor(prepare(Path(path), box, self.train, self.stress, seed=key)), label
 
 
 def evaluate(model, dataset: FaceSet, batch: int = 128, workers: int = 4) -> Dict[str, float]:
@@ -129,51 +148,55 @@ def evaluate(model, dataset: FaceSet, batch: int = 128, workers: int = 4) -> Dic
     }
 
 
-def evaluate_inference(checkpoint: Path, items: List[Tuple[Path, int]]) -> Dict[str, float]:
-    """Accuracy through the exact inference path (``FaceAuthenticityClassifier.analyse``) on untouched validation images."""
-    import cv2
-
-    from core.face_detection import get_face_finder
+def evaluate_inference(checkpoint: Path, items: List[Tuple[str, int]], boxes: Dict) -> Dict[str, float]:
+    """Accuracy through the inference path (detector box -> ``crop_face`` -> classifier) on untouched validation faces."""
     from image_detector.face_authenticity import FaceAuthenticityClassifier
 
-    clf, finder = FaceAuthenticityClassifier(checkpoint), get_face_finder()
+    clf = FaceAuthenticityClassifier(checkpoint)
     ys, ps = [], []
-    for path, label in items:
-        img = cv2.imread(str(path), cv2.IMREAD_COLOR)
-        res = clf.analyse(img, finder.find(img)[:1]) if img is not None else {"faces": []}
-        if res["faces"]:
-            ys.append(label)
-            ps.append(res["faces"][0]["p_ai"])
+    for key, label in items:
+        path, box = boxes[key]
+        img, _scale = _load(path)
+        ps += clf.predict_crops([crop_face(img, box)])
+        ys.append(label)
     ys, ps = np.array(ys), np.array(ps)
     pred = ps >= 0.5
     return {"accuracy": float((pred == (ys == 1)).mean()), "ai_recall": float(pred[ys == 1].mean()),
             "real_specificity": float((~pred[ys == 0]).mean()), "n": int(len(ys))}
 
 
-def train(real_dir: Path, ai_dir: Path, epochs: int, out: Path, batch: int = 64, workers: int = 4, limit: int = 0) -> Dict:
+def train(real_dirs: List[Path], ai_dirs: List[Path], epochs: int, out: Path, batch: int = 64, workers: int = 4, limit: int = 0) -> Dict:
     """Train, keep the best checkpoint by stress accuracy, and return the per-epoch history."""
     import torch
     from torch.utils.data import DataLoader
 
     torch.manual_seed(0)
-    r_tr, r_va = split(list_files(real_dir))
-    a_tr, a_va = split(list_files(ai_dir))
+    r_files = [p for d in real_dirs for p in list_files(d)]
+    a_files = [p for d in ai_dirs for p in list_files(d)]
+    r_tr, r_va = split(r_files)
+    a_tr, a_va = split(a_files)
     if limit:
         r_tr, r_va, a_tr, a_va = r_tr[:limit], r_va[:max(8, limit // 4)], a_tr[:limit], a_va[:max(8, limit // 4)]
     boxes = find_boxes(r_tr + r_va + a_tr + a_va)
-    for name, group in (("real", r_tr + r_va), ("ai", a_tr + a_va)):
-        logger.info("faces found in %d of %d %s images (images without a face are skipped)", sum(str(p) in boxes for p in group), len(group), name)
-    keep = lambda ps: [p for p in ps if str(p) in boxes]
-    r_tr, r_va, a_tr, a_va = keep(r_tr), keep(r_va), keep(a_tr), keep(a_va)
-    tr = [(p, 0) for p in r_tr] + [(p, 1) for p in a_tr]      # label 1 = AI-generated
-    va = [(p, 0) for p in r_va] + [(p, 1) for p in a_va]
-    logger.info("train %d (real %d, ai %d) | validation %d (real %d, ai %d)", len(tr), len(r_tr), len(a_tr), len(va), len(r_va), len(a_va))
+    by_path: Dict[str, List[str]] = {}
+    for key, (path, _box) in boxes.items():
+        by_path.setdefault(path, []).append(key)
+
+    def faces(paths, label):
+        return [(k, label) for p in paths for k in by_path.get(str(p), [])]
+
+    tr = faces(r_tr, 0) + faces(a_tr, 1)                      # label 1 = AI-generated
+    va = faces(r_va, 0) + faces(a_va, 1)
+    n_real, n_ai = len(faces(r_tr, 0)), len(faces(a_tr, 1))
+    logger.info("train %d faces (real %d, ai %d) | validation %d faces (real %d, ai %d) from %d + %d images",
+                len(tr), n_real, n_ai, len(va), len(faces(r_va, 0)), len(faces(a_va, 1)), len(r_files), len(a_files))
+    weights = torch.tensor([1.0, n_real / max(1, n_ai)])        # balance the classes in the loss
 
     model = build_model(pretrained=True)
     opt = torch.optim.AdamW(model.parameters(), lr=3e-4, weight_decay=1e-4)
     loader = DataLoader(FaceSet(tr, boxes, True), batch_size=batch, shuffle=True, num_workers=workers, drop_last=True, persistent_workers=workers > 0)
     sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=1e-3, total_steps=epochs * len(loader))
-    loss_fn = torch.nn.CrossEntropyLoss()
+    loss_fn = torch.nn.CrossEntropyLoss(weight=weights)
     best, history = -1.0, []
     for epoch in range(epochs):
         model.train()
@@ -196,7 +219,7 @@ def train(real_dir: Path, ai_dir: Path, epochs: int, out: Path, batch: int = 64,
             meta = {"epochs_run": epoch + 1, "val_stress": stress, "val_clean": clean, "train_samples": len(tr), "val_samples": len(va),
                     "input_size": INPUT_SIZE, "label_1": "ai_generated"}
             torch.save({"model_state_dict": model.state_dict(), "meta": meta}, out)
-    final = evaluate_inference(out, va)
+    final = evaluate_inference(out, va, boxes)
     logger.info("inference-path validation (detector -> crop -> classifier, no degradation): %s", json.dumps(final))
     return {"best_stress_accuracy": best, "inference_path": final, "history": history}
 
@@ -204,8 +227,8 @@ def train(real_dir: Path, ai_dir: Path, epochs: int, out: Path, batch: int = 64,
 def main(argv=None) -> Dict:
     """Command-line entry point."""
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
-    ap.add_argument("--real", type=Path, required=True)
-    ap.add_argument("--ai", type=Path, required=True)
+    ap.add_argument("--real", type=Path, nargs="+", required=True, help="folders of real faces")
+    ap.add_argument("--ai", type=Path, nargs="+", required=True, help="folders of AI-generated faces")
     ap.add_argument("--epochs", type=int, default=6)
     ap.add_argument("--out", type=Path, default=CHECKPOINT)
     ap.add_argument("--workers", type=int, default=4)

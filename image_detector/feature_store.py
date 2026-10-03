@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import cv2
+from core.imageio import imread
 import numpy as np
 from PIL import Image
 import torch
@@ -44,7 +45,7 @@ def _decode_image_input(image_input: Union[str, Path, bytes, bytearray, io.Bytes
         source_path = Path(image_input)
         if not source_path.is_file():
             return None, source_path
-        img_bgr = cv2.imread(str(source_path))
+        img_bgr = imread(str(source_path))
         return img_bgr, source_path
 
     if isinstance(image_input, np.ndarray):

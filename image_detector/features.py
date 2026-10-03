@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import cv2
+from core.imageio import imread
 import numpy as np
 from PIL import Image, ImageChops, ImageEnhance, ImageFile
 from PIL.ExifTags import TAGS
@@ -199,6 +200,39 @@ def extract_image_metadata(image_path: str | Path) -> Dict[str, Any]:
     return info
 
 
+
+def _is_four_point_star(cnt: np.ndarray, gray_roi: np.ndarray) -> bool:
+    """True if a contour is shaped like the Gemini sparkle: a bright, solid, four-pointed star.
+
+    Random texture blobs satisfy a size/aspect/solidity test easily, so the shape must also be four-fold symmetric
+    (matches itself rotated by 90 degrees and mirrored), have exactly four deep concavities, and stand out from the
+    ring of background around it.
+    """
+    x, y, cw, ch = cv2.boundingRect(cnt)
+    mask = np.zeros((ch, cw), np.uint8)
+    cv2.drawContours(mask, [cnt - [x, y]], -1, 255, thickness=cv2.FILLED)
+    m = cv2.resize(mask, (48, 48), interpolation=cv2.INTER_AREA) > 127
+
+    def iou(a: np.ndarray, b: np.ndarray) -> float:
+        union = np.logical_or(a, b).sum()
+        return float(np.logical_and(a, b).sum()) / union if union else 0.0
+
+    if min(iou(m, np.rot90(m)), iou(m, m[:, ::-1]), iou(m, m[::-1, :])) < 0.80:
+        return False
+    hull = cv2.convexHull(cnt, returnPoints=False)
+    defects = cv2.convexityDefects(cnt, hull) if hull is not None and len(hull) > 3 else None
+    deep = 0 if defects is None else int(sum(1 for d in defects.reshape(-1, 4) if d[3] / 256.0 > 0.07 * max(cw, ch)))
+    if deep != 4:
+        return False
+    inside = gray_roi[y:y + ch, x:x + cw][mask > 0]
+    pad = max(4, cw // 4)
+    y0, y1, x0, x1 = max(0, y - pad), min(gray_roi.shape[0], y + ch + pad), max(0, x - pad), min(gray_roi.shape[1], x + cw + pad)
+    ring_mask = np.ones((y1 - y0, x1 - x0), bool)
+    ring_mask[y - y0:y - y0 + ch, x - x0:x - x0 + cw] = False
+    ring = gray_roi[y0:y1, x0:x1][ring_mask]
+    return inside.size > 0 and ring.size > 0 and abs(float(inside.mean()) - float(ring.mean())) >= 25.0 and float(inside.std()) <= 40.0
+
+
 def detect_ai_watermark(image_path: str | Path, img_bgr: np.ndarray) -> Dict[str, Any]:
     """
     Detects known AI generation watermarks (specifically Google Gemini / Imagen 4-pointed sparkle emblem)
@@ -228,7 +262,7 @@ def detect_ai_watermark(image_path: str | Path, img_bgr: np.ndarray) -> Dict[str
                 hull_area = cv2.contourArea(hull)
                 solidity = float(area) / max(1.0, hull_area)
                 # 4-pointed star has characteristic concave quadrant flanks (solidity between 0.50 and 0.78)
-                if 0.50 <= solidity <= 0.78:
+                if 0.50 <= solidity <= 0.78 and _is_four_point_star(cnt, gray):
                     cx = x + cw / 2.0
                     cy = y + ch / 2.0
                     dist_corner = float(np.hypot(cr_w - cx, cr_h - cy))
@@ -267,7 +301,7 @@ def detect_background_cutout(image_path: str | Path, img_bgr: Optional[np.ndarra
 
     if img_bgr is None:
         try:
-            img_bgr = cv2.imread(str(image_path))
+            img_bgr = imread(str(image_path))
         except Exception as exc:
             logger.debug("detect_background_cutout: ignored %s: %s", type(exc).__name__, exc)
 
@@ -434,7 +468,7 @@ def detect_digital_art_and_painting(
     """
     if img_bgr is None:
         try:
-            img_bgr = cv2.imread(str(image_path))
+            img_bgr = imread(str(image_path))
         except Exception as exc:
             logger.debug("detect_digital_art_and_painting: ignored %s: %s", type(exc).__name__, exc)
 
@@ -527,7 +561,7 @@ def analyze_fft_radial_power_spectrum(gray_img: np.ndarray | str | Path) -> Dict
     Neural upscalers and latent generators produce anomalous high-frequency grid artifacts or abnormal alpha decay.
     """
     if isinstance(gray_img, (str, Path)):
-        loaded = cv2.imread(str(gray_img), cv2.IMREAD_GRAYSCALE)
+        loaded = imread(str(gray_img), cv2.IMREAD_GRAYSCALE)
         if loaded is None:
             return {"spectral_decay_alpha": 2.0, "is_anomalous_decay": False}
         gray_img = loaded
@@ -790,7 +824,7 @@ def detect_screenshot(
     """
     if img_bgr is None:
         try:
-            img_bgr = cv2.imread(str(image_path))
+            img_bgr = imread(str(image_path))
         except Exception as exc:
             logger.debug("detect_screenshot: ignored %s: %s", type(exc).__name__, exc)
 
@@ -892,7 +926,7 @@ def detect_inpainting_and_manipulation(
     """
     if img_bgr is None:
         try:
-            img_bgr = cv2.imread(str(image_path))
+            img_bgr = imread(str(image_path))
         except Exception as exc:
             logger.debug("detect_inpainting_and_manipulation: ignored %s: %s", type(exc).__name__, exc)
 
@@ -991,7 +1025,7 @@ def detect_screen_rephotography_moire(
     """
     if img_bgr is None:
         try:
-            img_bgr = cv2.imread(str(image_path))
+            img_bgr = imread(str(image_path))
         except Exception as exc:
             logger.debug("detect_screen_rephotography_moire: ignored %s: %s", type(exc).__name__, exc)
 
@@ -1057,7 +1091,7 @@ def detect_spectral_modality(
     """
     if img_bgr is None:
         try:
-            img_bgr = cv2.imread(str(image_path))
+            img_bgr = imread(str(image_path))
         except Exception as exc:
             logger.debug("detect_spectral_modality: ignored %s: %s", type(exc).__name__, exc)
 

@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import cv2
+from core.imageio import imread
 import numpy as np
 from PIL import Image
 import torch
@@ -209,7 +210,7 @@ class ImageAIDetector:
             img = cv2.imdecode(np.frombuffer(content, np.uint8), cv2.IMREAD_COLOR)
             return img, Path(getattr(image_path, "name", "in_memory.png")), io.BytesIO(content)
         path = Path(image_path)
-        return cv2.imread(str(path)), path, path
+        return imread(str(path)), path, path
 
     @staticmethod
     def _extract_signals(img_bgr: np.ndarray, path: Path, raw_meta_source: Any) -> _Signals:

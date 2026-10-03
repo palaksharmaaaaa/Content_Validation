@@ -29,6 +29,8 @@ MAX_FILE_SIZE_MB = 100
 SUPPORTED_IMAGE_EXTENSIONS = {
     ".jpg",
     ".jpeg",
+    ".jfif",
+    ".tif",
     ".png",
     ".webp",
     ".bmp",

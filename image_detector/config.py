@@ -30,7 +30,7 @@ def ensure_directories() -> None:
 IMAGE_SIZE = 224
 MIN_RESOLUTION = 64
 MAX_FILE_SIZE_MB = 100.0
-SUPPORTED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff"}
+SUPPORTED_EXTENSIONS = {".jpg", ".jpeg", ".jfif", ".png", ".webp", ".bmp", ".tif", ".tiff"}
 
 # Physical Forensic Baselines
 # Natural optical camera sensor noise (PRNU): mu ~ 2.45, sigma ~ 0.65

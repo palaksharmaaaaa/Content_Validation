@@ -20,6 +20,7 @@ from core.hashing import file_digests
 from core.perception.colors import dominant_colors, name_color
 
 import cv2
+from core.imageio import imread
 import numpy as np
 from PIL import Image
 
@@ -340,7 +341,7 @@ class ImageProfiler:
         size_mb = size_bytes / (1024.0 * 1024.0)
         container = _read_container_info(path)
 
-        img_bgr = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
+        img_bgr = imread(str(path), cv2.IMREAD_UNCHANGED)
         if img_bgr is None:
             return {
                 "valid": False, "filename": path.name, "source": source,

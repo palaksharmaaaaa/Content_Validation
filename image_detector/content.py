@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 import cv2
+from core.imageio import imread
 import numpy as np
 
 from core.perception.colors import dominant_colors
@@ -58,7 +59,7 @@ class ImageContentAnalyzer:
             if not path.is_file():
                 return self._empty_result()
             try:
-                img_bgr = cv2.imread(str(path))
+                img_bgr = imread(str(path))
             except Exception:
                 img_bgr = None
         elif isinstance(image_path, np.ndarray):

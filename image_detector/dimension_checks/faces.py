@@ -9,6 +9,7 @@ classifier trained by ``image_detector.face_training``; both are reported honest
 from __future__ import annotations
 
 import cv2
+from core.imageio import imread
 
 from core.face_detection import get_face_finder
 from core.forensics.registry import CheckContext, registry
@@ -33,7 +34,7 @@ def check_face_authenticity(ctx: CheckContext) -> Finding:
     if not classifier.available:
         return _finding(FindingStatus.NOT_CALIBRATED, Severity.NONE,
                         "No trained face model. Train one with: python -m image_detector.face_training --real <folder> --ai <folder>.", {})
-    img = cv2.imread(str(ctx.path), cv2.IMREAD_COLOR)
+    img = imread(str(ctx.path), cv2.IMREAD_COLOR)
     if img is None:
         return _finding(FindingStatus.NOT_APPLICABLE, Severity.NONE, "The image could not be decoded for face analysis.", {})
     scale = MAX_SIDE / max(img.shape[:2])

@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 import cv2
+from core.imageio import imread
 import numpy as np
 from PIL import Image, ImageOps
 
@@ -101,7 +102,7 @@ class ImageValidator:
             )
 
         # Quality analysis
-        img_bgr = cv2.imread(str(path))
+        img_bgr = imread(str(path))
         if img_bgr is None:
             return ImageValidationResult(
                 valid=False,
