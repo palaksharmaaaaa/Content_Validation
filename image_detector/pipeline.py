@@ -122,6 +122,31 @@ def _flat_quality(validation: Any) -> Dict[str, Any]:
     return flat
 
 
+FACE_LED_WEIGHT = 0.65     # share of the AI score taken from the face classifier when a face is the main subject
+FACE_LED_MIN_P = 0.95      # ... and only when it is this sure
+
+
+def _face_led_verdict(ai_result: Dict[str, Any], face_p_ai: float) -> None:
+    """Portrait-style images: the face classifier (trained on exactly that kind of image) leads the verdict.
+    The AI score becomes a weighted blend of the pixel detector and the face score, and the category follows the score.
+    One-directional: a face that looks real never raises confidence, because an unseen generator would also look real."""
+    if face_p_ai < FACE_LED_MIN_P or ai_result.get("taxonomy_state") in ("AI_GENERATED_SCREENSHOT", "AI_ENHANCED_SCREENSHOT"):
+        return
+    from image_detector.schemas import ImageTaxonomyState as S
+
+    old = float(ai_result.get("ai_percentage", 0.0))
+    blended = round((1 - FACE_LED_WEIGHT) * old + FACE_LED_WEIGHT * face_p_ai * 100.0, 1)
+    if blended <= old:
+        return
+    undecided = min(float(ai_result.get("undecided_percentage", 0.0)), 100.0 - blended)
+    ai_result.update(ai_percentage=blended, real_percentage=round(100.0 - blended - undecided, 1), undecided_percentage=round(undecided, 1))
+    reason = f"The main face in the image looks AI-generated ({face_p_ai * 100:.0f}% by the face classifier)"
+    ai_result["taxonomy_reasons"] = [reason] + list(ai_result.get("taxonomy_reasons", []))
+    if blended >= 65.0 and ai_result.get("taxonomy_state") in (None, S.AUTHENTIC_REAL_PHOTOGRAPH, S.AUTHENTIC_EDITED, S.AUTHENTIC_RECAPTURED_SCREEN):
+        ai_result.update(taxonomy_state=S.FULLY_AI_GENERATED, taxonomy_label=S.get_label(S.FULLY_AI_GENERATED),
+                         taxonomy_description=S.get_description(S.FULLY_AI_GENERATED), label="LIKELY AI-GENERATED")
+
+
 class ImageForensicPipeline:
     """Unified end-to-end linear forensic analysis pipeline for images."""
 
@@ -174,8 +199,12 @@ class ImageForensicPipeline:
 
         ai_result = self.detector.predict(path, sensitivity=sensitivity, provenance=provenance, extra_log_lrs=dim_terms)
         face = dim_analysis.pre_finding("face_authenticity")
+        if face is not None and face.data.get("face_dominant"):
+            ai_result["face_check"] = {"worst_p_ai": face.data.get("worst_p_ai")}
         if face is not None and face.data.get("ai_like"):
             ai_result["face_ai_like"] = {"worst_p_ai": face.data.get("worst_p_ai")}
+            if face.data.get("face_dominant"):
+                _face_led_verdict(ai_result, float(face.data["worst_p_ai"]))
         content = self.content_analyzer.analyze_image_content(path)
         attribution = self.attribution_engine.attribute_image(
             path, forensic_data=ai_result, profile_data=profile, provenance_data=provenance

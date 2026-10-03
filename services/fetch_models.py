@@ -23,9 +23,9 @@ MODELS: Dict[str, str] = {
 
 def present(repo_id: str) -> bool:
     """True if the model is already in the local cache."""
-    from huggingface_hub import try_to_load_from_cache
+    from core.perception.hub import is_cached
 
-    return isinstance(try_to_load_from_cache(repo_id, "config.json"), str)
+    return is_cached(repo_id)
 
 
 def main(argv=None) -> int:

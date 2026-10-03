@@ -11,7 +11,10 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
+from core.perception.hub import load_kwargs, silence_noise
 from core.perception.vocab import VOCABS
+
+silence_noise()
 
 logger = logging.getLogger("core.perception.recognizer")
 
@@ -36,8 +39,8 @@ class ZeroShotRecognizer:
                 try:
                     from transformers import AutoModel, AutoProcessor
 
-                    self._proc = AutoProcessor.from_pretrained(self._id)
-                    self._model = AutoModel.from_pretrained(self._id).eval()
+                    self._proc = AutoProcessor.from_pretrained(self._id, **load_kwargs(self._id))
+                    self._model = AutoModel.from_pretrained(self._id, **load_kwargs(self._id)).eval()
                 except Exception as exc:
                     logger.warning("Zero-shot recognizer %s unavailable: %s", self._id, exc)
                     self._failed = True

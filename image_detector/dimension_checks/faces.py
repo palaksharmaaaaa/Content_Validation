@@ -16,6 +16,7 @@ from core.forensics.schemas import EvidenceClass, Finding, FindingStatus, Severi
 from image_detector.face_authenticity import MIN_FACE_PIXELS, get_face_authenticity
 
 AI_LIKE_LLR = 0.40    # base-10 log-likelihood ratio added toward AI (the whole hybrid-scoring budget)
+DOMINANT_AREA = 0.15   # a face covering this fraction of the image makes the face the main subject
 AI_LIKE = 0.90        # a face scored at or above this is called AI-like
 UNSURE = 0.50
 MAX_SIDE = 2000       # large photos are downscaled before cropping; faces stay well above MIN_FACE_PIXELS
@@ -49,11 +50,14 @@ def check_face_authenticity(ctx: CheckContext) -> Finding:
                         f"{len(faces)} face(s) found, all smaller than {MIN_FACE_PIXELS} px, too small to judge.", data)
     worst = max(f["p_ai"] for f in judged)
     summary = ", ".join(f"{f['p_ai'] * 100:.0f}%" for f in judged)
+    img_area = float(img.shape[0] * img.shape[1])
+    biggest = max(f[2] * f[3] for f in faces) / img_area
+    data.update(largest_face_area_fraction=round(biggest, 3), worst_p_ai=worst, face_dominant=biggest >= DOMINANT_AREA)
     skipped = f" {result['skipped_small']} smaller face(s) were not judged." if result["skipped_small"] else ""
     note = " Trained on one public dataset."
     if worst >= AI_LIKE:
         return _finding(FindingStatus.WARN, Severity.MEDIUM,
-                        f"{len(judged)} face(s) judged; chance of being AI-generated: {summary}. At least one looks generated.{skipped}{note}", {**data, "ai_like": True, "worst_p_ai": worst}, llr=AI_LIKE_LLR)
+                        f"{len(judged)} face(s) judged; chance of being AI-generated: {summary}. At least one looks generated.{skipped}{note}", {**data, "ai_like": True, "worst_p_ai": worst, "face_dominant": biggest >= DOMINANT_AREA}, llr=AI_LIKE_LLR)
     if worst >= UNSURE:
         return _finding(FindingStatus.INFO, Severity.LOW,
                         f"{len(judged)} face(s) judged; chance of being AI-generated: {summary}. Uncertain.{skipped}{note}", data)

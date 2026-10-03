@@ -77,6 +77,8 @@ _STATUS_LIKELY_AUTHENTIC = "LIKELY_AUTHENTIC"
 _STATUS_PARTIAL = "PARTIALLY_SYNTHETIC_OR_EDITED"
 _STATUS_UNDETERMINED = "UNDETERMINED"
 _AUTHENTIC_TAXONOMY = ("AUTHENTIC_REAL_PHOTOGRAPH", "AUTHENTIC_EDITED")
+_AI_CLAIMING = ("FULLY_AI_GENERATED", "AI_ENHANCED_COMPOSITE", "PROCEDURAL_CGI_SYNTHETIC")
+_FACE_DISAGREES_BELOW = 0.10   # face classifier this sure the main face is real contradicts an AI verdict
 _SCORE_BACKED_AUTHENTIC = ("AUTHENTIC_REAL_PHOTOGRAPH", "AUTHENTIC_EDITED", "AUTHENTIC_RECAPTURED_SCREEN")
 
 
@@ -427,6 +429,12 @@ def generate_final_decision(
                 tax_state, tax_label, tax_desc = _taxonomy_from_fused(_STATUS_UNDETERMINED, 0.0, 0.0)
                 tax_reasons = tax_reasons + [f"A face in the image looks AI-generated ({float(face_ai.get('worst_p_ai') or 0) * 100:.0f}%), so the image is not called real."]
                 final_status, reason = _STATUS_UNDETERMINED, "A face looks AI-generated while the rest of the evidence does not agree; explicit uncertainty maintained."
+            elif (tax_state in _AI_CLAIMING and (ai_result.get("face_check") or {}).get("worst_p_ai", 1.0) < _FACE_DISAGREES_BELOW):
+                # Two independent detectors disagree on a portrait-style image: say so instead of picking one.
+                worst = float(ai_result["face_check"]["worst_p_ai"])
+                tax_state, tax_label, tax_desc = _taxonomy_from_fused(_STATUS_UNDETERMINED, 0.0, 0.0)
+                tax_reasons = tax_reasons + [f"The face classifier disagrees ({worst * 100:.0f}% AI for the main face) with the pixel analysis ({p_ai:.0f}% AI), so no verdict is given."]
+                final_status, reason = _STATUS_UNDETERMINED, "Independent detectors disagree; explicit uncertainty maintained."
             elif tax_state in _SCORE_BACKED_AUTHENTIC and _status_from_probabilities(p_ai, p_real)[0] != _STATUS_LIKELY_AUTHENTIC:
                 # The category must never claim more than the score supports: "real" needs real >= 55 % and AI < 35 %.
                 tax_state, tax_label, tax_desc = _taxonomy_from_fused(_STATUS_UNDETERMINED, p_ai, p_real)

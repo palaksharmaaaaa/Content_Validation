@@ -7,6 +7,9 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 
+from core.perception.hub import load_kwargs, silence_noise
+
+silence_noise()
 logger = logging.getLogger("core.perception.detector")
 
 MODEL_ID = "Roboflow/rf-detr-small"
@@ -33,8 +36,8 @@ class ObjectDetector:
                     import torch
                     from transformers import AutoImageProcessor, AutoModelForObjectDetection
 
-                    self._proc = AutoImageProcessor.from_pretrained(self._id)
-                    self._model = AutoModelForObjectDetection.from_pretrained(self._id).eval()
+                    self._proc = AutoImageProcessor.from_pretrained(self._id, **load_kwargs(self._id))
+                    self._model = AutoModelForObjectDetection.from_pretrained(self._id, **load_kwargs(self._id)).eval()
                     if torch.cuda.is_available():
                         self._model = self._model.to("cuda")
                 except Exception as exc:

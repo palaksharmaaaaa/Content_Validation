@@ -16,6 +16,9 @@ from typing import List, Optional, Tuple
 import cv2
 import numpy as np
 
+from core.perception.hub import silence_noise
+
+silence_noise()
 logger = logging.getLogger("core.face_detection")
 
 MODEL_PATH = Path(__file__).resolve().parent / "models" / "face_detection_yunet_2023mar.onnx"

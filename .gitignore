@@ -115,3 +115,4 @@ image_detector_update_implementation_plan.md
 !tests/data/
 !tests/data/**
 tests/data/*.meta.json
+reports/

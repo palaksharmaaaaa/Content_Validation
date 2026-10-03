@@ -17,6 +17,9 @@ from typing import Any, Dict, List, Optional, Sequence
 import cv2
 import numpy as np
 
+from core.perception.hub import silence_noise
+
+silence_noise()
 logger = logging.getLogger("core.perception.face_attributes")
 
 MODEL_DIR = Path(__file__).resolve().parents[1] / "models"
