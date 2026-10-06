@@ -41,7 +41,11 @@ class VideoContentAnalyzer:
                 "purpose_and_depiction": {"primary_genre": "Unknown"},
             }
         if self.image_content_analyzer is not None:
-            return self.image_content_analyzer.analyze_image_content(self.representative_frame(frames_bgr))
+            result = self.image_content_analyzer.analyze_image_content(self.representative_frame(frames_bgr))
+            if isinstance(result.get("minors"), dict):
+                # One frame cannot clear a video: until the video-wide check exists, a video is never reported as free of minors.
+                result["minors"].update(scope="one_frame_of_video", review_required=True)
+            return result
 
         # 1. Face analysis across frames
         face_info = self.face_detector.analyze_video_frames(frames_bgr)

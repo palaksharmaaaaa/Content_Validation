@@ -20,6 +20,7 @@ import cv2
 from core.imageio import imread
 import numpy as np
 
+from core.perception.age import get_age_estimator
 from core.perception.colors import dominant_colors
 from core.perception.detector import ANIMALS, VEHICLES, get_object_detector
 from core.perception.enrich import describe_scene, recognize_details
@@ -99,6 +100,9 @@ class ImageContentAnalyzer:
 
         human_count, faces_detected, single_character_detected = self._count_humans(sample_bgr, person_boxes, faces_detected)
 
+        # 2b. Age and minor screening for everyone found (recall-first; see core.perception.age)
+        age_info = get_age_estimator().assess(sample_bgr, persons=person_boxes)
+
         # 3. Lighting & Daytime Analysis
         scene = describe_scene(sample_bgr)
         lighting_info = self._analyze_lighting(sample_bgr)
@@ -131,6 +135,8 @@ class ImageContentAnalyzer:
             (detected_animals, animal_details), (detected_vehicles, vehicle_details), (detected_items, item_details),
             text_regions_count, environment, lighting_info, tone_info, purpose,
         )
+        result["entities"]["humans"]["age_estimation"] = age_info
+        result["minors"] = {k: age_info[k] for k in ("status", "contains_minor", "contains_possible_minor", "review_required", "youngest_age")}
         result["colors"] = dominant_colors(sample_bgr)
         return result
 

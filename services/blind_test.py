@@ -59,6 +59,10 @@ def _record(path: Path, item: Dict[str, Any], seconds: float) -> Dict[str, Any]:
         "faces": humans.get("faces_count", 0), "persons": humans.get("persons_count", 0),
         "face_ai_like": bool((face_finding.get("data") or {}).get("ai_like")),
         "face_worst_p_ai": (face_finding.get("data") or {}).get("worst_p_ai"),
+        "minor_review": bool((content.get("minors") or {}).get("review_required")),
+        "possible_minor": bool((content.get("minors") or {}).get("contains_possible_minor")),
+        "youngest_age": (content.get("minors") or {}).get("youngest_age"),
+        "age_status": (content.get("minors") or {}).get("status"),
         "scene": (content.get("environment") or {}).get("setting"),
         "seconds": round(seconds, 2),
     }

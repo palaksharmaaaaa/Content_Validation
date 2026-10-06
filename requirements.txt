@@ -24,3 +24,6 @@ pillow>=10.0.0
 requests>=2.31.0
 # Pretrained perception models (RF-DETR detector, SigLIP 2 recogniser) load through transformers
 transformers>=5.0.0
+# Age / minor screening (core.perception.age): MiVOLO v2 network is vendored; it needs timm's VOLO and safetensors to load weights
+timm>=1.0.0
+safetensors>=0.4.0

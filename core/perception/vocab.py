@@ -61,6 +61,14 @@ VEHICLES: List[str] = [
     "fishing boat", "ship", "speedboat", "cart or carriage", "toy car",
 ]
 
+# Age-group descriptions for the second, independent opinion in core.perception.age (the first labels are the minor ones).
+AGE_GROUPS: List[Tuple[str, str]] = [
+    ("baby", "a photo of a baby."), ("toddler", "a photo of a toddler."), ("child", "a photo of a young child."),
+    ("teenager", "a photo of a teenager."), ("young adult", "a photo of a young adult in their twenties."),
+    ("adult", "a photo of an adult in their thirties or forties."), ("middle-aged", "a photo of a middle-aged person."),
+    ("elderly", "a photo of an elderly person."),
+]
+
 VOCABS: Dict[str, List[Tuple[str, str]]] = {}
 
 
@@ -69,5 +77,6 @@ VOCABS["time_of_day"] = TIME_OF_DAY
 VOCABS["genre"] = GENRE
 VOCABS["animal"] = [(a, f"a photo of a {a}.") for a in ANIMALS]
 VOCABS["vehicle"] = [(v, f"a photo of a {v}.") for v in VEHICLES]
+VOCABS["age_group"] = AGE_GROUPS
 
 INDOOR = {label: indoor for label, indoor in SCENES}
