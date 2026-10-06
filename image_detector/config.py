@@ -170,5 +170,9 @@ REAL_THRESHOLD = 55.0
 # by at least EXIF_CONTRADICTION_LR (base-10 log-odds), camera EXIF is treated as UNTRUSTED: the physical-signal
 # discount is not applied and the hardware credit shrinks from EXIF_TRUSTED_CREDIT to EXIF_UNTRUSTED_CREDIT.
 EXIF_CONTRADICTION_LR = 2.0
+
+# Images no larger than this (longest side, px) have been downscaled enough that sensor-noise and smoothness
+# statistics no longer separate camera photos from synthetic ones. Kept below 512, the smallest common generator canvas.
+SMALL_IMAGE_MAX_SIDE = 400
 EXIF_TRUSTED_CREDIT = -1.4
 EXIF_UNTRUSTED_CREDIT = -0.3

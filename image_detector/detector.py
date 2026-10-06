@@ -34,6 +34,7 @@ from image_detector.config import (
     CANONICAL_RESOLUTIONS,
     DEFAULT_CHECKPOINT,
     EXIF_CONTRADICTION_LR,
+    SMALL_IMAGE_MAX_SIDE,
     EXIF_TRUSTED_CREDIT,
     EXIF_UNTRUSTED_CREDIT,
     FFT_DECAY_ALPHA_JPEG,
@@ -320,6 +321,13 @@ class ImageAIDetector:
         # before it is allowed to discount it.
         lr_smooth = self._gaussian_llr(sig.smoothness, REAL_SMOOTH_MU, REAL_SMOOTH_SIGMA,
                                        AI_SMOOTH_MU + offsets.get("smooth_center_offset", 0.0), AI_SMOOTH_SIGMA)
+
+        # Downscaled images lose their sensor grain whatever made them, so at thumbnail size "no noise" and "very
+        # smooth" say nothing about synthesis: they may still argue for a real photo, but never for AI.
+        h_px, w_px = sig.img_bgr.shape[:2]
+        if max(h_px, w_px) <= SMALL_IMAGE_MAX_SIDE and (lr_noise > 0.0 or lr_smooth > 0.0):
+            lr_noise, lr_smooth = min(lr_noise, 0.0), min(lr_smooth, 0.0)
+            ev.cues.append(f"Image is only {w_px}x{h_px}px: noise and smoothness are not reliable at this size and are not counted towards AI")
 
         exif_untrusted = bool(has_camera and not scanned and (max(lr_noise, 0.0) + max(lr_smooth, 0.0)) >= EXIF_CONTRADICTION_LR)
         if has_camera and "exif_hardware" in ev.lrs:

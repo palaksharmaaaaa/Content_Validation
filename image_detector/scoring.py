@@ -79,6 +79,9 @@ def pool_bayesian_log_odds(
 
 # Below this AI score a local noise inconsistency is treated as ordinary processing, not as AI editing.
 _INPAINT_MIN_AI_PCT = 35.0
+# A composite / AI-enhanced verdict claims AI involvement, so the score itself must clearly lean synthetic.
+# Between the two thresholds the noise inconsistency is neither dismissed as processing nor called AI.
+_COMPOSITE_MIN_AI_PCT = 60.0
 
 
 def evaluate_taxonomy_classification(
@@ -306,7 +309,7 @@ def _stage_enhanced_composite(c: _TaxonomyInputs, S: Any) -> _Outcome:
     composite_label = c.metadata.get("iptc_digital_source_type") == "compositeWithTrainedAlgorithmicMedia"
     # Local noise inconsistency alone (HDR, portrait-mode blur, selective retouching) is not evidence of AI: it
     # only counts as a composite when the pixel score also leans synthetic.
-    inpainting_counts = c.is_inpainted and c.ai_pct >= _INPAINT_MIN_AI_PCT
+    inpainting_counts = c.is_inpainted and c.ai_pct >= _COMPOSITE_MIN_AI_PCT
     if not (c.is_ai_enhancer or c.is_face_swap or composite_label or inpainting_counts):
         return None
     reasons: List[str] = []

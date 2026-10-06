@@ -343,9 +343,12 @@ class TestImageDetector(unittest.TestCase):
         s, _, _, _ = evaluate_taxonomy_classification(inpainting_data=inpaint_res, inpainting_detected=True, metadata=meta, ai_pct=2.0, real_pct=95.0)
         self.assertEqual(s, ImageTaxonomyState.AUTHENTIC_EDITED)
         # The same noise pattern together with a synthetic-leaning score is a composite
-        s, l, _, _ = evaluate_taxonomy_classification(inpainting_data=inpaint_res, inpainting_detected=True, metadata=meta, ai_pct=45.0, real_pct=40.0)
+        s, l, _, _ = evaluate_taxonomy_classification(inpainting_data=inpaint_res, inpainting_detected=True, metadata=meta, ai_pct=65.0, real_pct=30.0)
         self.assertEqual(s, ImageTaxonomyState.AI_ENHANCED_COMPOSITE)
         self.assertEqual(l, "AI-Enhanced / Composite (Mix)")
+        # A middling score is not enough to claim AI involvement from uneven noise alone
+        s, _, _, _ = evaluate_taxonomy_classification(inpainting_data=inpaint_res, inpainting_detected=True, metadata=meta, ai_pct=45.0, real_pct=40.0)
+        self.assertNotEqual(s, ImageTaxonomyState.AI_ENHANCED_COMPOSITE)
 
     def test_screen_rephotography_moire_detection(self):
         from image_detector.features import detect_screen_rephotography_moire

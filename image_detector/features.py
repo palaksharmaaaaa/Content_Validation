@@ -452,6 +452,23 @@ def _art_confidence_and_details(
     )
 
 
+_NATURAL_HUE_CONCENTRATION = 0.85   # share of saturated pixels inside the best 70-degree hue window
+_HUE_WINDOW = 35                    # OpenCV hue units (0..179, i.e. 2 degrees each): open water spans blue to teal
+_MIN_NATURAL_FLAT_NOISE = 0.05      # below this a region is a synthetic flat fill, not a photographed surface
+
+
+def _saturated_hue_concentration(img_bgr: np.ndarray) -> float:
+    """Share of strongly saturated pixels (S > 120) whose hue falls in the single best 70-degree window (0..1)."""
+    hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+    hues = hsv[:, :, 0][hsv[:, :, 1] > 120].astype(np.int64)
+    if hues.size < 50:
+        return 0.0
+    hist = np.bincount(hues, minlength=180)
+    wrapped = np.concatenate([hist, hist[:_HUE_WINDOW]])                 # OpenCV hue is 0..179 and wraps around
+    window = np.convolve(wrapped, np.ones(_HUE_WINDOW, dtype=np.int64), mode="valid")[:180]
+    return float(window.max() / hues.size)
+
+
 def detect_digital_art_and_painting(
     image_path: str | Path,
     img_bgr: Optional[np.ndarray] = None,
@@ -504,9 +521,14 @@ def detect_digital_art_and_painting(
     has_camera_hardware = bool(metadata.get("camera_make")) if metadata else False
     is_ink_art = bool(not has_camera_hardware and dark_edge_pct >= 0.70 and flat_noise < 0.38 and q_colors < 130)
 
-    # Natural photography rarely exceeds mean_sat > 105 and high_sat_pct > 40% simultaneously; digital art, anime,
-    # CGI renders and AI paintings are typically mean_sat >= 115 and high_sat_pct >= 45%.
-    is_art = bool((mean_sat >= 115.0 and high_sat_pct >= 45.0) or is_ink_art)
+    # Saturation alone is not evidence of synthesis: open water, sky and skin are strongly saturated in HSV yet
+    # photographic. Their saturated pixels sit in one narrow hue band, whereas painted / rendered art spreads
+    # saturated colour over several hues. A perfectly flat fill (no grain at all) is not a natural scene.
+    hue_conc = _saturated_hue_concentration(img_bgr)
+    natural_single_hue_scene = bool(hue_conc >= _NATURAL_HUE_CONCENTRATION and flat_noise >= _MIN_NATURAL_FLAT_NOISE)
+
+    # Digital art, anime, CGI renders and AI paintings are typically mean_sat >= 115 and high_sat_pct >= 45%.
+    is_art = bool((mean_sat >= 115.0 and high_sat_pct >= 45.0 and not natural_single_hue_scene) or is_ink_art)
 
     visual_medium = _art_visual_medium(is_art, is_ink_art, flat_noise)
     confidence, details = 0.0, None
