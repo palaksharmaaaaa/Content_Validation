@@ -11,6 +11,7 @@ Extracts:
 from __future__ import annotations
 
 import logging
+import re
 
 import io
 from pathlib import Path
@@ -168,13 +169,28 @@ def _apply_software_signatures(info: Dict[str, Any]) -> None:
             break
 
 
+# Short generator names that are also ordinary words or fragments ("flux", "sora", "luma", a gemini caption ...). They only count
+# when they appear as a whole word in a field that names software, never in free text or in other XMP attributes.
+_AMBIGUOUS_AI_SIGNATURES = frozenset({"imagen", "gemini", "flux", "runway", "kling", "sora", "pika", "luma"})
+_SOFTWARE_TAG_WORDS = ("software", "creator", "processing", "host", "generator")
+_XMP_SOFTWARE_FIELDS = re.compile(r'(?:CreatorTool|tiff:Software|xmp:CreatorTool)\s*(?:=\s*"([^"]*)"|>([^<]*)<)', re.IGNORECASE)
+
+
+def _whole_word(sig: str, text: str) -> bool:
+    """True if ``sig`` occurs in ``text`` not glued to other letters or digits ("imagen" must not match "ImageNumber")."""
+    return re.search(r"(?<![a-z0-9])" + re.escape(sig) + r"(?![a-z0-9])", text) is not None
+
+
 def _apply_generic_ai_signature(xmp_str: str, info: Dict[str, Any]) -> None:
-    """Substring search of the known-generator list across every tag value and the XMP packet."""
+    """Whole-word search of the known-generator list across every tag value and the XMP packet; the ambiguous short names are
+    only looked for in software-naming fields."""
     if info["ai_signature_found"]:
         return
-    haystack = " ".join(str(v).lower() for v in info["raw_tags"].values()) + " " + xmp_str.lower()
+    everywhere = " ".join(str(v).lower() for v in info["raw_tags"].values()) + " " + xmp_str.lower()
+    software_only = " ".join(str(v).lower() for k, v in info["raw_tags"].items() if any(w in k.lower() for w in _SOFTWARE_TAG_WORDS))
+    software_only += " " + " ".join((a or b or "").lower() for a, b in _XMP_SOFTWARE_FIELDS.findall(xmp_str))
     for sig in KNOWN_AI_SOFTWARE_SIGNATURES:
-        if sig in haystack:
+        if _whole_word(sig, software_only if sig in _AMBIGUOUS_AI_SIGNATURES else everywhere):
             info["ai_signature_found"] = True
             info["signature_details"] = f"Detected AI generator footprint: '{sig}' in image metadata."
             break

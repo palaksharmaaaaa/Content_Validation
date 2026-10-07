@@ -64,3 +64,16 @@ def test_no_exif_behavior_unchanged(detector, tmp_path):
     # Golden values for a blank project (no checkpoint, default calibration) (EXIF-less images never reach the policy).
     assert detector.predict(_save(tmp_path, "g", _gradient(), False))["ai_percentage"] == pytest.approx(96.4, abs=0.1)
     assert detector.predict(_save(tmp_path, "n", _grain(), False))["ai_percentage"] == pytest.approx(9.6, abs=0.1)
+
+
+def test_inpainting_evidence_is_ignored_on_thumbnails_but_counts_on_full_size(detector, tmp_path):
+    def composite(side):
+        rng = np.random.default_rng(5)
+        img = np.clip(rng.normal(128, 12, (side, side, 3)), 0, 255).astype(np.uint8)
+        q = side // 4
+        img[q:3 * q, q:3 * q] = 128                      # a perfectly smooth patch inside grainy pixels
+        return img
+    small = detector.predict(_save(tmp_path, "cs", composite(256), False))
+    large = detector.predict(_save(tmp_path, "cl", composite(512), False))
+    assert "inpainting_splicing" not in small["log_likelihood_ratios"]
+    assert large["inpainting_detected"] and "inpainting_splicing" in large["log_likelihood_ratios"]

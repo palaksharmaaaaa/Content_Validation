@@ -291,7 +291,9 @@ class ImageAIDetector:
         if sig.face_swap.get("is_face_swap"):
             ev.lrs["face_swap"] = 2.2
             ev.cues.append(sig.face_swap["details"])
-        if sig.inpainting.get("is_manipulated"):
+        # Uneven local noise is a statistic of the sensor grain, which a thumbnail no longer has: on the real small-photo sets the
+        # finding fires on 6-20 % of photographs but on only 4 % of AI faces, so below SMALL_IMAGE_MAX_SIDE it is not evidence.
+        if sig.inpainting.get("is_manipulated") and max(sig.img_bgr.shape[:2]) > SMALL_IMAGE_MAX_SIDE:
             ev.lrs["inpainting_splicing"] = 1.8 * float(sig.inpainting.get("confidence", 0.7))
             ev.cues.append(sig.inpainting["details"])
         if sig.screenshot.get("is_screenshot"):
