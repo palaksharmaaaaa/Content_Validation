@@ -82,6 +82,9 @@ _INPAINT_MIN_AI_PCT = 35.0
 # A composite / AI-enhanced verdict claims AI involvement, so the score itself must clearly lean synthetic.
 # Between the two thresholds the noise inconsistency is neither dismissed as processing nor called AI.
 _COMPOSITE_MIN_AI_PCT = 60.0
+# A digital-art finding with no declaration (watermark / label / AI metadata) names the image AI or CGI only if the score
+# agrees: saturation and flat colour alone also describe corals, sunsets and cartoons-by-hand.
+_ART_ONLY_MIN_AI_PCT = 58.0
 
 
 def evaluate_taxonomy_classification(
@@ -277,7 +280,7 @@ def _stage_screenshot(c: _TaxonomyInputs, S: Any) -> _Outcome:
 
 def _stage_declared_or_art_synthesis(c: _TaxonomyInputs, S: Any) -> _Outcome:
     """2. Fully AI-generated: explicit declaration (watermark / label / metadata) or non-optical digital art."""
-    if not (c.declares_ai or (c.is_digital_art and not c.has_camera and not c.is_scanned)):
+    if not (c.declares_ai or (c.is_digital_art and not c.has_camera and not c.is_scanned and c.ai_pct >= _ART_ONLY_MIN_AI_PCT)):
         return None
     reasons: List[str] = []
     if (c.is_digital_art and c.art.get("visual_medium") == "Digital 3D CGI / AI Neural Painting"

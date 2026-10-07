@@ -174,5 +174,10 @@ EXIF_CONTRADICTION_LR = 2.0
 # Images no larger than this (longest side, px) have been downscaled enough that sensor-noise and smoothness
 # statistics no longer separate camera photos from synthetic ones. Kept below 512, the smallest common generator canvas.
 SMALL_IMAGE_MAX_SIDE = 400
+
+# Weight of the "digital art" (saturation / ink-line) finding in the AI score, as base-10 log-odds per unit of its confidence.
+# A likelihood ratio cannot exceed P(finding | AI) / P(finding | real): on the real photo sets it fires on 4-20 % of photographs
+# (colourful corals, fish, sunsets, skin), so even if every AI image tripped it the ratio is at most about 5-8, i.e. below 1.0.
+DIGITAL_ART_LR_SCALE = 0.8
 EXIF_TRUSTED_CREDIT = -1.4
 EXIF_UNTRUSTED_CREDIT = -0.3

@@ -35,6 +35,7 @@ from image_detector.config import (
     DEFAULT_CHECKPOINT,
     EXIF_CONTRADICTION_LR,
     SMALL_IMAGE_MAX_SIDE,
+    DIGITAL_ART_LR_SCALE,
     EXIF_TRUSTED_CREDIT,
     EXIF_UNTRUSTED_CREDIT,
     FFT_DECAY_ALPHA_JPEG,
@@ -296,7 +297,7 @@ class ImageAIDetector:
         if sig.screenshot.get("is_screenshot"):
             ev.cues.append(sig.screenshot["details"])
         if sig.art.get("is_digital_art") and not has_camera and not scanned:
-            ev.lrs["digital_art_synthesis"] = 2.4 * float(sig.art.get("confidence", 0.8))
+            ev.lrs["digital_art_synthesis"] = DIGITAL_ART_LR_SCALE * float(sig.art.get("confidence", 0.8))
             ev.cues.append(sig.art["details"])
         if sig.cutout.get("is_cutout"):
             ev.cues.append(sig.cutout["details"])

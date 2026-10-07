@@ -350,6 +350,18 @@ class TestImageDetector(unittest.TestCase):
         s, _, _, _ = evaluate_taxonomy_classification(inpainting_data=inpaint_res, inpainting_detected=True, metadata=meta, ai_pct=45.0, real_pct=40.0)
         self.assertNotEqual(s, ImageTaxonomyState.AI_ENHANCED_COMPOSITE)
 
+    def test_digital_art_alone_does_not_name_an_image_ai(self):
+        from image_detector.scoring import evaluate_taxonomy_classification
+        from image_detector.schemas import ImageTaxonomyState
+
+        art = {"is_digital_art": True, "visual_medium": "Digital 3D CGI / AI Neural Painting", "details": "saturated"}
+        # saturation alone also describes corals and sunsets: with a middling score it is not called AI or CGI
+        s, _, _, _ = evaluate_taxonomy_classification(art_data=art, ai_pct=40.0, real_pct=50.0)
+        self.assertNotIn(s, (ImageTaxonomyState.PROCEDURAL_CGI_SYNTHETIC, ImageTaxonomyState.FULLY_AI_GENERATED))
+        # with a score that agrees, it still is
+        s, _, _, _ = evaluate_taxonomy_classification(art_data=art, ai_pct=75.0, real_pct=20.0)
+        self.assertEqual(s, ImageTaxonomyState.PROCEDURAL_CGI_SYNTHETIC)
+
     def test_screen_rephotography_moire_detection(self):
         from image_detector.features import detect_screen_rephotography_moire
         from image_detector.scoring import evaluate_taxonomy_classification

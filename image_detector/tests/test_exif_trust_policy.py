@@ -62,5 +62,5 @@ def test_camera_exif_with_natural_noise_keeps_full_credit(detector, tmp_path):
 
 def test_no_exif_behavior_unchanged(detector, tmp_path):
     # Golden values for a blank project (no checkpoint, default calibration) (EXIF-less images never reach the policy).
-    assert detector.predict(_save(tmp_path, "g", _gradient(), False))["ai_percentage"] == pytest.approx(97.0, abs=0.1)
+    assert detector.predict(_save(tmp_path, "g", _gradient(), False))["ai_percentage"] == pytest.approx(96.4, abs=0.1)
     assert detector.predict(_save(tmp_path, "n", _grain(), False))["ai_percentage"] == pytest.approx(9.6, abs=0.1)
