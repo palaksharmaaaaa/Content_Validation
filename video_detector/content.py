@@ -12,7 +12,7 @@ import cv2
 import numpy as np
 
 from video_detector.face import VideoFaceDeepfakeDetector
-from core.perception.age_video import screen_video_frames
+from core.perception.age_video import screen_video_file, screen_video_frames
 
 logger = logging.getLogger("video_detector.content")
 
@@ -32,7 +32,16 @@ class VideoContentAnalyzer:
         """The keyframe ~15% into the sampled timeline (past fade-ins, before late scene changes)."""
         return frames_bgr[min(len(frames_bgr) - 1, int(len(frames_bgr) * 0.15))]
 
-    def analyze_video_frames(self, frames_bgr: List[np.ndarray]) -> Dict[str, Any]:
+    @staticmethod
+    def _screen_minors(frames_bgr: List[np.ndarray], video_path: Optional[Any]) -> Dict[str, Any]:
+        """Adaptive sampling straight from the file when the path is known (and readable), otherwise the frames the caller gave."""
+        if video_path is not None:
+            result = screen_video_file(video_path)
+            if result["status"] != "NO_FRAMES":
+                return result
+        return screen_video_frames(frames_bgr)
+
+    def analyze_video_frames(self, frames_bgr: List[np.ndarray], video_path: Optional[Any] = None) -> Dict[str, Any]:
         """Runs content, environmental, and scene analysis across sampled video keyframes."""
         if not frames_bgr:
             return {
@@ -45,7 +54,7 @@ class VideoContentAnalyzer:
             result = self.image_content_analyzer.analyze_image_content(self.representative_frame(frames_bgr))
             if isinstance(result.get("minors"), dict):
                 # The still-image check covered one frame; a video is screened across all its sampled frames.
-                result["minors"] = screen_video_frames(frames_bgr)
+                result["minors"] = self._screen_minors(frames_bgr, video_path)
             return result
 
         # 1. Face analysis across frames
