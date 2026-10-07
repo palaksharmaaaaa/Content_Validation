@@ -89,18 +89,29 @@ def _iou(a, b) -> float:
     return inter / float((a[2] - a[0]) * (a[3] - a[1]) + (b[2] - b[0]) * (b[3] - b[1]) - inter)
 
 
-def _matches(subject: dict, face: list, person: list) -> bool:
-    """A reported subject is the annotated person if its face centre lies in the (slightly grown) annotated face, or its person
-    box overlaps the annotated person box well."""
-    fb, pb = subject.get("face_box"), subject.get("person_box")
-    if fb and face:
-        cx, cy = fb[0] + fb[2] / 2, fb[1] + fb[3] / 2
-        gw, gh = (face[2] - face[0]) * 0.3, (face[3] - face[1]) * 0.3
-        if face[0] - gw <= cx <= face[2] + gw and face[1] - gh <= cy <= face[3] + gh:
-            return True
-    if pb and person and _iou([pb[0], pb[1], pb[0] + pb[2], pb[1] + pb[3]], person) >= 0.5:
-        return True
-    return False
+def _best_match(subjects: list, face: list, person) -> dict | None:
+    """The reported subject that is the annotated person. A subject whose face centre lies in the (slightly grown) annotated face
+    wins, the closest centre first; only if none does, the subject whose person box overlaps the annotated one best (IoU >= 0.5).
+    Matching by the person box alone confuses a child with the adult standing next to them."""
+    gw, gh = (face[2] - face[0]) * 0.3, (face[3] - face[1]) * 0.3
+    gx, gy = (face[0] + face[2]) / 2, (face[1] + face[3]) / 2
+    by_face = []
+    for s in subjects:
+        fb = s.get("face_box")
+        if fb:
+            cx, cy = fb[0] + fb[2] / 2, fb[1] + fb[3] / 2
+            if face[0] - gw <= cx <= face[2] + gw and face[1] - gh <= cy <= face[3] + gh:
+                by_face.append(((cx - gx) ** 2 + (cy - gy) ** 2, s))
+    if by_face:
+        return min(by_face, key=lambda t: t[0])[1]
+    by_person = []
+    for s in subjects:
+        pb = s.get("person_box")
+        if pb and person:
+            iou = _iou([pb[0], pb[1], pb[0] + pb[2], pb[1] + pb[3]], person)
+            if iou >= 0.5:
+                by_person.append((iou, s))
+    return max(by_person, key=lambda t: t[0])[1] if by_person else None
 
 
 def wild(images: Path, annotations: Path, out: Path) -> int:
@@ -124,8 +135,7 @@ def wild(images: Path, annotations: Path, out: Path) -> int:
         for i, (name, people) in enumerate(sorted(gt.items()), 1):
             result = est.assess(imread(str(images / name)))
             for p in people:
-                hits = [s for s in result["subjects"] if _matches(s, p["face"], p["person"])]
-                best = hits[0] if hits else None
+                best = _best_match(result["subjects"], p["face"], p["person"])
                 fh.write(json.dumps({"image": name, "true": p["age"], "face_w": p["face"][2] - p["face"][0],
                                      "found": best is not None, "est": best and best["age"], "assessment": best and best["assessment"],
                                      "flagged": bool(best and best["assessment"] != "ADULT")}) + "\n")
