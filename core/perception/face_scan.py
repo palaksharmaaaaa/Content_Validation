@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import threading
-from typing import List, Optional, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 import cv2
 import numpy as np
@@ -34,6 +34,9 @@ MERGE_IOU = 0.40
 
 Box = Tuple[int, int, int, int]  # x, y, w, h
 
+# Image rotations (degrees clockwise) that bring a sideways or upside-down face upright, and OpenCV's name for each.
+ROTATIONS = {90: cv2.ROTATE_90_CLOCKWISE, 180: cv2.ROTATE_180, 270: cv2.ROTATE_90_COUNTERCLOCKWISE}
+
 
 def _iou(a: Box, b: Box) -> float:
     ax2, ay2, bx2, by2 = a[0] + a[2], a[1] + a[3], b[0] + b[2], b[1] + b[3]
@@ -56,6 +59,18 @@ def merge_scored(scored: List[Tuple[Box, float]], iou: float = MERGE_IOU) -> Lis
 def merge_boxes(scored: List[Tuple[Box, float]], iou: float = MERGE_IOU) -> List[Box]:
     """``merge_scored`` without the scores."""
     return [b for b, _ in merge_scored(scored, iou)]
+
+
+def unrotate_box(box: Box, rot: int, width: int, height: int) -> Box:
+    """Map a box found in the image rotated ``rot`` degrees clockwise back to the pixels of the original (width x height) image."""
+    x, y, w, h = box
+    if rot == 90:           # rotated size is (height x width); original x = rotated y, original y = height - rotated x
+        return (y, height - (x + w), h, w)
+    if rot == 270:
+        return (width - (y + h), x, h, w)
+    if rot == 180:
+        return (width - (x + w), height - (y + h), w, h)
+    return box
 
 
 class ScreeningFaceFinder:
@@ -118,6 +133,24 @@ class ScreeningFaceFinder:
             if x2 - x1 >= MIN_SIDE and y2 - y1 >= MIN_SIDE and score >= (ACCEPT_SCORE_SMALL if small else ACCEPT_SCORE):
                 boxes.append(((x1, y1, x2 - x1, y2 - y1), score))
         return boxes
+
+
+    def find_rotated(self, image_bgr: np.ndarray, rotations: Sequence[int] = (90, 270, 180)) -> List[dict]:
+        """Faces that are sideways or upside down: the image is rotated, scanned as usual, and the boxes mapped back. Each hit is
+        ``{box, rot, rot_box, score}``: ``box`` in the original pixels, ``rot`` the clockwise turn that makes the face upright and
+        ``rot_box`` its box in that turned image (crop the age model's face from there). Overlapping hits keep the most confident."""
+        if image_bgr is None or image_bgr.ndim < 2 or min(image_bgr.shape[:2]) < 16 or self._ensure() is None:
+            return []
+        height, width = image_bgr.shape[:2]
+        hits: List[dict] = []
+        for rot in rotations:
+            for rbox, score in self.find_scored(cv2.rotate(image_bgr, ROTATIONS[rot])):
+                hits.append({"box": unrotate_box(rbox, rot, width, height), "rot": rot, "rot_box": rbox, "score": score})
+        kept: List[dict] = []
+        for hit in sorted(hits, key=lambda h: -h["score"]):
+            if all(_iou(hit["box"], k["box"]) < MERGE_IOU for k in kept):
+                kept.append(hit)
+        return kept
 
 
 _default: Optional[ScreeningFaceFinder] = None

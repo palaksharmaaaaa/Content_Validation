@@ -165,9 +165,36 @@ class AgeEstimator:
         tops = rec.classify(rgb, "age_group", top_k=8)
         return [round(sum(p for label, p in row if label in MINOR_LABELS), 3) if row else None for row in tops]
 
-    def assess(self, image_bgr: np.ndarray, faces: Optional[Sequence[Box]] = None, persons: Optional[Sequence[Box]] = None) -> Dict[str, Any]:
+    @staticmethod
+    def _rotated_face(image_bgr: np.ndarray, person: Box) -> Optional[Dict[str, Any]]:
+        """A sideways or upside-down face inside a person's box that the upright finder missed: the box is turned until the face
+        is upright, and the turned box also becomes the body crop. None if no such face is found."""
+        from core.perception.face_scan import ROTATIONS, get_screening_finder
+
+        height, width = image_bgr.shape[:2]
+        x, y, w, h = person
+        px, py = int(w * 0.05), int(h * 0.05)
+        x0, y0, x1, y1 = max(0, x - px), max(0, y - py), min(width, x + w + px), min(height, y + h + py)
+        region = image_bgr[y0:y1, x0:x1]
+        if region.size == 0 or min(region.shape[:2]) < MIN_BODY_SIDE:
+            return None
+        hits = get_screening_finder().find_rotated(region)
+        if not hits:
+            return None
+        best = max(hits, key=lambda hit: hit["score"])
+        turned = cv2.rotate(region, ROTATIONS[best["rot"]])
+        face = _crop(turned, best["rot_box"])
+        if face.size == 0 or min(face.shape[:2]) < MIN_FACE_SIDE:
+            return None
+        bx, by, bw, bh = best["box"]
+        return {"rot": best["rot"], "face": face, "body": turned, "face_box": [bx + x0, by + y0, bw, bh]}
+
+    def assess(self, image_bgr: np.ndarray, faces: Optional[Sequence[Box]] = None, persons: Optional[Sequence[Box]] = None,
+               scan_rotated: bool = True) -> Dict[str, Any]:
         """Age and minor screening for everyone in the image. ``faces`` / ``persons`` are (x, y, w, h) boxes in the pixels of
-        ``image_bgr``; when omitted they are detected here (YuNet faces, RF-DETR persons)."""
+        ``image_bgr``; when omitted they are detected here (YuNet faces, RF-DETR persons). A person with no upright face is also
+        searched for a sideways or upside-down one (``scan_rotated``); if one is found the person is aged both ways and the younger
+        age and the larger child share are kept, so a false face can only add a review, never remove one."""
         base: Dict[str, Any] = {"model": f"{MODEL_ID}@{MODEL_REVISION[:7]}", "subjects": [], "n_subjects": 0, "youngest_age": None,
                                 "contains_minor": False, "contains_possible_minor": False, "review_required": False}
         if image_bgr is None or image_bgr.ndim != 3:
@@ -188,36 +215,51 @@ class AgeEstimator:
             return {**base, "status": "UNAVAILABLE", "n_subjects": len(pairs), "review_required": True,
                     "reason": "age model could not be loaded; people were found but not aged"}
 
-        face_crops, body_crops, meta = [], [], []
-        for fi, pi in pairs:
+        # Every subject is judged from one or more (face crop, body crop) variants; the youngest age and the largest child share win.
+        variants: List[Tuple[int, Optional[np.ndarray], Optional[np.ndarray]]] = []
+        evidence: List[str] = []
+        face_boxes: List[Optional[List[int]]] = []
+        rotation: List[int] = []
+        for i, (fi, pi) in enumerate(pairs):
             fc = _crop(image_bgr, faces[fi]) if fi is not None else None
             bc = _crop(image_bgr, persons[pi], pad=0.03) if pi is not None else None
             if fc is not None and min(fc.shape[:2]) < MIN_FACE_SIDE:
                 fc = None
             if bc is not None and min(bc.shape[:2]) < MIN_BODY_SIDE:
                 bc = None
-            face_crops.append(fc), body_crops.append(bc)
-            meta.append((fi, pi))
-        usable = [i for i, (f, b) in enumerate(zip(face_crops, body_crops)) if f is not None or b is not None]
+            evidence.append("face+body" if fc is not None and bc is not None else "face" if fc is not None else "body" if bc is not None else "none")
+            face_boxes.append(None if fi is None else list(faces[fi]))
+            rotation.append(0)
+            if fc is not None or bc is not None:
+                variants.append((i, fc, bc))
+            if scan_rotated and fi is None and pi is not None:
+                turned = self._rotated_face(image_bgr, persons[pi])
+                if turned is not None:
+                    variants.append((i, turned["face"], turned["body"]))
+                    evidence[i], face_boxes[i], rotation[i] = "face+body (rotated face)", turned["face_box"], turned["rot"]
+
         ages: Dict[int, float] = {}
         shares: Dict[int, Optional[float]] = {}
-        if usable:
-            for i, a in zip(usable, self._ages([face_crops[i] for i in usable], [body_crops[i] for i in usable])):
-                ages[i] = a
-            crops_for_group = [face_crops[i] if face_crops[i] is not None else body_crops[i] for i in usable]
-            for i, s in zip(usable, self._age_group_shares(crops_for_group)):
-                shares[i] = s
+        if variants:
+            for (i, _f, _b), a in zip(variants, self._ages([v[1] for v in variants], [v[2] for v in variants])):
+                ages[i] = min(a, ages.get(i, a))
+            group_crops = [v[1] if v[1] is not None else v[2] for v in variants]
+            for (i, _f, _b), sh in zip(variants, self._age_group_shares(group_crops)):
+                if sh is not None:
+                    shares[i] = max(sh, shares.get(i, sh))
+                else:
+                    shares.setdefault(i, None)
 
         subjects = []
-        for i, (fi, pi) in enumerate(meta):
+        for i, (fi, pi) in enumerate(pairs):
             age, share = ages.get(i), shares.get(i)
-            status = classify_minor(age, share, usable=i in ages)
             subjects.append({
                 "age": None if age is None else round(age, 1),
                 "minor_group_share": share,
-                "assessment": status,
-                "evidence": "face+body" if face_crops[i] is not None and body_crops[i] is not None else "face" if face_crops[i] is not None else "body" if body_crops[i] is not None else "none",
-                "face_box": None if fi is None else list(faces[fi]),
+                "assessment": classify_minor(age, share, usable=i in ages),
+                "evidence": evidence[i],
+                "rotation": rotation[i],
+                "face_box": face_boxes[i],
                 "person_box": None if pi is None else list(persons[pi]),
             })
         known = [s["age"] for s in subjects if s["age"] is not None]

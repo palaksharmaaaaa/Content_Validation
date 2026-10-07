@@ -34,3 +34,20 @@ def test_boxes_are_reported_in_original_pixels_for_a_large_image():
     cv2.ellipse(big, (2000, 1500), (60, 80), 0, 0, 360, (180, 190, 220), -1)
     for x, y, w, h in finder.find(big):
         assert 0 <= x and 0 <= y and x + w <= 4000 and y + h <= 3000
+
+
+@pytest.mark.parametrize("rot", [90, 180, 270])
+def test_unrotate_box_maps_back_to_the_original_pixels(rot):
+    h, w = 120, 200
+    img = np.zeros((h, w), np.uint8)
+    img[30:50, 60:130] = 255                                   # the "face": x 60..130, y 30..50
+    turned = cv2.rotate(img, F.ROTATIONS[rot])
+    ys, xs = np.where(turned > 0)
+    rbox = (int(xs.min()), int(ys.min()), int(xs.max() - xs.min() + 1), int(ys.max() - ys.min() + 1))
+    assert F.unrotate_box(rbox, rot, w, h) == (60, 30, 70, 20)
+
+
+def test_find_rotated_on_blank_and_tiny_images_is_empty():
+    f = F.ScreeningFaceFinder()
+    assert f.find_rotated(None) == []
+    assert f.find_rotated(np.full((300, 400, 3), 100, np.uint8)) == []

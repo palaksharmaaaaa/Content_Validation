@@ -70,3 +70,60 @@ def test_unavailable_model_fails_closed(tmp_path):
 def test_no_people_means_nothing_to_review():
     r = A.AgeEstimator().assess(np.zeros((200, 200, 3), np.uint8), faces=[], persons=[])
     assert r["status"] == "NO_PEOPLE" and r["review_required"] is False
+
+
+class _FakeFinder:
+    def __init__(self, hits):
+        self.hits = hits
+
+    def find(self, image):
+        return []
+
+    def find_rotated(self, image, rotations=(90, 270, 180)):
+        return self.hits
+
+
+def _estimator_with(monkeypatch, variant_ages, shares=None, hits=None):
+    """An AgeEstimator whose model is replaced by scripted ages (one per (face, body) variant, in order)."""
+    from core.perception import face_scan
+
+    monkeypatch.setattr(face_scan, "get_screening_finder", lambda: _FakeFinder(hits if hits is not None else []))
+    est = A.AgeEstimator()
+    monkeypatch.setattr(est, "_ensure", lambda: object())
+    monkeypatch.setattr(est, "_ages", lambda faces, bodies: list(variant_ages)[: len(faces)])
+    monkeypatch.setattr(A.AgeEstimator, "_age_group_shares", staticmethod(lambda crops: list(shares or [0.0] * len(crops))[: len(crops)]))
+    return est
+
+
+_HIT = [{"box": (50, 40, 60, 60), "rot": 270, "rot_box": (40, 50, 60, 60), "score": 0.9}]
+_IMG = np.full((400, 300, 3), 120, np.uint8)
+_PERSON = (20, 20, 200, 360)
+
+
+def test_rotated_face_found_in_a_person_without_an_upright_face_lowers_the_age(monkeypatch):
+    est = _estimator_with(monkeypatch, variant_ages=[40.0, 15.0], hits=_HIT)       # body-only says 40, the rotated face says 15
+    r = est.assess(_IMG, faces=[], persons=[_PERSON])
+    s = r["subjects"][0]
+    assert s["age"] == 15.0 and s["assessment"] == "LIKELY_MINOR" and s["rotation"] == 270
+    assert s["evidence"].startswith("face+body (rotated") and s["face_box"] == [60, 42, 60, 60]
+
+
+def test_a_false_rotated_face_cannot_remove_a_flag(monkeypatch):
+    est = _estimator_with(monkeypatch, variant_ages=[20.0, 45.0], hits=_HIT)       # body says 20; the (false) rotated face says 45
+    s = est.assess(_IMG, faces=[], persons=[_PERSON])["subjects"][0]
+    assert s["age"] == 20.0 and s["assessment"] == "POSSIBLE_MINOR"
+
+
+def test_rotated_scan_can_be_switched_off_and_is_not_used_when_a_face_was_found(monkeypatch):
+    est = _estimator_with(monkeypatch, variant_ages=[40.0, 15.0], hits=_HIT)
+    off = est.assess(_IMG, faces=[], persons=[_PERSON], scan_rotated=False)["subjects"][0]
+    assert off["age"] == 40.0 and off["rotation"] == 0
+    est2 = _estimator_with(monkeypatch, variant_ages=[40.0], hits=_HIT)
+    with_face = est2.assess(_IMG, faces=[(60, 40, 60, 60)], persons=[_PERSON])["subjects"][0]
+    assert with_face["rotation"] == 0 and with_face["evidence"] == "face+body"
+
+
+def test_no_rotated_face_found_keeps_the_body_only_judgement(monkeypatch):
+    est = _estimator_with(monkeypatch, variant_ages=[22.0], hits=[])
+    s = est.assess(_IMG, faces=[], persons=[_PERSON])["subjects"][0]
+    assert s["evidence"] == "body" and s["assessment"] == "POSSIBLE_MINOR"
