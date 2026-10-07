@@ -173,9 +173,9 @@ class AgeEstimator:
         if image_bgr is None or image_bgr.ndim != 3:
             return {**base, "status": "NO_IMAGE"}
         if faces is None:
-            from core.face_detection import get_face_finder
+            from core.perception.face_scan import get_screening_finder
 
-            faces = [tuple(f[:4]) for f in get_face_finder().find(image_bgr)]
+            faces = get_screening_finder().find(image_bgr)
         if persons is None:
             from core.perception.detector import get_object_detector
 

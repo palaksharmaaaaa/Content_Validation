@@ -12,6 +12,7 @@ import cv2
 import numpy as np
 
 from video_detector.face import VideoFaceDeepfakeDetector
+from core.perception.age_video import screen_video_frames
 
 logger = logging.getLogger("video_detector.content")
 
@@ -43,8 +44,8 @@ class VideoContentAnalyzer:
         if self.image_content_analyzer is not None:
             result = self.image_content_analyzer.analyze_image_content(self.representative_frame(frames_bgr))
             if isinstance(result.get("minors"), dict):
-                # One frame cannot clear a video: until the video-wide check exists, a video is never reported as free of minors.
-                result["minors"].update(scope="one_frame_of_video", review_required=True)
+                # The still-image check covered one frame; a video is screened across all its sampled frames.
+                result["minors"] = screen_video_frames(frames_bgr)
             return result
 
         # 1. Face analysis across frames
