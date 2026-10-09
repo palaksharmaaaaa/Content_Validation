@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Tuple
 
 from core.hashing import file_digests
 from core.perception.colors import dominant_colors, name_color
-from image_detector.features import analyze_fft_radial_power_spectrum
+from image_detector.features import analyze_fft_radial_power_spectrum, calculate_sensor_noise_profile, calculate_surface_smoothness
 
 import cv2
 from core.imageio import imread
@@ -290,12 +290,14 @@ def _raw_physical_signals(gray: np.ndarray) -> Dict[str, Any]:
     grad_mag = cv2.magnitude(cv2.Sobel(sample, cv2.CV_32F, 1, 0), cv2.Sobel(sample, cv2.CV_32F, 0, 1))
     flat_mask = grad_mag < 15.0
     flat_noise = float(np.mean(diff_med[flat_mask])) if np.sum(flat_mask) > 100 else float(np.mean(diff_med))
-    smoothness = float(np.mean(cv2.absdiff(sample, cv2.bilateralFilter(sample, 9, 75, 75))))
+    # The noise and smoothness the detector scores, from the same functions, so the profile can never disagree with the verdict.
+    noise_mean, noise_std = calculate_sensor_noise_profile(gray)
+    smoothness = calculate_surface_smoothness(gray)
     edges = cv2.Canny(sample, 50, 150)
     dark_edges = (sample < 50) & (edges > 0)
     return {
-        "prnu_noise_mean": round(float(np.mean(diff_med)), 3),
-        "prnu_noise_std": round(float(np.std(diff_med)), 3),
+        "prnu_noise_mean": round(noise_mean, 3),
+        "prnu_noise_std": round(noise_std, 3),
         "flat_region_noise_mean": round(flat_noise, 3),
         "surface_smoothness_index": round(smoothness, 3),
         "fft_decay_alpha": analyze_fft_radial_power_spectrum(gray).get("spectral_decay_alpha"),   # the detector's own measurement, one definition

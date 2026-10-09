@@ -60,3 +60,15 @@ def test_profile_and_detector_report_the_same_fourier_slope(tmp_path):
     shown = report["quantified_inventory"]["pixel_physics_metrics"]["fourier_fft_alpha"]
     used = report["ai_detection"]["forensic_metrics"]["spectral_decay_alpha"]
     assert shown is not None and shown == used == report["nine_dimensions_dossier"]["dimension_5"]["spectral_decay_alpha"]
+
+
+def test_profile_noise_and_smoothness_are_the_detectors_numbers(tmp_path):
+    from image_detector.pipeline import ImageForensicPipeline
+
+    rng = np.random.default_rng(6)
+    p = tmp_path / "y.png"
+    Image.fromarray(rng.normal(120, 30, (400, 500, 3)).clip(0, 255).astype(np.uint8)).save(p)
+    r = ImageForensicPipeline().analyze(p)
+    phys = r["quantified_inventory"]["pixel_physics_metrics"]
+    fm = r["ai_detection"]["forensic_metrics"]
+    assert phys["prnu_noise_mean"] == round(fm["noise_residual_mean"], 3) and phys["surface_smoothness"] == fm["surface_smoothness"]
