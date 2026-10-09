@@ -79,7 +79,7 @@ class ImageContentAnalyzer:
         else:
             sample_bgr = img_bgr
 
-        # 1. Neural Object Detection (SSDLite MobileNet V3)
+        # 1. Neural object detection (RF-DETR Small, core.perception.detector)
         (
             person_boxes,
             detected_animals,
