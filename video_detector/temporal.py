@@ -15,6 +15,10 @@ import cv2
 import numpy as np
 
 from video_detector.config import (
+    FLICKER_RATIO_THRESHOLD,
+    MEAN_DELTA_HIGH_THRESHOLD,
+    MEAN_DELTA_SUSPICIOUS_THRESHOLD,
+    MEAN_LUM_JUMP_THRESHOLD,
     MOTION_VAR_HIGH_WARPING,
     MOTION_VAR_SUSPICIOUS_FLICKER,
     MOTION_VAR_UNNATURAL_FREEZE,
@@ -77,10 +81,10 @@ def compute_interframe_motion_variance(
     suspicious_flicker_var = float(th.get("suspicious_flicker_var", MOTION_VAR_SUSPICIOUS_FLICKER))
     unnatural_freeze_var = float(th.get("unnatural_freeze_var", MOTION_VAR_UNNATURAL_FREEZE))
 
-    if var_delta > high_warping_var or (mean_delta > 32.0 and var_delta > high_warping_var * (4.0 / 7.0)):
+    if var_delta > high_warping_var or (mean_delta > MEAN_DELTA_HIGH_THRESHOLD and var_delta > high_warping_var * (4.0 / 7.0)):
         warping_risk = "HIGH_WARPING_DETECTED"
         is_anomalous = True
-    elif var_delta > suspicious_flicker_var or mean_delta > 22.0:
+    elif var_delta > suspicious_flicker_var or mean_delta > MEAN_DELTA_SUSPICIOUS_THRESHOLD:
         warping_risk = "SUSPICIOUS_FLICKER"
         is_anomalous = True
     elif var_delta < unnatural_freeze_var and mean_delta < 1.2:
@@ -120,7 +124,7 @@ def detect_diffusion_flickering(frames: List[np.ndarray]) -> Dict[str, Any]:
     flicker_ratio = sign_changes / max(1, len(diff_signs) - 1)
     mean_lum_jump = float(np.mean(lum_diffs)) if len(lum_diffs) > 0 else 0.0
 
-    has_flicker = bool(flicker_ratio > 0.65 and mean_lum_jump > 3.5)
+    has_flicker = bool(flicker_ratio > FLICKER_RATIO_THRESHOLD and mean_lum_jump > MEAN_LUM_JUMP_THRESHOLD)
     flicker_score = round(float(flicker_ratio * min(1.0, mean_lum_jump / 10.0)), 2)
 
     return {

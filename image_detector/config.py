@@ -141,6 +141,16 @@ KNOWN_AI_SOFTWARE_SIGNATURES = [
     "ic-light",
 ]
 
+# Relative weight of each pixel signal in the pooled score; user feedback nudges these (image_detector.learner) and the detector
+# renormalises them, so only the ratios matter.
+DEFAULT_FEATURE_WEIGHTS = {
+    "noise_residual": 0.35,
+    "surface_smoothness": 0.30,
+    "fft_decay": 0.20,
+    "facial_shading": 0.25,
+    "ela_discrepancy": 0.15,
+}
+
 # Sensitivity Mode Prior Log-Odds
 SENSITIVITY_PRIORS = {
     "aggressive": 0.40,  # Prior P(AI) ~ 71%

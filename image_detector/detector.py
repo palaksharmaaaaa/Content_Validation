@@ -32,6 +32,7 @@ from image_detector.config import (
     AI_SMOOTH_MU,
     AI_SMOOTH_SIGMA,
     CANONICAL_RESOLUTIONS,
+    DEFAULT_FEATURE_WEIGHTS,
     DEFAULT_CHECKPOINT,
     EXIF_CONTRADICTION_LR,
     SMALL_IMAGE_MAX_SIDE,
@@ -420,8 +421,10 @@ class ImageAIDetector:
     def _calibrated_weights(calib: Dict[str, Any]) -> Dict[str, float]:
         w = calib.get("feature_weights", {})
         parts = {
-            "noise": w.get("noise_residual", 0.35), "smooth": w.get("surface_smoothness", 0.30),
-            "fft": w.get("fft_decay", 0.20), "ela": w.get("ela_discrepancy", 0.15),
+            "noise": w.get("noise_residual", DEFAULT_FEATURE_WEIGHTS["noise_residual"]),
+            "smooth": w.get("surface_smoothness", DEFAULT_FEATURE_WEIGHTS["surface_smoothness"]),
+            "fft": w.get("fft_decay", DEFAULT_FEATURE_WEIGHTS["fft_decay"]),
+            "ela": w.get("ela_discrepancy", DEFAULT_FEATURE_WEIGHTS["ela_discrepancy"]),
         }
         total = sum(parts.values())
         return {k: v / total for k, v in parts.items()} if total > 0 else parts

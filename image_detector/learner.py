@@ -23,7 +23,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from image_detector.config import DATA_DIR
+from image_detector.config import DATA_DIR, DEFAULT_FEATURE_WEIGHTS
 from image_detector.schemas import ImageFeedbackRecord
 from core.metrics_util import sanitize_metric_value
 from core.atomic_io import atomic_read_json, atomic_write_json, serialized_on
@@ -65,13 +65,7 @@ class ImageSelfImprover:
             "version": 1,
             "last_updated": datetime.now().isoformat(),
             "samples_processed": 0,
-            "feature_weights": {
-                "noise_residual": 0.35,
-                "surface_smoothness": 0.30,
-                "fft_decay": 0.20,
-                "facial_shading": 0.25,
-                "ela_discrepancy": 0.15,
-            },
+            "feature_weights": dict(DEFAULT_FEATURE_WEIGHTS),
             "sensitivity_offsets": {
                 "noise_center_offset": 0.0,
                 "smooth_center_offset": 0.0,
@@ -148,10 +142,10 @@ class ImageSelfImprover:
         # A measurement that is not in the record moves nothing: calibration follows what was measured, never a stand-in value.
         if user_label.upper() == "AI":
             if noise is not None and noise < 2.5:
-                weights["noise_residual"] = min(0.60, weights.get("noise_residual", 0.35) + 0.02)
+                weights["noise_residual"] = min(0.60, weights.get("noise_residual", DEFAULT_FEATURE_WEIGHTS["noise_residual"]) + 0.02)
                 offsets["noise_center_offset"] = max(-0.40, offsets.get("noise_center_offset", 0.0) - 0.03)
             if smooth is not None and smooth < 3.0:
-                weights["surface_smoothness"] = min(0.55, weights.get("surface_smoothness", 0.30) + 0.02)
+                weights["surface_smoothness"] = min(0.55, weights.get("surface_smoothness", DEFAULT_FEATURE_WEIGHTS["surface_smoothness"]) + 0.02)
                 offsets["smooth_center_offset"] = min(0.40, offsets.get("smooth_center_offset", 0.0) + 0.03)
         elif user_label.upper() == "REAL":
             if noise is not None and noise < 2.0:

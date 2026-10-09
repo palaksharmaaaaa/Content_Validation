@@ -21,7 +21,17 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from audio_detector.config import CALIBRATION_FILE, DATA_DIR, MEMORY_FILE
+from audio_detector.config import (
+    CALIBRATION_FILE,
+    DATA_DIR,
+    DEFAULT_WEIGHT_FLATNESS,
+    DEFAULT_WEIGHT_HF_RATIO,
+    DEFAULT_WEIGHT_SILENCE,
+    DEFAULT_WEIGHT_VOCODER,
+    DIGITAL_SILENCE_RATIO_THRESHOLD,
+    MEMORY_FILE,
+    SYNTHETIC_FLATNESS_LOW_THRESHOLD,
+)
 from audio_detector.schemas import AudioFeedbackRecord
 from core.metrics_util import sanitize_metric_value
 from core.atomic_io import atomic_read_json, atomic_write_json, serialized_on
@@ -57,14 +67,14 @@ class AudioSelfImprover:
             "last_updated": datetime.now().isoformat(),
             "samples_processed": 0,
             "acoustic_weights": {
-                "vocoder_cutoff": 0.40,
-                "spectral_flatness": 0.30,
-                "silence_ratio": 0.20,
-                "high_freq_roll": 0.10,
+                "vocoder_cutoff": DEFAULT_WEIGHT_VOCODER,
+                "spectral_flatness": DEFAULT_WEIGHT_FLATNESS,
+                "silence_ratio": DEFAULT_WEIGHT_SILENCE,
+                "high_freq_roll": DEFAULT_WEIGHT_HF_RATIO,
             },
             "thresholds": {
-                "flatness_synthetic_max": 0.002,
-                "silence_synthetic_min": 0.12,
+                "flatness_synthetic_max": SYNTHETIC_FLATNESS_LOW_THRESHOLD,
+                "silence_synthetic_min": DIGITAL_SILENCE_RATIO_THRESHOLD,
             },
             "sensitivity_offsets": {
                 "audio_ai_offset": 0.0,
@@ -138,10 +148,10 @@ class AudioSelfImprover:
 
         if user_label.upper() == "AI":
             # If synthetic voice was missed, boost vocoder weight and audio AI offset
-            weights["vocoder_cutoff"] = min(0.60, weights.get("vocoder_cutoff", 0.40) + 0.02)
+            weights["vocoder_cutoff"] = min(0.60, weights.get("vocoder_cutoff", DEFAULT_WEIGHT_VOCODER) + 0.02)
             offsets["audio_ai_offset"] = min(0.35, offsets.get("audio_ai_offset", 0.0) + 0.03)
             if flatness is not None and flatness > 0.002:
-                thresh["flatness_synthetic_max"] = min(0.010, thresh.get("flatness_synthetic_max", 0.002) + 0.0005)
+                thresh["flatness_synthetic_max"] = min(0.010, thresh.get("flatness_synthetic_max", SYNTHETIC_FLATNESS_LOW_THRESHOLD) + 0.0005)
         elif user_label.upper() == "REAL":
             # If natural whisper / phone audio triggered false positive, lower audio AI offset
             offsets["audio_ai_offset"] = max(-0.35, offsets.get("audio_ai_offset", 0.0) - 0.03)

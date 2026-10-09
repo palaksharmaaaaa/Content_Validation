@@ -46,7 +46,6 @@ DEFAULT_WEIGHT_HF_RATIO = 0.10
 
 # Temporal Segmentation
 DEFAULT_WINDOW_SECONDS = 3.0
-DEFAULT_HOP_SECONDS = 1.5
 
 # Decision Thresholds
 AI_THRESHOLD_HIGH = 50.0

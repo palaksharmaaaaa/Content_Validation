@@ -201,7 +201,7 @@ class AudioAIDetector:
 
             # 2. Spectral Feature Extraction
             spectral_feats = compute_spectral_features(samples, sr)
-            temporal_segments = segment_audio_temporal(samples, sr, window_sec=3.0)
+            temporal_segments = segment_audio_temporal(samples, sr)
 
             # 3. Neural Classifier Inference (if model available)
             neural_ai_prob = self._neural_probability(spectral_feats)

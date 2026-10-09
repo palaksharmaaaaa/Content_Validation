@@ -14,6 +14,14 @@ from typing import Any, Dict, List, Optional
 import cv2
 import numpy as np
 
+from audio_detector.config import (
+    DEFAULT_WINDOW_SECONDS,
+    VOCODER_CUTOFF_BAND_HIGH_MAX,
+    VOCODER_CUTOFF_BAND_HIGH_MIN,
+    VOCODER_CUTOFF_BAND_LOW_MAX,
+    VOCODER_CUTOFF_BAND_LOW_MIN,
+)
+
 
 def feature_vector(f: Dict[str, Any]) -> List[float]:
     """The five numbers the neural head is trained on and scores; one definition for training and inference so they cannot drift apart."""
@@ -87,8 +95,8 @@ def compute_spectral_features(samples: np.ndarray, sample_rate: int) -> Dict[str
     below_nyquist_edge = cutoff_freq <= 0.92 * nyquist
     has_vocoder_cutoff = bool(
         below_nyquist_edge
-        and ((6500 <= cutoff_freq <= 8200 and sample_rate >= 16000)
-             or (15000 <= cutoff_freq <= 16500 and sample_rate >= 44100))
+        and ((VOCODER_CUTOFF_BAND_LOW_MIN <= cutoff_freq <= VOCODER_CUTOFF_BAND_LOW_MAX and sample_rate >= 16000)
+             or (VOCODER_CUTOFF_BAND_HIGH_MIN <= cutoff_freq <= VOCODER_CUTOFF_BAND_HIGH_MAX and sample_rate >= 44100))
     )
 
     # 2. Wiener Spectral Flatness: Geometric Mean / Arithmetic Mean of Power
@@ -166,7 +174,7 @@ def generate_spectrogram_image(samples: np.ndarray, sample_rate: int) -> Optiona
 
 
 def segment_audio_temporal(
-    samples: np.ndarray, sample_rate: int, window_sec: float = 3.0
+    samples: np.ndarray, sample_rate: int, window_sec: float = DEFAULT_WINDOW_SECONDS
 ) -> List[Dict[str, Any]]:
     """Divides audio into contiguous temporal evaluation chunks."""
     if len(samples) == 0 or sample_rate <= 0:

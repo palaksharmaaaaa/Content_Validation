@@ -22,7 +22,15 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from video_detector.config import DATA_DIR
+from video_detector.config import (
+    DATA_DIR,
+    DEFAULT_WEIGHT_FLICKER,
+    DEFAULT_WEIGHT_FRAME_AI,
+    DEFAULT_WEIGHT_WARPING,
+    MOTION_VAR_HIGH_WARPING,
+    MOTION_VAR_SUSPICIOUS_FLICKER,
+    MOTION_VAR_UNNATURAL_FREEZE,
+)
 from video_detector.schemas import VideoFeedbackRecord
 from core.metrics_util import sanitize_metric_value
 from core.atomic_io import atomic_read_json, atomic_write_json, serialized_on
@@ -60,14 +68,14 @@ class VideoSelfImprover:
             "last_updated": datetime.now().isoformat(),
             "samples_processed": 0,
             "motion_thresholds": {
-                "high_warping_var": 140.0,
-                "suspicious_flicker_var": 75.0,
-                "unnatural_freeze_var": 0.8,
+                "high_warping_var": MOTION_VAR_HIGH_WARPING,
+                "suspicious_flicker_var": MOTION_VAR_SUSPICIOUS_FLICKER,
+                "unnatural_freeze_var": MOTION_VAR_UNNATURAL_FREEZE,
             },
             "temporal_weights": {
-                "frame_ai_ratio": 0.60,
-                "motion_warping": 0.25,
-                "diffusion_flicker": 0.15,
+                "frame_ai_ratio": DEFAULT_WEIGHT_FRAME_AI,
+                "motion_warping": DEFAULT_WEIGHT_WARPING,
+                "diffusion_flicker": DEFAULT_WEIGHT_FLICKER,
             },
             "sensitivity_offsets": {
                 "video_ai_offset": 0.0,
@@ -142,11 +150,11 @@ class VideoSelfImprover:
 
         if user_label.upper() == "AI":
             if motion_var is not None and motion_var < 100.0:
-                m_thresh["suspicious_flicker_var"] = max(50.0, m_thresh.get("suspicious_flicker_var", 75.0) - 2.0)
+                m_thresh["suspicious_flicker_var"] = max(50.0, m_thresh.get("suspicious_flicker_var", MOTION_VAR_SUSPICIOUS_FLICKER) - 2.0)
                 offsets["video_ai_offset"] = min(0.30, offsets.get("video_ai_offset", 0.0) + 0.03)
         elif user_label.upper() == "REAL":
             if motion_var is not None and motion_var > 60.0:
-                m_thresh["high_warping_var"] = min(200.0, m_thresh.get("high_warping_var", 140.0) + 3.0)
+                m_thresh["high_warping_var"] = min(200.0, m_thresh.get("high_warping_var", MOTION_VAR_HIGH_WARPING) + 3.0)
                 offsets["video_ai_offset"] = max(-0.30, offsets.get("video_ai_offset", 0.0) - 0.03)
 
         self.save_calibration(calib)
