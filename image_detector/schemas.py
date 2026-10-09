@@ -48,7 +48,6 @@ class ImageTaxonomyState:
     AI_ENHANCED_COMPOSITE = "AI_ENHANCED_COMPOSITE"
     FULLY_AI_GENERATED = "FULLY_AI_GENERATED"
     PROCEDURAL_CGI_SYNTHETIC = "PROCEDURAL_CGI_SYNTHETIC"
-    ADVERSARIAL_SPOOF_SYNTHETIC = "ADVERSARIAL_SPOOF_SYNTHETIC"
     AUTHENTIC_SCREENSHOT = "AUTHENTIC_SCREENSHOT"
     AI_ENHANCED_SCREENSHOT = "AI_ENHANCED_SCREENSHOT"
     AI_GENERATED_SCREENSHOT = "AI_GENERATED_SCREENSHOT"
@@ -60,7 +59,6 @@ class ImageTaxonomyState:
         AI_ENHANCED_COMPOSITE: "AI-Enhanced / Composite (Mix)",
         FULLY_AI_GENERATED: "Fully AI Generated",
         PROCEDURAL_CGI_SYNTHETIC: "Procedural CGI Synthetic (3D Render)",
-        ADVERSARIAL_SPOOF_SYNTHETIC: "Adversarial Spoof / Neural Glitch",
         AUTHENTIC_SCREENSHOT: "Authentic Device Screenshot",
         AI_ENHANCED_SCREENSHOT: "AI-Enhanced / Composite Screenshot",
         AI_GENERATED_SCREENSHOT: "AI-Generated Content Screenshot",
@@ -90,10 +88,6 @@ class ImageTaxonomyState:
         PROCEDURAL_CGI_SYNTHETIC: (
             "Synthetic imagery generated via deterministic procedural 3D ray-tracing/rasterization engines (Blender, Unreal Engine, "
             "Maya) characterized by mathematical geometric polygons and non-stochastic texture shaders."
-        ),
-        ADVERSARIAL_SPOOF_SYNTHETIC: (
-            "Imagery synthesized or perturbed with high-frequency adversarial noise, gradient-based detector evasion patterns, "
-            "or severe neural latent collapse artifacts."
         ),
         AUTHENTIC_SCREENSHOT: (
             "Digital screen capture from a mobile phone, tablet, laptop, or desktop monitor displaying authentic OS/app UI, "

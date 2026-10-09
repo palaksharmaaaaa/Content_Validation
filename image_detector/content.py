@@ -136,7 +136,7 @@ class ImageContentAnalyzer:
             text_regions_count, environment, lighting_info, tone_info, purpose,
         )
         result["entities"]["humans"]["age_estimation"] = age_info
-        result["minors"] = {k: age_info[k] for k in ("status", "contains_minor", "contains_possible_minor", "review_required", "youngest_age")}
+        result["minors"] = {k: age_info[k] for k in ("status", "contains_minor", "contains_possible_minor", "review_required", "youngest_age", "n_subjects")}
         result["colors"] = dominant_colors(sample_bgr)
         return result
 

@@ -25,7 +25,6 @@ IPTC_SOURCE_TYPE_MAPPING = {
     "AI_GENERATED_SCREENSHOT": "digitalsourcetype:screenCapture / trainedAlgorithmicMedia",
     "FULLY_AI_GENERATED": "digitalsourcetype:trainedAlgorithmicMedia (Synthesized via Foundation Model)",
     "PROCEDURAL_CGI_SYNTHETIC": "digitalsourcetype:softwareImage / virtualRecording (3D CGI / Engine Render)",
-    "ADVERSARIAL_SPOOF_SYNTHETIC": "digitalsourcetype:trainedAlgorithmicMedia (Adversarially Perturbed)",
 }
 
 

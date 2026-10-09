@@ -13,7 +13,7 @@ from typing import Any, Callable, Dict, Sequence, Tuple
 import streamlit as st
 
 from ui.results.checks import AUDIO_CHECKS, IMAGE_CHECKS, VIDEO_CHECKS, CheckGroup, render_evidence
-from ui.results.content import render_image_type_and_category, render_quantified_detections_and_inventory, render_scene_and_content_intelligence
+from ui.results.content import render_image_type_and_category, render_minor_screening, render_quantified_detections_and_inventory, render_scene_and_content_intelligence
 from ui.results.dimensions import image_nine_dimensions, render_nine_dimensions_breakdown
 from ui.results.explanation import image_explanation, render_explanation
 from ui.results.feedback import render_export, render_feedback
@@ -123,6 +123,8 @@ def _render_page(item: Dict[str, Any], page: _Page) -> None:
         return
     p = _parts(item, page)
     render_summary(item, p.filename)
+    if page.modality in ("image", "video"):
+        render_minor_screening(p.content)
 
     overview, evidence, details, feedback = st.tabs(["Overview", "Evidence", "Details", "Feedback"])
     with overview:

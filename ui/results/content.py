@@ -196,3 +196,41 @@ def render_quantified_detections_and_inventory(
     if vehicles:
         veh_summary = ", ".join(f"{cnt}x `{name}`" if cnt > 1 else f"`{name}`" for name, cnt in Counter(vehicles).items())
         st.write(f"• **Vehicles Detected ({len(vehicles)} total):** {veh_summary}")
+
+
+def render_minor_screening(content: Dict[str, Any]) -> None:
+    """The minor-screening result of an image or video, shown above the tabs so a flag cannot be missed.
+
+    The screening is recall-first: it sends uncertain people to a human instead of deciding. It estimates *apparent* age from
+    appearance, so the page says "apparent" and never states anyone's real age."""
+    minors = (content or {}).get("minors")
+    if not isinstance(minors, dict) or not minors:
+        return
+    status = minors.get("status")
+    if status == "UNAVAILABLE":
+        st.info("**Minor screening did not run** (the age model is not available), so nobody in this file was checked.")
+        return
+    if status in ("NO_FRAMES", "NO_IMAGE"):
+        st.info("**Minor screening did not run**: the file could not be read.")
+        return
+    if minors.get("review_required"):
+        age = minors.get("youngest_age")
+        age_text = f" The youngest apparent age is about {age:.0f}." if isinstance(age, (int, float)) else ""
+        strength = "Likely minor" if minors.get("contains_minor") else "Possible minor"
+        where = ""
+        if minors.get("scope") == "video_adaptive_frames" or minors.get("flagged_frames"):
+            flagged = minors.get("frames_flagged", 0)
+            examined = minors.get("frames_examined") or minors.get("frames_available", 0)
+            times = [f"{f['time']:.1f}s" for f in minors.get("flagged_frames", [])[:5] if f.get("time") is not None]
+            where = f" Flagged in {flagged} of {examined} examined frames" + (f" (first at {', '.join(times)})" if times else "") + f"; pattern: {str(minors.get('priority', '')).replace('_', ' ').lower()}."
+        st.warning(f"**{strength}: send to a human reviewer.**{age_text}{where} This is an estimate from appearance, not anyone's real age.")
+        return
+    count = minors.get("n_subjects")
+    checked = f"{count} {'person' if count == 1 else 'people'} checked" if isinstance(count, int) else "people checked"
+    if status == "NO_PEOPLE" or count == 0:
+        st.caption("Minor screening: no people found.")
+    else:
+        sampling = minors.get("sampling") or {}
+        gap = sampling.get("longest_unexamined_seconds")
+        gap_text = f" The longest stretch of the video that was not examined is {gap:g} s." if isinstance(gap, (int, float)) else ""
+        st.caption(f"Minor screening: nobody flagged ({checked}). This is not a guarantee: small, hidden or turned-away faces can be missed.{gap_text}")
