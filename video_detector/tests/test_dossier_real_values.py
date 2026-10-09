@@ -110,3 +110,30 @@ def test_the_video_narrative_is_grounded_in_what_was_measured():
     assert "no verdict" in blank
     unknown_rate = generate_video_newbie_explanation("a.mp4", {"geometry": {"width": 640, "height": 360, "fps": 0.0}}, {}, vr, {"final_status": "UNDETERMINED", "authenticity_probabilities": {"p_ai": 50.0}})
     assert "not recorded" in unknown_rate
+
+
+def test_video_dossier_reports_only_what_was_measured():
+    from video_detector.explain import build_video_nine_dimensions_dossier
+
+    vr = {"label": "UNDECIDED", "ai_percentage": 50.0, "mean_frame_noise": 1.3, "ai_duration_pct": 40.0,
+          "temporal_consistency": {}, "diffusion_flicker": {}}
+    d = build_video_nine_dimensions_dossier({"geometry": {}}, vr, {}, {}, {}, {})
+    assert d["dimension_7"]["is_ai_video"] is None and d["dimension_7"]["visual_medium"] == "Not determined"
+    assert d["dimension_8"]["mean_frame_noise"] == 1.3 and "color_channels" not in d["dimension_8"]
+    assert d["dimension_9"]["watermark_detected"] is None and d["dimension_9"]["suspicious_duration_pct"] == "40.0%"
+    assert d["dimension_2"]["frame_rate"] == "Not recorded" and d["dimension_2"]["aspect_ratio"] == "Not recorded"
+
+
+def test_a_real_analysis_carries_the_share_of_the_timeline_flagged(tmp_path):
+    import cv2
+
+    from video_detector.detector import VideoAIDetector
+
+    rng = np.random.default_rng(4)
+    p = tmp_path / "t.mp4"
+    w = cv2.VideoWriter(str(p), cv2.VideoWriter_fourcc(*"mp4v"), 10, (96, 72))
+    for _ in range(30):
+        w.write(rng.integers(0, 256, (72, 96, 3), dtype=np.uint8))
+    w.release()
+    r = VideoAIDetector().analyze_video(p)
+    assert r["ai_duration_pct"] is not None and 0.0 <= r["ai_duration_pct"] <= 100.0

@@ -85,3 +85,15 @@ def test_the_audio_narrative_is_grounded_in_what_was_measured():
     assert "0.0012" in ai and "31.0%" in ai and "7,600 Hz" in ai and "ElevenLabs" not in ai and "not proof" in ai
     blank = generate_audio_newbie_explanation("a.wav", prof, {}, ar, {"final_status": "BLANK_OR_DEGRADED", "authenticity_probabilities": {}})
     assert "no verdict" in blank
+
+
+def test_audio_dossier_does_not_invent_synthesis_facts():
+    from audio_detector.explain import build_audio_nine_dimensions_dossier
+
+    ar = {"label": "LIKELY REAL", "ai_percentage": 20.0, "acoustic_features": {"cutoff_freq_hz": 7000.0, "measured": True}}
+    d = build_audio_nine_dimensions_dossier({"native_sample_rate": 44100, "duration_seconds": 3.0, "channels": 2}, ar, {}, {}, {})
+    assert d["dimension_7"]["is_synthetic_voice"] is False and d["dimension_7"]["synthesis_medium"] == "Not determined"
+    assert d["dimension_8"]["analysed_band_limit"].startswith("8,000") and d["dimension_8"]["energy_cutoff_hz"] == "7,000 Hz"
+    assert d["dimension_9"]["watermark_detected"] is None
+    und = build_audio_nine_dimensions_dossier({}, {"label": "UNDECIDED"}, {}, {}, {})
+    assert und["dimension_7"]["is_synthetic_voice"] is None

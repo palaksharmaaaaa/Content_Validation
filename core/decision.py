@@ -162,7 +162,7 @@ def _collect_video(ev: _Evidence, video_result: Optional[Dict[str, Any]]) -> Non
     ev.has_video = True
     ev.vid_ai = float(vid.get("ai_percentage", 0.0))
     vid_real = float(vid.get("real_percentage", 0.0))
-    ev.vid_dur_pct = float(vid.get("ai_duration_pct", vid.get("details", {}).get("ai_duration_pct", 0.0)))
+    ev.vid_dur_pct = float(vid.get("ai_duration_pct") or 0.0)
     ev.probs.append((ev.vid_ai, vid_real, 1.2))  # slightly higher weight for temporal video
     ev.trail.extend(f"[Video Forensic] {cue}" for cue in vid.get("forensic_cues", []))
     temp = vid.get("temporal_consistency") or {}

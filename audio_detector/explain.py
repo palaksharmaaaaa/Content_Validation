@@ -161,9 +161,11 @@ def _audio_dimension_7(c: _AudioDossierContext) -> Dict[str, Any]:
     d7 = {
         "dimension_id": 7,
         "title": "Dimension 7: Audio Synthesis Medium & Generation Paradigm",
-        "description": "Distinguishes human physical vocal cords from neural text-to-speech, voice conversion, or singing synthesis.",
-        "synthesis_medium": c.aud_res.get("synthesis_medium") or "Not determined",
-        "is_synthetic_voice": c.aud_res.get("is_synthetic", False),
+        "description": "Whether the overall verdict leans synthetic. The engine cannot tell text-to-speech from voice conversion, singing synthesis or music generation.",
+        "verdict": c.aud_res.get("label") or "Not determined",
+        "ai_likelihood_pct": c.aud_res.get("ai_percentage"),
+        "synthesis_medium": "Not determined",
+        "is_synthetic_voice": {"LIKELY AI-GENERATED": True, "LIKELY REAL": False}.get(c.aud_res.get("label")),
     }
     return d7
 
@@ -173,9 +175,10 @@ def _audio_dimension_8(c: _AudioDossierContext) -> Dict[str, Any]:
     d8 = {
         "dimension_id": 8,
         "title": "Dimension 8: Frequency Spectrum Bandwidth & Nyquist Coverage",
-        "description": "Assesses frequency range from sub-bass (20Hz) through presence (10kHz-20kHz).",
+        "description": "The file's own Nyquist limit, and the frequency below which 98.5 % of the energy lies. The engine analyses a 16 kHz decode, so nothing above 8 kHz is measured.",
         "nyquist_frequency": f"{c.sr // 2:,} Hz" if c.sr else "Not recorded",
-        "effective_bandwidth": f"{min(c.sr // 2, c.cutoff_hz if c.cutoff_hz > 0 else c.sr // 2):,.0f} Hz" if c.sr else "Not recorded",
+        "analysed_band_limit": "8,000 Hz (the engine decodes to 16 kHz)",
+        "energy_cutoff_hz": f"{c.cutoff_hz:,.0f} Hz" if _measured(c) else None,
     }
     return d8
 
@@ -188,7 +191,7 @@ def _audio_dimension_9(c: _AudioDossierContext) -> Dict[str, Any]:
         "description": "Names a voice-generation tool only when the file's own metadata declares one; otherwise reports none.",
         "attributed_generator": c.attr.get("attributed_model") or "Not attributable",
         "attribution_confidence": f"{int(c.attr.get('attribution_confidence', 0.0) * 100)}%",
-        "watermark_detected": c.attr.get("watermark_detected", False),
+        "watermark_detected": None,                      # no watermark detector exists for audio: not measured
         "suspicious_duration_pct": f"{c.aud_res.get('ai_duration_pct', 0.0):.1f}%",
     }
     return d9

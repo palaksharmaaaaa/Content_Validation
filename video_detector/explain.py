@@ -57,11 +57,11 @@ def _video_dimension_2(c: _VideoDossierContext) -> Dict[str, Any]:
         "dimension_id": 2,
         "title": "Dimension 2: Spatial Geometry & Temporal Framing Architecture",
         "description": "Examines resolution, frame rate (FPS), duration, aspect ratio, and total frame buffer depth.",
-        "dimensions": f"{c.w} x {c.h} px",
+        "dimensions": f"{c.w} x {c.h} px" if c.w and c.h else "Not recorded",
         "frame_rate": f"{c.fps:.2f} FPS" if c.fps else "Not recorded",
-        "duration": f"{c.duration:.2f} seconds ({c.total_frames} frames)",
-        "aspect_ratio": f"{c.geom.get('aspect_ratio', 0.0):.2f}:1",
-        "bitrate_kbps": c.prof.get("bitrate_kbps", 0.0),
+        "duration": f"{c.duration:.2f} seconds ({c.total_frames} frames)" if c.duration else "Not recorded",
+        "aspect_ratio": f"{c.geom['aspect_ratio']:.2f}:1" if c.geom.get("aspect_ratio") else "Not recorded",
+        "bitrate_kbps": c.prof.get("bitrate_kbps"),
     }
     return d2
 
@@ -153,8 +153,10 @@ def _video_dimension_7(c: _VideoDossierContext) -> Dict[str, Any]:
         "dimension_id": 7,
         "title": "Dimension 7: Video Synthesis Medium & Generative Model Archetype",
         "description": "Looks for what separates camera footage from generated or rendered footage: motion that warps, flicker between frames, missing grain.",
-        "visual_medium": c.vid_res.get("visual_medium") or "Not determined",
-        "is_ai_video": c.vid_res.get("is_synthetic", False),
+        "verdict": c.vid_res.get("label") or "Not determined",
+        "ai_likelihood_pct": c.vid_res.get("ai_percentage"),
+        "visual_medium": "Not determined",
+        "is_ai_video": {"LIKELY AI-GENERATED": True, "LIKELY REAL": False}.get(c.vid_res.get("label")),
     }
     return d7
 
@@ -164,9 +166,9 @@ def _video_dimension_8(c: _VideoDossierContext) -> Dict[str, Any]:
     d8 = {
         "dimension_id": 8,
         "title": "Dimension 8: Sensor Spectrum & Dynamic Range",
-        "description": "Evaluates color dynamics, dynamic range, and highlight/shadow preservation across frames.",
-        "sensor_modality": "Standard RGB Video Stream",
-        "color_channels": 3,
+        "description": "The average fine-grain level of the sampled frames. Colour dynamics and highlight or shadow preservation are not evaluated for video.",
+        "mean_frame_noise": c.vid_res.get("mean_frame_noise"),
+        "sensor_modality": "Not determined",
     }
     return d8
 
@@ -179,8 +181,8 @@ def _video_dimension_9(c: _VideoDossierContext) -> Dict[str, Any]:
         "description": "Names a video generator only when the file's own metadata declares one; otherwise reports none.",
         "attributed_generator": c.attr.get("attributed_model") or "Not attributable",
         "confidence": f"{int(c.attr.get('attribution_confidence', 0.0) * 100)}%",
-        "watermark_detected": c.attr.get("watermark_detected", False),
-        "suspicious_duration_pct": f"{c.vid_res.get('details', {}).get('ai_duration_pct', 0.0):.1f}%",
+        "watermark_detected": None,                      # no watermark detector exists for video: not measured
+        "suspicious_duration_pct": f"{c.vid_res['ai_duration_pct']:.1f}%" if c.vid_res.get("ai_duration_pct") is not None else None,
     }
     return d9
 

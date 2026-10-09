@@ -177,6 +177,14 @@ class VideoAIDetector:
             return None
 
     @staticmethod
+    def _ai_duration_pct(segments: List[Dict[str, Any]], duration: float) -> Optional[float]:
+        """Percentage of the timeline covered by segments labelled AI-generated; None when the duration is unknown."""
+        if not duration or duration <= 0:
+            return None
+        ai_seconds = sum(float(s.get("duration_seconds", 0.0)) for s in segments if s.get("label") == "LIKELY AI-GENERATED")
+        return round(min(100.0, ai_seconds / duration * 100.0), 1)
+
+    @staticmethod
     def _forensic_cues(
         neural_transition_ai: Optional[float], temporal_res: Dict[str, Any], flicker_res: Dict[str, Any], mean_frame_ai: float
     ) -> List[str]:
@@ -306,6 +314,7 @@ class VideoAIDetector:
             diffusion_flicker=flicker_res,
             mean_frame_noise=mean_frame_noise,
             is_blank=bool(analyzed_frames) and not frame_ai_scores,
+            ai_duration_pct=self._ai_duration_pct(temporal_segments, duration),
             temporal_segments=temporal_segments,
             forensic_cues=cues,
             metadata=metadata,

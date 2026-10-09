@@ -75,6 +75,7 @@ class VideoForensicResult:
     prediction: str = "UNDECIDED"
     temporal_consistency: Dict[str, Any] = field(default_factory=dict)
     diffusion_flicker: Dict[str, Any] = field(default_factory=dict)
+    ai_duration_pct: Optional[float] = None       # share of the timeline in segments labelled AI-generated (None when the duration is unknown)
     is_blank: bool = False                        # every sampled frame was blank (no variation): there is nothing to judge
     mean_frame_noise: Optional[float] = None      # mean median-filter noise residual over the frames the built-in scorer examined (None when an external frame detector scored them)
     temporal_segments: List[Dict[str, Any]] = field(default_factory=list)
@@ -99,6 +100,7 @@ class VideoForensicResult:
             "diffusion_flicker": self.diffusion_flicker,
             "mean_frame_noise": self.mean_frame_noise,
             "is_blank": self.is_blank,
+            "ai_duration_pct": self.ai_duration_pct,
             "temporal_segments": self.temporal_segments,
             "forensic_cues": self.forensic_cues,
             "metadata": self.metadata,
