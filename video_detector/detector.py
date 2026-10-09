@@ -22,14 +22,10 @@ from PIL import Image
 import torch
 
 from core.shared_results import shift_probability_by_log_odds
+from core.frame_scorer import score_frame
 from video_detector.config import (
     DEFAULT_MAX_FRAMES,
     DEFAULT_VIDEO_CHECKPOINT,
-    NOISE_AI_THRESHOLD,
-    NOISE_AI_THRESHOLD_SENSITIVE,
-    SMOOTH_AI_THRESHOLD,
-    SMOOTH_AI_THRESHOLD_SENSITIVE,
-    NOISE_BASELINE,
 )
 from video_detector.extractor import VideoFrameExtractor
 from video_detector.learner import VideoSelfImprover
@@ -103,25 +99,8 @@ class VideoAIDetector:
         return True
 
     def _score_frame_internal(self, frame_bgr: np.ndarray, sensitivity: str) -> Dict[str, Any]:
-        """Scores one frame from its median-filter noise residual and bilateral-filter smoothness (used when no external frame detector is attached)."""
-        gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
-        blurred = cv2.medianBlur(gray, 3)
-        noise = float(np.mean(cv2.absdiff(gray, blurred)))
-
-        bilateral = cv2.bilateralFilter(gray, d=7, sigmaColor=75, sigmaSpace=75)
-        smooth = float(np.mean(cv2.absdiff(gray, bilateral)))
-
-        comp_noise = max(0.2, noise - NOISE_BASELINE)
-        noise_thresh = NOISE_AI_THRESHOLD_SENSITIVE if sensitivity in ("high", "aggressive") else NOISE_AI_THRESHOLD
-        smooth_thresh = SMOOTH_AI_THRESHOLD_SENSITIVE if sensitivity in ("high", "aggressive") else SMOOTH_AI_THRESHOLD
-
-        p_noise_ai = float(1.0 / (1.0 + np.exp((comp_noise - noise_thresh) * 2.0)))
-        p_smooth_ai = float(1.0 / (1.0 + np.exp((smooth - smooth_thresh) * 1.3)))
-        score = (p_noise_ai * 0.55) + (p_smooth_ai * 0.45)
-
-        thresh = 0.50 if sensitivity in ("high", "aggressive") else 0.60
-        label = "LIKELY AI-GENERATED" if score >= thresh else ("LIKELY REAL" if score <= 0.35 else "UNDECIDED")
-        return {"label": label, "prediction": label, "ai_prob": round(score, 3), "real_prob": round(1.0 - score, 3), "frame_noise": round(noise, 3)}
+        """Scores one frame with the shared scorer (used when no external frame detector is attached)."""
+        return score_frame(frame_bgr, sensitivity)
 
     def _analyze_frames(
         self, frames: List[np.ndarray], timestamps: List[float], sensitivity: str,
@@ -135,12 +114,15 @@ class VideoAIDetector:
             if progress_callback:
                 progress_callback(idx + 1, total, f"Analyzing frame {idx+1}/{total}")
             if float(np.var(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))) < 5.0:
-                analyzed.append({"frame_idx": idx, "timestamp": ts, "label": "UNDECIDED", "ai_prob": 0.5})
+                analyzed.append({"frame_idx": idx, "timestamp": ts, "label": "UNDECIDED", "ai_prob": None, "blank": True})
                 continue
             if self.frame_detector is not None and hasattr(self.frame_detector, "predict_frame"):
                 frame_res = self.frame_detector.predict_frame(frame, sensitivity=sensitivity)
             else:
                 frame_res = self._score_frame_internal(frame, sensitivity=sensitivity)
+            if frame_res.get("ai_prob") is None:                       # the frame could not be scored: recorded, never counted
+                analyzed.append({"frame_idx": idx, "timestamp": ts, "label": "UNDECIDED", "ai_prob": None})
+                continue
             analyzed.append({
                 "frame_idx": idx, "timestamp": ts, "label": frame_res["label"],
                 "ai_prob": frame_res["ai_prob"], "real_prob": frame_res["real_prob"],
@@ -313,7 +295,7 @@ class VideoAIDetector:
             temporal_consistency=temporal_res,
             diffusion_flicker=flicker_res,
             mean_frame_noise=mean_frame_noise,
-            is_blank=bool(analyzed_frames) and not frame_ai_scores,
+            is_blank=bool(analyzed_frames) and all(f.get("blank") for f in analyzed_frames),
             ai_duration_pct=self._ai_duration_pct(temporal_segments, duration),
             temporal_segments=temporal_segments,
             forensic_cues=cues,

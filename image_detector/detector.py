@@ -26,6 +26,7 @@ from PIL import Image
 import torch
 from torchvision import transforms
 
+from core.frame_scorer import score_frame
 from image_detector.config import (
     AI_NOISE_MU,
     AI_NOISE_SIGMA,
@@ -337,7 +338,7 @@ class ImageAIDetector:
         if lr_noise > 0.3:
             ev.cues.append(f"Very little fine grain (noise residual: {sig.noise_mean:.2f}), as in denoised or generated pictures")
         elif lr_noise < -0.3 and not art:
-            ev.cues.append(f"Natural optical camera sensor shot noise preserved ({sig.noise_mean:.2f})")
+            ev.cues.append(f"Camera-like fine grain present ({sig.noise_mean:.2f})")
 
         if discount:
             lr_smooth = min(0.10, lr_smooth)
@@ -345,9 +346,9 @@ class ImageAIDetector:
             lr_smooth = max(0.20, lr_smooth)
         ev.lrs["surface_smoothness"] = lr_smooth * w_smooth
         if lr_smooth > 0.3:
-            ev.cues.append(f"Synthetic bilateral surface over-smoothing detected (index: {sig.smoothness:.2f})")
+            ev.cues.append(f"Surfaces are very smooth (index: {sig.smoothness:.2f})")
         elif lr_smooth < -0.3 and not art:
-            ev.cues.append(f"Natural fine-grained surface micro-textures preserved ({sig.smoothness:.2f})")
+            ev.cues.append(f"Surface texture is not unusually smooth ({sig.smoothness:.2f})")
         return lr_noise, lr_smooth
 
     @staticmethod
@@ -538,24 +539,10 @@ class ImageAIDetector:
     predict_image = predict
 
     def predict_frame(self, frame_bgr: np.ndarray, sensitivity: str = "balanced") -> Dict[str, Any]:
-        """Fast frame-level inference for video frames."""
+        """Fast frame-level inference for video frames (the shared scorer in core.frame_scorer). A frame that cannot be scored
+        carries ``ai_prob`` None, so the caller leaves it out instead of counting a neutral 0.5."""
         try:
-            gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
-            noise_mean, _ = calculate_sensor_noise_profile(gray)
-            smoothness = calculate_surface_smoothness(gray)
-
-            comp_noise = max(0.2, noise_mean - 0.70)
-            noise_thresh = 2.4 if sensitivity in ("high", "aggressive") else 2.0
-            smooth_thresh = 3.6 if sensitivity in ("high", "aggressive") else 3.1
-
-            p_noise_ai = float(1.0 / (1.0 + np.exp((comp_noise - noise_thresh) * 2.0)))
-            p_smooth_ai = float(1.0 / (1.0 + np.exp((smoothness - smooth_thresh) * 1.3)))
-            score = (p_noise_ai * 0.55) + (p_smooth_ai * 0.45)
-
-            thresh = 0.50 if sensitivity in ("high", "aggressive") else 0.60
-            label = "LIKELY AI-GENERATED" if score >= thresh else ("LIKELY REAL" if score <= 0.35 else "UNDECIDED")
-            return {"label": label, "prediction": label, "ai_prob": round(score, 3), "real_prob": round(1.0 - score, 3),
-                    "frame_noise": round(float(noise_mean), 3)}
+            return score_frame(frame_bgr, sensitivity)
         except Exception as exc:
             logger.warning("predict_frame encountered exception: %s", exc)
-            return {"label": "UNDECIDED", "prediction": "UNDECIDED", "ai_prob": 0.5, "real_prob": 0.5}
+            return {"label": "UNDECIDED", "prediction": "UNDECIDED", "ai_prob": None, "real_prob": None}

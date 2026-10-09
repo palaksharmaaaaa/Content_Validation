@@ -140,7 +140,6 @@ def test_a_real_analysis_carries_the_share_of_the_timeline_flagged(tmp_path):
 
 
 def test_a_vendor_name_must_stand_alone_in_the_file(tmp_path):
-    import os
 
     from video_detector.provenance import VideoProvenanceValidator
 
@@ -173,3 +172,23 @@ def test_too_few_frames_is_no_reading_and_takes_no_part_in_the_score():
     assert only_frames == 0.7                                                  # the frame score alone, not diluted by invented 'calm' cues
     calm, _ = pool_video_temporal_score(0.7, "LOW", False)
     assert calm < only_frames
+
+
+def test_one_frame_scorer_serves_video_and_image_and_unscorable_frames_are_not_counted(monkeypatch):
+    from core.frame_scorer import score_frame
+    from image_detector.detector import ImageAIDetector
+    from video_detector.detector import VideoAIDetector
+
+    rng = np.random.default_rng(12)
+    frame = rng.integers(0, 256, (72, 96, 3), dtype=np.uint8)
+    a = ImageAIDetector().predict_frame(frame)
+    b = VideoAIDetector()._score_frame_internal(frame, "balanced")
+    assert a == b == score_frame(frame)
+
+    class Broken:
+        def predict_frame(self, frame, sensitivity="balanced"):
+            return {"label": "UNDECIDED", "prediction": "UNDECIDED", "ai_prob": None, "real_prob": None}
+
+    det = VideoAIDetector(frame_detector=Broken())
+    analyzed, scores = det._analyze_frames([frame, frame], [0.0, 1.0], "balanced", None)
+    assert scores == [] and all(f["ai_prob"] is None for f in analyzed)

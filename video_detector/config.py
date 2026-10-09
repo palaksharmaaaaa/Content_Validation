@@ -26,12 +26,14 @@ MAX_FILE_SIZE_MB = 500.0
 MAX_DURATION_SECONDS = 3600.0
 SUPPORTED_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
 
-# Per-frame noise judgement (median-filter residual of the grey frame; every camera frame has about NOISE_BASELINE of it)
-NOISE_BASELINE = 0.70
-NOISE_AI_THRESHOLD = 2.0              # balanced sensitivity: noise above the baseline below this is AI-like
-NOISE_AI_THRESHOLD_SENSITIVE = 2.4    # high / aggressive sensitivity
-SMOOTH_AI_THRESHOLD = 3.1             # bilateral-filter residual below this reads as over-smoothed (balanced sensitivity)
-SMOOTH_AI_THRESHOLD_SENSITIVE = 3.6   # high / aggressive sensitivity
+# Per-frame noise judgement: the cut-offs live with the shared scorer (core.frame_scorer).
+from core.frame_scorer import (  # noqa: E402,F401
+    NOISE_AI_THRESHOLD,
+    NOISE_AI_THRESHOLD_SENSITIVE,
+    NOISE_BASELINE,
+    SMOOTH_AI_THRESHOLD,
+    SMOOTH_AI_THRESHOLD_SENSITIVE,
+)
 
 # Temporal Motion Variance Thresholds
 MOTION_VAR_HIGH_WARPING = 140.0
