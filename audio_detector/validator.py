@@ -17,8 +17,7 @@ import wave
 
 import numpy as np
 
-_FFMPEG_MISSING_WARNED = False
-
+from core.ffmpeg import ffmpeg_input, pcm_to_float
 from core.hashing import file_sha256
 from audio_detector.config import (
     MAX_DURATION_SECONDS,
@@ -29,6 +28,8 @@ from audio_detector.config import (
 from audio_detector.schemas import AudioValidationResult
 
 logger = logging.getLogger("audio_detector.validator")
+
+_FFMPEG_MISSING_WARNED = False
 
 
 def _get_file_size_mb(path: Path) -> float:
@@ -151,21 +152,9 @@ class AudioValidator:
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_f:
                 tmp_wav_path = tmp_f.name
 
-            cmd = [
-                "ffmpeg",
-                "-y",
-                "-i",
-                str(path),
-                "-ac",
-                "1",
-                "-ar",
-                str(self.target_sr),
-                "-vn",
-                "-f",
-                "wav",
-                tmp_wav_path,
-            ]
-            res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=120)
+            # Decode at most one second past the limit: a file longer than that is rejected anyway, so the rest is never decoded.
+            cmd = ffmpeg_input(path, max_seconds=self.max_duration_sec + 1.0) + ["-y", "-ac", "1", "-ar", str(self.target_sr), "-vn", "-f", "wav", tmp_wav_path]
+            res = subprocess.run(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=120)
 
             if res.returncode == 0 and Path(tmp_wav_path).is_file() and Path(tmp_wav_path).stat().st_size > 44:
                 with wave.open(tmp_wav_path, "rb") as wf:
@@ -173,14 +162,7 @@ class AudioValidator:
                     fr = wf.getframerate()
                     raw = wf.readframes(wf.getnframes())
 
-                    if sw == 2:
-                        samples = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
-                    elif sw == 1:
-                        samples = (np.frombuffer(raw, dtype=np.uint8).astype(np.float32) - 128.0) / 128.0
-                    elif sw == 4:
-                        samples = np.frombuffer(raw, dtype=np.int32).astype(np.float32) / 2147483648.0
-                    else:
-                        samples = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
+                    samples = pcm_to_float(raw, sw)
 
                     dur = float(len(samples)) / max(1, fr)
                     return samples, fr, dur
@@ -211,14 +193,9 @@ class AudioValidator:
                     sw = wf.getsampwidth()
                     fr = wf.getframerate()
                     raw = wf.readframes(wf.getnframes())
-                    if sw == 2:
-                        s = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
-                    elif sw == 1:
-                        s = (np.frombuffer(raw, dtype=np.uint8).astype(np.float32) - 128.0) / 128.0
-                    else:
-                        s = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
+                    s = pcm_to_float(raw, sw)
                     if n_ch > 1:
-                        s = s.reshape(-1, n_ch).mean(axis=1)
+                        s = s[: len(s) // n_ch * n_ch].reshape(-1, n_ch).mean(axis=1)
                     if fr > 0 and fr != self.target_sr and len(s) > 1:
                         s = resample_antialiased(s, fr, self.target_sr)
                         fr = self.target_sr

@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
+from core.ffmpeg import ffmpeg_input, pcm_to_float
 from core.forensics.bytescan import WINDOW, read_windows  # noqa: F401  (re-exported)
 
 logger = logging.getLogger(__name__)
@@ -338,17 +339,7 @@ def load_native_mono(path: Path, max_seconds: float = 30.0) -> Optional[Tuple[np
                 raw = wf.readframes(n_frames)
                 ch = wf.getnchannels()
                 sw = wf.getsampwidth()
-            if sw == 2:
-                x = np.frombuffer(raw, dtype="<i2").astype(np.float32) / 32768.0
-            elif sw == 1:
-                x = (np.frombuffer(raw, dtype=np.uint8).astype(np.float32) - 128.0) / 128.0
-            elif sw == 4:
-                x = np.frombuffer(raw, dtype="<i4").astype(np.float32) / 2147483648.0
-            else:
-                b = np.frombuffer(raw[: len(raw) // 3 * 3], dtype=np.uint8).reshape(-1, 3).astype(np.int32)
-                v = b[:, 0] | (b[:, 1] << 8) | (b[:, 2] << 16)
-                v = np.where(v & 0x800000, v - 0x1000000, v)
-                x = v.astype(np.float32) / 8388608.0
+            x = pcm_to_float(raw, sw)
             if ch > 1:
                 x = x[: len(x) // ch * ch].reshape(-1, ch).mean(axis=1)
             return x, sr, bits
@@ -357,9 +348,8 @@ def load_native_mono(path: Path, max_seconds: float = 30.0) -> Optional[Tuple[np
             return None
     try:
         res = subprocess.run(
-            ["ffmpeg", "-v", "error", "-t", str(max_seconds), "-i", str(path), "-vn", "-ac", "1",
-             "-f", "f32le", "-"],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=120,
+            ffmpeg_input(path, max_seconds=max_seconds) + ["-vn", "-ac", "1", "-f", "f32le", "-"],
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=120,
         )
     except (FileNotFoundError, subprocess.TimeoutExpired):
         return None

@@ -17,6 +17,7 @@ import wave
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
+from core.ffmpeg import ffprobe_input
 from core.hashing import file_digests
 import numpy as np
 
@@ -57,9 +58,9 @@ def read_stream_info(path: Path) -> Dict[str, Optional[Any]]:
     if not ffprobe:
         return info
     try:
-        out = subprocess.run([ffprobe, "-v", "error", "-select_streams", "a:0", "-show_entries",
-                              "stream=sample_rate,channels,bits_per_raw_sample,bits_per_sample,codec_name", "-of", "json", str(path)],
-                             capture_output=True, text=True, timeout=15, check=False)
+        out = subprocess.run(ffprobe_input(path, ffprobe) + ["-select_streams", "a:0", "-show_entries",
+                             "stream=sample_rate,channels,bits_per_raw_sample,bits_per_sample,codec_name", "-of", "json"],
+                             stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=15, check=False)
         stream = (json.loads(out.stdout or "{}").get("streams") or [{}])[0]
     except (OSError, subprocess.SubprocessError, ValueError) as exc:
         logger.debug("ffprobe failed for %s: %s", path, exc)

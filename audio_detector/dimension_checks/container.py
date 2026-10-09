@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Dict, Optional
 
 from audio_detector.dimension_checks import _common as C
+from core.ffmpeg import ffmpeg_input
 from core.forensics.config import EXPLICIT_GENERATOR_LLR_CAP
 from core.forensics.registry import CheckContext, registry
 from core.forensics.schemas import EvidenceClass, Finding, FindingStatus, Severity
@@ -126,8 +127,8 @@ def _md5_of_decoded(path: Path, sample_fmt: str) -> Optional[str]:
     """MD5 of the PCM that ffmpeg decodes from ``path`` (None if ffmpeg is missing, fails or times out)."""
     try:
         proc = subprocess.Popen(
-            ["ffmpeg", "-v", "error", "-i", str(path), "-vn", "-f", sample_fmt, "-"],
-            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            ffmpeg_input(path) + ["-vn", "-f", sample_fmt, "-"],
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
         )
     except FileNotFoundError:
         return None
