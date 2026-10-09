@@ -94,7 +94,7 @@ def parse_gps_info(gps_dict: dict) -> Dict[str, Any]:
             }
     except Exception as e:
         logger.debug("GPS EXIF parsing skipped: %s", e)
-    return {"has_gps": False, "latitude": None, "longitude": None, "altitude_m": None, "coordinates_str": "Not Embedded"}
+    return {"has_gps": False, "latitude": None, "longitude": None, "altitude_m": None, "coordinates_str": None}
 
 
 def _blank_exif_info() -> Dict[str, Any]:
@@ -109,14 +109,14 @@ def _blank_exif_info() -> Dict[str, Any]:
         "aperture": None,
         "iso": None,
         "focal_length": None,
-        "flash": "Not Fired",
-        "white_balance": "Auto",
-        "metering_mode": "Standard",
-        "exposure_bias": "0.0 EV",
+        "flash": None,                 # every field stays None until the file itself records it
+        "white_balance": None,
+        "metering_mode": None,
+        "exposure_bias": None,
         "gps_embedded": False,
-        "gps_details": {"has_gps": False, "coordinates_str": "Not Embedded"},
-        "orientation_tag": "Normal (1)",
-        "color_space_tag": "sRGB",
+        "gps_details": {"has_gps": False, "coordinates_str": None},
+        "orientation_tag": None,
+        "color_space_tag": None,
     }
 
 
@@ -172,7 +172,7 @@ def _apply_sub_ifd(exif_data: Any, exif_info: Dict[str, Any]) -> None:
 def _read_container_info(path: Path) -> Dict[str, Any]:
     """PIL-level container facts: colour mode, ICC, DPI and EXIF acquisition metadata."""
     info: Dict[str, Any] = {
-        "dpi_x": None, "dpi_y": None, "color_mode": "RGB", "has_icc": False,        # None: the file records no resolution
+        "dpi_x": None, "dpi_y": None, "color_mode": None, "has_icc": False,        # None: the file records no resolution
         "icc_profile_name": "ICC profile embedded", "exif_info": _blank_exif_info(),
     }
     exif_info = info["exif_info"]

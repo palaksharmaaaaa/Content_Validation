@@ -114,3 +114,15 @@ def test_an_unreadable_input_is_not_labelled_an_authentic_photograph():
 
     r = ImageAIDetector().predict(b"not an image")
     assert r["is_available"] is False and r["taxonomy_state"] == "UNDETERMINED" and r["taxonomy_label"] == "Undetermined"
+
+
+def test_a_file_without_exif_records_nothing_it_did_not_say(tmp_path):
+    from image_detector.profiler import ImageProfiler
+
+    rng = np.random.default_rng(8)
+    p = tmp_path / "plain.png"
+    Image.fromarray(rng.integers(0, 256, (80, 80, 3), dtype=np.uint8)).save(p)
+    exif = ImageProfiler().profile_image(p)["exif_device_details"]
+    for key in ("flash", "white_balance", "metering_mode", "exposure_bias", "orientation_tag", "color_space_tag"):
+        assert exif[key] is None, key
+    assert exif["gps_details"]["coordinates_str"] is None
