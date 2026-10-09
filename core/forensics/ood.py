@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Callable, Dict, Iterable, Optional, Union
 
 import numpy as np
 
@@ -85,3 +85,29 @@ class OODGate:
         except Exception:  # corrupt stats file -> treat as uncalibrated
             return cls()
         return gate
+
+
+def fit_gate_from_files(
+    paths: Iterable[Path],
+    out_path: Union[str, Path],
+    vectorizer: Callable[[Path], np.ndarray],
+    max_samples: int,
+    noun: str,
+) -> Dict[str, Any]:
+    """Vectorise up to ``max_samples`` files (one that cannot be read is skipped), fit an ``OODGate`` and save it.
+
+    ``noun`` names what is counted in the "need at least N" message (images, files, videos).
+    """
+    vectors = []
+    for p in list(paths)[:max_samples]:
+        try:
+            vectors.append(np.asarray(vectorizer(Path(p)), dtype=np.float64).reshape(-1))
+        except Exception as exc:  # unreadable file: skip, keep fitting
+            logger.warning("skipping %s: %s", p, exc)
+    if len(vectors) < MIN_FIT_SAMPLES:
+        return {"fitted": False, "samples": len(vectors), "message": f"Need at least {MIN_FIT_SAMPLES} {noun}; got {len(vectors)}."}
+    gate = OODGate().fit(np.vstack(vectors))
+    if not gate.calibrated:
+        return {"fitted": False, "samples": len(vectors), "message": "Fit failed."}
+    gate.save(out_path)
+    return {"fitted": True, "samples": len(vectors), "threshold": gate.threshold, "path": str(out_path)}

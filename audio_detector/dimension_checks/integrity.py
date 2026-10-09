@@ -40,7 +40,10 @@ def _declared_end(path: Path, head: bytes, size: int):
     """(format, declared end offset or None) for formats whose end can be derived structurally."""
     fmt = C.sniff_audio_format(head)
     if fmt == "wav" and len(head) >= 8 and head[:4] == b"RIFF":
-        return fmt, 8 + int.from_bytes(head[4:8], "little")
+        riff_size = int.from_bytes(head[4:8], "little")
+        if riff_size in (0, 0xFFFFFFFF):
+            return fmt, None                      # a streamed WAV (e.g. written to a pipe) leaves the size unset: there is no declared end to compare
+        return fmt, 8 + riff_size
     if fmt == "ogg" and size <= C.MAX_OGG_BYTES:
         pages = C.parse_ogg_pages(path.read_bytes())
         complete = [p for p in pages if not p.get("truncated")]

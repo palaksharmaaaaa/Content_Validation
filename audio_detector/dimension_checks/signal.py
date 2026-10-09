@@ -260,7 +260,7 @@ def check_loudness_dynamics(ctx: CheckContext) -> Finding:
     seg = x[: sr * 30].astype(np.float64)
     n = len(seg)
     up = np.fft.irfft(np.fft.rfft(seg), n * 4) * 4.0  # 4x FFT-domain oversampling (approximate true peak)
-    true_peak = float(np.max(np.abs(up)))
+    true_peak = max(float(np.max(np.abs(up))), peak)          # the oversampled estimate covers the first 30 s; the true peak is never below a sample peak
     peak_db = 20 * np.log10(max(peak, 1e-9))
     rms_db = 20 * np.log10(rms)
     crest = peak_db - rms_db

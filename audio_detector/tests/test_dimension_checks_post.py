@@ -165,3 +165,20 @@ def test_unknown_source_false_for_authentic(tmp_path):
     r = a.run_post(content={}, ai_result={"ai_percentage": 5.0}, attribution={"model_key": "unknown"})
     assert r["attribution_open_set"]["unknown_source"] is False
     assert r["confidence_band"]["band"] == "LEANING_AUTHENTIC"
+
+
+def test_a_streamed_wav_with_an_unset_riff_size_is_not_called_truncated(tmp_path):
+    import struct
+    import wave
+
+    from audio_detector.dimension_checks.integrity import check_trailing_data
+    from core.forensics.registry import CheckContext
+
+    p = tmp_path / "s.wav"
+    with wave.open(str(p), "wb") as w:
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(8000); w.writeframes(b"\x01\x00" * 800)
+    raw = bytearray(p.read_bytes())
+    raw[4:8] = struct.pack("<I", 0xFFFFFFFF)
+    p.write_bytes(bytes(raw))
+    f = check_trailing_data(CheckContext(path=p, modality="audio"))
+    assert f.status.name == "NOT_APPLICABLE"

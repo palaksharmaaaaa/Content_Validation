@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
+from audio_detector.features import feature_vector
 from core.forensics.reporting import UNKNOWN_SOURCE_MIN_AI_PERCENT as _UNKNOWN_MIN
 from core.forensics.reporting import add_band_and_open_set, summarize_for_evidence_trail
 from core.forensics.gates import HardBlockGate, recognize_symbolic_music
@@ -78,14 +79,8 @@ def acoustic_vector(features: Optional[Dict[str, Any]]) -> Optional[np.ndarray]:
     if not features:
         return None
     try:
-        return np.array([
-            float(bool(features.get("has_vocoder_cutoff", False))),
-            float(features.get("cutoff_freq_hz", 0.0)) / 10000.0,
-            float(features.get("spectral_flatness", 0.0)) * 100.0,
-            float(features.get("digital_silence_ratio", 0.0)),
-            float(features.get("high_freq_ratio", 0.0)),
-        ], dtype=np.float64)
-    except (TypeError, ValueError):
+        return np.array(feature_vector(features), dtype=np.float64)      # the same five numbers the neural head is trained on
+    except (KeyError, TypeError, ValueError):
         return None
 
 

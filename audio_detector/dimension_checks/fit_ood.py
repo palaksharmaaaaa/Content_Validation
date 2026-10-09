@@ -16,25 +16,13 @@ from typing import Callable, Iterable, Optional
 
 import numpy as np
 
-from core.forensics.ood import MIN_FIT_SAMPLES, OODGate
+from core.forensics.ood import fit_gate_from_files
 
 logger = logging.getLogger("audio_detector.dimension_checks.fit_ood")
 
 
 def fit_ood_gate(paths: Iterable[Path], out_path: Path, vectorizer: Callable[[Path], np.ndarray], max_samples: int = 2000) -> dict:
-    vectors = []
-    for p in list(paths)[:max_samples]:
-        try:
-            vectors.append(np.asarray(vectorizer(Path(p)), dtype=np.float64).reshape(-1))
-        except Exception as exc:
-            logger.warning("skipping %s: %s", p, exc)
-    if len(vectors) < MIN_FIT_SAMPLES:
-        return {"fitted": False, "samples": len(vectors), "message": f"Need at least {MIN_FIT_SAMPLES} analyzable files; got {len(vectors)}."}
-    gate = OODGate().fit(np.vstack(vectors))
-    if not gate.calibrated:
-        return {"fitted": False, "samples": len(vectors), "message": "Fit failed."}
-    gate.save(out_path)
-    return {"fitted": True, "samples": len(vectors), "threshold": gate.threshold, "path": str(out_path)}
+    return fit_gate_from_files(paths, out_path, vectorizer, max_samples, "analyzable files")
 
 
 def _default_vectorizer() -> Callable[[Path], np.ndarray]:

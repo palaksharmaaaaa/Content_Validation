@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import re
 import subprocess
+import threading
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -120,6 +121,7 @@ def check_riff_structure(ctx: CheckContext) -> Finding:
 
 
 # ---------------------------------------------------------------------------------------------
+DECODE_TIMEOUT_SECONDS = 120
 _FLAC_FMT = {16: "s16le", 24: "s24le"}
 
 
@@ -133,14 +135,18 @@ def _md5_of_decoded(path: Path, sample_fmt: str) -> Optional[str]:
     except FileNotFoundError:
         return None
     h = hashlib.md5()
+    watchdog = threading.Timer(DECODE_TIMEOUT_SECONDS, proc.kill)      # a hostile file must not keep ffmpeg (and this read loop) running
+    watchdog.start()
     with proc:  # closes the stdout pipe even on errors (no leaked handle)
         try:
             for chunk in iter(lambda: proc.stdout.read(1 << 20), b""):
                 h.update(chunk)
-            proc.wait(timeout=120)
+            proc.wait(timeout=DECODE_TIMEOUT_SECONDS)
         except Exception:
             proc.kill()
             return None
+        finally:
+            watchdog.cancel()
     return h.hexdigest() if proc.returncode == 0 else None
 
 
@@ -194,7 +200,7 @@ def check_mp3_encoder_tag(ctx: CheckContext) -> Finding:
     m = _ENCODER_RX.search(frame)
     encoder = m.group(0).decode("latin-1") if m else None
     lowpass = None
-    if m and encoder and encoder.startswith("LAME") and m.end() + 1 < len(frame) - 0:
+    if m and encoder and encoder.startswith("LAME") and m.end() + 1 < len(frame):
         # LAME tag: 9-byte encoder string, 1 byte revision/VBR method, then lowpass in units of 100 Hz.
         pos = m.start() + 9
         if pos + 2 <= len(frame):

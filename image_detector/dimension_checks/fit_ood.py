@@ -16,31 +16,13 @@ from typing import Callable, Iterable, Optional
 
 import numpy as np
 
-from core.forensics.ood import MIN_FIT_SAMPLES, OODGate
+from core.forensics.ood import fit_gate_from_files
 
 logger = logging.getLogger("image_detector.dimension_checks.fit_ood")
 
 
-def fit_ood_gate(
-    paths: Iterable[Path],
-    out_path: Path,
-    embedder: Callable[[Path], np.ndarray],
-    max_samples: int = 2000,
-) -> dict:
-    vectors = []
-    for p in list(paths)[:max_samples]:
-        try:
-            vectors.append(np.asarray(embedder(Path(p)), dtype=np.float64).reshape(-1))
-        except Exception as exc:  # unreadable file: skip, keep fitting
-            logger.warning("skipping %s: %s", p, exc)
-    if len(vectors) < MIN_FIT_SAMPLES:
-        return {"fitted": False, "samples": len(vectors),
-                "message": f"Need at least {MIN_FIT_SAMPLES} embeddable images; got {len(vectors)}."}
-    gate = OODGate().fit(np.vstack(vectors))
-    if not gate.calibrated:
-        return {"fitted": False, "samples": len(vectors), "message": "Fit failed."}
-    gate.save(out_path)
-    return {"fitted": True, "samples": len(vectors), "threshold": gate.threshold, "path": str(out_path)}
+def fit_ood_gate(paths: Iterable[Path], out_path: Path, embedder: Callable[[Path], np.ndarray], max_samples: int = 2000) -> dict:
+    return fit_gate_from_files(paths, out_path, embedder, max_samples, "embeddable images")
 
 
 def main(argv: Optional[list] = None) -> None:
