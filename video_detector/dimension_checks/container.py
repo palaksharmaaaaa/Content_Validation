@@ -9,7 +9,7 @@ Absence of any marker is never scored.
 from __future__ import annotations
 
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -204,7 +204,7 @@ def check_mp4_metadata(ctx: CheckContext) -> Finding:
     creation = C.mac_time(mv.get("creation", 0))
     modification = C.mac_time(mv.get("modification", 0))
     paradoxes: List[str] = []
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     if creation and modification and modification < creation - timedelta(seconds=60):
         paradoxes.append("modification time precedes creation time")
     for name, v in (("creation", creation), ("modification", modification)):

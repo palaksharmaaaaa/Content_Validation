@@ -13,7 +13,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 
-from core.decision import normalize_percentages
+from core.decision import normalize_percentages  # noqa: F401  (re-exported: audio_detector.detector and the package API import it from here)
 from core.shared_results import three_way_label
 from audio_detector.config import (
     AI_THRESHOLD_BALANCED,

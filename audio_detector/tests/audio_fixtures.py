@@ -2,7 +2,7 @@
 import struct
 import wave
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict
 
 import numpy as np
 

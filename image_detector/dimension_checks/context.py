@@ -8,41 +8,23 @@ Set OMNI_CONTEXT_HASH_INDEX or place the file at image_detector/data/context_has
 """
 from __future__ import annotations
 
-import logging
-
-import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from PIL import Image
 
 from core.forensics.config import context_index_file
+from core.forensics.jsonl_index import load_index
 from core.forensics.registry import CheckContext, registry
 from core.forensics.schemas import EvidenceClass, Finding, FindingStatus, Severity
 from image_detector.dimension_checks import _common as C
-
-logger = logging.getLogger(__name__)
 
 DEFAULT_INDEX = Path(__file__).resolve().parents[1] / "data" / "context_hash_index.jsonl"
 MATCH_HAMMING = 6
 
 
-def _load_index(path: Path) -> List[Dict[str, Any]]:
-    if not path.is_file():
-        return []
-    rows: List[Dict[str, Any]] = []
-    for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            row = json.loads(line)
-            int(row["phash"], 16)
-            rows.append(row)
-        except Exception as exc:
-            logger.debug("_load_index: ignored %s: %s", type(exc).__name__, exc)
-            continue
-    return rows
+def _prepare(row: Dict[str, Any]) -> None:
+    int(row["phash"], 16)
 
 
 @registry.register("image", "perceptual_hash", phase="post")
@@ -50,7 +32,7 @@ def check_perceptual_hash(ctx: CheckContext) -> Finding:
     with Image.open(ctx.path) as im:
         im.load()
         ph, dh = C.phash64(im), C.dhash64(im)
-    index = _load_index(context_index_file(DEFAULT_INDEX))
+    index = load_index(context_index_file(DEFAULT_INDEX), _prepare)
     matches = []
     for row in index:
         dist = C.hamming64(ph, int(row["phash"], 16))

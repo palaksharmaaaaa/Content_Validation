@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 
 import io
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -137,7 +137,7 @@ def check_timestamp_sanity(ctx: CheckContext) -> Finding:
         paradoxes.append("DateTimeDigitized precedes DateTimeOriginal")
     if orig and mod and mod < orig - slack:
         paradoxes.append("ModifyDate precedes DateTimeOriginal")
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     for name, v in (("DateTimeOriginal", orig), ("DateTimeDigitized", digi), ("ModifyDate", mod)):
         if v and v > now + timedelta(days=1):
             paradoxes.append(f"{name} is in the future")

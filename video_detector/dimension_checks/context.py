@@ -12,11 +12,11 @@ from __future__ import annotations
 
 import logging
 
-import json
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
 from core.forensics.config import video_fp_index_file
+from core.forensics.jsonl_index import load_index
 from core.forensics.registry import CheckContext, registry
 from core.forensics.schemas import EvidenceClass, Finding, FindingStatus, Severity
 from video_detector.dimension_checks import _common as C
@@ -33,22 +33,8 @@ def video_fingerprint_hashes(path: Union[str, Path], n: int = 16) -> List[str]:
     return [f"{C.phash64_gray(g):016x}" for g in C.read_spread_gray(Path(path), n=n)]
 
 
-def _load_index(path: Path) -> List[Dict[str, Any]]:
-    if not path.is_file():
-        return []
-    rows = []
-    for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            row = json.loads(line)
-            row["_h"] = [int(h, 16) for h in row["phashes"]]
-            rows.append(row)
-        except Exception as exc:
-            logger.debug("_load_index: ignored %s: %s", type(exc).__name__, exc)
-            continue
-    return rows
+def _prepare(row: Dict[str, Any]) -> None:
+    row["_h"] = [int(h, 16) for h in row["phashes"]]
 
 
 @registry.register("video", "video_fingerprint", phase="post")
@@ -60,7 +46,7 @@ def check_video_fingerprint(ctx: CheckContext) -> Finding:
         return Finding(status=FindingStatus.NOT_APPLICABLE, severity=Severity.NONE, detail="Too few decodable frames to fingerprint.",
                        data={"frames": len(hashes)}, **base)
     query = [int(h, 16) for h in hashes]
-    index = _load_index(video_fp_index_file(DEFAULT_INDEX))
+    index = load_index(video_fp_index_file(DEFAULT_INDEX), _prepare)
     matches = []
     for row in index:
         hit = sum(1 for q in query if any(C.hamming64(q, r) <= MATCH_HAMMING for r in row["_h"]))

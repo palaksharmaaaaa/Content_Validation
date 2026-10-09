@@ -12,13 +12,13 @@ from __future__ import annotations
 
 import logging
 
-import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import numpy as np
 
 from core.forensics.config import audio_fp_index_file
+from core.forensics.jsonl_index import load_index
 from core.forensics.registry import CheckContext, registry
 from core.forensics.schemas import EvidenceClass, Finding, FindingStatus, Severity
 
@@ -77,22 +77,8 @@ def best_ber(query: np.ndarray, ref: np.ndarray) -> float:
     return best
 
 
-def _load_index(path: Path) -> List[Dict[str, Any]]:
-    if not path.is_file():
-        return []
-    rows = []
-    for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            row = json.loads(line)
-            row["_fp"] = np.frombuffer(bytes.fromhex(row["fp"]), dtype="<u4").astype(np.uint32)
-            rows.append(row)
-        except Exception as exc:
-            logger.debug("_load_index: ignored %s: %s", type(exc).__name__, exc)
-            continue
-    return rows
+def _prepare(row: Dict[str, Any]) -> None:
+    row["_fp"] = np.frombuffer(bytes.fromhex(row["fp"]), dtype="<u4").astype(np.uint32)
 
 
 @registry.register("audio", "audio_fingerprint", phase="post")
@@ -110,7 +96,7 @@ def check_audio_fingerprint(ctx: CheckContext) -> Finding:
     if len(fp) < 20:
         return Finding(status=FindingStatus.NOT_APPLICABLE, severity=Severity.NONE,
                        detail="Recording too short to fingerprint.", data={"fingerprint_frames": len(fp)}, **base)
-    index = _load_index(context_index_path())
+    index = load_index(context_index_path(), _prepare)
     matches = []
     for row in index:
         ber = best_ber(fp, row["_fp"])
