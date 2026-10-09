@@ -9,17 +9,11 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from core.c2pa import scan_file as scan_c2pa_file
 from core.provenance_view import build_c2pa_block, build_exif_block, build_provenance_view
 
 logger = logging.getLogger("video_detector.provenance")
 
-C2PA_VIDEO_SIGNATURES = [
-    b"urn:c2pa",
-    b"c2pa",
-    b"c2ma",
-    b"c2cs",
-    b"application/c2pa",
-]
 
 KNOWN_VIDEO_ATOMS = [b"ftyp", b"moov", b"mdat", b"udta", b"meta", b"mvhd", b"trak"]
 
@@ -52,38 +46,8 @@ class VideoProvenanceValidator:
         return None
 
     def scan_c2pa(self, file_path: str | Path) -> Dict[str, Any]:
-        """Scans video binary for C2PA JUMBF boxes."""
-        path = Path(file_path)
-        if not path.is_file():
-            return {"c2pa_present": False, "status": "FILE_NOT_FOUND", "manifests_found": []}
-
-        try:
-            file_size = path.stat().st_size
-            read_len = min(file_size, 1024 * 1024)  # First 1MB
-            with open(path, "rb") as f:
-                header = f.read(read_len)
-                # Also read last 128KB (where MP4 moov/udta atoms frequently reside)
-                if file_size > read_len:
-                    f.seek(max(0, file_size - 128 * 1024))
-                    footer = f.read(128 * 1024)
-                else:
-                    footer = b""
-
-            search_bytes = header + footer
-            found = []
-            for sig in C2PA_VIDEO_SIGNATURES:
-                if sig in search_bytes:
-                    found.append(sig.decode("utf-8", errors="ignore"))
-
-            has_c2pa = len(found) > 0
-            return {
-                "c2pa_present": has_c2pa,
-                "status": "C2PA_CREDENTIALS_FOUND" if has_c2pa else "NO_C2PA_MANIFEST",
-                "manifests_found": found,
-            }
-        except Exception as e:
-            logger.debug("Video C2PA scan error: %s", e)
-            return {"c2pa_present": False, "status": "ERROR", "manifests_found": []}
+        """Content Credentials marker scan (presence only; see core.c2pa)."""
+        return scan_c2pa_file(file_path)
 
     def analyze_provenance(self, file_path: str | Path) -> Dict[str, Any]:
         """Analyzes video atoms, encoder signatures, and cryptographic provenance."""

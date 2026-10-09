@@ -9,17 +9,11 @@ import logging
 from pathlib import Path
 from typing import Any, Dict
 
+from core.c2pa import scan_file as scan_c2pa_file
 from core.provenance_view import build_c2pa_block, build_exif_block, build_provenance_view
 
 logger = logging.getLogger("audio_detector.provenance")
 
-C2PA_AUDIO_SIGNATURES = [
-    b"urn:c2pa",
-    b"c2pa",
-    b"c2ma",
-    b"c2cs",
-    b"application/c2pa",
-]
 
 KNOWN_AUDIO_ENCODERS = ["lame", "lavf", "ffmpeg", "coreaudio", "audacity", "pro tools", "elevenlabs"]
 
@@ -31,31 +25,8 @@ class AudioProvenanceValidator:
         pass
 
     def scan_c2pa(self, file_path: str | Path) -> Dict[str, Any]:
-        """Scans audio binary for C2PA JUMBF byte patterns."""
-        path = Path(file_path)
-        if not path.is_file():
-            return {"c2pa_present": False, "status": "FILE_NOT_FOUND", "manifests_found": []}
-
-        try:
-            file_size = path.stat().st_size
-            read_len = min(file_size, 512 * 1024)
-            with open(path, "rb") as f:
-                header = f.read(read_len)
-
-            found = []
-            for sig in C2PA_AUDIO_SIGNATURES:
-                if sig in header:
-                    found.append(sig.decode("utf-8", errors="ignore"))
-
-            has_c2pa = len(found) > 0
-            return {
-                "c2pa_present": has_c2pa,
-                "status": "C2PA_CREDENTIALS_FOUND" if has_c2pa else "NO_C2PA_MANIFEST",
-                "manifests_found": found,
-            }
-        except Exception as e:
-            logger.debug("Audio C2PA scan error: %s", e)
-            return {"c2pa_present": False, "status": "ERROR", "manifests_found": []}
+        """Content Credentials marker scan (presence only; see core.c2pa)."""
+        return scan_c2pa_file(file_path)
 
     def analyze_provenance(self, file_path: str | Path) -> Dict[str, Any]:
         """Analyzes audio chunk headers, encoder footprints, and C2PA credentials."""
@@ -82,7 +53,7 @@ class AudioProvenanceValidator:
 
         if c2pa_res["c2pa_present"]:
             status = "C2PA_PROVENANCE_PRESENT"
-            cues.append("Content Credentials cryptographic manifest verified in audio stream.")
+            cues.append("Content Credentials markers found in the audio file (presence only; not cryptographically verified).")
         elif encoder_found:
             status = "STANDARD_ENCODER_METADATA"
         else:

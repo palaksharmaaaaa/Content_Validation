@@ -9,24 +9,11 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from typing import Any, Dict
+from core.c2pa import scan_file as scan_c2pa_file
 from core.provenance_view import build_c2pa_block, build_exif_block, build_provenance_view
 
 logger = logging.getLogger("image_detector.provenance")
 
-C2PA_JUMBF_SIGNATURES = [
-    b"urn:c2pa",
-    b"c2pa",
-    b"c2ma",
-    b"c2cs",
-    b"application/c2pa",
-    b"image/jumd",
-    b"http://c2pa.org",
-    b"c2pa.claim",
-    b"c2pa.assertion",
-]
-
-
-MIN_DISTINCTIVE_MARKER = 8     # characters: urn:c2pa, application/c2pa, c2pa.claim ... (the 4-letter tags are too short to trust alone)
 
 
 class ImageProvenanceValidator:
@@ -36,38 +23,8 @@ class ImageProvenanceValidator:
         pass
 
     def scan_c2pa(self, file_path: str | Path) -> Dict[str, Any]:
-        """Scans image binary bytes (both header and trailer) for C2PA JUMBF manifests."""
-        path = Path(file_path)
-        if not path.is_file():
-            return {"c2pa_present": False, "status": "FILE_NOT_FOUND", "manifests_found": []}
-
-        try:
-            file_size = path.stat().st_size
-            read_len = min(file_size, 512 * 1024)
-            with open(path, "rb") as f:
-                header_bytes = f.read(read_len)
-                trailer_bytes = b""
-                if file_size > read_len:
-                    f.seek(max(0, file_size - read_len))
-                    trailer_bytes = f.read(read_len)
-
-            scan_buffer = header_bytes + trailer_bytes
-            found_markers = []
-            for sig in C2PA_JUMBF_SIGNATURES:
-                if sig in scan_buffer:
-                    found_markers.append(sig.decode("utf-8", errors="ignore"))
-
-            # A bare 4-byte tag turns up by chance in about one megabyte of compressed image data in a few thousand files, so it counts
-            # only together with the JUMBF box type; a distinctive marker (a URN, a MIME type, a claim name) counts on its own.
-            has_c2pa = any(len(m) >= MIN_DISTINCTIVE_MARKER for m in found_markers) or (b"jumb" in scan_buffer and bool(found_markers))
-            return {
-                "c2pa_present": has_c2pa,
-                "status": "C2PA_CREDENTIALS_FOUND" if has_c2pa else "NO_C2PA_MANIFEST",
-                "manifests_found": found_markers,
-            }
-        except Exception as e:
-            logger.debug("C2PA scan error: %s", e)
-            return {"c2pa_present": False, "status": "ERROR", "manifests_found": []}
+        """Content Credentials marker scan (presence only; see core.c2pa)."""
+        return scan_c2pa_file(file_path)
 
     def analyze_provenance(self, file_path: str | Path) -> Dict[str, Any]:
         """Runs complete provenance and metadata analysis on an image."""
