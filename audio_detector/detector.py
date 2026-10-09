@@ -2,7 +2,7 @@
 audio_detector.detector: Complete, self-contained Audio AI Detection engine.
 Combines:
 1. Native & FFmpeg multi-format audio decoding to 16kHz float32 PCM.
-2. High-frequency vocoder brick-wall cutoff detection (HiFi-GAN, MelGAN, ElevenLabs).
+2. High-frequency brick-wall cutoff detection (a trait of many neural vocoders, and of some codecs).
 3. Wiener spectral flatness analysis for unnatural harmonic smoothing.
 4. Digital zero silence analysis for absent room tone.
 5. Speech temporal timeline attribution.
@@ -45,8 +45,7 @@ logger = logging.getLogger("audio_detector")
 class AudioAIDetector:
     """
     Completely independent, self-contained Audio AI Detector with rule-based feedback calibration (see learner.py).
-    Evaluates acoustic spectral anomalies, vocoder cutoffs, digital silence gaps,
-    and voice clone signatures.
+    Evaluates acoustic spectral anomalies, band-limit cutoffs and digital silence gaps.
     """
 
     def __init__(

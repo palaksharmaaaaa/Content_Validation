@@ -8,13 +8,12 @@ Contains:
 """
 from __future__ import annotations
 
-import math
 from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 
 from core.decision import normalize_percentages  # noqa: F401  (re-exported: audio_detector.detector and the package API import it from here)
-from core.shared_results import three_way_label
+from core.shared_results import three_way_label, binary_entropy
 from audio_detector.config import (
     AI_THRESHOLD_BALANCED,
     AI_THRESHOLD_HIGH,
@@ -30,10 +29,8 @@ from audio_detector.config import (
 
 
 def calculate_audio_epistemic_uncertainty(prob_ai: float) -> float:
-    """Calculates epistemic uncertainty from binary probability using Shannon entropy."""
-    p_safe = float(np.clip(prob_ai, 1e-6, 1.0 - 1e-6))
-    entropy = -p_safe * math.log2(p_safe) - (1.0 - p_safe) * math.log2(1.0 - p_safe)
-    return max(0.0, min(1.0, float(entropy)))
+    """Epistemic uncertainty of a binary probability as its Shannon entropy (see core.shared_results.binary_entropy)."""
+    return binary_entropy(prob_ai)
 
 
 def pool_acoustic_evidence(

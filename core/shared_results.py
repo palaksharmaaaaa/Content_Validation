@@ -1,6 +1,7 @@
 """core.shared_results: result shapes and label rules shared by all three modality packages."""
 from __future__ import annotations
 
+import math
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -45,6 +46,12 @@ def shift_probability_by_log_odds(p_ai: float, extra_log_lrs: Optional[Dict[str,
     shifted = float(np.clip(1.0 / (1.0 + 10.0 ** (-logit)), 0.01, 0.99))
     cues = [f"Dimension check '{k}' adjusted log-odds by {float(v):+.2f}" for k, v in (extra_log_lrs or {}).items() if v]
     return shifted, 1.0 - shifted, cues
+
+
+def binary_entropy(prob_ai: float) -> float:
+    """Shannon entropy (bits) of a two-outcome probability: 1.0 at P(AI) = 0.5, near 0 when the probability is near 0 or 1."""
+    p = float(np.clip(prob_ai, 1e-6, 1.0 - 1e-6))
+    return max(0.0, min(1.0, float(-p * math.log2(p) - (1.0 - p) * math.log2(1.0 - p))))
 
 
 NAMING_THRESHOLD = 0.25

@@ -8,24 +8,20 @@ Contains:
 """
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
+
+from core.shared_results import binary_entropy
 
 from core.decision import normalize_percentages  # noqa: F401  (re-exported: tests and callers import it from here)
 from image_detector.config import SENSITIVITY_PRIORS
 
 
 def calculate_image_epistemic_uncertainty(prob_ai: float) -> float:
-    """
-    Calculates epistemic uncertainty from binary probability using Shannon entropy.
-    Entropy is maximal (1.0) when P(AI) = 0.5, and approaches 0 when P is near 0 or 1.
-    """
-    p_safe = float(np.clip(prob_ai, 1e-6, 1.0 - 1e-6))
-    entropy = -p_safe * math.log2(p_safe) - (1.0 - p_safe) * math.log2(1.0 - p_safe)
-    return max(0.0, min(1.0, float(entropy)))
+    """Epistemic uncertainty of a binary probability as its Shannon entropy (see core.shared_results.binary_entropy)."""
+    return binary_entropy(prob_ai)
 
 
 def pool_bayesian_log_odds(
