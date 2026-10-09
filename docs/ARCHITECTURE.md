@@ -60,7 +60,7 @@ Pretrained models that describe an image's content. All are Apache-2.0 and run o
 | Apparent age | MiVOLO v2 (115 MB, Git LFS), network code vendored in `mivolo_vendor/` | `core/models/mivolo_v2/` |
 | Dominant colours | CIELAB clustering plus a colour-name table (no model) | `colors.py` |
 
-The text side of SigLIP 2 is only needed to embed the fixed prompts in `vocab.py`. Those 182 embeddings ship in `core/perception/vocab_embeddings.npz` (fingerprinted by the pinned revision and every prompt; rebuild with `python -m services.build_vocab_embeddings` after editing a vocabulary, a test fails until you do), and the recognizer frees the text tower after loading, saving about 1 GB of memory. A missing large model makes its part of the report empty or `UNAVAILABLE`; it never stops the analysis. Modules: `age.py` (ages every person, recall-first), `age_video.py` and `video_sampling.py` (minor screening across a video with adaptive sampling), `face_scan.py` (small-face finder), `face_attributes.py`, `enrich.py` (adds recognition details to detections), `hub.py` (offline-friendly model loading, pinned revisions, Git LFS pointer detection).
+The text side of SigLIP 2 is only needed to embed the fixed prompts in `vocab.py`. Those 182 embeddings ship in `core/perception/vocab_embeddings.npz` (fingerprinted by the pinned revision and every prompt; rebuild with `python -m services.build_vocab_embeddings` after editing a vocabulary, a test fails until you do), and the recognizer frees the text tower after loading, saving about 1 GB of memory. A missing large model makes its part of the report empty or `UNAVAILABLE`; it never stops the analysis. Modules: `age.py` (ages every person, recall-first), `age_video.py` and `video_sampling.py` (minor screening across a video with adaptive sampling), `face_scan.py` (small-face finder), `face_texture.py` (the facial texture cue shared by the image and video detectors), `face_attributes.py`, `enrich.py` (adds recognition details to detections), `hub.py` (offline-friendly model loading, pinned revisions, Git LFS pointer detection).
 
 ## Face authenticity
 
@@ -84,14 +84,14 @@ Each package follows the same shape.
 | `explain.py` | the nine-dimension dossier and the plain-English explanation |
 | `pipeline.py` | `run()` (the single analysis sequence) and `analyze()` (headless report) |
 | `learner.py`, `retrain.py`, `trainer.py` | feedback records, the fine-tuning entry point, the PyTorch trainer |
-| `batch.py`, `benchmarks.py` | a sequential headless batch runner and accuracy on a labelled folder (URLs are fetched by `core.security`; the app's own batches are parallel, see Operations) |
+| `batch.py`, `benchmarks.py` | thin subclasses of `core.batch` / `core.benchmark` for the package (URLs are fetched by `core.security`; the app's own batches are parallel, see Operations) |
 | `dimension_checks/` | the isolated checks (see [CHECKS.md](CHECKS.md)) |
 
 Package-specific points:
 
 - **Image**: `feature_store.py` is an optional, rebuildable feature cache keyed by content hash. `face.py` counts faces and scores a texture heuristic for waxy skin (not a trained deepfake detector); `face_authenticity.py` and `face_training.py` are the trained face check. `learner.py` nudges five scalar weights per feedback event and does not retrain a network.
 - **Audio**: `validator.py` uses `ffmpeg` to decode to 16 kHz mono; if `ffmpeg` is not installed it reads WAV files natively and nothing else. Limits: 200 MB, one hour.
-- **Video**: `extractor.py` samples frames uniformly, takes a keyframe at 15 % of the timeline and demuxes audio with `ffmpeg` (skipped, with a warning, if it is missing). `cross_modal.py` compares the video result with an audio result supplied by the caller. Frames are scored by the built-in noise and smoothness scorer unless an external frame detector is attached. Limit: 500 MB. Minor screening reads the file itself with adaptive sampling (`core/perception/age_video.py`).
+- **Video**: `extractor.py` samples frames uniformly (frames below 64 px on the short side are rejected). The representative keyframe is chosen from the sampled frames, and the audio track is decoded by the audio package through `ffmpeg` (skipped, with a warning, if it is missing). `cross_modal.py` compares the video result with an audio result supplied by the caller. Frames are scored by the built-in noise and smoothness scorer unless an external frame detector is attached. Limit: 500 MB. Minor screening reads the file itself with adaptive sampling (`core/perception/age_video.py`).
 
 ## `core/` modules
 
@@ -103,8 +103,10 @@ Package-specific points:
 | `media_library.py`, `retrain_engine.py` | labelled media by reference (hash and path hint, never a copy); fine-tuning with a hash-based validation split, promoting a new checkpoint only if its validation accuracy does not drop. |
 | `checkpoint_log.py` | a plain-text, Git-tracked provenance log for trained checkpoints. |
 | `bands.py`, `calibration_report.py` | the five probability bands; accuracy, false-positive rate, Brier score and ECE from labelled pairs. |
-| `forensics/` | `schemas.py` (Finding, DimensionReport), `registry.py` (isolated checks), `gates.py`, `ood.py`, `bytescan.py`, `reporting.py`, `config.py`. |
+| `forensics/` | `schemas.py` (Finding, DimensionReport), `registry.py` (isolated checks), `gates.py`, `ood.py`, `bytescan.py`, `jsonl_index.py` (re-use indexes read once per change), `reporting.py`, `config.py`. |
 | `hashing.py`, `imageio.py` | one streaming file-digest implementation; image reading that works for every file name and bit depth. |
+| `ffmpeg.py`, `c2pa.py` | the one hardened way to call ffmpeg/ffprobe (file and pipe protocols only, no stdin, bounded decode) and the one PCM decoder; the one C2PA presence scan used by all three packages. |
+| `batch.py`, `benchmark.py` | the sequential headless batch runner (one failing file never stops the run; results bucketed by exact status) and the labelled-folder scorer (rank-based ROC-AUC, abstentions and failures reported). |
 | `shared_results.py`, `provenance_view.py`, `metrics_util.py` | result shapes and label rules shared by the three packages; the single nested provenance shape used by the decision layer and the UI; conversion of metric values to JSON-safe scalars. |
 | `filecache.py`, `lazy.py`, `logging_filters.py` | a memoiser for expensive per-file parses that invalidates when the file changes; lazy package re-exports so light imports do not load torch; a filter for one benign Windows asyncio log line. |
 

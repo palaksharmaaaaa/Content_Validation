@@ -52,10 +52,11 @@ The screening is deliberately cautious: it sends many adults to review as well (
 - A **confidence band** (very likely AI / leaning AI / inconclusive / leaning real / very likely real) is shown instead of a bare number. Prefer the band.
 - **C2PA** is detected by presence only. The signature is not verified, so it is never counted as proof of authenticity.
 - **Camera metadata (EXIF)** can be forged and earns no trust on its own.
-- **Generator attribution** ("looks like Midjourney") is an explanation aid and never changes the verdict.
+- **Generator attribution** names a generator only when the file itself declares one (a watermark, or a metadata or software tag). Without that it says "Unknown". It is an explanation aid and never changes the verdict.
 - Heavily compressed reposts, screenshots and low-resolution files weaken every signal.
 - Faces are counted with a trained detector (YuNet), but the facial deepfake-risk score is a texture heuristic. The separate face-authenticity check is a trained classifier whose generality is limited (see [Limitations](LIMITATIONS.md)).
 - A field the tool could not measure is shown as "not measured" or "not recorded", never as a normal reading.
+- A file with nothing to analyse (one flat colour, silence, blank frames) gets "No usable content" instead of a verdict.
 
 More detail: [Limitations](LIMITATIONS.md).
 

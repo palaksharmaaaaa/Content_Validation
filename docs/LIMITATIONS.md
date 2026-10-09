@@ -12,9 +12,11 @@ What this project does not do, or has not been shown to do. Numbers below were m
 - **Recognition is zero-shot.** Place, species and vehicle type are the best match inside a fixed vocabulary, so they always return something; results below 30 % are shown as "not sure". Rare species and specific vehicle models are weak spots.
 - **Expression recognition is indicative.** The model reaches about 88 % on a posed-face benchmark; real photographs (stern group poses, sunglasses, side views) are harder, and "disgust" is over-reported.
 - **Same-person matching works within one photo set only**: nothing is stored and no names are attached. It is accurate on frontal faces and weak on small, blurred or turned faces.
-- **Attribution is a guess.** Only some generators have spectral calibration; the rest match metadata strings. Attribution never changes the verdict.
-- **C2PA is presence-only**; signatures and hash bindings are not verified. **EXIF is unauthenticated.**
-- **Learning is shallow.** Feedback nudges a few scalar weights; real model training is a separate, manual step. Near-duplicate files (re-saves, resizes) are not recognised as the same sample.
+- **A generator is named only when the file itself declares it** (a visible watermark, or a metadata or software claim, all unauthenticated). Spectral slope, motion variance, cutoff frequency and canvas size are shared by many generators and by ordinary cameras and codecs, so they rank candidates but never name one; without a declaration the answer is "Unknown" and no candidates are offered. A file name is never used. Attribution never changes the verdict.
+- **C2PA is presence-only**; signatures and hash bindings are not verified, and a bare four-letter tag counts only next to the JUMBF box type. **EXIF is unauthenticated.**
+- **A file name is not evidence.** Nothing in the verdict, the screenshot decision or the attribution reads it.
+- **Blank or degenerate media get "no usable content", not a verdict**: a single flat colour, silence, all-blank video frames. Pictures and videos whose shorter side is under 64 px are rejected with the reason.
+- **Learning is shallow.** Feedback nudges a few scalar weights, and only from values that were actually measured for that file; real model training is a separate, manual step. Near-duplicate files (re-saves, resizes) are not recognised as the same sample.
 - **What is not covered at all** is listed in [CHECKS.md](CHECKS.md#not-covered).
 
 ## Operations
@@ -25,7 +27,8 @@ What this project does not do, or has not been shown to do. Numbers below were m
 - **No authentication.** Per-session scratch folders keep users' files apart, but the app is for personal, local use only.
 - **Batches run in parallel on multi-core machines** (images and audio about 2x faster, video about 1.15x); on a dual-core machine they stay sequential.
 - **Size limits:** image 100 MB, audio 200 MB or 1 hour, video 500 MB.
-- **Without `ffmpeg`**, WAV audio is still read natively and video frames are still read through OpenCV, but compressed audio cannot be decoded and a video's audio track is skipped.
+- **`ffmpeg` is called with only the `file` and `pipe` protocols, no terminal input and a bounded decode** (an upload that is really a playlist cannot make it fetch URLs).
+- **Without `ffmpeg`**, WAV audio (8, 16, 24 and 32-bit PCM) is still read natively and video frames are still read through OpenCV, but compressed audio cannot be decoded and a video's audio track is skipped.
 
 ## Age and minor screening
 

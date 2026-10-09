@@ -42,7 +42,7 @@ upload / link
   -> profile + provenance   (hashes, geometry, metadata, C2PA marker scan)
   -> dimension checks "pre" (integrity, container, metadata, signal checks, face authenticity)
   -> detector         (pixel / spectral / temporal signals -> probability)
-  -> content + attribution  (what is in the file; which known generator it resembles)
+  -> content + attribution  (what is in the file; which generator the file itself declares)
   -> dimension checks "post" (reuse fingerprint, rights, re-encoding, confidence limiters)
   -> decision         (one verdict, five confidence bands, nine-dimension dossier, explanation)
 ```
@@ -159,7 +159,8 @@ All are run from the repository root with `python -m <module>`.
 | `services.calibration_cli --modality image\|audio\|video` | accuracy, false-positive rate, Brier score, ECE and band occupancy on your held-out files |
 | `image_detector.face_training --real <dirs> --ai <dirs>` | train the face-authenticity checkpoint |
 | `<modality>_detector.dimension_checks.fit_ood` | fit the out-of-distribution gate from your library |
-| `<modality>_detector.trainer` / `benchmarks` | train a backbone; score a labelled folder |
+| `<modality>_detector.trainer` | train a backbone |
+| `<modality>_detector.benchmarks --dataset <dir> [--output report.json]` | score a labelled folder (`real/`, `ai_generated/`): accuracy, precision, recall, F1, ROC-AUC, latency; abstentions and failures are counted, never scored as "real" |
 | `services.age_eval run\|wild\|fairface` | measure the age screening on public datasets |
 | `services.blind_test run\|summary` | run the image pipeline over folders without looking at labels |
 | `manual_pipeline_smoke.py` | a manual end-to-end smoke script (not part of the test suite) |
