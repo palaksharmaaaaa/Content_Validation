@@ -219,10 +219,10 @@ def _collect_attribution(ev: _Evidence, attribution: Optional[Dict[str, Any]]) -
         return
     ev.trail.extend(f"[Model Attribution] {cue}" for cue in attribution.get("cues", []))
     conf = float(attribution.get("attribution_confidence", 0.0))
-    if conf >= 0.45 and attribution.get("model_key", "") not in ("unknown_ai", ""):
+    if conf >= 0.45 and attribution.get("model_key", "") not in ("unknown", "unknown_ai", ""):
         ev.trail.append(
-            f"[Model Attribution] High-confidence fingerprint alignment: {attribution.get('attributed_model')} "
-            f"({attribution.get('region_of_origin')}) at {int(conf * 100)}% match."
+            f"[Model Attribution] The file declares {attribution.get('attributed_model')} "
+            f"({attribution.get('region_of_origin')}); unauthenticated claim, share of the candidate ranking {int(conf * 100)}%."
         )
 
 

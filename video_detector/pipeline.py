@@ -83,8 +83,8 @@ def _evidence_trail(
         trail.append("C2PA Content Credentials markers found in video container (presence only; not cryptographically verified).")
     trail.extend(ai_res.get("forensic_cues", []))
     trail.extend(f"Audio-Visual Cross-Modal: {cue}" for cue in cross_modal.get("cues", []) if "skipped" not in cue.lower())
-    if attribution.get("attributed_model") != "Unknown":
-        trail.append(f"Video Generator Fingerprint: {attribution.get('attributed_model')} ({attribution.get('confidence', 0)*100:.0f}% confidence)")
+    if attribution.get("model_key", "unknown") != "unknown":
+        trail.append(f"The file declares the video generator: {attribution.get('attributed_model')} (unauthenticated claim)")
     trail.extend(summarize_for_evidence_trail(dimension_report))
     return trail
 

@@ -88,9 +88,8 @@ def _evidence_trail(
     for cue in ai_res.get("forensic_cues", []):
         evidence_trail.append(cue)
     attr_model = attribution_res.get("attributed_model", "")
-    attr_conf = float(attribution_res.get("confidence", 0.0))
-    if attr_model and not attr_model.startswith("None") and not attr_model.startswith("Unknown") and attr_conf > 0.0:
-        evidence_trail.append(f"Generative fingerprint matched: {attr_model} ({int(attr_conf * 100)}% match)")
+    if attribution_res.get("model_key", "unknown") not in ("unknown", "authentic") and attr_model and not attr_model.startswith("None"):
+        evidence_trail.append(f"The file declares the generator: {attr_model} (unauthenticated claim)")
 
     evidence_trail.extend(summarize_for_evidence_trail(dimension_report))
     return evidence_trail

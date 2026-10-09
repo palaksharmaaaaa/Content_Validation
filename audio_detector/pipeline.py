@@ -72,8 +72,8 @@ def _evidence_trail(provenance: Dict[str, Any], ai_res: Dict[str, Any], attribut
     if provenance.get("c2pa_present"):
         trail.append("C2PA Content Credentials markers found in audio stream (presence only; not cryptographically verified).")
     trail.extend(ai_res.get("forensic_cues", []))
-    if attribution.get("attributed_model") != "Unknown":
-        trail.append(f"Voice Synthesizer Fingerprint: {attribution.get('attributed_model')} ({attribution.get('confidence', 0)*100:.0f}% confidence)")
+    if attribution.get("model_key", "unknown") != "unknown":
+        trail.append(f"The file declares the voice generator: {attribution.get('attributed_model')} (unauthenticated claim)")
     trail.extend(summarize_for_evidence_trail(dimension_report))
     return trail
 

@@ -212,7 +212,7 @@ def _authentic_attribution(tax_state: str) -> Dict[str, Any]:
         "attribution_confidence": 0.0,
         "region_of_origin": "N/A",
         "watermark_detected": False,
-        "cues": ["Authentic media capture - no generative foundation model detected."],
+        "cues": ["Classified as a camera capture; the file declares no generator."],
         "top_candidates": [],
     }
 
