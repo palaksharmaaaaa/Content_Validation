@@ -101,7 +101,7 @@ class AudioAIDetector:
         cues: List[str] = []
         if spectral_feats.get("has_vocoder_cutoff"):
             cues.append(
-                f"Sharp vocoder brick-wall frequency cutoff at {spectral_feats['cutoff_freq_hz']} Hz (indicative of ElevenLabs, Suno, CosyVoice)"
+                f"Sharp brick-wall frequency cutoff at {spectral_feats['cutoff_freq_hz']} Hz, well below the recording's Nyquist limit (neural vocoders do this; so do some codecs and band-limited sources)"
             )
         if spectral_feats.get("spectral_flatness", 1.0) < thresh.get("flatness_synthetic_max", 0.002):
             cues.append("Unnaturally smooth Wiener spectral flatness (synthetic voice harmonic profile)")

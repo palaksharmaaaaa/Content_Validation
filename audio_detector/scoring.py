@@ -73,12 +73,11 @@ def pool_acoustic_evidence(
     th_cfg = thresholds or {}
     flatness_low_limit = float(th_cfg.get("flatness_synthetic_max", SYNTHETIC_FLATNESS_LOW_THRESHOLD))
     silence_min_limit = float(th_cfg.get("silence_synthetic_min", DIGITAL_SILENCE_RATIO_THRESHOLD))
-    vocoder_min = float(th_cfg.get("vocoder_min_hz", 6500))
-    vocoder_max = float(th_cfg.get("vocoder_max_hz", 8200))
 
     # 1. Vocoder cutoff score
-    cutoff_hz = float(features.get("cutoff_freq_hz", 0.0))
-    has_vocoder = bool(features.get("has_vocoder_cutoff", False) or (vocoder_min <= cutoff_hz <= vocoder_max))
+    # features.compute_spectral_features decides this once, and only for a cutoff clearly below the recording's own Nyquist; a cutoff
+    # frequency alone is not re-tested here (a plain 16 kHz recording rolls off at 7.5-8 kHz without any vocoder).
+    has_vocoder = bool(features.get("has_vocoder_cutoff", False))
     vocoder_score = 0.90 if has_vocoder else 0.10
 
     # 2. Flatness score

@@ -63,8 +63,6 @@ class AudioSelfImprover:
                 "high_freq_roll": 0.10,
             },
             "thresholds": {
-                "vocoder_min_hz": 6500,
-                "vocoder_max_hz": 8200,
                 "flatness_synthetic_max": 0.002,
                 "silence_synthetic_min": 0.12,
             },

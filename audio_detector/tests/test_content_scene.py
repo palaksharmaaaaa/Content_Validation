@@ -51,3 +51,12 @@ def test_the_ui_shows_the_real_fields():
     shown = " ".join(str(m.value) for m in at.metric)
     assert "Speech-like" in shown and "Strong signal" in shown
     assert not any("Studio" in str(m.value) or "Conversational" in str(m.value) for m in at.metric)
+
+
+def test_a_cutoff_near_the_recordings_own_nyquist_is_not_a_vocoder():
+    from audio_detector.scoring import pool_acoustic_evidence
+
+    feats = {"has_vocoder_cutoff": False, "cutoff_freq_hz": 7600.0, "spectral_flatness": 0.05, "digital_silence_ratio": 0.0, "high_freq_ratio": 0.05}
+    plain = pool_acoustic_evidence(feats, {}, None, 0.0, {})[0]
+    flagged = pool_acoustic_evidence({**feats, "has_vocoder_cutoff": True}, {}, None, 0.0, {})[0]
+    assert plain < flagged
