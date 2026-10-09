@@ -97,3 +97,14 @@ def test_audio_dossier_does_not_invent_synthesis_facts():
     assert d["dimension_9"]["watermark_detected"] is None
     und = build_audio_nine_dimensions_dossier({}, {"label": "UNDECIDED"}, {}, {}, {})
     assert und["dimension_7"]["is_synthetic_voice"] is None
+
+
+def test_audio_vendor_names_must_be_whole_words(tmp_path):
+    from audio_detector.attribution import AudioModelAttributionEngine
+    from audio_detector.tests.audio_fixtures import tone, write_wav
+
+    p = write_wav(tmp_path / "w.wav", tone(1.0, seed=3))
+    eng = AudioModelAttributionEngine()
+    for text in ("this take resembles my earlier one", "supersonic", "an audio interview"):
+        assert eng.attribute_audio(p, provenance_data={"metadata": {"comment": text}})["model_key"] == "unknown", text
+    assert eng.attribute_audio(p, provenance_data={"metadata": {"comment": "voice by Resemble AI"}})["model_key"] == "resemble_ai"

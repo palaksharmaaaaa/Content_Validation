@@ -143,7 +143,7 @@ class AudioModelAttributionEngine:
             meta = provenance_data.get("metadata", {})
             for k, v in meta.items():
                 val_str = str(v).lower()
-                if "elevenlabs" in val_str:
+                if _word("elevenlabs", val_str) or _word("eleven labs", val_str):
                     scores["elevenlabs"] += 0.85
                     cues.append("Metadata declares ElevenLabs audio generation")
                     declared = True
@@ -155,11 +155,11 @@ class AudioModelAttributionEngine:
                     scores["udio"] += 0.85
                     cues.append("Metadata declares Udio generation")
                     declared = True
-                elif "lyria" in val_str or ("gemini" in val_str and "audio" in val_str):
+                elif _word("lyria", val_str) or (_word("gemini", val_str) and _word("audio", val_str)):
                     scores["google_gemini_audio"] += 0.85
                     cues.append("Metadata declares Google Gemini/Lyria audio generation")
                     declared = True
-                elif "audiocraft" in val_str or "musicgen" in val_str or "voicebox" in val_str:
+                elif _word("audiocraft", val_str) or _word("musicgen", val_str) or _word("voicebox", val_str):
                     scores["meta_audiocraft"] += 0.85
                     cues.append("Metadata declares Meta AudioCraft generation")
                     declared = True
@@ -167,23 +167,23 @@ class AudioModelAttributionEngine:
                     scores["hume_ai"] += 0.85
                     cues.append("Metadata declares Hume AI (Octave) generation")
                     declared = True
-                elif "cartesia" in val_str or _word("sonic", val_str):
+                elif _word("cartesia", val_str) or _word("sonic", val_str):
                     scores["cartesia"] += 0.85
                     cues.append("Metadata declares Cartesia (Sonic) generation")
                     declared = True
-                elif "play.ht" in val_str or "playht" in val_str:
+                elif _word("play.ht", val_str) or _word("playht", val_str):
                     scores["playht"] += 0.85
                     cues.append("Metadata declares PlayHT generation")
                     declared = True
-                elif "resemble" in val_str:
+                elif _word("resemble ai", val_str) or _word("resemble.ai", val_str) or _word("resembleai", val_str):
                     scores["resemble_ai"] += 0.85
                     cues.append("Metadata declares Resemble AI generation")
                     declared = True
-                elif "coqui" in val_str or "xtts" in val_str:
+                elif _word("coqui", val_str) or _word("xtts", val_str):
                     scores["coqui_xtts"] += 0.85
                     cues.append("Metadata declares Coqui XTTS generation")
                     declared = True
-                elif "realtime api" in val_str or "advanced voice mode" in val_str or ("gpt-4o" in val_str and "voice" in val_str):
+                elif _word("realtime api", val_str) or _word("advanced voice mode", val_str) or (_word("gpt-4o", val_str) and _word("voice", val_str)):
                     scores["openai_voice"] += 0.85
                     cues.append("Metadata declares OpenAI Realtime API / Advanced Voice Mode generation")
                     declared = True
