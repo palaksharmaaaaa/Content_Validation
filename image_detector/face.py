@@ -5,7 +5,7 @@ The texture score (waxy skin, missing sensor noise) is a heuristic cue, not a tr
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 import cv2
 import numpy as np
 

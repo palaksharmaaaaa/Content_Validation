@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
-from core.decision import normalize_percentages
+from core.decision import normalize_percentages  # noqa: F401  (re-exported: tests and callers import it from here)
 from image_detector.config import SENSITIVITY_PRIORS
 
 

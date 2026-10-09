@@ -237,6 +237,7 @@ def test_truncated_large_wav_still_detected(tmp_path):
 def test_multiple_list_chunks_merged(tmp_path):
     a = b"INFO" + b"ISFT" + (len(b"ToolA\x00")).to_bytes(4, "little") + b"ToolA\x00"
     b = b"INFO" + b"ICOP" + (len(b"(c) X\x00")).to_bytes(4, "little") + b"(c) X\x00"
-    p = write_wav_with_chunks(tmp_path / "m.wav", tone(0.2), extra={b"LIST": a + (b"\x00" if len(a) & 1 else b"")})
+    p = write_wav_with_chunks(tmp_path / "m.wav", tone(0.2), extra=[(b"LIST", a), (b"LIST", b)])
     f = container.check_riff_structure(_ctx(p))
     assert f.data["info"]["ISFT"] == "ToolA"
+    assert f.data["info"]["ICOP"] == "(c) X"          # the second LIST chunk is merged, not dropped

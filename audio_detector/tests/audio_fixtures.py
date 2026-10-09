@@ -35,12 +35,13 @@ def write_wav(path: Path, samples: np.ndarray, sr=16000, bits=16) -> Path:
     return path
 
 
-def write_wav_with_chunks(path: Path, samples: np.ndarray, sr=16000, extra: Optional[Dict[bytes, bytes]] = None) -> Path:
-    """16-bit mono WAV with additional RIFF chunks (e.g. bext, LIST) inserted before data."""
+def write_wav_with_chunks(path: Path, samples: np.ndarray, sr=16000, extra=None) -> Path:
+    """16-bit mono WAV with additional RIFF chunks (e.g. bext, LIST) inserted before data. ``extra`` is a dict of chunk id -> payload,
+    or a list of (id, payload) pairs when the same id must appear more than once."""
     pcm = (np.clip(samples, -1, 1) * 32767).astype("<i2").tobytes()
     fmt = struct.pack("<HHIIHH", 1, 1, sr, sr * 2, 2, 16)
     body = b"WAVE" + b"fmt " + struct.pack("<I", len(fmt)) + fmt
-    for cid, payload in (extra or {}).items():
+    for cid, payload in (extra.items() if isinstance(extra, dict) else (extra or [])):
         body += cid + struct.pack("<I", len(payload)) + payload + (b"\x00" if len(payload) & 1 else b"")
     body += b"data" + struct.pack("<I", len(pcm)) + pcm
     Path(path).write_bytes(b"RIFF" + struct.pack("<I", len(body)) + body)
