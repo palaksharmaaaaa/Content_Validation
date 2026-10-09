@@ -42,3 +42,47 @@ def test_audio_without_flatness_leaves_the_flatness_threshold(tmp_path):
     assert cal["thresholds"]["flatness_synthetic_max"] == 0.002
     cal = imp.record_feedback("x.wav", "AI", {"spectral_flatness": 0.05})
     assert cal["thresholds"]["flatness_synthetic_max"] > 0.002
+
+
+def test_trainer_reads_a_folder_and_does_not_reseed_the_global_rng(tmp_path):
+    import random
+
+    import numpy as np
+    from PIL import Image
+
+    from image_detector.trainer import ImageDetectorTrainer
+
+    for sub in ("ai_generated", "real"):
+        (tmp_path / sub).mkdir()
+        for i in range(3):
+            Image.fromarray(np.full((40, 40, 3), 10 * i + 5, np.uint8)).save(tmp_path / sub / f"{i}.png")
+    tr = ImageDetectorTrainer.__new__(ImageDetectorTrainer)
+    random.seed(123)
+    expected = random.random()
+    random.seed(123)
+    train, val = tr.prepare_data(tmp_path, batch_size=2, val_split=0.5)
+    assert len(train.dataset) + len(val.dataset) == 6
+    assert random.random() == expected
+    out = tmp_path / "ck" / "m.pt"
+    tr.architecture, tr.checkpoint_path = "resnet18", out
+    import torch.nn as nn
+    tr.model = nn.Linear(2, 2)
+    tr.save_checkpoint()
+    assert out.is_file() and not list(out.parent.glob("*.partial"))
+
+
+def test_audio_training_and_scoring_use_the_same_feature_vector(tmp_path):
+    from audio_detector.features import compute_spectral_features, feature_vector
+    from audio_detector.tests.audio_fixtures import tone, write_wav
+    from audio_detector.trainer import AudioDetectorTrainer
+
+    for sub in ("ai_generated", "real"):
+        (tmp_path / sub).mkdir()
+        write_wav(tmp_path / sub / "a.wav", tone(2.0, noise=0.05, seed=1))
+    tr = AudioDetectorTrainer(checkpoint_path=tmp_path / "ck.pt")
+    X, y = tr.prepare_data_from_directory(tmp_path)
+    assert sorted(y.tolist()) == [0, 1] and X.shape == (2, 5)
+    f = compute_spectral_features(tone(2.0, noise=0.05, seed=1), 16000)
+    assert list(X[0]) == pytest.approx(feature_vector(f), abs=1e-3)
+    report = tr.export_feature_dataset(tmp_path, tmp_path / "f.npz")
+    assert report["success"] and report["samples_processed"] == 2

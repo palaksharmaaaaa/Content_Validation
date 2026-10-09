@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -20,11 +21,21 @@ from torch import nn, optim
 from torch.utils.data import DataLoader, Dataset
 
 from audio_detector.config import DEFAULT_AUDIO_CHECKPOINT, SUPPORTED_EXTENSIONS
-from audio_detector.features import compute_spectral_features
+from audio_detector.features import compute_spectral_features, feature_vector
 from audio_detector.models.backbone import AudioClassifierNet
 from audio_detector.validator import AudioValidator
 
 logger = logging.getLogger("audio_detector.trainer")
+
+
+def _labelled(root: Path) -> List[Tuple[Path, int]]:
+    """Audio files under ``root/ai_generated`` (label 0) and ``root/real`` (label 1), in a stable order."""
+    out: List[Tuple[Path, int]] = []
+    for sub_dir, label in (("ai_generated", 0), ("real", 1)):
+        folder = root / sub_dir
+        if folder.is_dir():
+            out += [(p, label) for p in sorted(folder.rglob("*")) if p.is_file() and p.suffix.lower() in SUPPORTED_EXTENSIONS]
+    return out
 
 
 class AcousticFeatureDataset(Dataset):
@@ -67,39 +78,19 @@ class AudioDetectorTrainer:
         if samples is None or len(samples) < 1000:
             return None
         f = compute_spectral_features(samples, sr)
-        return np.array([
-            float(f["has_vocoder_cutoff"]),
-            f["cutoff_freq_hz"] / 10000.0,
-            f["spectral_flatness"] * 100.0,
-            f["digital_silence_ratio"],
-            f["high_freq_ratio"],
-        ], dtype=np.float32)
+        return np.array(feature_vector(f), dtype=np.float32)
 
     def prepare_data_from_directory(
         self, dataset_dir: Path | str
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Scans dataset with 'ai_generated' and 'real' subdirectories."""
         dataset_path = Path(dataset_dir)
-        ai_dir = dataset_path / "ai_generated"
-        real_dir = dataset_path / "real"
-
-        ai_files = [p for p in ai_dir.rglob("*") if p.suffix.lower() in SUPPORTED_EXTENSIONS] if ai_dir.exists() else []
-        real_files = [p for p in real_dir.rglob("*") if p.suffix.lower() in SUPPORTED_EXTENSIONS] if real_dir.exists() else []
-
-        X: List[np.ndarray] = []
-        y: List[int] = []
-
-        for p in ai_files:
+        X, y = [], []
+        for p, label in _labelled(dataset_path):
             vec = self.extract_features_from_file(p)
             if vec is not None:
                 X.append(vec)
-                y.append(0)  # AI
-
-        for p in real_files:
-            vec = self.extract_features_from_file(p)
-            if vec is not None:
-                X.append(vec)
-                y.append(1)  # Real
+                y.append(label)
 
         if not X:
             raise ValueError(f"No valid audio samples found in {dataset_path}")
@@ -133,7 +124,7 @@ class AudioDetectorTrainer:
             X_hold, y_hold = X_val, y_val
         else:
             n_total = len(X)
-            indices = np.random.permutation(n_total)
+            indices = np.random.default_rng(42).permutation(n_total)
             val_size = int(n_total * val_split) if n_total > 5 else 0
             val_idx = indices[:val_size]
             train_idx = indices[val_size:]
@@ -213,7 +204,9 @@ class AudioDetectorTrainer:
             "in_features": 5,
             "class_to_idx": {"ai_generated": 0, "real": 1},
         }
-        torch.save(checkpoint, save_path)
+        partial = save_path.with_name(save_path.name + ".partial")
+        torch.save(checkpoint, partial)
+        os.replace(partial, save_path)                            # a crash mid-write never leaves a half-written checkpoint
         logger.info("Saved trained Audio AI detector checkpoint to %s", save_path)
 
     def export_feature_dataset(
@@ -227,21 +220,12 @@ class AudioDetectorTrainer:
         output_path = Path(output_npz_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        dataset_path = Path(dataset_dir)
-        ai_dir = dataset_path / "ai_generated"
-        real_dir = dataset_path / "real"
-
-        ai_files = [p for p in ai_dir.rglob("*") if p.suffix.lower() in SUPPORTED_EXTENSIONS] if ai_dir.exists() else []
-        real_files = [p for p in real_dir.rglob("*") if p.suffix.lower() in SUPPORTED_EXTENSIONS] if real_dir.exists() else []
-
         X: List[np.ndarray] = []
         y: List[int] = []
         total_source_bytes = 0
 
-        for p in ai_files + real_files:
-            label = 0 if p in ai_files else 1
-            if p.is_file():
-                total_source_bytes += p.stat().st_size
+        for p, label in _labelled(Path(dataset_dir)):
+            total_source_bytes += p.stat().st_size
             vec = self.extract_features_from_file(p)
             if vec is not None:
                 X.append(vec)

@@ -24,6 +24,7 @@ from core.shared_results import shift_probability_by_log_odds
 from audio_detector.config import DEFAULT_AUDIO_CHECKPOINT
 from audio_detector.features import (
     compute_spectral_features,
+    feature_vector,
     generate_spectrogram_image,
     segment_audio_temporal,
 )
@@ -87,13 +88,7 @@ class AudioAIDetector:
         if self.model is None or self.device is None:
             return None
         try:
-            feat_vec = torch.tensor([[
-                float(spectral_feats["has_vocoder_cutoff"]),
-                spectral_feats["cutoff_freq_hz"] / 10000.0,
-                spectral_feats["spectral_flatness"] * 100.0,
-                spectral_feats["digital_silence_ratio"],
-                spectral_feats["high_freq_ratio"],
-            ]], dtype=torch.float32).to(self.device)
+            feat_vec = torch.tensor([feature_vector(spectral_feats)], dtype=torch.float32).to(self.device)
             with torch.no_grad():
                 probs = torch.softmax(self.model(feat_vec), dim=1)[0]
                 return float(probs[0].item())

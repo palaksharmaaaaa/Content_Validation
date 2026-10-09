@@ -15,6 +15,17 @@ import cv2
 import numpy as np
 
 
+def feature_vector(f: Dict[str, Any]) -> List[float]:
+    """The five numbers the neural head is trained on and scores; one definition for training and inference so they cannot drift apart."""
+    return [
+        float(f["has_vocoder_cutoff"]),
+        f["cutoff_freq_hz"] / 10000.0,
+        f["spectral_flatness"] * 100.0,
+        f["digital_silence_ratio"],
+        f["high_freq_ratio"],
+    ]
+
+
 def compute_spectral_features(samples: np.ndarray, sample_rate: int) -> Dict[str, Any]:
     """
     Computes acoustic features indicative of neural vocoders and synthetic speech:

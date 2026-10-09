@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 from pathlib import Path
 import random
 from typing import Any, Dict, List, Optional, Tuple
@@ -25,6 +26,26 @@ from image_detector.config import DEFAULT_CHECKPOINT, IMAGE_SIZE, SUPPORTED_EXTE
 from image_detector.models.backbone import build_image_classifier
 
 logger = logging.getLogger("image_detector.trainer")
+
+
+_NORMALISE = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
+
+def _transforms():
+    """(training, validation) preprocessing; training adds a flip and a small brightness/contrast jitter."""
+    resize = transforms.Resize((IMAGE_SIZE, IMAGE_SIZE))
+    train = transforms.Compose([resize, transforms.RandomHorizontalFlip(), transforms.ColorJitter(brightness=0.1, contrast=0.1), transforms.ToTensor(), _NORMALISE])
+    return train, transforms.Compose([resize, transforms.ToTensor(), _NORMALISE])
+
+
+def _scan(folder: Path) -> List[Path]:
+    """Supported image files under ``folder`` (none when it does not exist), in a stable order."""
+    return sorted(p for p in folder.rglob("*") if p.is_file() and p.suffix.lower() in SUPPORTED_EXTENSIONS) if folder.is_dir() else []
+
+
+def _labelled(root: Path) -> List[Tuple[Path, int]]:
+    """``root/ai_generated`` as label 0 and ``root/real`` as label 1."""
+    return [(p, 0) for p in _scan(root / "ai_generated")] + [(p, 1) for p in _scan(root / "real")]
 
 
 class ImageDataset(Dataset):
@@ -77,67 +98,27 @@ class ImageDetectorTrainer:
     def prepare_data(
         self, dataset_dir: Path | str, batch_size: int = 16, val_split: float = 0.2
     ) -> Tuple[DataLoader, Optional[DataLoader]]:
-        """Scans dataset directory formatted with 'ai_generated' and 'real' subdirectories, or pre-split 'train' and 'val' subdirectories."""
-        dataset_path = Path(dataset_dir)
-        
-        train_transform = transforms.Compose([
-            transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
-            transforms.RandomHorizontalFlip(),
-            transforms.ColorJitter(brightness=0.1, contrast=0.1),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ])
-        val_transform = transforms.Compose([
-            transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ])
+        """Reads a dataset folder with ``ai_generated/`` and ``real/`` (split at random, fixed seed), or pre-split ``train/`` and ``val/``."""
+        root = Path(dataset_dir)
+        train_tf, val_tf = _transforms()
+        rng = random.Random(42)                                   # a private generator: training never reseeds the process-wide one
 
-        # Check for pre-split structure (train/ and val/)
-        train_dir = dataset_path / "train"
-        val_dir = dataset_path / "val"
-        if train_dir.exists() and (train_dir / "ai_generated").exists():
-            train_ai = [p for p in (train_dir / "ai_generated").rglob("*") if p.suffix.lower() in SUPPORTED_EXTENSIONS]
-            train_real = [p for p in (train_dir / "real").rglob("*") if (train_dir / "real").exists() and p.suffix.lower() in SUPPORTED_EXTENSIONS]
-            train_samples = [(p, 0) for p in train_ai] + [(p, 1) for p in train_real]
+        if (root / "train" / "ai_generated").is_dir():
+            train_samples = _labelled(root / "train")
+            val_samples = _labelled(root / "val") if (root / "val").is_dir() else []
+            rng.shuffle(train_samples)
+            rng.shuffle(val_samples)
+        else:
+            all_samples = _labelled(root)
+            if not all_samples:
+                raise ValueError(f"No valid image files found in {root}/ai_generated or {root}/real")
+            rng.shuffle(all_samples)
+            split_idx = int(len(all_samples) * (1.0 - val_split))
+            train_samples, val_samples = all_samples[:split_idx], all_samples[split_idx:]
 
-            val_samples = []
-            if val_dir.exists():
-                val_ai = [p for p in (val_dir / "ai_generated").rglob("*") if (val_dir / "ai_generated").exists() and p.suffix.lower() in SUPPORTED_EXTENSIONS]
-                val_real = [p for p in (val_dir / "real").rglob("*") if (val_dir / "real").exists() and p.suffix.lower() in SUPPORTED_EXTENSIONS]
-                val_samples = [(p, 0) for p in val_ai] + [(p, 1) for p in val_real]
-
-            random.seed(42)
-            random.shuffle(train_samples)
-            if val_samples:
-                random.shuffle(val_samples)
-
-            train_loader = DataLoader(ImageDataset(train_samples, train_transform), batch_size=batch_size, shuffle=True)
-            val_loader = DataLoader(ImageDataset(val_samples, val_transform), batch_size=batch_size, shuffle=False) if val_samples else None
-            logger.info("Prepared Pre-Split Image Dataset: %d train, %d val samples.", len(train_samples), len(val_samples))
-            return train_loader, val_loader
-
-        ai_dir = dataset_path / "ai_generated"
-        real_dir = dataset_path / "real"
-
-        ai_files = [p for p in ai_dir.rglob("*") if p.suffix.lower() in SUPPORTED_EXTENSIONS] if ai_dir.exists() else []
-        real_files = [p for p in real_dir.rglob("*") if p.suffix.lower() in SUPPORTED_EXTENSIONS] if real_dir.exists() else []
-
-        all_samples = [(p, 0) for p in ai_files] + [(p, 1) for p in real_files]
-        if not all_samples:
-            raise ValueError(f"No valid image files found in {dataset_path}/ai_generated or {dataset_path}/real")
-
-        random.seed(42)
-        random.shuffle(all_samples)
-
-        split_idx = int(len(all_samples) * (1.0 - val_split))
-        train_samples = all_samples[:split_idx]
-        val_samples = all_samples[split_idx:]
-
-        train_loader = DataLoader(ImageDataset(train_samples, train_transform), batch_size=batch_size, shuffle=True)
-        val_loader = DataLoader(ImageDataset(val_samples, val_transform), batch_size=batch_size, shuffle=False) if val_samples else None
-
-        logger.info("Prepared Image Dataset: %d train, %d val samples.", len(train_samples), len(val_samples))
+        train_loader = DataLoader(ImageDataset(train_samples, train_tf), batch_size=batch_size, shuffle=True)
+        val_loader = DataLoader(ImageDataset(val_samples, val_tf), batch_size=batch_size, shuffle=False) if val_samples else None
+        logger.info("Prepared image dataset: %d train, %d val samples.", len(train_samples), len(val_samples))
         return train_loader, val_loader
 
     def train(
@@ -209,15 +190,7 @@ class ImageDetectorTrainer:
         1=real) -- no dataset copy, no files written. Used with core.media_library's content-hash
         train/val partition so validation images can never be trained on.
         """
-        norm = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        train_tf = transforms.Compose([
-            transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
-            transforms.RandomHorizontalFlip(),
-            transforms.ColorJitter(brightness=0.1, contrast=0.1),
-            transforms.ToTensor(),
-            norm,
-        ])
-        val_tf = transforms.Compose([transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)), transforms.ToTensor(), norm])
+        train_tf, val_tf = _transforms()
         train_loader = DataLoader(ImageDataset(train_samples, train_tf), batch_size=batch_size, shuffle=True) if train_samples else None
         val_loader = DataLoader(ImageDataset(val_samples, val_tf), batch_size=batch_size, shuffle=False) if val_samples else None
         return train_loader, val_loader
@@ -231,7 +204,9 @@ class ImageDetectorTrainer:
             "architecture": self.architecture,
             "class_to_idx": {"ai_generated": 0, "real": 1},
         }
-        torch.save(checkpoint, save_path)
+        partial = save_path.with_name(save_path.name + ".partial")
+        torch.save(checkpoint, partial)
+        os.replace(partial, save_path)                            # a crash mid-write never leaves a half-written checkpoint
         logger.info("Saved trained Image AI detector checkpoint to %s", save_path)
 
     def prepare_feature_bank(
@@ -248,12 +223,8 @@ class ImageDetectorTrainer:
         from image_detector.feature_store import FeatureStore
 
         dataset_path = Path(dataset_dir)
-        ai_dir = dataset_path / "ai_generated"
-        real_dir = dataset_path / "real"
-
-        ai_files = [p for p in ai_dir.rglob("*") if p.suffix.lower() in SUPPORTED_EXTENSIONS] if ai_dir.exists() else []
-        real_files = [p for p in real_dir.rglob("*") if p.suffix.lower() in SUPPORTED_EXTENSIONS] if real_dir.exists() else []
-
+        ai_files = _scan(dataset_path / "ai_generated")
+        real_files = _scan(dataset_path / "real")
         if max_samples_per_class:
             ai_files = ai_files[:max_samples_per_class]
             real_files = real_files[:max_samples_per_class]
@@ -289,8 +260,7 @@ class ImageDetectorTrainer:
             raise ValueError(f"Feature bank in {feature_npz_path} must contain at least 2 samples.")
 
         indices = list(range(total_samples))
-        random.seed(42)
-        random.shuffle(indices)
+        random.Random(42).shuffle(indices)
 
         split = int(total_samples * (1.0 - val_split))
         train_indices = indices[:split]
