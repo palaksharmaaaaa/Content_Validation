@@ -78,3 +78,18 @@ def test_video_is_named_only_when_its_metadata_says_so(tmp_path):
     assert out["model_key"] == "unknown" and out["top_candidates"] == []
     named = eng.attribute_video(p, temporal_data=temporal, provenance_data={"vendor_signatures_found": ["Made with Pika Labs"]})
     assert named["model_key"] == "pika"
+
+
+def test_a_video_too_small_to_judge_is_rejected_with_the_reason(tmp_path):
+    import cv2
+
+    from video_detector.validator import VideoValidator
+
+    p = tmp_path / "tiny.mp4"
+    rng = np.random.default_rng(0)
+    w = cv2.VideoWriter(str(p), cv2.VideoWriter_fourcc(*"mp4v"), 5, (16, 16))
+    for _ in range(10):
+        w.write(rng.integers(0, 256, (16, 16, 3), dtype=np.uint8))
+    w.release()
+    r = VideoValidator().validate(p)
+    assert not r.valid and "16x16" in r.error and "minimum" in r.error

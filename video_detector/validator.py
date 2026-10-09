@@ -16,7 +16,7 @@ from pathlib import Path
 import cv2
 
 from core.hashing import file_sha256
-from video_detector.config import MAX_DURATION_SECONDS, MAX_FILE_SIZE_MB, SUPPORTED_EXTENSIONS
+from video_detector.config import MAX_DURATION_SECONDS, MAX_FILE_SIZE_MB, MIN_RESOLUTION, SUPPORTED_EXTENSIONS
 from video_detector.extractor import VideoFrameExtractor
 from video_detector.schemas import VideoValidationResult
 
@@ -84,6 +84,17 @@ class VideoValidator:
                 filename=path.name,
                 file_size_mb=round(size_mb, 3),
                 error=meta["error"],
+            )
+
+        width, height = int(meta.get("width", 0) or 0), int(meta.get("height", 0) or 0)
+        if 0 < min(width, height) < MIN_RESOLUTION:
+            return VideoValidationResult(
+                valid=False,
+                filename=path.name,
+                file_size_mb=round(size_mb, 3),
+                width=width,
+                height=height,
+                error=f"Video frame size ({width}x{height}) is below the {MIN_RESOLUTION}px minimum the detector can judge.",
             )
 
         dur = meta.get("duration_seconds", 0.0)

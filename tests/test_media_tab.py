@@ -129,9 +129,9 @@ def test_the_app_accepts_what_each_package_supports_up_to_its_own_size_limit(tmp
 
     assert validators.MAX_FILE_SIZE_MB_BY_TYPE == {"image": 100.0, "video": 500.0, "audio": 200.0}
     p = tmp_path / "big.mp4"
-    vw = cv2.VideoWriter(str(p), cv2.VideoWriter_fourcc(*"mp4v"), 10, (64, 48))
+    vw = cv2.VideoWriter(str(p), cv2.VideoWriter_fourcc(*"mp4v"), 10, (96, 72))
     for i in range(30):
-        vw.write(np.full((48, 64, 3), 100 + i, np.uint8))
+        vw.write(np.full((72, 96, 3), 100 + i, np.uint8))
     vw.release()
     with open(p, "ab") as f:
         f.write(b"\x00" * (150 * 1024 * 1024))

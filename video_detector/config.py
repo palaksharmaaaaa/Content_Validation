@@ -21,6 +21,7 @@ CALIBRATION_FILE = DATA_DIR / "video_calibration.json"
 
 # Sampling & Limits
 DEFAULT_MAX_FRAMES = 30
+MIN_RESOLUTION = 64          # shorter side, px: below this the noise and texture statistics the detector reads are not meaningful
 MAX_FILE_SIZE_MB = 500.0
 MAX_DURATION_SECONDS = 3600.0
 SUPPORTED_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
