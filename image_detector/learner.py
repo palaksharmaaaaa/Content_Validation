@@ -32,6 +32,11 @@ from core.media_library import MediaLibrary, library_for, register_feedback
 logger = logging.getLogger("image_detector.learner")
 
 
+def _measurement(metrics: Dict[str, Any], key: str) -> Optional[float]:
+    value = metrics.get(key)
+    return float(value) if isinstance(value, (int, float)) and not isinstance(value, bool) else None
+
+
 class ImageSelfImprover:
     """
     Dedicated feedback-calibration module for Image AI Detection (adjusts scoring constants only -- see module docstring above; not model training).
@@ -135,20 +140,23 @@ class ImageSelfImprover:
         offsets = calib.setdefault("sensitivity_offsets", {})
         calib["samples_processed"] = len(memory)
 
-        noise = float(forensic_metrics.get("noise_residual_mean", 2.2))
-        smooth = float(forensic_metrics.get("surface_smoothness", 3.2))
+        # The app hands over the whole detector result, whose measurements sit under "forensic_metrics"; a caller may also pass them flat.
+        measured = {**forensic_metrics, **(forensic_metrics.get("forensic_metrics") or {})}
+        noise = _measurement(measured, "noise_residual_mean")
+        smooth = _measurement(measured, "surface_smoothness")
 
+        # A measurement that is not in the record moves nothing: calibration follows what was measured, never a stand-in value.
         if user_label.upper() == "AI":
-            if noise < 2.5:
+            if noise is not None and noise < 2.5:
                 weights["noise_residual"] = min(0.60, weights.get("noise_residual", 0.35) + 0.02)
                 offsets["noise_center_offset"] = max(-0.40, offsets.get("noise_center_offset", 0.0) - 0.03)
-            if smooth < 3.0:
+            if smooth is not None and smooth < 3.0:
                 weights["surface_smoothness"] = min(0.55, weights.get("surface_smoothness", 0.30) + 0.02)
                 offsets["smooth_center_offset"] = min(0.40, offsets.get("smooth_center_offset", 0.0) + 0.03)
         elif user_label.upper() == "REAL":
-            if noise < 2.0:
+            if noise is not None and noise < 2.0:
                 offsets["noise_center_offset"] = min(0.35, offsets.get("noise_center_offset", 0.0) + 0.03)
-            if smooth < 2.0:
+            if smooth is not None and smooth < 2.0:
                 offsets["smooth_center_offset"] = max(-0.35, offsets.get("smooth_center_offset", 0.0) - 0.03)
 
         self.save_calibration(calib)

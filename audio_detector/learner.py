@@ -135,13 +135,14 @@ class AudioSelfImprover:
         offsets = calib.setdefault("sensitivity_offsets", {})
         calib["samples_processed"] = len(memory)
 
-        flatness = float(acoustic_metrics.get("spectral_flatness", 0.05))
+        flatness = acoustic_metrics.get("spectral_flatness")
+        flatness = float(flatness) if isinstance(flatness, (int, float)) and not isinstance(flatness, bool) else None
 
         if user_label.upper() == "AI":
             # If synthetic voice was missed, boost vocoder weight and audio AI offset
             weights["vocoder_cutoff"] = min(0.60, weights.get("vocoder_cutoff", 0.40) + 0.02)
             offsets["audio_ai_offset"] = min(0.35, offsets.get("audio_ai_offset", 0.0) + 0.03)
-            if flatness > 0.002:
+            if flatness is not None and flatness > 0.002:
                 thresh["flatness_synthetic_max"] = min(0.010, thresh.get("flatness_synthetic_max", 0.002) + 0.0005)
         elif user_label.upper() == "REAL":
             # If natural whisper / phone audio triggered false positive, lower audio AI offset

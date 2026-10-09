@@ -137,14 +137,15 @@ class VideoSelfImprover:
         calib["samples_processed"] = len(memory)
 
         tc = raw_metrics.get("temporal_consistency", {})
-        motion_var = float(raw_metrics.get("motion_variance", tc.get("motion_variance", 50.0)))
+        motion_var = raw_metrics.get("motion_variance", tc.get("motion_variance"))
+        motion_var = float(motion_var) if isinstance(motion_var, (int, float)) and not isinstance(motion_var, bool) else None
 
         if user_label.upper() == "AI":
-            if motion_var < 100.0:
+            if motion_var is not None and motion_var < 100.0:
                 m_thresh["suspicious_flicker_var"] = max(50.0, m_thresh.get("suspicious_flicker_var", 75.0) - 2.0)
                 offsets["video_ai_offset"] = min(0.30, offsets.get("video_ai_offset", 0.0) + 0.03)
         elif user_label.upper() == "REAL":
-            if motion_var > 60.0:
+            if motion_var is not None and motion_var > 60.0:
                 m_thresh["high_warping_var"] = min(200.0, m_thresh.get("high_warping_var", 140.0) + 3.0)
                 offsets["video_ai_offset"] = max(-0.30, offsets.get("video_ai_offset", 0.0) - 0.03)
 
