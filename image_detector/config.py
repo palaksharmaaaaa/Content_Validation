@@ -26,7 +26,7 @@ MAX_FILE_SIZE_MB = 100.0
 SUPPORTED_EXTENSIONS = {".jpg", ".jpeg", ".jfif", ".png", ".webp", ".bmp", ".tif", ".tiff"}
 
 # Physical Forensic Baselines
-# Natural optical camera sensor noise (PRNU): mu ~ 2.45, sigma ~ 0.65
+# Median-filter noise residual of camera photographs in the project's sample sets: mu ~ 2.45, sigma ~ 0.65
 REAL_NOISE_MU = 2.45
 REAL_NOISE_SIGMA = 0.65
 AI_NOISE_MU = 0.85

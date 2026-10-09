@@ -66,7 +66,7 @@ class ImageTaxonomyState:
 
     DESCRIPTIONS = {
         AUTHENTIC_REAL_PHOTOGRAPH: (
-            "Authentic camera or mobile-phone photographic capture containing natural sensor noise (PRNU), "
+            "Authentic camera or mobile-phone photographic capture containing natural sensor noise, "
             "coherent optical properties, genuine lens depth-of-field, and unmanipulated physical geometry and EXIF metadata."
         ),
         AUTHENTIC_EDITED: (

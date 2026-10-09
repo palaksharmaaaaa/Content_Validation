@@ -160,7 +160,7 @@ def _render_profile_section_6(v: _ProfileView) -> None:
     sharpness = v.phys.get("laplacian_sharpness_var", 0.0)
 
     n1, n2, n3, n4, n5 = st.columns(5)
-    n1.metric("PRNU Sensor Noise", f"{prnu_noise:.3f}")
+    n1.metric("Noise Residual", f"{prnu_noise:.3f}")
     n2.metric("Flat-Region Noise", f"{flat_noise:.3f}")
     n3.metric("Surface Smoothness", f"{smoothness:.3f}")
     n4.metric("Fourier Decay Alpha", "Not measured" if fft_alpha is None else f"{fft_alpha:.2f}")

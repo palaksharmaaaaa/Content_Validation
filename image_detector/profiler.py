@@ -7,7 +7,7 @@ Extracts:
 4. Detailed EXIF acquisition hardware parameters (Camera make, model, lens, exposure time, aperture, ISO, focal length, flash, white balance, metering mode, GPS coords, software).
 5. Pixel-by-pixel photometric & color distribution (Shannon entropy, luminance min/max/mean/std/median/dynamic range, channel statistics, shadow crush & highlight clip percentages).
 6. Dominant color palette with exact canvas coverage % and human-readable color naming.
-7. Raw physical signals & noise (PRNU sensor noise, flat region noise, bilateral smoothness, 2D FFT spectral decay alpha, Canny edges, dark lines, Laplacian blur/focus).
+7. Raw physical signals & noise (noise residual, flat region noise, bilateral smoothness, 2D FFT spectral decay alpha, Canny edges, dark lines, Laplacian blur/focus).
 Completely self-contained with zero outside dependencies.
 """
 from __future__ import annotations
@@ -279,7 +279,7 @@ def _dominant_palette(img_bgr: np.ndarray, gray: np.ndarray, channels: int) -> T
 
 
 def _raw_physical_signals(gray: np.ndarray) -> Dict[str, Any]:
-    """PRNU-style noise residuals, bilateral smoothness, spectral decay, edge density and sharpness."""
+    """Noise residuals, bilateral smoothness, spectral decay, edge density and sharpness."""
     h, w = gray.shape[:2]
     sample = gray
     if max(h, w) > 1024:

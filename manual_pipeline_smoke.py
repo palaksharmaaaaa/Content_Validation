@@ -110,7 +110,7 @@ def run_pipeline_test():
         print(f" -> Shannon Entropy: {pix_spec.get('pixel_entropy')} bits/pixel")
 
         # 7. Multi-Modal AI Detection (Image + Audio)
-        print("\n[Step 7/9] Running Multi-Modal AI Forensics (PRNU, FFT, Vocoder)...")
+        print("\n[Step 7/9] Running Multi-Modal AI Forensics (noise residual, FFT, vocoder)...")
         ai_detector = ImageAIDetector()
         ai_img_res = ai_detector.predict(str(tmp_img_path), sensitivity="high")
         print(f" -> Image AI %: {ai_img_res.get('ai_percentage')}% | Real %: {ai_img_res.get('real_percentage')}% | Undecided: {ai_img_res.get('undecided_percentage')}%")

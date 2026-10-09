@@ -2,7 +2,7 @@
 image_detector.features: Forensic image feature extraction routines.
 Extracts:
 1. EXIF metadata & generative AI signatures.
-2. High-frequency sensor noise residuals (PRNU / Poisson shot noise).
+2. High-frequency noise residuals (median-filter residual, a stand-in for sensor grain).
 3. Surface smoothness via bilateral filter discrepancy.
 4. 2D FFT Radial Power Spectrum decay (1/f^alpha field law).
 5. Error Level Analysis (ELA) compression artifacts.
@@ -527,7 +527,7 @@ def detect_digital_art_and_painting(
 def calculate_sensor_noise_profile(gray_img: np.ndarray) -> Tuple[float, float]:
     """
     Computes camera sensor noise residual using wavelet / Wiener-approximated median filter subtraction.
-    Physical optical sensors produce Poisson-Gaussian noise (PRNU). Neural diffusion models
+    Camera sensors leave Poisson-Gaussian grain. Neural diffusion models
     and latent generators produce unnaturally denoised or synthetic uniform noise distributions.
     Downsampled for speed on large files while preserving high-frequency statistics.
     """
@@ -832,7 +832,7 @@ def detect_screenshot(
     2. The capture tool named in the EXIF Software tag
     3. UI bar edge profiles (top status bar with battery/wifi icons, bottom gesture navigation pill/buttons, desktop taskbars)
     4. Discrete UI color profiles (large areas of pure uniform background color and anti-aliased font glyphs)
-    5. Absence of optical camera sensor noise (PRNU) in UI regions
+    5. Absence of camera-like grain in UI regions
     """
     if img_bgr is None:
         try:
@@ -927,7 +927,7 @@ def detect_inpainting_and_manipulation(
 ) -> Dict[str, Any]:
     """
     Detects localized generative inpainting, neural face swapping, deep learning denoising/upscaling,
-    and composite splicing by evaluating spatial PRNU sensor noise inconsistency and ELA variance.
+    and composite splicing by evaluating spatial noise-residual inconsistency and ELA variance.
     """
     if img_bgr is None:
         try:

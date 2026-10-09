@@ -2,7 +2,7 @@
 image_detector.detector: Complete, self-contained Image AI Detection engine.
 Combines:
 1. Local PyTorch neural classifier backbone (models/ai_detector.pt).
-2. Physical camera sensor noise residual analysis (PRNU / Poisson shot noise).
+2. Sensor-noise residual analysis (median-filter residual, a stand-in for sensor grain).
 3. Bilateral filter surface smoothness & plastic skin texture detection.
 4. 2D FFT Radial Power Spectrum decay (1/f^alpha field law).
 5. Error Level Analysis (ELA) compression footprint discrepancy.
@@ -344,7 +344,7 @@ class ImageAIDetector:
             lr_noise = max(0.15, lr_noise)
         ev.lrs["sensor_noise"] = lr_noise * w_noise
         if lr_noise > 0.3:
-            ev.cues.append(f"Synthetic latent space denoising detected (PRNU residual: {sig.noise_mean:.2f})")
+            ev.cues.append(f"Very little fine grain (noise residual: {sig.noise_mean:.2f}), as in denoised or generated pictures")
         elif lr_noise < -0.3 and not art:
             ev.cues.append(f"Natural optical camera sensor shot noise preserved ({sig.noise_mean:.2f})")
 

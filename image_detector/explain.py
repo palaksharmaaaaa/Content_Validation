@@ -139,20 +139,20 @@ def _dimension_2(c: _DossierContext) -> Dict[str, Any]:
 
 
 def _dimension_3(c: _DossierContext) -> Dict[str, Any]:
-    """Dimension 3: Physical Sensor PRNU Noise Residual"""
+    """Dimension 3: Sensor-Noise Residual"""
     prnu_val = c.phys.get("flat_region_noise_mean", c.f_metrics.get("noise_residual_mean", 0.0))
     d3 = {
         "dimension_id": 3,
-        "title": "Dimension 3: Physical Sensor PRNU Noise Residual",
-        "description": "Calculates Photo-Response Non-Uniformity (PRNU) and Poisson-Gaussian sensor shot noise residual (sigma_PRNU >= 1.45 for optical capture).",
-        "prnu_residual_mean": prnu_val,
+        "title": "Dimension 3: Sensor-Noise Residual",
+        "description": "Measures the fine grain left after a 3x3 median filter is subtracted from the grey image. Camera photographs usually keep visible grain; heavily denoised, rendered or generated pictures often do not. This is a stand-in for sensor noise, not a PRNU fingerprint.",
+        "noise_residual_mean": prnu_val,
         "flat_region_noise": c.phys.get("flat_region_noise_mean", prnu_val),
         "is_natural_shot_noise": prnu_val >= 1.20,
-        "mathematical_physics": "sigma^2_PRNU = (1/|M|) * sum((W(x,y) - mu_W)^2) >= 1.45",
+        "mathematical_physics": "residual = mean(|I - median3x3(I)|) over the image; flat-region residual is the same statistic where the local gradient is small.",
         "diagnosis": (
-            f"Natural Poisson-Gaussian sensor shot noise grain preserved (score: {prnu_val:.2f})"
+            f"Fine camera-like grain is present (score: {prnu_val:.2f})"
             if prnu_val >= 1.20
-            else f"Absence of physical camera sensor grain; synthetic mathematical smoothing detected (score: {prnu_val:.2f})"
+            else f"Little fine grain; the picture looks smoothed or denoised (score: {prnu_val:.2f})"
         ),
     }
     return d3
@@ -379,7 +379,7 @@ def _authentic_takeaway(tax_label: str, p_real: float, noise: float) -> str:
         f"**The Simple Takeaway:** This image is **consistent with a genuine real-world photograph** captured through an optical glass camera lens ({tax_label}); "
         f"the heuristic (uncalibrated) estimate is **{p_real:.1f}%**, which is a ranking aid, not proof.\n\n"
         f"**Think of it like this:** Everything about this file matches real-world optical physics. When light bounced off the subject and entered the camera lens, "
-        f"it left behind authentic physical sensor grain (PRNU score: **{noise:.2f}**), natural organic skin and fabric micro-textures, and optical depth-of-field "
+        f"it left behind authentic physical sensor grain (noise residual: **{noise:.2f}**), natural organic skin and fabric micro-textures, and optical depth-of-field "
         f"(where the focus gently falls off naturally in a way computers struggle to replicate). No generative AI alterations or deceptive digital manipulations were detected."
     )
 

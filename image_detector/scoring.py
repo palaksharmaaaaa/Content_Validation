@@ -39,7 +39,7 @@ def pool_bayesian_log_odds(
     not base-e. `audio_detector.scoring.pool_acoustic_evidence`, `video_detector.scoring.
     pool_video_temporal_score`, and `core.decision.generate_final_decision`'s cross-modal
     fusion are each their own independent evidence model operating on different physical
-    signals (vocoder/flatness for audio, motion/flicker for video, PRNU/FFT for image) --
+    signals (vocoder/flatness for audio, motion/flicker for video, noise/FFT for image) --
     they are not interchangeable and intentionally are not unified into one shared
     function. `core.decision` additionally uses natural-log (base-e) odds for its own
     fusion step. Do not compare a raw posterior_log_odds value from this function against
@@ -55,7 +55,7 @@ def pool_bayesian_log_odds(
     """
     prior_log_odds = SENSITIVITY_PRIORS.get(sensitivity.lower(), 0.0)
 
-    # Correlation discounting: when both bilateral smoothness and PRNU flatness fire together,
+    # Correlation discounting: when both bilateral smoothness and noise flatness fire together,
     # discount the second cue by 0.70x to account for physical redundancy
     weighted_sum = 0.0
     has_noise = "sensor_noise" in log_lrs
@@ -291,11 +291,11 @@ def _stage_declared_or_art_synthesis(c: _TaxonomyInputs, S: Any) -> _Outcome:
         reasons.append(c.metadata.get("signature_details", "AI generator footprint detected in metadata"))
     if c.is_digital_art:
         reasons.append(c.art.get("details", "AI digital artwork / synthetic painting style detected"))
-        reasons.append("Non-optical color rendering and absence of physical camera sensor PRNU grain")
+        reasons.append("Non-optical color rendering and absence of camera-like fine grain")
         if c.cutout.get("is_cutout"):
             reasons.append("Synthetic 3D asset with transparent alpha background cutout")
     else:
-        reasons.append(f"Synthetic generation metrics (Bilateral Smoothness: {c.smoothness:.2f}, PRNU Noise: {c.noise_mean:.2f})")
+        reasons.append(f"Synthetic generation metrics (Bilateral Smoothness: {c.smoothness:.2f}, Noise residual: {c.noise_mean:.2f})")
     if c.canvas_matches_generator:
         reasons.append("Canvas dimensions match standard generative model diffusion canvas")
     return S.FULLY_AI_GENERATED, reasons
@@ -385,7 +385,7 @@ def _stage_graphic_edit(c: _TaxonomyInputs, S: Any) -> _Outcome:
         return S.AUTHENTIC_EDITED, reasons
     if c.ai_pct >= 50.0 or c.noise_mean < 1.10:
         reasons.append(c.cutout.get("details", "Isolated synthetic character / object on solid background canvas"))
-        reasons.append("Absence of authentic camera sensor PRNU noise across subject boundaries")
+        reasons.append("Absence of camera-like fine grain across subject boundaries")
         return S.FULLY_AI_GENERATED, reasons
     return None
 
