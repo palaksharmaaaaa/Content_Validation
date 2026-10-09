@@ -93,3 +93,20 @@ def test_a_video_too_small_to_judge_is_rejected_with_the_reason(tmp_path):
     w.release()
     r = VideoValidator().validate(p)
     assert not r.valid and "16x16" in r.error and "minimum" in r.error
+
+
+def test_the_video_narrative_is_grounded_in_what_was_measured():
+    from video_detector.explain import generate_video_newbie_explanation
+
+    vr = {"temporal_consistency": {"temporal_warping_risk": "HIGH_WARPING_DETECTED", "motion_variance": 211.5},
+          "diffusion_flicker": {"has_diffusion_flicker": True}, "mean_frame_noise": 0.42}
+    prof = {"geometry": {"width": 640, "height": 360, "fps": 24.0, "duration_seconds": 5.0, "total_frames": 120}}
+    ai = generate_video_newbie_explanation("a.mp4", prof, {}, vr, {"final_status": "LIKELY_SYNTHETIC", "authenticity_probabilities": {"p_ai": 80.0, "p_real": 10.0}})
+    assert "211.5" in ai and "0.42" in ai and "was seen" in ai and "Sora" not in ai and "not proof" in ai
+    real = generate_video_newbie_explanation("a.mp4", prof, {}, {**vr, "diffusion_flicker": {"has_diffusion_flicker": False}},
+                                             {"final_status": "LIKELY_AUTHENTIC", "authenticity_probabilities": {"p_ai": 10.0, "p_real": 80.0}})
+    assert "was not seen" in real and "zero" not in real
+    blank = generate_video_newbie_explanation("a.mp4", prof, {}, vr, {"final_status": "BLANK_OR_DEGRADED", "authenticity_probabilities": {}})
+    assert "no verdict" in blank
+    unknown_rate = generate_video_newbie_explanation("a.mp4", {"geometry": {"width": 640, "height": 360, "fps": 0.0}}, {}, vr, {"final_status": "UNDETERMINED", "authenticity_probabilities": {"p_ai": 50.0}})
+    assert "not recorded" in unknown_rate
