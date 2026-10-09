@@ -37,3 +37,23 @@ def test_presence_gives_no_score_credit(tmp_path):
     with_c2pa = det.predict(str(p), provenance={"c2pa_present": True})
     assert "c2pa_verified" not in with_c2pa["log_likelihood_ratios"]
     assert with_c2pa["ai_percentage"] == pytest.approx(base["ai_percentage"], abs=0.05)
+
+
+def test_random_image_bytes_are_not_mistaken_for_content_credentials(tmp_path):
+    """A bare 4-byte tag appears by chance in compressed data; only a distinctive marker, or the JUMBF box with a tag, counts."""
+    rng = np.random.default_rng(7)
+    hits = 0
+    for i in range(300):
+        blob = bytearray(rng.integers(0, 256, 600_000, dtype=np.uint8).tobytes())
+        if i % 3 == 0:
+            blob[1000:1004] = b"c2pa"                                  # a lone short tag planted in noise
+        p = tmp_path / f"r{i}.jpg"
+        p.write_bytes(bytes(blob))
+        hits += ImageProvenanceValidator().scan_c2pa(p)["c2pa_present"]
+    assert hits == 0
+
+
+def test_a_real_looking_manifest_is_still_detected(tmp_path):
+    p = tmp_path / "m.jpg"
+    p.write_bytes(b"\xff\xd8" + b"\x00" * 100 + b"jumb" + b"c2pa" + b"\x00" * 100)
+    assert ImageProvenanceValidator().scan_c2pa(p)["c2pa_present"] is True

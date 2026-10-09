@@ -9,10 +9,6 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from typing import Any, Dict
-from PIL import Image
-from PIL.ExifTags import TAGS
-
-
 from core.provenance_view import build_c2pa_block, build_exif_block, build_provenance_view
 
 logger = logging.getLogger("image_detector.provenance")
@@ -28,6 +24,9 @@ C2PA_JUMBF_SIGNATURES = [
     b"c2pa.claim",
     b"c2pa.assertion",
 ]
+
+
+MIN_DISTINCTIVE_MARKER = 8     # characters: urn:c2pa, application/c2pa, c2pa.claim ... (the 4-letter tags are too short to trust alone)
 
 
 class ImageProvenanceValidator:
@@ -58,7 +57,9 @@ class ImageProvenanceValidator:
                 if sig in scan_buffer:
                     found_markers.append(sig.decode("utf-8", errors="ignore"))
 
-            has_c2pa = len(found_markers) > 0
+            # A bare 4-byte tag turns up by chance in about one megabyte of compressed image data in a few thousand files, so it counts
+            # only together with the JUMBF box type; a distinctive marker (a URN, a MIME type, a claim name) counts on its own.
+            has_c2pa = any(len(m) >= MIN_DISTINCTIVE_MARKER for m in found_markers) or (b"jumb" in scan_buffer and bool(found_markers))
             return {
                 "c2pa_present": has_c2pa,
                 "status": "C2PA_CREDENTIALS_FOUND" if has_c2pa else "NO_C2PA_MANIFEST",
@@ -83,7 +84,7 @@ class ImageProvenanceValidator:
 
         if meta_extracted.get("ai_signature_found"):
             is_synthetic = True
-            cues.append(meta_extracted.get("signature_details") or "Generative AI signature verified in metadata")
+            cues.append(meta_extracted.get("signature_details") or "Generative AI signature found in metadata (unauthenticated)")
         elif meta_extracted.get("ai_enhancer_signature_found"):
             is_ai_enhanced = True
             cues.append(meta_extracted.get("signature_details") or "AI enhancement / neural restoration signature detected")
@@ -148,28 +149,3 @@ class ImageProvenanceValidator:
         """Extracts standard EXIF and deep XMP/IPTC metadata packets."""
         from image_detector.features import extract_image_metadata
         return extract_image_metadata(path)
-
-    def _extract_exif(self, path: Path) -> Dict[str, Any]:
-        """Extracts standard camera EXIF metadata dictionary."""
-        try:
-            with Image.open(path) as img:
-                exif = img.getexif()
-                if not exif:
-                    return {}
-                res = {}
-                for tag_id, value in exif.items():
-                    tag_name = TAGS.get(tag_id, str(tag_id))
-                    if isinstance(value, (str, int, float)):
-                        res[tag_name.lower()] = value
-                    elif isinstance(value, bytes):
-                        res[tag_name.lower()] = value.decode("utf-8", errors="ignore")
-                return {
-                    "camera_make": str(res.get("make", "")).strip(),
-                    "camera_model": str(res.get("model", "")).strip(),
-                    "software": str(res.get("software", "")).strip(),
-                    "datetime": str(res.get("datetime", "")).strip(),
-                    "all_tags": res,
-                }
-        except Exception as exc:
-            logger.debug("EXIF parsing bypassed for %s: %s", path, exc)
-            return {}
