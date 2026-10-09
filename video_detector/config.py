@@ -33,6 +33,11 @@ MAX_FILE_SIZE_MB = 500.0
 MAX_DURATION_SECONDS = 3600.0
 SUPPORTED_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
 
+# Per-frame noise judgement (median-filter residual of the grey frame; every camera frame has about NOISE_BASELINE of it)
+NOISE_BASELINE = 0.70
+NOISE_AI_THRESHOLD = 2.0              # balanced sensitivity: noise above the baseline below this is AI-like
+NOISE_AI_THRESHOLD_SENSITIVE = 2.4    # high / aggressive sensitivity
+
 # Temporal Motion Variance Thresholds
 MOTION_VAR_HIGH_WARPING = 140.0
 MOTION_VAR_SUSPICIOUS_FLICKER = 75.0

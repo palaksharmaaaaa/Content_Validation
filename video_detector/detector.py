@@ -25,6 +25,9 @@ from core.shared_results import shift_probability_by_log_odds
 from video_detector.config import (
     DEFAULT_MAX_FRAMES,
     DEFAULT_VIDEO_CHECKPOINT,
+    NOISE_AI_THRESHOLD,
+    NOISE_AI_THRESHOLD_SENSITIVE,
+    NOISE_BASELINE,
 )
 from video_detector.extractor import VideoFrameExtractor
 from video_detector.learner import VideoSelfImprover
@@ -98,7 +101,7 @@ class VideoAIDetector:
         return True
 
     def _score_frame_internal(self, frame_bgr: np.ndarray, sensitivity: str) -> Dict[str, Any]:
-        """Internal frame scoring fallback if no external frame detector is attached."""
+        """Scores one frame from its median-filter noise residual and bilateral-filter smoothness (used when no external frame detector is attached)."""
         gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
         blurred = cv2.medianBlur(gray, 3)
         noise = float(np.mean(cv2.absdiff(gray, blurred)))
@@ -106,8 +109,8 @@ class VideoAIDetector:
         bilateral = cv2.bilateralFilter(gray, d=7, sigmaColor=75, sigmaSpace=75)
         smooth = float(np.mean(cv2.absdiff(gray, bilateral)))
 
-        comp_noise = max(0.2, noise - 0.70)
-        noise_thresh = 2.4 if sensitivity in ("high", "aggressive") else 2.0
+        comp_noise = max(0.2, noise - NOISE_BASELINE)
+        noise_thresh = NOISE_AI_THRESHOLD_SENSITIVE if sensitivity in ("high", "aggressive") else NOISE_AI_THRESHOLD
         smooth_thresh = 3.6 if sensitivity in ("high", "aggressive") else 3.1
 
         p_noise_ai = float(1.0 / (1.0 + np.exp((comp_noise - noise_thresh) * 2.0)))
@@ -116,7 +119,7 @@ class VideoAIDetector:
 
         thresh = 0.50 if sensitivity in ("high", "aggressive") else 0.60
         label = "LIKELY AI-GENERATED" if score >= thresh else ("LIKELY REAL" if score <= 0.35 else "UNDECIDED")
-        return {"label": label, "prediction": label, "ai_prob": round(score, 3), "real_prob": round(1.0 - score, 3)}
+        return {"label": label, "prediction": label, "ai_prob": round(score, 3), "real_prob": round(1.0 - score, 3), "frame_noise": round(noise, 3)}
 
     def _analyze_frames(
         self, frames: List[np.ndarray], timestamps: List[float], sensitivity: str,
@@ -139,6 +142,7 @@ class VideoAIDetector:
             analyzed.append({
                 "frame_idx": idx, "timestamp": ts, "label": frame_res["label"],
                 "ai_prob": frame_res["ai_prob"], "real_prob": frame_res["real_prob"],
+                **({"frame_noise": frame_res["frame_noise"]} if "frame_noise" in frame_res else {}),
             })
             scores.append(frame_res["ai_prob"])
         return analyzed, scores
@@ -247,6 +251,9 @@ class VideoAIDetector:
         # Deallocate raw frame pixel arrays to prevent memory leaks
         del frames
 
+        frame_noises = [f["frame_noise"] for f in analyzed_frames if "frame_noise" in f]
+        mean_frame_noise = round(float(np.mean(frame_noises)), 3) if frame_noises else None
+
         # 5. Temporal Segments
         temporal_segments = group_temporal_segments(analyzed_frames, duration_seconds=duration)
 
@@ -295,6 +302,7 @@ class VideoAIDetector:
             prediction=final_label,
             temporal_consistency=temporal_res,
             diffusion_flicker=flicker_res,
+            mean_frame_noise=mean_frame_noise,
             temporal_segments=temporal_segments,
             forensic_cues=cues,
             metadata=metadata,

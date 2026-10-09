@@ -30,6 +30,7 @@ def compute_spectral_features(samples: np.ndarray, sample_rate: int) -> Dict[str
             "digital_silence_ratio": 0.0,
             "high_freq_ratio": 0.05,
             "p_audio_ai": 0.5,
+            "measured": False,          # too short to analyse: the numbers above are neutral placeholders, not measurements
         }
 
     # Short-Time Fourier Transform
@@ -46,6 +47,7 @@ def compute_spectral_features(samples: np.ndarray, sample_rate: int) -> Dict[str
             "digital_silence_ratio": 0.0,
             "high_freq_ratio": 0.05,
             "p_audio_ai": 0.5,
+            "measured": False,          # too short to analyse: the numbers above are neutral placeholders, not measurements
         }
 
     specs = []
@@ -117,6 +119,7 @@ def compute_spectral_features(samples: np.ndarray, sample_rate: int) -> Dict[str
         "digital_silence_ratio": round(digital_silence_ratio, 4),
         "high_freq_ratio": round(high_freq_ratio, 4),
         "p_audio_ai": round(p_score, 3),
+        "measured": True,
     }
 
 

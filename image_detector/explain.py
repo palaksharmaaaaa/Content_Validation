@@ -78,11 +78,17 @@ class _DossierContext:
         )
 
 
+def _join_known(*parts: Any) -> str:
+    """The non-empty parts joined with a bullet, or "Not determined" when none is known."""
+    known = [str(p) for p in parts if p]
+    return " • ".join(dict.fromkeys(known)) if known else "Not determined"
+
+
 def _dimension_1(c: _DossierContext) -> Dict[str, Any]:
     """Dimension 1: Acquisition Hardware & Provenance Spectrum"""
     has_cam = bool(c.exif.get("camera_make") or c.prov.get("camera_make"))
-    cam_str = f"{c.exif.get('camera_make') or c.prov.get('camera_make', '')} {c.exif.get('camera_model') or c.prov.get('camera_model', '')}".strip() or "No Hardware Camera Detected (Web Container / Stripped Metadata)"
-    iptc_type = IPTC_SOURCE_TYPE_MAPPING.get(c.tax_state, "digitalsourcetype:digitalCapture (Unspecified)")
+    cam_str = f"{c.exif.get('camera_make') or c.prov.get('camera_make') or ''} {c.exif.get('camera_model') or c.prov.get('camera_model') or ''}".strip() or "No camera make or model recorded"
+    iptc_type = IPTC_SOURCE_TYPE_MAPPING.get(c.tax_state, "Not determined")
 
     d1 = {
         "dimension_id": 1,
@@ -96,7 +102,7 @@ def _dimension_1(c: _DossierContext) -> Dict[str, Any]:
             "iso": c.exif.get("iso") or "N/A",
             "focal_length": c.exif.get("focal_length") or "N/A",
             "flash": c.exif.get("flash", "N/A"),
-            "white_balance": c.exif.get("white_balance", "Auto"),
+            "white_balance": c.exif.get("white_balance") or "N/A",
         },
         "date_taken": c.exif.get("date_time") or c.prov.get("date_time") or "Unknown / Stripped",
         "gps_coordinates": c.exif.get("gps_details", {}).get("coordinates_str", "Not Embedded"),
@@ -122,10 +128,10 @@ def _dimension_2(c: _DossierContext) -> Dict[str, Any]:
         "description": "Inspects pixel geometry, resolution aspect ratio, DPI resolution, bit depth, Shannon entropy, dynamic range, and dominant color palette.",
         "geometry": f"{w} x {h} px ({c.geom.get('megapixels', 0.0):.2f} MP, {c.geom.get('total_pixels', w * h):,} total pixels)",
         "aspect_ratio": c.geom.get("aspect_ratio_str", f"{c.geom.get('aspect_ratio', 0.0)}:1"),
-        "orientation": c.geom.get("orientation", "Landscape"),
-        "dpi": c.disp.get("dpi_str", "72 x 72 DPI"),
+        "orientation": c.geom.get("orientation", "Not recorded"),
+        "dpi": c.disp.get("dpi_str", "Not recorded"),
         "bit_depth": c.disp.get("bit_depth", f"{c.profile_data.get('channels', 3) * 8}-bit"),
-        "color_space": c.disp.get("color_space", "Standard sRGB"),
+        "color_space": c.disp.get("color_space", "Not recorded"),
         "shannon_entropy": f"{c.pcol.get('shannon_entropy_bpp', c.profile_data.get('pixel_entropy', 0.0)):.3f} bits/px",
         "luminance_dynamic_range": f"{c.pcol.get('luminance_mean', 0.0):.1f} mean (span: {c.pcol.get('luminance_min', 0)}..{c.pcol.get('luminance_max', 255)}, median: {c.pcol.get('luminance_median', 0.0)})",
         "clipping_profile": f"Highlights: {c.pcol.get('highlight_clipped_pct', 0.0)}% ({c.pcol.get('highlight_clipped_count', 0):,} px) | Shadows: {c.pcol.get('shadow_crushed_pct', 0.0)}% ({c.pcol.get('shadow_crushed_count', 0):,} px)",
@@ -194,7 +200,7 @@ def _dimension_5(c: _DossierContext) -> Dict[str, Any]:
 
 def _dimension_6(c: _DossierContext) -> Dict[str, Any]:
     """Dimension 6: Visual Genre & Semantic Subject-Matter Catalog"""
-    genre = c.purpose.get("primary_genre") or c.ai_result.get("subject_genre") or "General Scene"
+    genre = c.purpose.get("primary_genre") or c.ai_result.get("subject_genre") or "Not determined"
     d6 = {
         "dimension_id": 6,
         "title": "Dimension 6: Visual Genre & Semantic Subject-Matter Catalog",
@@ -208,9 +214,9 @@ def _dimension_6(c: _DossierContext) -> Dict[str, Any]:
         "animal_types": c.entities.get("animals", {}).get("animal_types", []),
         "vehicles_count": c.inv.get("vehicles", {}).get("count", 0),
         "vehicle_types": c.inv.get("vehicles", {}).get("vehicle_types", []),
-        "setting_and_environment": f"{c.env.get('setting_type', 'Ambient')} • {c.env.get('setting', 'Indoor')}",
-        "lighting_and_daytime": f"{c.light.get('daytime', 'Daylight')} ({c.light.get('lighting_quality', 'Ambient')})",
-        "atmospheric_mood": c.tone.get("atmospheric_mood", "Balanced"),
+        "setting_and_environment": _join_known(c.env.get("setting_type"), c.env.get("setting")),
+        "lighting_and_daytime": _join_known(c.light.get("daytime"), c.light.get("lighting_quality")),
+        "atmospheric_mood": c.tone.get("atmospheric_mood") or "Not determined",
         "identified_items": c.inv.get("contents_and_items", {}).get("identified_items", []),
     }
     return d6
@@ -218,7 +224,7 @@ def _dimension_6(c: _DossierContext) -> Dict[str, Any]:
 
 def _dimension_7(c: _DossierContext) -> Dict[str, Any]:
     """Dimension 7: Visual Art Mediums & Creative Styles Catalog"""
-    medium = c.ai_result.get("visual_medium", "Photographic Capture")
+    medium = c.ai_result.get("visual_medium") or "Not determined"
     d7 = {
         "dimension_id": 7,
         "title": "Dimension 7: Visual Art Mediums & Creative Styles Catalog",
@@ -235,7 +241,7 @@ def _dimension_7(c: _DossierContext) -> Dict[str, Any]:
 
 def _dimension_8(c: _DossierContext) -> Dict[str, Any]:
     """Dimension 8: Electromagnetic Spectrum & Acquisition Modalities"""
-    spectrum = c.ai_result.get("sensor_spectrum", "Visible Spectrum (Bayer RGB)")
+    spectrum = c.ai_result.get("sensor_spectrum") or "Not determined"
     d8 = {
         "dimension_id": 8,
         "title": "Dimension 8: Electromagnetic Spectrum & Acquisition Modalities",
@@ -255,7 +261,7 @@ def _dimension_9(c: _DossierContext) -> Dict[str, Any]:
         "title": "Dimension 9: Generative AI Frontier & Attribution Fingerprint",
         "description": "Detects foundation model synthesis (Flux.1, Midjourney, SD 3.5, Gemini/Imagen 3, DALL-E 3), neural inpainting, deepfake face-swapping, and watermarks.",
         "attributed_model": attributed_model,
-        "region_of_origin": c.attr.get("region_of_origin", "Global"),
+        "region_of_origin": c.attr.get("region_of_origin") or "Not determined",
         "attribution_confidence": c.attr.get("attribution_confidence", c.attr.get("confidence", 0.0)),
         "watermark_detected": c.ai_result.get("watermark_detected", False),
         "watermark_details": c.ai_result.get("watermark_details") or "No synthetic watermark detected",
@@ -304,7 +310,7 @@ def _depiction_phrase(persons: int, faces: int, is_char: bool, animals: List[str
         return f"a wildlife / domestic scene featuring {len(animals)} animal(s) ({', '.join(sorted(set(animals)))})"
     if vehicles:
         return f"a vehicular or transit scene showing {len(vehicles)} vehicle(s) ({', '.join(sorted(set(vehicles)))})"
-    return f"a visual scene composed as a {genre.lower()}"
+    return f"a visual scene composed as a {genre.lower()}" if genre else "a visual scene"
 
 
 def _extra_entities_phrase(persons: int, animals: List[str], vehicles: List[str]) -> str:
@@ -401,18 +407,18 @@ def generate_newbie_explanation(
     geom = profile_data.get("spatial_geometry") or profile_data.get("pixel_specifications") or {}
     w = geom.get("width", profile_data.get("width", 0))
     h = geom.get("height", profile_data.get("height", 0))
-    aspect_str = geom.get("aspect_ratio_str", "Standard format")
-    dpi_str = profile_data.get("display_attributes", {}).get("dpi_str", "72 DPI")
+    aspect_str = geom.get("aspect_ratio_str")
+    dpi_str = profile_data.get("display_attributes", {}).get("dpi_str")
 
     content = content_inventory or {}
     entities = content.get("living_entities") or content.get("entities") or {}
     humans = entities.get("humans", {})
     persons = humans.get("persons_count", content.get("persons_count", 0))
     faces = humans.get("faces_count", content.get("faces_count", 0))
-    genre = content.get("purpose_and_depiction", {}).get("primary_genre") or ai_result.get("subject_genre") or "General Scene"
-    medium = ai_result.get("visual_medium", "Digital Image")
-    mood = content.get("tone_and_mood", {}).get("atmospheric_mood", "Balanced")
-    daytime = content.get("lighting_and_daytime", {}).get("daytime", "Ambient")
+    genre = content.get("purpose_and_depiction", {}).get("primary_genre") or ai_result.get("subject_genre") or ""
+    medium = ai_result.get("visual_medium") or ""
+    mood = content.get("tone_and_mood", {}).get("atmospheric_mood") or ""
+    daytime = content.get("lighting_and_daytime", {}).get("daytime") or ""
 
     metrics = ai_result.get("forensic_metrics", {})
     phys = profile_data.get("raw_physical_signals") or {}
@@ -426,11 +432,17 @@ def generate_newbie_explanation(
     items_list = content.get("contents_and_items", {}).get("identified_items", [])
     items_desc = f", with visible elements including {', '.join(items_list[:3])}" if items_list else ""
 
+    format_phrase = ""
+    if aspect_str:
+        format_phrase = f" formatted in **{aspect_str}**" + (f" at **{dpi_str}**" if dpi_str and dpi_str != "Not recorded" else "")
+    setting_phrase = ""
+    if daytime or mood:
+        setting_phrase = " set in" + (f" **{daytime.lower()}** conditions" if daytime else "") + (" with" if daytime and mood else "") + (f" a **{mood.lower()}** atmosphere" if mood else "")
     section_what = (
         f"### 🖼️ What We Identified in this Image\n\n"
-        f"This file (`{filename}`) is a **{w} × {h} pixel** visual asset formatted in **{aspect_str}** at **{dpi_str}**. "
-        f"Visually, it depicts **{depiction}**{extra_str}{items_desc} set in a **{daytime.lower()}** environment with an evocative **{mood.lower()}** atmosphere{_palette_phrase(profile_data)}. "
-        f"The visual style is characterized as **{medium}**."
+        f"This file (`{filename}`) is a **{w} × {h} pixel** visual asset{format_phrase}. "
+        f"Visually, it depicts **{depiction}**{extra_str}{items_desc}{setting_phrase}{_palette_phrase(profile_data)}."
+        + (f" The visual style is characterized as **{medium}**." if medium else "")
     )
 
     is_synthetic = "AI" in verdict or "SYNTHETIC" in verdict or p_ai >= 55.0

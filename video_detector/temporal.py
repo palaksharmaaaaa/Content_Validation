@@ -105,7 +105,7 @@ def detect_diffusion_flickering(frames: List[np.ndarray]) -> Dict[str, Any]:
     where details shimmer unnaturally across frames.
     """
     if len(frames) < 3:
-        return {"flicker_score": 0.0, "has_diffusion_flicker": False}
+        return {"flicker_score": 0.0, "has_diffusion_flicker": False, "frames_compared": len(frames)}
 
     luminances = [float(np.mean(cv2.cvtColor(f, cv2.COLOR_BGR2GRAY))) for f in frames]
     lum_diffs = np.abs(np.diff(luminances))
@@ -128,6 +128,7 @@ def detect_diffusion_flickering(frames: List[np.ndarray]) -> Dict[str, Any]:
         "flicker_ratio": round(flicker_ratio, 2),
         "mean_lum_jump": round(mean_lum_jump, 2),
         "has_diffusion_flicker": has_flicker,
+        "frames_compared": len(frames),
     }
 
 

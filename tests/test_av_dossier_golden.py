@@ -22,8 +22,8 @@ def audio_case(r):
     for k, v in (("sample_rate", 22050), ("duration", 3.3), ("channels", 2), ("format", "MP3"), ("bit_depth", "24-bit")):
         put(r, prof, k, v, .4)
     ac = {}
-    put(r, ac, "vocoder_cutoff_hz", r.choice([0, 8000, 16000, 12345])); put(r, ac, "spectral_flatness_mean", r.uniform(0, .1)); put(r, ac, "silence_ratio", r.uniform(0, .6))
-    put(r, ac, "has_unnatural_silence", r.random() < .5, .4)
+    put(r, ac, "cutoff_freq_hz", r.choice([0.0, 8000.0, 16000.0, 12345.0])); put(r, ac, "spectral_flatness", r.uniform(0, .1)); put(r, ac, "digital_silence_ratio", r.uniform(0, .6)); put(r, ac, "measured", r.random() < .8, .7)
+    put(r, ac, "has_vocoder_cutoff", r.random() < .5, .5)
     res = {"acoustic_features": ac}
     put(r, res, "has_vocoder_cutoff", r.random() < .5, .4); put(r, res, "synthesis_medium", "TTS", .4); put(r, res, "is_synthetic", True, .4); put(r, res, "ai_duration_pct", 33.3, .5)
     inv = {}
@@ -42,8 +42,8 @@ def video_case(r):
     put(r, prof, "bitrate_kbps", 4500.0)
     temp = {}
     put(r, temp, "motion_variance", r.uniform(0, 100)); put(r, temp, "temporal_warping_risk", r.choice(["LOW", "HIGH_WARPING_DETECTED", "SUSPICIOUS_FLICKER", "UNNATURAL_FREEZE"]))
-    put(r, temp, "flicker_variance", r.uniform(0, 100))
     res = {"temporal_consistency": temp}
+    put(r, res, "diffusion_flicker", {"flicker_score": round(r.uniform(0, 1), 2), "has_diffusion_flicker": r.random() < .3, "frames_compared": r.choice([2, 12, 30])})
     put(r, res, "mean_frame_noise", r.uniform(0, 3)); put(r, res, "visual_medium", "CGI"); put(r, res, "is_synthetic", True); put(r, res, "details", {"ai_duration_pct": 12.0})
     inv = {}
     put(r, inv, "living_entities", {"humans": {"persons_count": 2, "faces_count": 1}}); put(r, inv, "entities", {"humans": {"persons_count": 3}}, .3)

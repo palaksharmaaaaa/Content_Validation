@@ -75,6 +75,7 @@ class VideoForensicResult:
     prediction: str = "UNDECIDED"
     temporal_consistency: Dict[str, Any] = field(default_factory=dict)
     diffusion_flicker: Dict[str, Any] = field(default_factory=dict)
+    mean_frame_noise: Optional[float] = None      # mean median-filter noise residual over the frames the built-in scorer examined (None when an external frame detector scored them)
     temporal_segments: List[Dict[str, Any]] = field(default_factory=list)
     forensic_cues: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -95,6 +96,7 @@ class VideoForensicResult:
             "prediction": self.prediction,
             "temporal_consistency": self.temporal_consistency,
             "diffusion_flicker": self.diffusion_flicker,
+            "mean_frame_noise": self.mean_frame_noise,
             "temporal_segments": self.temporal_segments,
             "forensic_cues": self.forensic_cues,
             "metadata": self.metadata,

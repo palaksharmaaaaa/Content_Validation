@@ -92,7 +92,7 @@ class TestCoreDecision(unittest.TestCase):
 class TestModalExplainers(unittest.TestCase):
     def test_audio_explainer_dossier_and_newbie(self):
         prof = {'sample_rate': 44100, 'duration': 4.5, 'channels': 2}
-        aud_res = {'authenticity_score': 0.85, 'has_vocoder_cutoff': True, 'acoustic_features': {'vocoder_cutoff_hz': 16000}}
+        aud_res = {'authenticity_score': 0.85, 'has_vocoder_cutoff': True, 'acoustic_features': {'cutoff_freq_hz': 16000.0, 'has_vocoder_cutoff': True}}
         decision = {
             'final_status': 'AI_GENERATED_CONTENT',
             'authenticity_probabilities': {'p_ai': 85.0, 'p_real': 15.0},

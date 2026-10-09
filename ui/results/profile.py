@@ -53,7 +53,7 @@ def _render_profile_section_2(v: _ProfileView) -> None:
     g5.metric("Orientation", orient)
 
     d1, d2, d3, d4 = st.columns(4)
-    d1.metric("DPI Resolution", v.disp.get("dpi_str", "72 x 72 DPI"))
+    d1.metric("DPI Resolution", v.disp.get("dpi_str", "Not recorded"))
     d2.metric("Bit Depth", v.disp.get("bit_depth", "24-bit (3x8-bit)"))
     d3.metric("Color Space", v.disp.get("color_space", "Standard sRGB"))
     d4.metric("Alpha Channel", "Present (RGBA)" if v.disp.get("has_alpha_channel") else "None (RGB)")

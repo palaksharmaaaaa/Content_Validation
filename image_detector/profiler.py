@@ -171,8 +171,8 @@ def _apply_sub_ifd(exif_data: Any, exif_info: Dict[str, Any]) -> None:
 def _read_container_info(path: Path) -> Dict[str, Any]:
     """PIL-level container facts: colour mode, ICC, DPI and EXIF acquisition metadata."""
     info: Dict[str, Any] = {
-        "dpi_x": 72.0, "dpi_y": 72.0, "color_mode": "RGB", "has_icc": False,
-        "icc_profile_name": "Standard sRGB", "exif_info": _blank_exif_info(),
+        "dpi_x": None, "dpi_y": None, "color_mode": "RGB", "has_icc": False,        # None: the file records no resolution
+        "icc_profile_name": "ICC profile embedded", "exif_info": _blank_exif_info(),
     }
     exif_info = info["exif_info"]
     try:
@@ -180,7 +180,6 @@ def _read_container_info(path: Path) -> Dict[str, Any]:
             info["color_mode"] = pil_img.mode
             if pil_img.info.get("icc_profile"):
                 info["has_icc"] = True
-                info["icc_profile_name"] = "ICC Profile Embedded"
             raw_dpi = pil_img.info.get("dpi")
             if raw_dpi and isinstance(raw_dpi, (tuple, list)):
                 info["dpi_x"] = float(raw_dpi[0])
@@ -351,6 +350,7 @@ class ImageProfiler:
 
         h, w = img_bgr.shape[:2]
         channels = img_bgr.shape[2] if img_bgr.ndim == 3 else 1
+        bits = img_bgr.dtype.itemsize * 8
         aspect = round(float(w) / max(1.0, float(h)), 3)
         orientation, aspect_str = _orientation_and_aspect(aspect)
 
@@ -392,13 +392,13 @@ class ImageProfiler:
                 "orientation": orientation,
             },
             "display_attributes": {
-                "dpi_x": round(dpi_x, 1),
-                "dpi_y": round(dpi_y, 1),
-                "dpi_str": f"{int(dpi_x)} x {int(dpi_y)} DPI",
-                "bit_depth": f"{8 * channels}-bit ({channels} channels x 8-bit)",
-                "bits_per_channel": 8,
+                "dpi_x": None if dpi_x is None else round(dpi_x, 1),
+                "dpi_y": None if dpi_y is None else round(dpi_y, 1),
+                "dpi_str": "Not recorded" if dpi_x is None else f"{int(dpi_x)} x {int(dpi_y)} DPI",
+                "bit_depth": f"{bits * channels}-bit ({channels} channels x {bits}-bit)",
+                "bits_per_channel": bits,
                 "color_mode": container["color_mode"],
-                "color_space": container["icc_profile_name"] if container["has_icc"] else "Standard sRGB",
+                "color_space": container["icc_profile_name"] if container["has_icc"] else "No embedded profile",
                 "has_alpha_channel": channels == 4,
             },
             "pixel_color_profile": {

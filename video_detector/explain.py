@@ -9,6 +9,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, Optional, NamedTuple
 
+from video_detector.config import NOISE_AI_THRESHOLD, NOISE_BASELINE
+
 logger = logging.getLogger("video_detector.explain")
 
 
@@ -42,9 +44,9 @@ def _video_dimension_1(c: _VideoDossierContext) -> Dict[str, Any]:
         "dimension_id": 1,
         "title": "Dimension 1: Acquisition Hardware & Video Container Provenance",
         "description": "Inspects container atom structure (moov, mvhd, udta), encoder signatures, and C2PA manifests.",
-        "container_atoms": atoms or ["Standard MP4 Atoms"],
+        "container_atoms": atoms or [],
         "c2pa_status": "Present (markers only; not cryptographically verified)" if has_c2pa else "Absent (Neutral)",
-        "hardware_origin": c.prov.get("camera_make") or "Unspecified Camera Hardware / Web Export",
+        "hardware_origin": c.prov.get("camera_make") or "No camera make recorded",
         "provenance_verdict": c.prov.get("provenance_status", "PROVENANCE_UNKNOWN"),
     }
     return d1
@@ -67,58 +69,67 @@ def _video_dimension_2(c: _VideoDossierContext) -> Dict[str, Any]:
 
 def _video_dimension_3(c: _VideoDossierContext) -> Dict[str, Any]:
     """3. Sensor Shot Noise & Micro-Grain Consistency"""
-    noise_mean = c.vid_res.get("mean_frame_noise", 1.8)
+    noise_mean = c.vid_res.get("mean_frame_noise")
     d3 = {
         "dimension_id": 3,
         "title": "Dimension 3: Sensor Shot Noise & Micro-Grain Consistency",
-        "description": "Monitors photon shot noise and PRNU stability across temporal frame samples.",
+        "description": "Measures the median-filter noise residual of the sampled frames (a heuristic stand-in for sensor noise, not PRNU).",
         "noise_score": noise_mean,
-        "is_natural_noise": noise_mean >= 1.20,
-        "diagnosis": (
-            "Authentic camera sensor shot noise preserved across sampled frames."
-            if noise_mean >= 1.20
-            else f"Sub-optical noise floor ({noise_mean:.2f}); consistent with neural diffusion denoiser."
-        ),
     }
+    if noise_mean is None:
+        d3.update(is_natural_noise=None, diagnosis="Not measured: the frames were not scored by the built-in noise measure.")
+        return d3
+    natural = noise_mean - NOISE_BASELINE >= NOISE_AI_THRESHOLD
+    d3.update(
+        is_natural_noise=natural,
+        diagnosis=(
+            f"Noise level ({noise_mean:.2f}) is above the level typical of denoised generated frames."
+            if natural
+            else f"Low noise floor ({noise_mean:.2f}); similar to the smooth output of generative denoisers, but also to clean or heavily compressed camera footage."
+        ),
+    )
     return d3
 
 
 def _video_dimension_4(c: _VideoDossierContext) -> Dict[str, Any]:
     """4. Inter-Frame Motion Vectors & Warping"""
-    motion_var = c.temp.get("motion_variance", 45.0)
-    warping_risk = c.temp.get("temporal_warping_risk", "LOW")
+    motion_var = c.temp.get("motion_variance")
+    warping_risk = c.temp.get("temporal_warping_risk")
     d4 = {
         "dimension_id": 4,
         "title": "Dimension 4: Inter-Frame Motion Vectors & Morphological Warping",
-        "description": "Tracks optical flow continuity to detect liquid limb morphing and unnatural physics.",
-        "motion_variance": round(motion_var, 2),
+        "description": "Compares the variance of frame-to-frame differences against thresholds for warping, flicker and frozen footage.",
+        "motion_variance": None if motion_var is None else round(motion_var, 2),
         "warping_risk": warping_risk,
-        "diagnosis": (
-            f"Anomalous inter-frame warping detected ({warping_risk}). Surfaces exhibit non-Euclidean morphing."
-            if warping_risk in ("HIGH_WARPING_DETECTED", "SUSPICIOUS_FLICKER")
-            else f"Unnatural frame-to-frame stillness detected ({warping_risk}); inconsistent with live motion capture."
-            if warping_risk == "UNNATURAL_FREEZE"
-            else "Natural Newtonian motion dynamics and smooth inter-frame optical flow."
-        ),
     }
+    if motion_var is None or warping_risk is None:
+        d4["diagnosis"] = "Not measured: fewer than two frames could be compared."
+    elif warping_risk in ("HIGH_WARPING_DETECTED", "SUSPICIOUS_FLICKER"):
+        d4["diagnosis"] = f"Inter-frame change is unusually irregular ({warping_risk}); can indicate warping surfaces, but also fast cuts or heavy compression."
+    elif warping_risk == "UNNATURAL_FREEZE":
+        d4["diagnosis"] = f"Almost no frame-to-frame change ({warping_risk}); inconsistent with live motion capture."
+    else:
+        d4["diagnosis"] = "Frame-to-frame change is within the range of ordinary footage."
     return d4
 
 
 def _video_dimension_5(c: _VideoDossierContext) -> Dict[str, Any]:
     """5. Temporal Diffusion Flickering & Latent Drift"""
-    flicker_score = c.temp.get("flicker_variance", 20.0)
+    flicker = c.vid_res.get("diffusion_flicker") or {}
+    score = flicker.get("flicker_score") if flicker.get("frames_compared", 0) >= 3 else None
     d5 = {
         "dimension_id": 5,
         "title": "Dimension 5: Temporal Diffusion Flickering & Latent Drift",
-        "description": "Detects high-frequency luminance fluctuations characteristic of frame-by-frame diffusion generation.",
-        "flicker_score": round(flicker_score, 2),
-        "has_diffusion_flicker": flicker_score > 65.0,
-        "diagnosis": (
-            "High inter-frame generative flicker detected; signature of unconstrained diffusion step variance."
-            if flicker_score > 65.0
-            else "Temporal luminance stability aligns with physical camera shutter exposure."
-        ),
+        "description": "Counts reversals of the frame-to-frame brightness change, a pattern seen in frame-by-frame diffusion generation.",
+        "flicker_score": score,
+        "has_diffusion_flicker": flicker.get("has_diffusion_flicker"),
     }
+    if score is None:
+        d5["diagnosis"] = "Not measured: fewer than three frames were sampled."
+    elif flicker.get("has_diffusion_flicker"):
+        d5["diagnosis"] = f"Brightness flickers frame to frame (score {score:.2f}); a pattern of unconstrained generation, though some cameras and codecs also produce it."
+    else:
+        d5["diagnosis"] = f"No rapid brightness flicker (score {score:.2f})."
     return d5
 
 
@@ -130,8 +141,8 @@ def _video_dimension_6(c: _VideoDossierContext) -> Dict[str, Any]:
         "description": "Catalogs entities, persons, faces, scene settings, and environmental lighting.",
         "persons_count": c.humans.get("persons_count", c.inv.get("persons_count", 0)),
         "faces_count": c.humans.get("faces_count", c.inv.get("faces_count", 0)),
-        "setting": f"{c.env.get('setting_type', 'Ambient')} • {c.env.get('setting', 'Indoor')}",
-        "lighting": c.light.get("daytime", "Daylight"),
+        "setting": " • ".join(dict.fromkeys(str(p) for p in (c.env.get("setting_type"), c.env.get("setting")) if p)) or "Not determined",
+        "lighting": c.light.get("daytime") or "Not determined",
         "identified_items": c.inv.get("contents_and_items", {}).get("identified_items", []),
     }
     return d6
@@ -143,7 +154,7 @@ def _video_dimension_7(c: _VideoDossierContext) -> Dict[str, Any]:
         "dimension_id": 7,
         "title": "Dimension 7: Video Synthesis Medium & Generative Model Archetype",
         "description": "Distinguishes physical camera capture from Sora, Runway Gen-2/Gen-3, Kling, Luma, or 3D CGI.",
-        "visual_medium": c.vid_res.get("visual_medium", "Video Capture"),
+        "visual_medium": c.vid_res.get("visual_medium") or "Not determined",
         "is_ai_video": c.vid_res.get("is_synthetic", False),
     }
     return d7
@@ -167,7 +178,7 @@ def _video_dimension_9(c: _VideoDossierContext) -> Dict[str, Any]:
         "dimension_id": 9,
         "title": "Dimension 9: Foundation Model Attribution & Watermarking",
         "description": "Matches forensic fingerprints against known video foundation generators (Sora, Runway, Pika, Kling, Luma).",
-        "attributed_generator": c.attr.get("attributed_model", "Unattributable / Unknown Generator"),
+        "attributed_generator": c.attr.get("attributed_model") or "Not attributable",
         "confidence": f"{int(c.attr.get('attribution_confidence', 0.0) * 100)}%",
         "watermark_detected": c.attr.get("watermark_detected", False),
         "suspicious_duration_pct": f"{c.vid_res.get('details', {}).get('ai_duration_pct', 0.0):.1f}%",
@@ -245,13 +256,15 @@ def generate_video_newbie_explanation(
         subject_desc = f"an individual ({faces} visible face)" if faces > 0 else "an individual"
     elif persons > 1:
         subject_desc = f"a group of {persons} individuals ({faces} visible faces)"
+    elif humans or "persons_count" in inv:
+        subject_desc = "a scene with no people"
     else:
-        subject_desc = "a visual landscape or scene"
+        subject_desc = None
 
     section_what = (
         f"### 📹 What We Identified in this Video\n\n"
         f"This file (`{filename}`) is a **{duration:.1f}-second video recording** formatted at **{w} × {h} pixels** "
-        f"running at **{fps:.1f} frames per second**. The video depicts **{subject_desc}**.\n\n"
+        f"running at **{fps:.1f} frames per second**." + (f" The video depicts **{subject_desc}**." if subject_desc else "") + "\n\n"
     )
 
     section_newbie = "### 💡 How Would You Explain This to a Newbie?\n\n"
