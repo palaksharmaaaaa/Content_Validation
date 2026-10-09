@@ -12,6 +12,7 @@ import cv2
 import numpy as np
 
 from core.face_detection import get_face_finder
+from core.perception.face_texture import risk_label, texture_cues
 
 logger = logging.getLogger("video_detector.face")
 
@@ -44,28 +45,13 @@ class VideoFaceDeepfakeDetector:
             if face_roi.size == 0:
                 continue
 
-            bilateral = cv2.bilateralFilter(face_roi, 9, 75, 75)
-            texture_diff = float(np.mean(cv2.absdiff(face_roi, bilateral)))
-
-            fh_y1 = max(0, int(h * 0.15))
-            fh_y2 = min(h, int(h * 0.50))
-            fh_x1 = max(0, int(w * 0.20))
-            fh_x2 = min(w, int(w * 0.80))
-            upper_roi = face_roi[fh_y1:fh_y2, fh_x1:fh_x2]
-            noise_mean = float(np.mean(cv2.absdiff(upper_roi, cv2.GaussianBlur(upper_roi, (3, 3), 0)))) if upper_roi.size > 0 else 2.0
-
-            risk_factors = 0.0
-            if texture_diff < 3.2:
-                risk_factors += 1.5
-            if noise_mean < 1.8:
-                risk_factors += 1.0
-
-            score = min(0.95, (risk_factors / 2.5) * 0.75 + 0.15)
+            cues = texture_cues(face_roi)
+            score = cues["score"]
             scores.append(score)
-            details.append({"bbox": [x, y, w, h], "texture_smoothness": round(texture_diff, 2), "deepfake_score": round(score, 2)})
+            details.append({"bbox": [x, y, w, h], "texture_smoothness": round(cues["texture_smoothness"], 2), "deepfake_score": round(score, 2)})
 
         avg = float(np.mean(scores)) if scores else 0.0
-        risk = "HIGH_SYNTHETIC_RISK" if avg >= 0.70 else ("SUSPICIOUS_ARTIFACTS" if avg >= 0.45 else "LOW_RISK_NATURAL_TEXTURE")
+        risk = risk_label(avg)
 
         return {
             "faces_detected": len(faces),
@@ -87,7 +73,7 @@ class VideoFaceDeepfakeDetector:
         ai_scores = [r["facial_ai_confidence"] for r in frame_results if r["faces_detected"] > 0]
         mean_score = float(np.mean(ai_scores)) if ai_scores else 0.0
 
-        risk = "HIGH_SYNTHETIC_RISK" if mean_score >= 0.70 else ("SUSPICIOUS_ARTIFACTS" if mean_score >= 0.45 else "LOW_RISK_NATURAL_TEXTURE")
+        risk = risk_label(mean_score)
 
         return {
             "total_frames_analyzed": len(frames_bgr),

@@ -10,6 +10,7 @@ import cv2
 import numpy as np
 
 from core.face_detection import get_face_finder
+from core.perception.face_texture import risk_label, texture_cues
 from core.perception.face_attributes import get_face_attributes, group_same_person
 
 logger = logging.getLogger("image_detector.face")
@@ -64,32 +65,8 @@ class FaceDeepfakeDetector:
             if face_roi_gray.size == 0:
                 continue
 
-            # 1. Bilateral texture smoothness inside face
-            bilateral = cv2.bilateralFilter(face_roi_gray, 9, 75, 75)
-            diff = cv2.absdiff(face_roi_gray, bilateral)
-            texture_diff = float(np.mean(diff))
-
-            # 2. High-frequency sensor noise on upper face (forehead/cheeks)
-            fh_y1 = max(0, int(h * 0.15))
-            fh_y2 = min(h, int(h * 0.50))
-            fh_x1 = max(0, int(w * 0.20))
-            fh_x2 = min(w, int(w * 0.80))
-            upper_roi = face_roi_gray[fh_y1:fh_y2, fh_x1:fh_x2]
-
-            if upper_roi.size > 0:
-                blurred = cv2.GaussianBlur(upper_roi, (3, 3), 0)
-                noise_mean = float(np.mean(cv2.absdiff(upper_roi, blurred)))
-            else:
-                noise_mean = 2.0
-
-            # Evaluated risk factors
-            risk_factors = 0.0
-            if texture_diff < 3.2:
-                risk_factors += 1.5
-            if noise_mean < 1.8:
-                risk_factors += 1.0
-
-            face_prob = min(0.95, (risk_factors / 2.5) * 0.75 + 0.15)
+            cues = texture_cues(face_roi_gray)
+            face_prob = cues["score"]
             deepfake_scores.append(face_prob)
 
             embedding = attributes.embedding(image_bgr, found["landmarks"])
@@ -99,9 +76,9 @@ class FaceDeepfakeDetector:
                 "detector_confidence": round(float(found["score"]), 3),
                 "expression": attributes.expression(image_bgr, found["landmarks"]),
                 "embedding": None if embedding is None else [round(float(v), 5) for v in embedding],
-                "texture_smoothness": round(texture_diff, 2),
-                "facial_noise_residual": round(noise_mean, 2),
-                "is_waxy_texture": texture_diff < 3.2,
+                "texture_smoothness": round(cues["texture_smoothness"], 2),
+                "facial_noise_residual": None if cues["facial_noise_residual"] is None else round(cues["facial_noise_residual"], 2),
+                "is_waxy_texture": cues["is_waxy_texture"],
                 "deepfake_score": round(face_prob, 2),
             })
 
@@ -109,12 +86,7 @@ class FaceDeepfakeDetector:
         for detail, group in zip(face_details, groups):
             detail["same_person_group"] = group
         avg_score = float(np.mean(deepfake_scores)) if deepfake_scores else 0.0
-        if avg_score >= 0.70:
-            risk = "HIGH_SYNTHETIC_RISK"
-        elif avg_score >= 0.45:
-            risk = "SUSPICIOUS_ARTIFACTS"
-        else:
-            risk = "LOW_RISK_NATURAL_TEXTURE"
+        risk = risk_label(avg_score)
 
         face_boxes = [
             {"x": d["bbox"][0], "y": d["bbox"][1], "width": d["bbox"][2], "height": d["bbox"][3]}
