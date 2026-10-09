@@ -57,11 +57,6 @@ def merge_scored(scored: List[Tuple[Box, float]], iou: float = MERGE_IOU) -> Lis
     return kept
 
 
-def merge_boxes(scored: List[Tuple[Box, float]], iou: float = MERGE_IOU) -> List[Box]:
-    """``merge_scored`` without the scores."""
-    return [b for b, _ in merge_scored(scored, iou)]
-
-
 def unrotate_box(box: Box, rot: int, width: int, height: int) -> Box:
     """Map a box found in the image rotated ``rot`` degrees clockwise back to the pixels of the original (width x height) image."""
     x, y, w, h = box

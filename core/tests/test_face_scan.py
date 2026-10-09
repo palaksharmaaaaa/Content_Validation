@@ -12,7 +12,7 @@ def test_merge_keeps_the_most_confident_of_overlapping_boxes():
 
 
 def test_merge_of_nothing_is_nothing():
-    assert F.merge_boxes([]) == []
+    assert F.merge_scored([]) == []
 
 
 def test_tiny_images_and_none_are_safe():
