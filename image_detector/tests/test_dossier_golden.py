@@ -38,7 +38,7 @@ def case(r):
     prof = {"spatial_geometry": geom, "display_attributes": disp, "pixel_color_profile": pcol, "exif_device_details": exif, "raw_physical_signals": phys}
     put(prof, "width", 10, .3); put(prof, "height", 11, .3); put(prof, "channels", r.choice([1, 3, 4]), .5); put(prof, "pixel_entropy", 6.5, .5)
     if r.random() < .15:
-        prof = {"pixel_specifications": geom}
+        prof = {}
     ai = {"taxonomy_state": r.choice([None] + list(IPTC_SOURCE_TYPE_MAPPING) + ["UNKNOWN"])}
     put(ai, "forensic_metrics", {"noise_residual_mean": 1.1, "surface_smoothness": 2.2, "spectral_decay_alpha": 3.9}, .5)
     put(ai, "subject_genre", "Landscape", .4); put(ai, "visual_medium", "Watercolor", .4); put(ai, "digital_art_detected", True, .3)

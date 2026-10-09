@@ -104,10 +104,9 @@ def run_pipeline_test():
         print("\n[Step 6/9] Running Deep Media Profiler (Pixel Specs, Entropy, Hashes)...")
         img_profile = profile_media(str(tmp_img_path), modality="image")
         aud_profile = profile_media(str(tmp_aud_path), modality="audio")
-        pix_spec = img_profile.get("pixel_specifications", {})
         print(f" -> Image SHA-256: {img_profile['file_identity']['sha256'][:16]}...")
-        print(f" -> Aspect Ratio: {pix_spec.get('aspect_ratio')}")
-        print(f" -> Shannon Entropy: {pix_spec.get('pixel_entropy')} bits/pixel")
+        print(f" -> Aspect Ratio: {img_profile.get('aspect_ratio')}")
+        print(f" -> Shannon Entropy: {img_profile.get('pixel_entropy')} bits/pixel")
 
         # 7. Multi-Modal AI Detection (Image + Audio)
         print("\n[Step 7/9] Running Multi-Modal AI Forensics (noise residual, FFT, vocoder)...")

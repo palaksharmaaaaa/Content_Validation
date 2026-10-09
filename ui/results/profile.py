@@ -192,7 +192,7 @@ def render_pre_analysis_specifications(
         "color palette, and raw physical noise prior to running AI detection models."
     )
 
-    geom = profile_data.get("spatial_geometry") or profile_data.get("pixel_specifications") or {}
+    geom = profile_data.get("spatial_geometry") or {}
     disp = profile_data.get("display_attributes") or {}
     pcol = profile_data.get("pixel_color_profile") or {}
     exif = profile_data.get("exif_device_details") or {}

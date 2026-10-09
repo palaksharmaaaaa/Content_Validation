@@ -59,7 +59,7 @@ class _DossierContext:
             inv=inv,
             prov=provenance_result or {},
             attr=attribution_result or ai_result.get("model_attribution") or {},
-            geom=profile_data.get("spatial_geometry") or profile_data.get("pixel_specifications") or {},
+            geom=profile_data.get("spatial_geometry") or {},
             disp=profile_data.get("display_attributes") or {},
             pcol=profile_data.get("pixel_color_profile") or {},
             exif=profile_data.get("exif_device_details") or {},
@@ -406,7 +406,7 @@ def generate_newbie_explanation(
     p_ai = float(probs.get("p_ai", 0.0))
     p_real = float(probs.get("p_real", 0.0))
 
-    geom = profile_data.get("spatial_geometry") or profile_data.get("pixel_specifications") or {}
+    geom = profile_data.get("spatial_geometry") or {}
     w = geom.get("width", profile_data.get("width", 0))
     h = geom.get("height", profile_data.get("height", 0))
     aspect_str = geom.get("aspect_ratio_str")
