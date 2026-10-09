@@ -380,9 +380,7 @@ def _edited_takeaway(tax_label: str, p_real: float) -> str:
 def _authentic_takeaway(tax_label: str, p_real: float, noise: float) -> str:
     return (
         f"**The Simple Takeaway:** This image is **consistent with a plain camera photograph** ({tax_label}); "
-        f"the heuristic (uncalibrated) estimate is **{p_real:.1f}%**, which is a ranking aid, not proof.
-
-"
+        f"the heuristic (uncalibrated) estimate is **{p_real:.1f}%**, which is a ranking aid, not proof.\n\n"
         f"**What that is based on:** A camera sensor leaves a fine grain in every photo, and this picture has it (noise residual: **{noise:.2f}**) "
         f"without the extra smoothness or other signs of generation that this tool looks for. That does not rule out a good fake: "
         f"recent generators, careful retouching and re-photographed screens can pass these checks."
