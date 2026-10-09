@@ -39,6 +39,14 @@ SESSION_CACHE_DIR = get_session_cache_dir(st.session_state["session_id"])
 
 
 @st.cache_resource
+def start_model_warmup() -> bool:
+    """Once per server process: load the perception models in the background while the user chooses a file."""
+    from services.warmup import start_background_warmup
+
+    return start_background_warmup() is not None
+
+
+@st.cache_resource
 def get_forensic_service() -> ForensicService:
     return ForensicService.get_instance(checkpoint_path=DETECTOR_CHECKPOINT)
 
@@ -86,6 +94,7 @@ def get_attribution_engine():
 st.set_page_config(page_title="OmniForensics", page_icon="🔍", layout="wide")
 
 inject_css()
+start_model_warmup()
 sensitivity_key = render_sidebar(SESSION_CACHE_DIR)
 
 st.title("OmniForensics")

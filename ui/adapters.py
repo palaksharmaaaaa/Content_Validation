@@ -4,6 +4,8 @@ The analysis sequence itself lives in each package's pipeline.run(); these funct
 short-circuit shape, display profile blocks, keyframe file, error packaging)."""
 from __future__ import annotations
 
+import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
@@ -215,6 +217,61 @@ def process_single_audio(
     }
 
 
+ENV_BATCH_WORKERS = "OMNI_BATCH_WORKERS"
+_MAX_WORKERS = {"image": 4, "audio": 4, "video": 2}          # video decoding and frame models are the heaviest per file
+
+
+def batch_workers(modality: str, n_items: int) -> int:
+    """How many files to analyse at once: at most half the CPU cores, capped per media type, never more than the files, and
+    overridable with ``OMNI_BATCH_WORKERS`` (1 turns parallelism off)."""
+    override = os.environ.get(ENV_BATCH_WORKERS, "").strip()
+    if override.isdigit() and int(override) >= 1:
+        return min(int(override), max(1, n_items))
+    cores = os.cpu_count() or 2
+    return max(1, min(_MAX_WORKERS.get(modality, 1), max(1, cores // 2), n_items))
+
+
+def _analyse_item(item: Dict[str, str], modality: str, detectors: Dict[str, Any], sensitivity: str, cache_dir: Optional[Path]) -> Dict[str, Any]:
+    """Analyse one batch item; any failure becomes an error result so one bad file never stops the batch."""
+    path = item["path"]
+    filename = item["filename"]
+    try:
+        if modality == "image":
+            return process_single_image(
+                img_path=path,
+                filename=filename,
+                detector=detectors["detector"],
+                content_analyzer=detectors["content_analyzer"],
+                attribution_engine=detectors["attribution_engine"],
+                sensitivity=sensitivity,
+                source=item.get("source", "User Upload"),
+            )
+        if modality == "video":
+            return process_single_video(
+                vid_path=path,
+                filename=filename,
+                detector=detectors["detector"],
+                content_analyzer=detectors["content_analyzer"],
+                audio_detector=detectors["audio_detector"],
+                attribution_engine=detectors["attribution_engine"],
+                sensitivity=sensitivity,
+                cache_dir=cache_dir,
+                video_detector=detectors.get("video_detector"),
+            )
+        if modality == "audio":
+            return process_single_audio(
+                aud_path=path,
+                filename=filename,
+                audio_detector=detectors["audio_detector"],
+                content_analyzer=detectors["content_analyzer"],
+                attribution_engine=detectors["attribution_engine"],
+                sensitivity=sensitivity,
+            )
+        return {"filename": filename, "path": path, "success": False, "error": f"Unknown modality: {modality}"}
+    except Exception as exc:
+        return {"filename": filename, "path": path, "success": False, "error": str(exc)}
+
+
 def run_batch_pipeline(
     items: List[Dict[str, str]],
     modality: str,
@@ -223,54 +280,26 @@ def run_batch_pipeline(
     cache_dir: Optional[Path] = None,
     progress_callback: Optional[Callable[[int, int, str], None]] = None,
 ) -> List[Dict[str, Any]]:
-    """Executes batch forensic analysis across a list of media items."""
-    results: List[Dict[str, Any]] = []
+    """Analyse a list of media items, several at a time on a multi-core machine (see ``batch_workers``).
+
+    Results are returned in the order of ``items``. ``progress_callback(done, total, filename)`` is called from the calling thread
+    only, once each time a file finishes, so it may safely touch Streamlit."""
     total = len(items)
+    workers = batch_workers(modality, total)
+    if workers <= 1:
+        results = []
+        for item in items:
+            results.append(_analyse_item(item, modality, detectors, sensitivity, cache_dir))
+            if progress_callback:
+                progress_callback(len(results), total, item["filename"])
+        return results
 
-    for idx, item in enumerate(items):
-        path = item["path"]
-        filename = item["filename"]
-
-        if progress_callback:
-            progress_callback(idx + 1, total, filename)
-
-        try:
-            if modality == "image":
-                res = process_single_image(
-                    img_path=path,
-                    filename=filename,
-                    detector=detectors["detector"],
-                    content_analyzer=detectors["content_analyzer"],
-                    attribution_engine=detectors["attribution_engine"],
-                    sensitivity=sensitivity,
-                    source=item.get("source", "User Upload"),
-                )
-            elif modality == "video":
-                res = process_single_video(
-                    vid_path=path,
-                    filename=filename,
-                    detector=detectors["detector"],
-                    content_analyzer=detectors["content_analyzer"],
-                    audio_detector=detectors["audio_detector"],
-                    attribution_engine=detectors["attribution_engine"],
-                    sensitivity=sensitivity,
-                    cache_dir=cache_dir,
-                    video_detector=detectors.get("video_detector"),
-                )
-            elif modality == "audio":
-                res = process_single_audio(
-                    aud_path=path,
-                    filename=filename,
-                    audio_detector=detectors["audio_detector"],
-                    content_analyzer=detectors["content_analyzer"],
-                    attribution_engine=detectors["attribution_engine"],
-                    sensitivity=sensitivity,
-                )
-            else:
-                res = {"filename": filename, "path": path, "success": False, "error": f"Unknown modality: {modality}"}
-        except Exception as exc:
-            res = {"filename": filename, "path": path, "success": False, "error": str(exc)}
-
-        results.append(res)
-
-    return results
+    results: List[Optional[Dict[str, Any]]] = [None] * total
+    with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="batch") as pool:
+        futures = {pool.submit(_analyse_item, item, modality, detectors, sensitivity, cache_dir): i for i, item in enumerate(items)}
+        for done, future in enumerate(as_completed(futures), start=1):
+            index = futures[future]
+            results[index] = future.result()                  # _analyse_item never raises
+            if progress_callback:
+                progress_callback(done, total, items[index]["filename"])
+    return results  # type: ignore[return-value]

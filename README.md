@@ -59,7 +59,7 @@ Only physical, learned and weak-metadata findings can move the probability, each
 | OpenCV zoo MobileFaceNet | facial expression | 4.6 MB | `core/models/` | in the repository |
 | OpenCV zoo SFace | same-person matching | 37 MB | `core/models/` | in the repository |
 | RF-DETR Small | people, animals, vehicles, objects | about 130 MB | Hugging Face cache | `python -m services.fetch_models`, pinned to revision `3bdc465` |
-| SigLIP 2 Base (zero-shot) | place, species, vehicle type, genre, time of day, age-group opinion | about 1.4 GB | Hugging Face cache | `python -m services.fetch_models`, pinned to revision `75de2d5` |
+| SigLIP 2 Base (zero-shot) | place, species, vehicle type, genre, time of day, age-group opinion | about 1.4 GB on disk, about 0.7 GB in memory | Hugging Face cache; its 182 prompt embeddings ship in `core/perception/vocab_embeddings.npz` | `python -m services.fetch_models`, pinned to revision `75de2d5` |
 
 Pinned revisions mean every machine loads identical weights. **Not included:** a trained AI-versus-real backbone for any modality, calibration history, feedback and labelled datasets; until you supply and train on them, the AI-versus-real score comes from the statistical signals alone and every probability is labelled `UNCALIBRATED_HEURISTIC`. An optional image/audio/video backbone checkpoint (`<modality>_detector/models/*.pt`) is picked up automatically if you train one.
 
@@ -129,6 +129,24 @@ from services.forensic_service import ForensicService
 report = ForensicService.get_instance().image_pipeline.analyze("photo.jpg")   # also audio_pipeline, video_pipeline
 ```
 
+## Performance
+
+Measured on a Windows laptop CPU with 14 threads, no GPU, Python 3.10 (your numbers will differ; the ratios are what matter):
+
+| What | Time |
+|---|---|
+| Importing the service layer (torch dominates) | about 6 s |
+| First image analysis in a fresh process, models loading on demand | 7.5 s |
+| First image analysis when the background warm-up has finished | 1.9 s |
+| Image analysis once warm (1200 x 1600 photograph, full chain) | about 1.2-1.7 s |
+| Audio analysis (20 s clip) | about 0.3 s |
+| Video analysis (10 s clip, 250 frames, minor screening included) | about 4 s |
+| Batch of 12 images, 1 worker versus 4 workers | 16.6 s versus 8.2 s |
+| Process memory after an image analysis (all image models loaded) | 1.2 GB (it was 2.4 GB before SigLIP 2's text tower was released); about 1.3 GB while six analyses run at once |
+| Memory growth over 40 further analyses | none measurable |
+
+Hostile input is cheap: truncated, empty, mislabelled and decompression-bomb files are rejected in well under a second with a clear error.
+
 ## Command-line tools
 
 All are run from the repository root with `python -m <module>`.
@@ -136,6 +154,7 @@ All are run from the repository root with `python -m <module>`.
 | Module | Purpose |
 |---|---|
 | `services.fetch_models` | download (or `--check`) the pretrained models |
+| `services.build_vocab_embeddings` | rebuild the shipped SigLIP prompt embeddings after editing `core/perception/vocab.py` |
 | `core.media_library <image\|audio\|video> add --label real\|ai_generated <paths>` / `stats` / `rescan` | register labelled media by reference |
 | `services.calibration_cli --modality image\|audio\|video` | accuracy, false-positive rate, Brier score, ECE and band occupancy on your held-out files |
 | `image_detector.face_training --real <dirs> --ai <dirs>` | train the face-authenticity checkpoint |
@@ -156,6 +175,8 @@ Nothing needs configuring to start. Optional operator files and variables (all g
 | Audio fingerprint index | `audio_detector/data/audio_fingerprint_index.jsonl` | `OMNI_AUDIO_FP_INDEX` |
 | Video fingerprint index | `video_detector/data/video_fingerprint_index.jsonl` | `OMNI_VIDEO_FP_INDEX` |
 | Out-of-distribution statistics | `<modality>_detector/data/ood_stats.npz` | written by `fit_ood` |
+| Load the models in the background at start (default on; `0` turns it off) | none | `OMNI_WARMUP` |
+| Files analysed at once in a batch (default: up to half the cores; `1` turns it off) | none | `OMNI_BATCH_WORKERS` |
 
 Sensitivity (Balanced, High, Aggressive) is set in the sidebar. Limits and thresholds live in each package's `config.py`.
 

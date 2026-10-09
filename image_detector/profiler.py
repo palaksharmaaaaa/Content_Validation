@@ -285,7 +285,11 @@ def _fft_decay_alpha(sample_gray: np.ndarray) -> float:
         y_mesh, x_mesh = np.ogrid[:sample_gray.shape[0], :sample_gray.shape[1]]
         r_mesh = np.hypot(x_mesh - cx, y_mesh - cy).astype(int)
         r_max = min(cx, cy) - 1
-        profile = [float(mag_spec[r_mesh == r].mean()) for r in range(5, max(6, r_max))]
+        stop = max(6, r_max)
+        radii = r_mesh.ravel()
+        sums = np.bincount(radii, weights=mag_spec.ravel(), minlength=stop)[:stop]
+        counts = np.bincount(radii, minlength=stop)[:stop]
+        profile = [float(s) / int(c) for s, c in zip(sums[5:stop], counts[5:stop])]      # every radius below the half-size has pixels
         if len(profile) > 5:
             freqs = np.arange(5, 5 + len(profile))
             return float(-np.polyfit(np.log(freqs), np.log(np.maximum(1e-6, profile)), 1)[0])

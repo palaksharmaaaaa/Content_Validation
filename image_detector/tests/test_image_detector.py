@@ -520,3 +520,25 @@ def test_profiler_reads_exif_optics_with_real_rationals_and_survives_bad_tag(tmp
     info = ImageProfiler().profile_image(p)["exif_device_details"]
     assert info["aperture"] == "f/2.8" and info["iso"] == 100 and info["focal_length"] == "50.0mm"
     assert info["exposure_time"] is None
+
+
+def test_fft_analysis_is_reused_for_identical_pixels_and_never_for_different_ones():
+    import numpy as np
+    from image_detector import features
+
+    rng = np.random.default_rng(4)
+    a = rng.integers(0, 255, (200, 240), dtype=np.uint8)
+    b = a.copy()
+    b[0, 0] ^= 1
+    calls = []
+    real = features._analyze_fft_radial_power_spectrum
+    features._analyze_fft_radial_power_spectrum = lambda g: (calls.append(1), real(g))[1]
+    try:
+        first = features.analyze_fft_radial_power_spectrum(a)
+        again = features.analyze_fft_radial_power_spectrum(a.copy())
+        other = features.analyze_fft_radial_power_spectrum(b)
+    finally:
+        features._analyze_fft_radial_power_spectrum = real
+    assert len(calls) == 2 and first == again
+    again["spectral_decay_alpha"] = -1.0                      # a caller changing its copy must not corrupt the memo
+    assert features.analyze_fft_radial_power_spectrum(b) == other

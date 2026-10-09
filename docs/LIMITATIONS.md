@@ -21,9 +21,9 @@ What this project does not do, or has not been shown to do. Numbers below were m
 
 - **Platforms.** Tested on Windows locally and on Linux (Python 3.10) by CI on every push. macOS has never been run.
 - **GPU.** The CUDA path exists but has never been run; the tests cover CPU behaviour.
-- **Scale.** Nothing tests heavy load or concurrency. Analysis is CPU-bound: about 4 s per photograph for the full chain including age screening, and a 10-minute video took about 46 s.
+- **Scale.** Nothing tests sustained heavy load. Analysis is CPU-bound; see [Performance](../README.md#performance) for measured times. Concurrent analyses are safe (six at once gave results identical to sequential runs) but share one set of models in one process.
 - **No authentication.** Per-session scratch folders keep users' files apart, but the app is for personal, local use only.
-- **Batch analysis is sequential.** The pipelines share models and were not designed for parallel runs.
+- **Batches run in parallel on multi-core machines** (images and audio about 2x faster, video about 1.15x); on a dual-core machine they stay sequential.
 - **Size limits:** image 100 MB, audio 200 MB or 1 hour, video 500 MB.
 - **Without `ffmpeg`**, WAV audio is still read natively and video frames are still read through OpenCV, but compressed audio cannot be decoded and a video's audio track is skipped.
 

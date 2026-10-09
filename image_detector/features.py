@@ -10,8 +10,10 @@ Extracts:
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 import re
+import threading
 
 import io
 from pathlib import Path
@@ -589,7 +591,26 @@ def calculate_surface_smoothness(gray_img: np.ndarray) -> float:
     return float(np.mean(diff))
 
 
+_fft_memo: Dict[str, Any] = {"key": None, "value": None}
+_fft_memo_lock = threading.Lock()
+
+
 def analyze_fft_radial_power_spectrum(gray_img: np.ndarray | str | Path) -> Dict[str, Any]:
+    """Fourier radial power-spectrum analysis (see ``_analyze_fft_radial_power_spectrum``). The detector and the moire check ask for
+    the same grayscale picture within one analysis, so the last result is reused when the pixels are identical."""
+    if not (isinstance(gray_img, np.ndarray) and gray_img.ndim == 2):
+        return _analyze_fft_radial_power_spectrum(gray_img)
+    key = (gray_img.shape, gray_img.dtype.str, hashlib.blake2b(np.ascontiguousarray(gray_img).tobytes(), digest_size=16).digest())
+    with _fft_memo_lock:
+        if _fft_memo["key"] == key:
+            return dict(_fft_memo["value"])
+    result = _analyze_fft_radial_power_spectrum(gray_img)
+    with _fft_memo_lock:
+        _fft_memo["key"], _fft_memo["value"] = key, dict(result)
+    return result
+
+
+def _analyze_fft_radial_power_spectrum(gray_img: np.ndarray | str | Path) -> Dict[str, Any]:
     """
     Analyzes 2D Fourier Transform Radial Power Spectrum decay.
     Natural optical photography obeys Field's Law: Radial Power P(f) ~ 1 / f^alpha, where alpha ~ 2.0.
@@ -625,15 +646,11 @@ def analyze_fft_radial_power_spectrum(gray_img: np.ndarray | str | Path) -> Dict
     r = np.hypot(x - cx, y - cy).astype(np.int32)
 
     max_r = min_dim // 2
-    radial_profile = np.zeros(max_r, dtype=np.float32)
-    radial_counts = np.zeros(max_r, dtype=np.float32)
-
-    for radius in range(1, max_r):
-        mask = r == radius
-        count = np.sum(mask)
-        if count > 0:
-            radial_profile[radius] = np.sum(magnitude_spectrum[mask])
-            radial_counts[radius] = count
+    # One pass over the spectrum: total power and pixel count per integer radius (radius 0 is excluded).
+    radial_profile = np.bincount(r.ravel(), weights=magnitude_spectrum.ravel(), minlength=max_r)[:max_r]
+    radial_counts = np.bincount(r.ravel(), minlength=max_r)[:max_r].astype(np.float64)
+    radial_profile[0] = 0.0
+    radial_counts[0] = 0.0
 
     valid = (radial_counts > 0) & (radial_profile > 0)
     freqs = np.arange(max_r)[valid]
@@ -658,12 +675,11 @@ def analyze_fft_radial_power_spectrum(gray_img: np.ndarray | str | Path) -> Dict
         axes_mask = (np.abs(np.sin(theta)) > 0.12) & (np.abs(np.cos(theta)) > 0.12)
         wedges = 16
         theta_bins = np.digitize(theta, np.linspace(-np.pi, np.pi, wedges + 1)) - 1
-        wedge_energies = []
         band_mask = (r >= int(min_dim * 0.18)) & (r <= int(min_dim * 0.42)) & axes_mask
-        for w_idx in range(wedges):
-            w_mask = band_mask & (theta_bins == w_idx)
-            if np.sum(w_mask) > 50:
-                wedge_energies.append(float(np.mean(magnitude_spectrum[w_mask])))
+        in_band = theta_bins[band_mask]
+        wedge_sum = np.bincount(in_band, weights=magnitude_spectrum[band_mask], minlength=wedges)[:wedges]
+        wedge_count = np.bincount(in_band, minlength=wedges)[:wedges]
+        wedge_energies = [float(wedge_sum[i] / wedge_count[i]) for i in range(wedges) if wedge_count[i] > 50]
         if len(wedge_energies) >= 8:
             azimuthal_var = float(np.std(wedge_energies) / max(1e-5, np.mean(wedge_energies)))
             peak_energy_ratio = float(np.max(wedge_energies) / max(1e-5, np.median(wedge_energies)))

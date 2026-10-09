@@ -73,3 +73,33 @@ def test_recognizer_prefers_the_right_scene_for_a_synthetic_sky_image():
     img[:, :] = (235, 170, 80)       # BGR: sky blue
     top = get_recognizer().classify([img[:, :, ::-1].copy()], "scene", top_k=3)[0]
     assert len(top) == 3 and 0.0 < top[0][1] <= 1.0
+
+
+def test_shipped_vocabulary_embeddings_match_the_current_vocabularies():
+    """Fails until ``python -m services.build_vocab_embeddings`` is run after any change to a vocabulary or the pinned model."""
+    from core.perception.recognizer import EMBEDDINGS_FILE, vocabulary_key
+
+    with np.load(EMBEDDINGS_FILE, allow_pickle=False) as data:
+        assert str(data["key"]) == vocabulary_key()
+        for name, items in VOCABS.items():
+            assert data[name].shape[0] == len(items)
+            assert np.allclose(np.linalg.norm(data[name], axis=1), 1.0, atol=1e-4)
+
+
+@needs_recognizer
+def test_shipped_embeddings_equal_a_fresh_computation_and_the_text_tower_is_released():
+    import torch
+
+    from core.perception.recognizer import EMBEDDINGS_FILE
+
+    rec = get_recognizer()
+    assert rec._model.text_model is None                      # about 1 GB freed after the vocabularies were embedded
+    fresh = ZeroShotRecognizer()
+    fresh._embed_vocabularies_and_free_text_tower = lambda *a, **k: None
+    assert fresh._ensure() is not None
+    with np.load(EMBEDDINGS_FILE, allow_pickle=False) as data:
+        for name in VOCABS:
+            computed = fresh._text_features(name).numpy()
+            assert np.allclose(data[name], computed, atol=1e-5), name
+    img = np.full((224, 224, 3), (200, 160, 80), np.uint8)
+    assert rec.classify([img], "scene", top_k=1)[0]                 # image classification still works without the tower

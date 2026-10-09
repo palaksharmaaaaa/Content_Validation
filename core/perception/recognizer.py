@@ -5,8 +5,10 @@ text vocabulary (core.perception.vocab). No per-class training. One image encodi
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 import threading
+from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -21,6 +23,17 @@ logger = logging.getLogger("core.perception.recognizer")
 MODEL_ID = "google/siglip2-base-patch16-224"
 MODEL_REVISION = "75de2d55ec2d0b4efc50b3e9ad70dba96a7b2fa2"   # pinned: identical weights on every machine
 TEXT_LEN = 64            # SigLIP 2 text tower is trained with fixed-length 64 token prompts
+EMBEDDINGS_FILE = Path(__file__).with_name("vocab_embeddings.npz")
+
+
+def vocabulary_key() -> str:
+    """Fingerprint of everything the vocabulary embeddings depend on: the model revision, the prompt length and every prompt."""
+    h = hashlib.sha256(f"{MODEL_ID}@{MODEL_REVISION}|{TEXT_LEN}".encode("utf-8"))
+    for name in sorted(VOCABS):
+        h.update(name.encode("utf-8"))
+        for label, prompt in VOCABS[name]:
+            h.update(f"\x00{label}\x00{prompt}".encode("utf-8"))
+    return h.hexdigest()
 
 
 class ZeroShotRecognizer:
@@ -42,10 +55,39 @@ class ZeroShotRecognizer:
 
                     self._proc = AutoProcessor.from_pretrained(self._id, **load_kwargs(self._id, MODEL_REVISION if self._id == MODEL_ID else None))
                     self._model = AutoModel.from_pretrained(self._id, **load_kwargs(self._id, MODEL_REVISION if self._id == MODEL_ID else None)).eval()
+                    self._embed_vocabularies_and_free_text_tower()
                 except Exception as exc:
                     logger.warning("Zero-shot recognizer %s unavailable: %s", self._id, exc)
                     self._failed = True
             return self._model
+
+    def _shipped_embeddings(self):
+        """The vocabulary embeddings stored in the repository, or ``None`` when absent or built from different prompts or weights."""
+        import torch
+
+        try:
+            with np.load(EMBEDDINGS_FILE, allow_pickle=False) as data:
+                if str(data["key"]) != vocabulary_key():
+                    logger.warning("%s does not match the current vocabularies; embedding them now (run services.build_vocab_embeddings)", EMBEDDINGS_FILE.name)
+                    return None
+                return {v: torch.from_numpy(data[v].copy()) for v in VOCABS}
+        except (OSError, KeyError, ValueError):
+            return None
+
+    def _embed_vocabularies_and_free_text_tower(self, use_shipped: bool = True) -> None:
+        """Make every fixed vocabulary's text embedding available, then drop the text tower. The tower holds about three quarters of
+        the model's parameters (about 1 GB in float32) and is needed only to embed these prompts; image encoding does not use it.
+        The embeddings come from ``vocab_embeddings.npz`` when it matches the current prompts and weights, otherwise they are computed."""
+        import gc
+
+        shipped = self._shipped_embeddings() if use_shipped else None
+        if shipped is not None:
+            self._text.update(shipped)
+        else:
+            for vocab in VOCABS:
+                self._text_features(vocab)
+        self._model.text_model = None
+        gc.collect()
 
     @property
     def available(self) -> bool:
@@ -56,6 +98,8 @@ class ZeroShotRecognizer:
         import torch
 
         if vocab not in self._text:
+            if getattr(self._model, "text_model", None) is None:
+                raise KeyError(f"vocabulary {vocab!r} was not embedded before the text tower was released")
             prompts = [p for _label, p in VOCABS[vocab]]
             tokens = self._proc(text=prompts, padding="max_length", max_length=TEXT_LEN, return_tensors="pt")
             with torch.no_grad():

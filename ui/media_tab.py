@@ -96,7 +96,7 @@ def _analyse(spec: MediaTabSpec, items: List[Dict[str, Any]], detectors: Dict[st
     progress_bar = st.progress(0, text="Starting")
 
     def on_progress(curr: int, total: int, name: str) -> None:
-        progress_bar.progress(curr / total, text=f"Analysing {curr} of {total}: {name}")
+        progress_bar.progress(curr / total, text=f"Analysed {curr} of {total} (latest: {name})")
 
     results = run_batch_pipeline(
         items=items, modality=spec.modality, detectors=detectors, sensitivity=sensitivity_key,

@@ -54,13 +54,13 @@ Pretrained models that describe an image's content. All are Apache-2.0 and run o
 |---|---|---|
 | Face detection | YuNet (0.2 MB) | `core/models/` |
 | Object detection (people, animals, vehicles, objects) | RF-DETR Small (about 130 MB) | Hugging Face cache, revision pinned in `detector.py` |
-| Place, species, vehicle type, genre, time of day | SigLIP 2 Base, zero-shot against `vocab.py` (1.4 GB) | Hugging Face cache, revision pinned in `recognizer.py` |
+| Place, species, vehicle type, genre, time of day | SigLIP 2 Base, zero-shot against `vocab.py` (1.4 GB on disk; its text tower is released after load, see below) | Hugging Face cache, revision pinned in `recognizer.py` |
 | Facial expression | OpenCV zoo MobileFaceNet (4.8 MB) | `core/models/` |
 | Same-person matching | OpenCV zoo SFace (39 MB) | `core/models/` |
 | Apparent age | MiVOLO v2 (115 MB, Git LFS), network code vendored in `mivolo_vendor/` | `core/models/mivolo_v2/` |
 | Dominant colours | CIELAB clustering plus a colour-name table (no model) | `colors.py` |
 
-A missing large model makes its part of the report empty or `UNAVAILABLE`; it never stops the analysis. Modules: `age.py` (ages every person, recall-first), `age_video.py` and `video_sampling.py` (minor screening across a video with adaptive sampling), `face_scan.py` (small-face finder), `face_attributes.py`, `enrich.py` (adds recognition details to detections), `hub.py` (offline-friendly model loading, pinned revisions, Git LFS pointer detection).
+The text side of SigLIP 2 is only needed to embed the fixed prompts in `vocab.py`. Those 182 embeddings ship in `core/perception/vocab_embeddings.npz` (fingerprinted by the pinned revision and every prompt; rebuild with `python -m services.build_vocab_embeddings` after editing a vocabulary, a test fails until you do), and the recognizer frees the text tower after loading, saving about 1 GB of memory. A missing large model makes its part of the report empty or `UNAVAILABLE`; it never stops the analysis. Modules: `age.py` (ages every person, recall-first), `age_video.py` and `video_sampling.py` (minor screening across a video with adaptive sampling), `face_scan.py` (small-face finder), `face_attributes.py`, `enrich.py` (adds recognition details to detections), `hub.py` (offline-friendly model loading, pinned revisions, Git LFS pointer detection).
 
 ## Face authenticity
 
@@ -84,7 +84,7 @@ Each package follows the same shape.
 | `explain.py` | the nine-dimension dossier and the plain-English explanation |
 | `pipeline.py` | `run()` (the single analysis sequence) and `analyze()` (headless report) |
 | `learner.py`, `retrain.py`, `trainer.py` | feedback records, the fine-tuning entry point, the PyTorch trainer |
-| `batch.py`, `benchmarks.py`, `downloader.py` | sequential batch runs, accuracy on a labelled folder, URL fetch via `core.security` |
+| `batch.py`, `benchmarks.py`, `downloader.py` | a sequential headless batch runner, accuracy on a labelled folder, URL fetch via `core.security` (the app's own batches are parallel, see Operations) |
 | `dimension_checks/` | the isolated checks (see [CHECKS.md](CHECKS.md)) |
 
 Package-specific points:
@@ -109,6 +109,10 @@ Package-specific points:
 | `filecache.py`, `lazy.py`, `logging_filters.py` | a memoiser for expensive per-file parses that invalidates when the file changes; lazy package re-exports so light imports do not load torch; a filter for one benign Windows asyncio log line. |
 
 ## Operations
+
+- **Parallel batches.** `ui.adapters.run_batch_pipeline` analyses several files at once (at most half the CPU cores; 4 for images and audio, 2 for video; `OMNI_BATCH_WORKERS` overrides, 1 turns it off). Results keep input order, a failing file becomes an error result, and the progress callback is only called from the calling thread because Streamlit forbids calls from workers. Every shared model takes its own lock, which is why concurrent use gives results identical to sequential use.
+- **Model warm-up.** `services/warmup.py` loads the perception models in one background thread when the app starts, so the first analysis does not pay for model loading (`OMNI_WARMUP=0` disables it).
+- **Memoised Fourier analysis.** The image detector and the moire check ask for the same spectrum within one analysis; the last result is reused when the pixels are identical.
 
 - Uploads go to a per-session scratch directory (`core.atomic_io.get_session_cache_dir`), never into the repository. "Clear uploaded files" empties only the current session's directory. Results are cached per session by content hash.
 - The root `conftest.py` fingerprints `*/models/*.pt`, `*/data/*.json|npz` and `core/data/*` before and after a run and fails the session if any test changed them.

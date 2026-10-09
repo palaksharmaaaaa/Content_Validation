@@ -13,6 +13,7 @@ REQUIRED_MODELS = [
     "core/models/face_recognition_sface_2021dec.onnx",
     "core/models/facial_expression_recognition_mobilefacenet_2022july.onnx",
     "core/models/mivolo_v2/model.safetensors",
+    "core/perception/vocab_embeddings.npz",
     "image_detector/models/face_authenticity.pt",
 ]
 
