@@ -289,15 +289,19 @@ def _score_canonical_resolution(path: Path, scores: Dict[str, float], cues: List
 
 
 def _score_spectral(forensic_data: Dict[str, Any], scores: Dict[str, float], cues: List[str]) -> None:
-    decay = float(forensic_data.get("spectral_features", {}).get("spectral_decay_slope", 0.0))
-    if decay < 1.65:
-        scores["midjourney"] += 0.25
-        scores["flux1"] += 0.20
-    elif decay > 2.30:
-        scores["stable_diffusion"] += 0.20
-    if float(forensic_data.get("surface_smoothness", 0.0)) < 2.0:
+    # The measurements live in the detector's ``forensic_metrics``; a value that is not there contributes nothing.
+    metrics = forensic_data.get("forensic_metrics") or {}
+    decay = metrics.get("spectral_decay_alpha")
+    if decay is not None:
+        if float(decay) < 1.65:
+            scores["midjourney"] += 0.25
+            scores["flux1"] += 0.20
+        elif float(decay) > 2.30:
+            scores["stable_diffusion"] += 0.20
+    smoothness = metrics.get("surface_smoothness")
+    if smoothness is not None and float(smoothness) < 2.0:
         scores["openai_dalle3"] += 0.15
-    if forensic_data.get("digital_art_detected") or (forensic_data.get("forensic_metrics") and forensic_data["forensic_metrics"].get("is_digital_art")):
+    if forensic_data.get("digital_art_detected") or metrics.get("is_digital_art"):
         scores["google_imagen"] += 0.40
         scores["openai_dalle3"] += 0.20
         scores["midjourney"] += 0.15
@@ -384,6 +388,3 @@ class ImageModelAttributionEngine:
             profile_data=profile_data,
             provenance_data=provenance_data,
         )
-
-    def _unknown_attribution(self, reason: str) -> Dict[str, Any]:
-        return unknown_attribution(reason)

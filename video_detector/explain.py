@@ -76,7 +76,7 @@ def _video_dimension_3(c: _VideoDossierContext) -> Dict[str, Any]:
         "noise_score": noise_mean,
     }
     if noise_mean is None:
-        d3.update(is_natural_noise=None, diagnosis="Not measured: the frames were not scored by the built-in noise measure.")
+        d3.update(is_natural_noise=None, diagnosis="Not measured: no frame had enough detail to measure noise on.")
         return d3
     natural = noise_mean - NOISE_BASELINE >= NOISE_AI_THRESHOLD
     d3.update(

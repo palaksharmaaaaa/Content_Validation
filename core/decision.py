@@ -88,7 +88,7 @@ def _attribution_stub(label: str, model_key: str = "unknown", region: str = "N/A
         "model_key": model_key,
         "region_of_origin": region,
         "attribution_confidence": 0.0,
-        "attribution_cues": [],
+        "cues": [],
         "top_candidates": [],
     }
 
@@ -217,7 +217,7 @@ def _collect_attribution(ev: _Evidence, attribution: Optional[Dict[str, Any]]) -
     """Attribution is explanation only: it derives from the same pixels/samples, so scoring it would double count."""
     if not attribution:
         return
-    ev.trail.extend(f"[Model Attribution] {cue}" for cue in attribution.get("attribution_cues", []))
+    ev.trail.extend(f"[Model Attribution] {cue}" for cue in attribution.get("cues", []))
     conf = float(attribution.get("attribution_confidence", 0.0))
     if conf >= 0.45 and attribution.get("model_key", "") not in ("unknown_ai", ""):
         ev.trail.append(
@@ -239,7 +239,7 @@ def _authentic_attribution() -> Dict[str, Any]:
         "model_key": "none_authentic",
         "region_of_origin": "Physical Sensor / Camera",
         "attribution_confidence": 0.0,
-        "attribution_cues": ["Camera-like sensor noise and optical properties observed (heuristic; metadata is unauthenticated)."],
+        "cues": ["Camera-like sensor noise and optical properties observed (heuristic; metadata is unauthenticated)."],
         "top_candidates": [],
     }
 
@@ -475,7 +475,7 @@ def generate_final_decision(
             "model_key": "unknown_ai",
             "region_of_origin": "Global / Open-Source",
             "attribution_confidence": 0.0,
-            "attribution_cues": [],
+            "cues": [],
             "top_candidates": [],
         },
         "evidence_trail": ev.trail,

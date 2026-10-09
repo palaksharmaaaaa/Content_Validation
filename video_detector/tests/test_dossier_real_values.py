@@ -54,3 +54,14 @@ def test_missing_measurements_are_stated_not_invented():
     assert d["dimension_5"]["flicker_score"] is None and "Not measured" in d["dimension_5"]["diagnosis"]
     two_frames = _dossier({"diffusion_flicker": {"flicker_score": 0.0, "has_diffusion_flicker": False, "frames_compared": 2}})
     assert two_frames["dimension_5"]["flicker_score"] is None
+
+
+def test_the_app_path_measures_frame_noise_too(tmp_path):
+    """ForensicService scores video frames with the image detector's frame scorer; its noise value must reach the dossier."""
+    from services.forensic_service import ForensicService
+
+    rng = np.random.default_rng(3)
+    noisy = _clip(tmp_path, "noisy_app.mp4", lambda i: np.clip(128 + rng.normal(0, 25, (120, 160, 3)), 0, 255).astype(np.uint8))
+    r = ForensicService.get_instance().video_pipeline.analyze(noisy)
+    d3 = r["nine_dimensions_dossier"]["dimension_3"]
+    assert d3["noise_score"] is not None and d3["is_natural_noise"] is True and "Not measured" not in d3["diagnosis"]

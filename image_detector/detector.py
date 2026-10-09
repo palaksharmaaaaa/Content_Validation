@@ -504,7 +504,7 @@ class ImageAIDetector:
             taxonomy_label=tax_label,
             taxonomy_description=tax_desc,
             taxonomy_reasons=tax_reasons,
-            subject_genre="Unspecified General Scene",
+            subject_genre=None,                       # the genre comes from the content analysis, not from the detector
             visual_medium=visual_medium,
             sensor_spectrum=sensor_spectrum,
             document_layout="None (Standard Visual Content)",
@@ -564,7 +564,8 @@ class ImageAIDetector:
 
             thresh = 0.50 if sensitivity in ("high", "aggressive") else 0.60
             label = "LIKELY AI-GENERATED" if score >= thresh else ("LIKELY REAL" if score <= 0.35 else "UNDECIDED")
-            return {"label": label, "prediction": label, "ai_prob": round(score, 3), "real_prob": round(1.0 - score, 3)}
+            return {"label": label, "prediction": label, "ai_prob": round(score, 3), "real_prob": round(1.0 - score, 3),
+                    "frame_noise": round(float(noise_mean), 3)}
         except Exception as exc:
             logger.warning("predict_frame encountered exception: %s", exc)
             return {"label": "UNDECIDED", "prediction": "UNDECIDED", "ai_prob": 0.5, "real_prob": 0.5}

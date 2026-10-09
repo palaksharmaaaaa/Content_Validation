@@ -127,7 +127,7 @@ class ImageForensicResult:
     taxonomy_description: str = ""
     taxonomy_reasons: List[str] = field(default_factory=list)
     # Multi-Dimensional Taxonomy Categorization (Dimensions B, C, D, E)
-    subject_genre: str = "Unspecified General Scene"
+    subject_genre: Optional[str] = None
     visual_medium: str = "Photographic Capture"
     sensor_spectrum: str = "Visible Spectrum (Bayer RGB)"
     document_layout: str = "None (Standard Visual Content)"

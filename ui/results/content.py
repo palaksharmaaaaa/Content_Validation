@@ -135,9 +135,9 @@ def render_image_type_and_category(
         if nine_dims
         else IPTC_SOURCE_TYPE_MAPPING.get(tax_state, "digitalsourcetype:digitalCapture")
     )
-    genre = content_res.get("purpose_and_depiction", {}).get("primary_genre") or ai_result.get("subject_genre", "General Scene")
-    medium = ai_result.get("visual_medium", "Photographic Capture")
-    spectrum = ai_result.get("sensor_spectrum", "Visible Spectrum (Bayer RGB)")
+    genre = content_res.get("purpose_and_depiction", {}).get("primary_genre") or ai_result.get("subject_genre") or "Not determined"
+    medium = ai_result.get("visual_medium") or "Not determined"
+    spectrum = ai_result.get("sensor_spectrum") or "Not determined"
     layout = content_res.get("purpose_and_depiction", {}).get("document_layout", "None (Standard Visual Content)")
 
     col1, col2, col3 = st.columns(3)

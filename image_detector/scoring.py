@@ -111,7 +111,11 @@ def evaluate_taxonomy_classification(
     screenshot_detected: Optional[bool] = None,
     inpainting_data: Optional[Dict[str, Any]] = None,
     inpainting_detected: Optional[bool] = None,
-    **kwargs: Any,
+    screen_recapture_data: Optional[Dict[str, Any]] = None,
+    screen_recapture_detected: bool = False,
+    metadata_absent: bool = False,
+    synthetic_signal_count: int = 99,
+    text_regions_count: int = 0,
 ) -> Tuple[str, str, str, List[str]]:
     """
     Evaluates converging forensic signals, provenance, device profiles, and physical indicators to assign
@@ -141,11 +145,11 @@ def evaluate_taxonomy_classification(
         art=_with_flag(art_data, "is_digital_art", art_detected),
         screenshot=_with_flag(screenshot_data, "is_screenshot", screenshot_detected),
         inpainting=_with_flag(inpainting_data, "is_manipulated", inpainting_detected),
-        screen_recapture=dict(kwargs.get("screen_recapture_data") or {}),
-        recapture_flag=bool(kwargs.get("screen_recapture_detected")),
-        metadata_absent=bool(kwargs.get("metadata_absent")),
-        synthetic_signal_count=int(kwargs.get("synthetic_signal_count", 99)),
-        text_count=int(kwargs.get("text_regions_count", 0)),
+        screen_recapture=dict(screen_recapture_data or {}),
+        recapture_flag=bool(screen_recapture_detected),
+        metadata_absent=bool(metadata_absent),
+        synthetic_signal_count=int(synthetic_signal_count),
+        text_count=int(text_regions_count),
     )
     for stage in _TAXONOMY_STAGES:
         outcome = stage(c, ImageTaxonomyState)
@@ -274,7 +278,7 @@ def _stage_screenshot(c: _TaxonomyInputs, S: Any) -> _Outcome:
 
     reasons.append(f"Authentic digital screen capture from {device} ({orient} orientation, {screen_res})")
     reasons.append(details)
-    reasons.append("Unmanipulated operating system / app interface rendering with zero generative synthesis")
+    reasons.append("No sign of AI generation or editing was found in the captured content (an estimate, not proof)")
     return S.AUTHENTIC_SCREENSHOT, reasons
 
 
@@ -390,7 +394,7 @@ def _stage_graphic_edit(c: _TaxonomyInputs, S: Any) -> _Outcome:
             reasons.append(c.metadata.get("signature_details", "Graphic layout composition software detected"))
         if has_graphic_text:
             reasons.append(f"Graphic design typography / text elements overlaid on image ({c.text_count} text blocks detected)")
-        reasons.append("Base subject contains authentic photographic sensor noise and natural physical geometry")
+        reasons.append(f"The noise evidence does not point to AI (noise residual {c.noise_mean:.2f}, {c.ai_pct:.0f}% AI score)")
         return S.AUTHENTIC_EDITED, reasons
     if c.ai_pct >= 50.0 or c.noise_mean < 1.10:
         reasons.append(c.cutout.get("details", "Isolated synthetic character / object on solid background canvas"))
@@ -415,7 +419,7 @@ def _stage_authentic_photograph(c: _TaxonomyInputs, S: Any) -> _Outcome:
     reasons: List[str] = []
     if c.is_scanned:
         reasons.append(c.scanned.get("details", "High-resolution flatbed scan of physical photographic print"))
-        reasons.append("Preserved physical halftone screening and authentic photographic print emulsion")
+        reasons.append("Consistent with a scan of a printed photograph (heuristic)")
         return S.AUTHENTIC_REAL_PHOTOGRAPH, reasons
     if m.get("camera_make"):
         reasons.append(f"Camera hardware EXIF tags: {m.get('camera_make')} {m.get('camera_model') or ''}".strip())
@@ -429,8 +433,7 @@ def _stage_authentic_photograph(c: _TaxonomyInputs, S: Any) -> _Outcome:
             optics.append(f"ISO {m['iso']}")
         if optics:
             reasons.append(f"Physical lens optical parameters: {', '.join(optics)}")
-    reasons.append(f"Natural camera sensor Poisson shot noise (PRNU residual: {c.noise_mean:.2f})")
-    reasons.append("Natural optical depth of field, coherent lighting, and unmanipulated geometry")
+    reasons.append(f"Nothing in the analysis points to AI generation or editing (noise residual {c.noise_mean:.2f}, smoothness {c.smoothness:.2f}); an estimate, not proof")
     return S.AUTHENTIC_REAL_PHOTOGRAPH, reasons
 
 

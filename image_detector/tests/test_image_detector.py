@@ -542,3 +542,35 @@ def test_fft_analysis_is_reused_for_identical_pixels_and_never_for_different_one
     assert len(calls) == 2 and first == again
     again["spectral_decay_alpha"] = -1.0                      # a caller changing its copy must not corrupt the memo
     assert features.analyze_fft_radial_power_spectrum(b) == other
+
+
+def test_a_misspelled_taxonomy_argument_raises_instead_of_being_ignored():
+    import pytest
+
+    from image_detector.scoring import evaluate_taxonomy_classification
+
+    with pytest.raises(TypeError):
+        evaluate_taxonomy_classification(ai_pct=50.0, real_pct=40.0, metadata_abscent=True)
+
+
+def test_attribution_follows_the_measured_spectrum_and_smoothness(tmp_path):
+    """The spectral evidence used to be read from keys the detector never produces, so it was ignored and every AI image listed the same
+    three generators. It is read from forensic_metrics now."""
+    from PIL import Image as PILImage
+
+    from image_detector.attribution import ImageModelAttributionEngine
+
+    p = tmp_path / "x.png"
+    PILImage.fromarray(np.full((640, 480, 3), 100, np.uint8)).save(p)
+    eng = ImageModelAttributionEngine()
+
+    def ranking(alpha, smooth):
+        fd = {"taxonomy_state": "FULLY_AI_GENERATED", "forensic_metrics": {"spectral_decay_alpha": alpha, "surface_smoothness": smooth}}
+        return [(c["model"], c["confidence"]) for c in eng.attribute_image(p, forensic_data=fd)["top_candidates"]]
+
+    flat, steep = ranking(1.2, 3.5), ranking(3.0, 3.5)
+    assert flat != steep                                              # the measurement changes the answer
+    assert "stable diffusion" in steep[0][0].lower()                  # a steep spectrum favours Stable Diffusion, a flat one Midjourney / Flux
+    assert any(name in flat[0][0].lower() for name in ("midjourney", "black forest"))
+    no_metrics = [(c["model"], c["confidence"]) for c in eng.attribute_image(p, forensic_data={"taxonomy_state": "FULLY_AI_GENERATED"})["top_candidates"]]
+    assert no_metrics == ranking(2.0, 3.5)            # no measurement, or a mid-range one, adds evidence for nobody
