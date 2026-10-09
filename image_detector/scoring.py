@@ -246,7 +246,7 @@ def _stage_screenshot(c: _TaxonomyInputs, S: Any) -> _Outcome:
     details = c.screenshot.get("details", f"{device} screen capture in {orient} orientation")
     reasons: List[str] = []
 
-    if c.declares_ai or c.is_digital_art or c.ai_pct >= 62.0:
+    if c.declares_ai or c.ai_pct >= 62.0 or (c.is_digital_art and c.ai_pct >= _ART_ONLY_MIN_AI_PCT):
         reasons.append(f"Screen capture from {device} ({orient} orientation) displaying fully AI-generated media")
         if c.has_watermark:
             reasons.append(c.watermark.get("details", "AI generator watermark detected inside display"))
@@ -279,7 +279,7 @@ def _stage_declared_or_art_synthesis(c: _TaxonomyInputs, S: Any) -> _Outcome:
     reasons: List[str] = []
     if (c.is_digital_art and c.art.get("visual_medium") == "Digital 3D CGI / AI Neural Painting"
             and not c.has_watermark and not c.has_ai_iptc and not c.has_pure_ai_meta):
-        reasons.append("Deterministic procedural 3D ray-traced rendering / CGI synthetic model detected")
+        reasons.append("Looks like a 3D or CGI-style rendering (flat colour and no camera grain); the tool cannot confirm how it was made")
         reasons.append(c.art.get("details", "Absence of natural camera-sensor noise"))
         return S.PROCEDURAL_CGI_SYNTHETIC, reasons
 
