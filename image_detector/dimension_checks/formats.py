@@ -1,5 +1,5 @@
 """
-image_detector.dimension_checks.formats: format/compression forensics (report Dimension O, §18).
+image_detector.dimension_checks.formats: format/compression forensics.
 
 Findings are METADATA_WEAK: they may add small capped log-odds, never when the signal is merely
 absent. The explicit generator-parameter PNG chunk is the single case allowed the 0.40 cap.

@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 @dataclass
 class ImageModalityScore:
-    """NIST-aligned three-state authenticity percentage distribution."""
+    """Three-state authenticity percentage distribution."""
     ai_percentage: float = 0.0
     real_percentage: float = 0.0
     undecided_percentage: float = 100.0
@@ -41,7 +41,7 @@ class ImageModalityScore:
 
 
 class ImageTaxonomyState:
-    """NIST & Forensic Standard Multi-State Image Authenticity Taxonomy."""
+    """Multi-state image authenticity taxonomy."""
     AUTHENTIC_REAL_PHOTOGRAPH = "AUTHENTIC_REAL_PHOTOGRAPH"
     AUTHENTIC_EDITED = "AUTHENTIC_EDITED"
     AUTHENTIC_RECAPTURED_SCREEN = "AUTHENTIC_RECAPTURED_SCREEN"

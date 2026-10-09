@@ -2,7 +2,6 @@
 video_detector.explain: Plain-English Newbie Explanation & 9-Dimensions Video Forensic Dossier Generator.
 Transforms complex temporal telemetry, inter-frame motion vectors, and generative video indicators
 into clear, engaging narrative explanations for beginners and comprehensive audits for professionals.
-Aligned directly with NIST OpenMFC and C2PA v2.1 video standards.
 """
 from __future__ import annotations
 

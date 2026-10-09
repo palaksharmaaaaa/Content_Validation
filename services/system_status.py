@@ -42,6 +42,21 @@ def _hardblock_entries(path: Path) -> int:
     return sum(1 for line in path.read_text(encoding="utf-8", errors="ignore").splitlines() if line.strip() and not line.startswith("#"))
 
 
+def _age_row() -> StatusRow:
+    """Whether minor screening can run: the weights file is present (not a Git LFS pointer) and timm is installed. Nothing is loaded."""
+    import importlib.util
+
+    from core.perception.age import WEIGHTS_PATH
+
+    if not WEIGHTS_PATH.is_file():
+        return StatusRow("Minor screening (age model)", WARN, "Weights missing", f"Expected at {WEIGHTS_PATH.relative_to(WEIGHTS_PATH.parents[3])}.")
+    if WEIGHTS_PATH.stat().st_size < 1024:
+        return StatusRow("Minor screening (age model)", WARN, "Git LFS pointer", "Run `git lfs install` then `git lfs pull` in the repository.")
+    if importlib.util.find_spec("timm") is None:
+        return StatusRow("Minor screening (age model)", WARN, "timm missing", "pip install -r requirements.txt")
+    return StatusRow("Minor screening (age model)", OK, "Ready", "MiVOLO v2 estimates apparent age; uncertain people are sent to review.")
+
+
 def collect_status() -> List[StatusRow]:
     """Inspect the installation (models, calibration, OOD fit, hard-block list, ffmpeg, compute device) and return the status rows."""
     import audio_detector.config as audio_cfg
@@ -93,6 +108,7 @@ def collect_status() -> List[StatusRow]:
     else:
         rows.append(StatusRow("Face authenticity model", INFO, "Not trained",
                               "python -m image_detector.face_training --real <folder> --ai <folder>"))
+    rows.append(_age_row())
     hb = _hardblock_entries(hardblock_file())
     rows.append(StatusRow("Hard-block list", OK if hb else INFO, f"{hb} hash(es)" if hb else "Empty",
                           "Optional: list SHA-256 hashes (one per line) in core/data/hardblock_sha256.txt."))

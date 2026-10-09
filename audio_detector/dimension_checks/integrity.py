@@ -1,6 +1,5 @@
 """
-audio_detector.dimension_checks.integrity: file-integrity & security checks (report Dimension P /
-Section 21.6). SECURITY class: never alter P(AI); they surface risks.
+audio_detector.dimension_checks.integrity: file-integrity & security checks. SECURITY class: never alter P(AI); they surface risks.
 """
 from __future__ import annotations
 

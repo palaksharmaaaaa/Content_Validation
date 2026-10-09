@@ -55,7 +55,7 @@ class ImageSelfImprover:
         self.library = library if library is not None else (None if memory_file else library_for("image"))
 
     def load_calibration(self) -> Dict[str, Any]:
-        """Loads active calibration parameters or initializes default NIST-tuned priors."""
+        """Loads active calibration parameters or initializes default priors."""
         default_calib = {
             "version": 1,
             "last_updated": datetime.now().isoformat(),

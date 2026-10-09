@@ -1,5 +1,5 @@
 """
-audio_detector.dimension_checks.reliability: confidence limiters (report Section 21.7).
+audio_detector.dimension_checks.reliability: confidence limiters.
 RELIABILITY class: informational, never alters P(AI).
 """
 from __future__ import annotations

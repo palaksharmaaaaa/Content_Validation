@@ -1,5 +1,5 @@
 """
-audio_detector.dimension_checks.legal: advisory legal/rights flags (report Section 21.2). LEGAL_FLAG
+audio_detector.dimension_checks.legal: advisory legal/rights flags. LEGAL_FLAG
 findings never alter P(AI) and are not legal advice.
 """
 from __future__ import annotations

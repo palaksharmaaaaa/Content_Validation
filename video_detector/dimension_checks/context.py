@@ -1,6 +1,6 @@
 """
 video_detector.dimension_checks.context: frame-hash fingerprint for "real but misleading" re-use checks
-(report Section 21.3). The footage itself cannot reveal a false caption; this check computes up to 16
+. The footage itself cannot reveal a false caption; this check computes up to 16
 evenly spaced perceptual (DCT) frame hashes and, if the operator maintains a local reference index,
 matches by set overlap (>= 50% of query frames, at least 4, within Hamming distance 8).
 

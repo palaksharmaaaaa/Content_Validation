@@ -31,7 +31,7 @@ def process_single_image(
     sensitivity: str = "balanced",
     source: str = "User Upload",
 ) -> Dict[str, Any]:
-    """Runs end-to-end NIST-aligned forensic pipeline on a single image."""
+    """Runs end-to-end forensic pipeline on a single image."""
     # 0. Pre-analysis gates (before decoding): hard-block hash list + out-of-scope scientific formats.
     gates = check_image_gates(img_path)
     if gates["triggered"]:
@@ -97,7 +97,7 @@ def process_single_video(
     cache_dir: Optional[Path] = None,
     video_detector: Optional[VideoAIDetector] = None,
 ) -> Dict[str, Any]:
-    """Runs end-to-end NIST-aligned forensic pipeline on a single video."""
+    """Runs end-to-end forensic pipeline on a single video."""
     # 0. Pre-analysis gates (before decoding): hard-block hash list + scientific-format recognition.
     gates = check_video_gates(vid_path)
     if gates["triggered"]:
@@ -162,7 +162,7 @@ def process_single_audio(
     attribution_engine: Any,
     sensitivity: str = "balanced",
 ) -> Dict[str, Any]:
-    """Runs end-to-end NIST-aligned forensic pipeline on a single audio file."""
+    """Runs end-to-end forensic pipeline on a single audio file."""
     # 0. Pre-analysis gates (before decoding): hard-block hash list + symbolic-music recognition.
     gates = check_audio_gates(aud_path)
     if gates["triggered"]:

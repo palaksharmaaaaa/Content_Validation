@@ -19,7 +19,7 @@ them again before using a dataset for anything beyond internal evaluation. Image
 
 Kaggle only serves files to a signed-in account, and the credentials are the owner's to supply. To let the tools here fetch Kaggle
 datasets: create an API token at kaggle.com (Settings, API, Create New Token), save the downloaded file as
-`%USERPROFILE%\.kaggle\kaggle.json`, and run `uv pip install kaggle`. Do not paste the token into a chat or commit it.
+`kaggle.json` in the `.kaggle` folder of your home directory, and install the `kaggle` package. Do not paste the token into a chat or commit it.
 
 ## What the datasets cannot show
 

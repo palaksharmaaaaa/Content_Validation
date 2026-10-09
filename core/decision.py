@@ -4,7 +4,7 @@ Decoupled completely from presentation frameworks.
 Provides:
 1. Multi-factor Bayesian log-odds evidence compounding across image, video, audio, and provenance.
 2. Mathematically grounded invariant percentage normalization.
-3. Standardized NIST / C2PA / IPTC taxonomy state mapping and attribution sanitization.
+3. Taxonomy state mapping (with IPTC digital-source-type labels) and attribution sanitization.
 """
 from __future__ import annotations
 

@@ -1,8 +1,8 @@
 """
 image_detector.pipeline: End-to-End Linear Image Forensic Analysis Orchestrator.
-Executes the strictly linear NIST-aligned forensic inspection:
+Executes the strictly linear forensic inspection:
 Step 1: File Ingestion & Pre-Analysis Details Extraction (Dimensions, DPI, Pixel stats, EXIF, Colors, Noise).
-Step 2: 9-Dimensions Forensic Analyzer (As described in GLOBAL_IMAGE_TAXONOMY_AND_FORENSIC_RESEARCH_REPORT.md).
+Step 2: 9-Dimensions Forensic Analyzer.
 Step 3: Image Type & Category Identification (Ontology states, IPTC mapping, Genre, Medium, Spectrum).
 Step 4: Algorithmic Detection & Quantified Inventory (Percentages, Counts of faces/objects/text/colors/noise).
 Step 5: Result Generation & Plain-English Newbie Narrative Explanation.

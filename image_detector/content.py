@@ -427,7 +427,7 @@ class ImageContentAnalyzer:
     def _infer_purpose(
         self, human_count: int, h: int, w: int, items: List[str], text_regions_count: int = 0, is_character: bool = False
     ) -> Dict[str, Any]:
-        """Infers photographic purpose and genre covering the NIST/forensic catalog."""
+        """Infers photographic purpose and genre covering the photographic genres."""
         aspect = float(w) / max(1.0, float(h))
         
         # Check for Document / Identity / Layout

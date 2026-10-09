@@ -32,7 +32,7 @@ used for training or threshold tuning.
 | Huawei, Honor | Pura 80, Mate 70, Honor Magic 7 / 8, Honor X series |
 | Others | Motorola (Edge, G series), Nothing Phone, Sony Xperia, Asus ROG/Zenfone, Fairphone |
 | Emerging-market volume | Infinix, Tecno, Itel, Lava, Micromax, Jio phones |
-| Older phones | 2012-2020 Android and iPhone (your own `new` folder is this class) |
+| Older phones | 2012-2020 Android and iPhone |
 
 For each phone, include: main camera, ultrawide, telephoto/zoom (including AI-assisted zoom of 10x or more), front/selfie
 camera, portrait mode, night mode, HDR, panorama, Live/Motion photo stills, beauty mode on and off, and RAW/ProRAW plus the
@@ -40,7 +40,7 @@ processed JPEG/HEIC pair.
 
 ### A2. Dedicated cameras. Test: 300 per row; train: 1,500
 
-Canon (EOS R series, DSLR), Nikon (Z series, D series), Sony (alpha, RX, and old Cyber-shot DSC compacts like your Camera Pic),
+Canon (EOS R series, DSLR), Nikon (Z series, D series), Sony (alpha, RX, and old Cyber-shot DSC compacts),
 Fujifilm (X, GFX), Panasonic Lumix, OM System / Olympus, Leica, Pentax, GoPro and action cams, DJI drones and Osmo,
 360 cameras, webcams and laptop cameras, CCTV and dashcam frames, scanners and film scans, medical/microscope (only if you
 need them).
@@ -49,7 +49,7 @@ need them).
 
 COCO, Open Images, ImageNet (pre-2022), Flickr (CC-licensed, filter by upload date before 2022), Unsplash/Pexels (check for AI
 uploads after 2023), RAISE and MIT-Adobe FiveK (RAW pairs), Dresden Image Database and VISION (camera-model fingerprints),
-FFHQ and CelebA for faces, plus your own libraries.
+FFHQ and CelebA for faces, plus your own captures.
 
 ### A4. Real content types (every device row should mix these). Target 15 types
 

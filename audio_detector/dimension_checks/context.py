@@ -1,6 +1,6 @@
 """
 audio_detector.dimension_checks.context: audio re-use fingerprinting for "real but misleading" checks
-(report Section 21.3). The recording itself cannot reveal a false attribution; this check only computes
+. The recording itself cannot reveal a false attribution; this check only computes
 a coarse Haitsma-Kalker-style fingerprint (32 bits per 32 ms hop from 33 log-spaced bands, 300-3000 Hz)
 and, if the operator maintains a local reference index, matches against it by best-offset bit error rate.
 

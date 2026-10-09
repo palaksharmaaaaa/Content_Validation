@@ -1,4 +1,4 @@
-"""Five calibrated probability bands (report Section 'Calibrated Probability Bands')."""
+"""Five calibrated probability bands."""
 import pytest
 
 from core.bands import Band, classify_band, classify_band_from_percent

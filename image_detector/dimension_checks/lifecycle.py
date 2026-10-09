@@ -1,5 +1,5 @@
 """
-image_detector.dimension_checks.lifecycle: platform re-encode likelihood (report §22.5).
+image_detector.dimension_checks.lifecycle: platform re-encode likelihood.
 
 RELIABILITY class: explains why forensic traces may be degraded; never changes P(AI).
 """

@@ -1,5 +1,5 @@
 """
-image_detector.dimension_checks.metadata: metadata & container forensics (report Section 21).
+image_detector.dimension_checks.metadata: metadata & container forensics.
 
 Metadata is forgeable and routinely stripped by benign platforms, so every signal here is weak.
 Absence never yields log-odds. The thumbnail mismatch is the only PHYSICAL_SIGNAL (it compares

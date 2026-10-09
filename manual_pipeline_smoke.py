@@ -33,7 +33,7 @@ from ui.validators import analyze_provenance, validate_file
 
 def run_pipeline_test():
     print("=" * 70)
-    print("[TEST] NIST-ALIGNED MULTI-MODAL FORENSICS & CONTINUAL LEARNING TEST SUITE")
+    print("[TEST] MULTI-MODAL FORENSICS & CONTINUAL LEARNING TEST SUITE")
     print("=" * 70)
 
     # 1. Create a test image
@@ -149,7 +149,7 @@ def run_pipeline_test():
         print(f" -> Audio Attributed Model: {attr_aud.get('attributed_model', 'None')} ({attr_aud.get('region_of_origin', 'Global')}) - Conf: {attr_aud.get('attribution_confidence', attr_aud.get('confidence', 0.0))}")
         print(f" -> Watermark Detected: {attr_img.get('watermark_detected', False)}")
 
-        # 10. Complete NIST-Style Media Forensics Dossier Report
+        # 10. Complete media forensics dossier
         print("\n[Step 10/10] Generating Official Media Forensics Dossier Report...")
         dossier = generate_final_decision(
             file_validation=file_res_img,

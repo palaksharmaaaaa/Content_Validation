@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 @dataclass
 class AudioModalityScore:
-    """NIST-aligned three-state authenticity percentage distribution for audio."""
+    """Three-state authenticity percentage distribution for audio."""
     ai_percentage: float = 0.0
     real_percentage: float = 0.0
     undecided_percentage: float = 100.0

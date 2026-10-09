@@ -36,6 +36,16 @@ Status words: **Pass** nothing unusual; **Warning** worth a look; **Fail** a str
 
 A blocked-file banner means the file matched your hard-block list or is a recognised format the tool does not score (for example DICOM); no AI verdict is given in that case.
 
+### Minor screening
+
+For images and videos, a notice appears directly under the verdict card:
+
+- **Likely minor / Possible minor: send to a human reviewer.** At least one person looks young enough that the tool will not clear them. It gives the youngest *apparent* age (an estimate from appearance, never anyone's real age). For a video it also says in how many of the examined frames this happened, and at which times.
+- **Nobody flagged.** Nothing was flagged among the people found. This is not a guarantee: small, hidden or turned-away faces can be missed.
+- **Did not run.** The age model could not be loaded or the file could not be read, so nobody was checked.
+
+The screening is deliberately cautious: it sends many adults to review as well (see [Limitations](LIMITATIONS.md#age-and-minor-screening) for the measured rates). It reports; a person decides.
+
 ## How much to trust a verdict
 
 - Scores are **heuristic and uncalibrated**. Thresholds were tuned on synthetic test files only. The real error rate is unknown until you measure it ([below](#measure-real-accuracy)).
@@ -44,7 +54,8 @@ A blocked-file banner means the file matched your hard-block list or is a recogn
 - **Camera metadata (EXIF)** can be forged and earns no trust on its own.
 - **Generator attribution** ("looks like Midjourney") is an explanation aid and never changes the verdict.
 - Heavily compressed reposts, screenshots and low-resolution files weaken every signal.
-- Faces are counted with a trained detector (YuNet), but the facial deepfake-risk score is a texture heuristic.
+- Faces are counted with a trained detector (YuNet), but the facial deepfake-risk score is a texture heuristic. The separate face-authenticity check is a trained classifier whose generality is limited (see [Limitations](LIMITATIONS.md)).
+- A field the tool could not measure is shown as "not measured" or "not recorded", never as a normal reading.
 
 More detail: [Limitations](LIMITATIONS.md).
 
@@ -94,7 +105,7 @@ Rules the trainer follows:
 
 ## Train the face model
 
-The Evidence tab's **Faces** check uses a classifier that judges whether each face is a real photograph or AI-generated. It is trained from two folders of face images:
+The Evidence tab's **Faces** check uses a classifier that judges whether each face is a real photograph or AI-generated. A trained checkpoint ships with the repository; retrain it only if you have face images of your own to add. Training takes two folders of face images:
 
 ```bash
 python -m image_detector.face_training --real "<dir of real face photos>" --ai "<dir of AI-generated face images>" --epochs 6
@@ -133,4 +144,6 @@ Nothing here ships; add them only if you want the matching check to become activ
 | First analysis is slow | Models load on first use and are cached afterwards. |
 | A link will not download | Only direct `http`/`https` links on ports 80/443 to public addresses are allowed, and HTML pages are rejected. |
 | Everything says "uncalibrated" | Expected on a fresh project. See [Measure real accuracy](#measure-real-accuracy). |
+| "... is a Git LFS pointer, not the model" in the log, or the face check / age screening is unavailable | The repository was cloned without Git LFS. Run `git lfs install` then `git lfs pull` in the repository. |
+| "Minor screening did not run" | The age weights could not be loaded (see the row above) or `torch`/`timm` is missing; the sidebar System status row "Minor screening (age model)" says which. |
 | Windows log shows `WinError 10054` | Harmless browser disconnect; it is filtered out of the log. |

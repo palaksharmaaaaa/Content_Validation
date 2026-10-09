@@ -1,5 +1,5 @@
 """
-image_detector.dimension_checks.reliability: confidence limiters (report §22.6).
+image_detector.dimension_checks.reliability: confidence limiters.
 
 Explains conditions under which the physical-signal detectors are less trustworthy. RELIABILITY
 class: informational, never alters P(AI).

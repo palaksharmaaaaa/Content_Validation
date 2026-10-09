@@ -1,5 +1,5 @@
 """
-video_detector.dimension_checks.container: container / metadata forensics (report Section 20).
+video_detector.dimension_checks.container: container / metadata forensics.
 
 All findings are METADATA_WEAK: boxes, tags and sample tables are trivially forged and are routinely
 rewritten by benign editors and platforms. The only score effect is an explicit self-declaration of a

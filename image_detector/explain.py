@@ -2,8 +2,6 @@
 image_detector.explain: Plain-English Newbie Explanation and 9-Dimensions Forensic Dossier Generator.
 Transforms complex forensic telemetry, pixel statistics, and taxonomy states into
 clear, engaging, accessible narrative explanations for beginners and comprehensive audits for professionals.
-Aligned directly with:
-GLOBAL_IMAGE_TAXONOMY_AND_FORENSIC_RESEARCH_REPORT.md (NIST OpenMFC, C2PA v2.1, IPTC Photo Metadata Standard 2024-2026).
 Completely self-contained with zero outside dependencies.
 """
 from __future__ import annotations
@@ -150,7 +148,7 @@ def _dimension_3(c: _DossierContext) -> Dict[str, Any]:
         "prnu_residual_mean": prnu_val,
         "flat_region_noise": c.phys.get("flat_region_noise_mean", prnu_val),
         "is_natural_shot_noise": prnu_val >= 1.20,
-        "mathematical_physics": "sigma^2_PRNU = (1/|M|) * sum((W(x,y) - mu_W)^2) >= 1.45 (NIST OpenMFC)",
+        "mathematical_physics": "sigma^2_PRNU = (1/|M|) * sum((W(x,y) - mu_W)^2) >= 1.45",
         "diagnosis": (
             f"Natural Poisson-Gaussian sensor shot noise grain preserved (score: {prnu_val:.2f})"
             if prnu_val >= 1.20
@@ -278,8 +276,7 @@ def build_nine_dimensions_dossier(
     attribution_result: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Dict[str, Any]]:
     """
-    Constructs an exhaustive 9-dimensional forensic analysis dossier directly aligned with
-    GLOBAL_IMAGE_TAXONOMY_AND_FORENSIC_RESEARCH_REPORT.md.
+    Constructs an exhaustive 9-dimensional forensic analysis dossier.
     """
     c = _DossierContext.build(profile_data, ai_result, content_inventory, provenance_result, attribution_result)
     return {

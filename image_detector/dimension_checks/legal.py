@@ -1,5 +1,5 @@
 """
-image_detector.dimension_checks.legal: advisory legal/rights flags (report §22.2). LEGAL_FLAG
+image_detector.dimension_checks.legal: advisory legal/rights flags. LEGAL_FLAG
 findings never alter P(AI) and are not legal advice; they surface facts a reviewer should consider.
 """
 from __future__ import annotations

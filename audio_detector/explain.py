@@ -2,7 +2,6 @@
 audio_detector.explain: Plain-English Newbie Explanation & 9-Dimensions Audio Forensic Dossier Generator.
 Transforms complex acoustic telemetry, Wiener spectral flatness, and neural vocoder frequency cutoffs
 into clear, engaging narrative explanations for beginners and comprehensive audits for professionals.
-Aligned directly with NIST OpenMFC and C2PA v2.1 audio standards.
 """
 from __future__ import annotations
 

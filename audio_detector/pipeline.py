@@ -1,6 +1,6 @@
 """
 audio_detector.pipeline: End-to-End Audio Forensic Analysis Orchestrator.
-Executes the comprehensive NIST-aligned forensic inspection:
+Executes the comprehensive forensic inspection:
 1. Audio Stream & Codec Validation.
 2. Signal Profiling & Dynamic Range / Crest Factor Analysis.
 3. Cryptographic Provenance & ID3/RIFF Chunk Inspection.

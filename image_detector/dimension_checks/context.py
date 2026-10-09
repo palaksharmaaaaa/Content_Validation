@@ -1,6 +1,6 @@
 """
 image_detector.dimension_checks.context: perceptual-hash fingerprinting for "real but misleading"
-re-use detection (report §22.3). The file's own pixels cannot reveal a false caption; this check
+re-use detection. The file's own pixels cannot reveal a false caption; this check
 only computes hashes and, if the operator maintains a local reference index, matches against it.
 
 Index format (JSON lines): {"phash": "<16 hex>", "label": "...", "source": "..."}.

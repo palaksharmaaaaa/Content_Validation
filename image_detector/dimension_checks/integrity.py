@@ -1,6 +1,5 @@
 """
-image_detector.dimension_checks.integrity: file-integrity & security checks (report Dimension Q /
-Section 20.4). All findings are SECURITY class: they never alter P(AI); they surface risks.
+image_detector.dimension_checks.integrity: file-integrity & security checks. All findings are SECURITY class: they never alter P(AI); they surface risks.
 """
 from __future__ import annotations
 

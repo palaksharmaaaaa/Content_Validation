@@ -115,7 +115,7 @@ def evaluate_taxonomy_classification(
 ) -> Tuple[str, str, str, List[str]]:
     """
     Evaluates converging forensic signals, provenance, device profiles, and physical indicators to assign
-    each image strictly to one of the NIST & Forensic standard taxonomy states:
+    each image strictly to one of the taxonomy states:
     1. AUTHENTIC_REAL_PHOTOGRAPH: Authentic real-life camera/mobile capture or physical scan.
     2. AUTHENTIC_EDITED: Real photo with conventional edits (cropping, background removal, Canva, Photoshop).
     3. AI_ENHANCED_COMPOSITE: Real photo augmented via neural models (face swap, deepfake, inpainting, Topaz Photo AI).

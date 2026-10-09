@@ -1,5 +1,5 @@
 """
-audio_detector.dimension_checks.lifecycle: transcoding-cascade likelihood (report Section 21.5).
+audio_detector.dimension_checks.lifecycle: transcoding-cascade likelihood.
 RELIABILITY class: explains why forensic traces may be degraded; never changes P(AI).
 """
 from __future__ import annotations

@@ -1,5 +1,5 @@
 """
-video_detector.dimension_checks.signal: signal-level checks (report Dimension K).
+video_detector.dimension_checks.signal: signal-level checks.
 
 PHYSICAL_SIGNAL class but informational: interlacing and frame-cadence findings describe how a clip was
 captured/converted and how reliable temporal cues are; they do not indicate AI generation and carry no

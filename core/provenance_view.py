@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import Any, Dict, Iterable, Optional
 
 PROVENANCE_RULE = (
-    "NIST Rule: Absence of C2PA metadata indicates UNKNOWN provenance, "
+    "Rule: Absence of C2PA metadata indicates UNKNOWN provenance, "
     "not authenticity. Strong conclusions require cryptographic verification."
 )
 

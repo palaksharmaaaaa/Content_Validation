@@ -1,5 +1,5 @@
 """
-audio_detector.dimension_checks.signal: signal-level checks (report Dimensions L, M, O).
+audio_detector.dimension_checks.signal: signal-level checks.
 
 PHYSICAL_SIGNAL class. Only ENF may add log-odds (continuous trace -0.15, splice +0.15). Absence of an
 ENF trace is NEVER evidence: battery-powered recorders, telephony band-limits, noise reduction and many

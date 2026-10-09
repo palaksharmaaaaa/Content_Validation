@@ -1,5 +1,5 @@
 """
-audio_detector.dimension_checks.container: container / metadata forensics (report Section 20).
+audio_detector.dimension_checks.container: container / metadata forensics.
 
 All findings are METADATA_WEAK: tags are trivially forged and routinely rewritten by benign
 converters. The only score effect is the explicit self-declaration of a known generator in an

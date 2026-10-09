@@ -1,6 +1,6 @@
 """
 video_detector.pipeline: End-to-End Video Forensic Analysis Orchestrator.
-Executes the comprehensive NIST-aligned forensic inspection:
+Executes the comprehensive forensic inspection:
 1. Container & Codec Validation.
 2. Signal Profiling & Stream Parameter Extraction.
 3. Cryptographic Provenance & MP4 Atom Inspection.
