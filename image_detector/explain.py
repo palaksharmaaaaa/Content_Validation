@@ -98,59 +98,71 @@ def _dimension_1(c: _DossierContext) -> Dict[str, Any]:
             "aperture": c.exif.get("aperture") or "N/A",
             "iso": c.exif.get("iso") or "N/A",
             "focal_length": c.exif.get("focal_length") or "N/A",
-            "flash": c.exif.get("flash", "N/A"),
+            "flash": c.exif.get("flash") or "N/A",
             "white_balance": c.exif.get("white_balance") or "N/A",
         },
-        "date_taken": c.exif.get("date_time") or c.prov.get("date_time") or "Unknown / Stripped",
-        "gps_coordinates": c.exif.get("gps_details", {}).get("coordinates_str", "Not Embedded"),
+        "date_taken": c.exif.get("date_time") or c.prov.get("date_time") or "Not recorded",
+        "gps_coordinates": (c.exif.get("gps_details") or {}).get("coordinates_str") or "Not recorded",
         "c2pa_status": (
             "Present (markers only; not cryptographically verified)"
             if c.prov.get("c2pa_present")
             else "Absent (Neutral)"
         ),
-        "software_signature": c.exif.get("software") or c.prov.get("software") or "None (Clean)",
+        "software_signature": c.exif.get("software") or c.prov.get("software") or "Not recorded",
         "iptc_digital_source_type": iptc_type,
-        "provenance_verdict": "Camera hardware EXIF present (unauthenticated)" if has_cam else "Web Container / Metadata Stripped",
+        "provenance_verdict": "Camera hardware EXIF present (unauthenticated)" if has_cam else "No camera make or model recorded",
     }
     return d1
 
 
 def _dimension_2(c: _DossierContext) -> Dict[str, Any]:
     """Dimension 2: Photometric, Spatial Geometry & Colorimetric Architecture"""
-    w = c.geom.get("width", c.profile_data.get("width", 0))
-    h = c.geom.get("height", c.profile_data.get("height", 0))
+    w = c.geom.get("width") or c.profile_data.get("width") or 0
+    h = c.geom.get("height") or c.profile_data.get("height") or 0
+    pc = c.pcol
+    entropy = pc.get("shannon_entropy_bpp", c.profile_data.get("pixel_entropy"))
+    aspect = c.geom.get("aspect_ratio_str") or (f"{c.geom['aspect_ratio']}:1" if c.geom.get("aspect_ratio") else "Not recorded")
     d2 = {
         "dimension_id": 2,
         "title": "Dimension 2: Photometric, Spatial Geometry & Colorimetric Architecture",
         "description": "Inspects pixel geometry, resolution aspect ratio, DPI resolution, bit depth, Shannon entropy, dynamic range, and dominant color palette.",
-        "geometry": f"{w} x {h} px ({c.geom.get('megapixels', 0.0):.2f} MP, {c.geom.get('total_pixels', w * h):,} total pixels)",
-        "aspect_ratio": c.geom.get("aspect_ratio_str", f"{c.geom.get('aspect_ratio', 0.0)}:1"),
+        "geometry": f"{w} x {h} px ({w * h / 1e6:.2f} MP, {w * h:,} total pixels)" if w and h else "Not recorded",
+        "aspect_ratio": aspect,
         "orientation": c.geom.get("orientation", "Not recorded"),
         "dpi": c.disp.get("dpi_str", "Not recorded"),
-        "bit_depth": c.disp.get("bit_depth", f"{c.profile_data.get('channels', 3) * 8}-bit"),
+        "bit_depth": c.disp.get("bit_depth") or "Not recorded",
         "color_space": c.disp.get("color_space", "Not recorded"),
-        "shannon_entropy": f"{c.pcol.get('shannon_entropy_bpp', c.profile_data.get('pixel_entropy', 0.0)):.3f} bits/px",
-        "luminance_dynamic_range": f"{c.pcol.get('luminance_mean', 0.0):.1f} mean (span: {c.pcol.get('luminance_min', 0)}..{c.pcol.get('luminance_max', 255)}, median: {c.pcol.get('luminance_median', 0.0)})",
-        "clipping_profile": f"Highlights: {c.pcol.get('highlight_clipped_pct', 0.0)}% ({c.pcol.get('highlight_clipped_count', 0):,} px) | Shadows: {c.pcol.get('shadow_crushed_pct', 0.0)}% ({c.pcol.get('shadow_crushed_count', 0):,} px)",
-        "dominant_palette": c.pcol.get("dominant_palette", []),
-        "unique_colors_quantized": c.pcol.get("unique_quantized_colors", 0),
+        "shannon_entropy": f"{entropy:.3f} bits/px" if entropy is not None else "Not recorded",
+        "luminance_dynamic_range": (
+            f"{pc['luminance_mean']:.1f} mean (span: {pc.get('luminance_min')}..{pc.get('luminance_max')}, median: {pc.get('luminance_median')})"
+            if pc.get("luminance_mean") is not None else "Not recorded"
+        ),
+        "clipping_profile": (
+            f"Highlights: {pc['highlight_clipped_pct']}% ({pc.get('highlight_clipped_count', 0):,} px) | "
+            f"Shadows: {pc.get('shadow_crushed_pct')}% ({pc.get('shadow_crushed_count', 0):,} px)"
+            if pc.get("highlight_clipped_pct") is not None else "Not recorded"
+        ),
+        "dominant_palette": pc.get("dominant_palette", []),
+        "unique_colors_quantized": pc.get("unique_quantized_colors"),
     }
     return d2
 
 
 def _dimension_3(c: _DossierContext) -> Dict[str, Any]:
     """Dimension 3: Sensor-Noise Residual"""
-    prnu_val = c.phys.get("flat_region_noise_mean", c.f_metrics.get("noise_residual_mean", 0.0))
+    prnu_val = c.phys.get("flat_region_noise_mean", c.f_metrics.get("noise_residual_mean"))
     d3 = {
         "dimension_id": 3,
         "title": "Dimension 3: Sensor-Noise Residual",
         "description": "Measures the fine grain left after a 3x3 median filter is subtracted from the grey image. Camera photographs usually keep visible grain; heavily denoised, rendered or generated pictures often do not. This is a stand-in for sensor noise, not a PRNU fingerprint.",
         "noise_residual_mean": prnu_val,
         "flat_region_noise": c.phys.get("flat_region_noise_mean", prnu_val),
-        "is_natural_shot_noise": prnu_val >= 1.20,
+        "is_natural_shot_noise": None if prnu_val is None else prnu_val >= 1.20,
         "mathematical_physics": "residual = mean(|I - median3x3(I)|) over the image; flat-region residual is the same statistic where the local gradient is small.",
         "diagnosis": (
-            f"Fine camera-like grain is present (score: {prnu_val:.2f})"
+            "Not measured"
+            if prnu_val is None
+            else f"Fine camera-like grain is present (score: {prnu_val:.2f})"
             if prnu_val >= 1.20
             else f"Little fine grain; the picture looks smoothed or denoised (score: {prnu_val:.2f})"
         ),
@@ -160,17 +172,19 @@ def _dimension_3(c: _DossierContext) -> Dict[str, Any]:
 
 def _dimension_4(c: _DossierContext) -> Dict[str, Any]:
     """Dimension 4: Bilateral Surface Smoothness & Spatial Texture Variance"""
-    smooth_val = c.phys.get("surface_smoothness_index", c.f_metrics.get("surface_smoothness", 0.0))
+    smooth_val = c.phys.get("surface_smoothness_index", c.f_metrics.get("surface_smoothness"))
     d4 = {
         "dimension_id": 4,
         "title": "Dimension 4: Bilateral Surface Smoothness & Spatial Texture Variance",
         "description": "Measures micro-texture continuity against bilateral filter smoothing to expose plastic diffusion skin and synthetic surfaces.",
         "smoothness_index": smooth_val,
-        "is_diffusion_smoothed": smooth_val < 3.2,
+        "is_diffusion_smoothed": None if smooth_val is None else smooth_val < 3.2,
         "diagnosis": (
-            f"Diffusion latent space bilateral over-smoothing detected across surfaces (index: {smooth_val:.2f})"
+            "Not measured"
+            if smooth_val is None
+            else f"Surfaces are very smooth (index: {smooth_val:.2f}), as in generated or heavily retouched pictures"
             if smooth_val < 3.2
-            else f"Natural organic surface micro-textures and physical lens MTF sharpness preserved (index: {smooth_val:.2f})"
+            else f"Surface texture is not unusually smooth (index: {smooth_val:.2f})"
         ),
     }
     return d4
@@ -190,9 +204,9 @@ def _dimension_5(c: _DossierContext) -> Dict[str, Any]:
         "diagnosis": (
             "Not measured (the picture is too small to fit a spectral slope)"
             if unmeasured
-            else f"Anomalous Fourier spectral slope (alpha={float(fft_alpha):.2f}); deviates from physical optical decay"
+            else f"Anomalous Fourier spectral slope (alpha={float(fft_alpha):.2f}); outside the range of ordinary photographs"
             if (fft_alpha < 1.65 or fft_alpha > 3.45)
-            else f"Standard Fourier radial spectral decay slope (alpha={float(fft_alpha):.2f}) adhering to optical physics"
+            else f"Standard Fourier radial spectral decay slope (alpha={float(fft_alpha):.2f}) within the range of ordinary photographs"
         ),
     }
     return d5
@@ -231,9 +245,9 @@ def _dimension_7(c: _DossierContext) -> Dict[str, Any]:
         "description": "Distinguishes photographic optical capture from traditional painting (oil, watercolor), vector art, anime/manga, pixel art, or 3D CGI.",
         "visual_medium": medium,
         "is_digital_art": c.ai_result.get("digital_art_detected", False),
-        "dark_line_contours_pct": c.phys.get("dark_line_art_pct", 0.0),
-        "canny_edge_density_pct": c.phys.get("canny_edge_pct", 0.0),
-        "laplacian_focus_sharpness": c.phys.get("laplacian_sharpness_var", 0.0),
+        "dark_line_contours_pct": c.phys.get("dark_line_art_pct"),
+        "canny_edge_density_pct": c.phys.get("canny_edge_pct"),
+        "laplacian_focus_sharpness": c.phys.get("laplacian_sharpness_var"),
         "diagnosis": f"Visual style categorized as {medium}",
     }
     return d7
@@ -247,7 +261,7 @@ def _dimension_8(c: _DossierContext) -> Dict[str, Any]:
         "title": "Dimension 8: Electromagnetic Spectrum & Acquisition Modalities",
         "description": "Identifies imaging wavelength: visible colour RGB (400-700nm), Monochrome, Infrared (NIR/LWIR), UV, Biomedical (X-Ray/SEM), or Satellite/SAR.",
         "sensor_spectrum": spectrum,
-        "color_channels": c.profile_data.get("channels", 3),
+        "color_channels": c.profile_data.get("channels"),
         "diagnosis": f"Acquisition modality operates in {spectrum}",
     }
     return d8
@@ -264,7 +278,7 @@ def _dimension_9(c: _DossierContext) -> Dict[str, Any]:
         "region_of_origin": c.attr.get("region_of_origin") or "Not determined",
         "attribution_confidence": c.attr.get("attribution_confidence", c.attr.get("confidence", 0.0)),
         "watermark_detected": c.ai_result.get("watermark_detected", False),
-        "watermark_details": c.ai_result.get("watermark_details") or "No synthetic watermark detected",
+        "watermark_details": c.ai_result.get("watermark_details") or "No Gemini-style sparkle watermark found (the only visible watermark this tool looks for)",
         "top_candidates": c.attr.get("top_candidates", []),
         "spatial_manipulated_area_pct": c.ai_result.get("ai_spatial_area_pct", 0.0),
     }

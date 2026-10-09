@@ -95,3 +95,15 @@ def test_the_image_narrative_does_not_claim_missing_grain_when_the_grain_is_ther
     smooth = _synthetic_takeaway(80.0, "Fully AI Generated", noise=0.5, smooth=0.9)
     assert "not unusually low" in grainy and "completely missing" not in grainy and "Midjourney" not in grainy
     assert "is low here" in smooth and "not proof" in smooth
+
+
+def test_an_empty_profile_yields_not_recorded_not_invented_readings():
+    from image_detector.explain import build_nine_dimensions_dossier
+
+    d = build_nine_dimensions_dossier({}, {"taxonomy_state": "UNDECIDED"}, {}, {}, {})
+    assert d["dimension_2"]["geometry"] == "Not recorded" and d["dimension_2"]["bit_depth"] == "Not recorded"
+    assert d["dimension_2"]["luminance_dynamic_range"] == "Not recorded"
+    assert d["dimension_3"]["is_natural_shot_noise"] is None and d["dimension_3"]["diagnosis"] == "Not measured"
+    assert d["dimension_4"]["is_diffusion_smoothed"] is None and d["dimension_4"]["diagnosis"] == "Not measured"
+    assert d["dimension_1"]["software_signature"] == "Not recorded" and d["dimension_1"]["date_taken"] == "Not recorded"
+    assert d["dimension_8"]["color_channels"] is None
