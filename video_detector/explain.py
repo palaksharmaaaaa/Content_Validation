@@ -152,7 +152,7 @@ def _video_dimension_7(c: _VideoDossierContext) -> Dict[str, Any]:
     d7 = {
         "dimension_id": 7,
         "title": "Dimension 7: Video Synthesis Medium & Generative Model Archetype",
-        "description": "Distinguishes physical camera capture from Sora, Runway Gen-2/Gen-3, Kling, Luma, or 3D CGI.",
+        "description": "Looks for what separates camera footage from generated or rendered footage: motion that warps, flicker between frames, missing grain.",
         "visual_medium": c.vid_res.get("visual_medium") or "Not determined",
         "is_ai_video": c.vid_res.get("is_synthetic", False),
     }
@@ -176,7 +176,7 @@ def _video_dimension_9(c: _VideoDossierContext) -> Dict[str, Any]:
     d9 = {
         "dimension_id": 9,
         "title": "Dimension 9: Foundation Model Attribution & Watermarking",
-        "description": "Matches forensic fingerprints against known video foundation generators (Sora, Runway, Pika, Kling, Luma).",
+        "description": "Names a video generator only when the file's own metadata declares one; otherwise reports none.",
         "attributed_generator": c.attr.get("attributed_model") or "Not attributable",
         "confidence": f"{int(c.attr.get('attribution_confidence', 0.0) * 100)}%",
         "watermark_detected": c.attr.get("watermark_detected", False),

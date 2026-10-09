@@ -73,3 +73,15 @@ def test_audio_is_named_only_when_its_metadata_says_so(tmp_path):
     assert out["model_key"] == "unknown" and out["top_candidates"] == [] and out["cues"]
     named = eng.attribute_audio(p, acoustic_data=acoustic, provenance_data={"metadata": {"comment": "made with ElevenLabs"}})
     assert named["model_key"] == "elevenlabs"
+
+
+def test_the_audio_narrative_is_grounded_in_what_was_measured():
+    from audio_detector.explain import generate_audio_newbie_explanation
+
+    ar = {"spectral_flatness": 0.0012, "digital_silence_ratio": 0.31, "cutoff_freq_hz": 7600.0, "has_vocoder_cutoff": True,
+          "forensic_cues": ["Brick-wall frequency cutoff at 7600 Hz"]}
+    prof = {"duration_seconds": 4.0, "native_sample_rate": 16000}
+    ai = generate_audio_newbie_explanation("a.wav", prof, {}, ar, {"final_status": "LIKELY_SYNTHETIC", "authenticity_probabilities": {"p_ai": 80.0, "p_real": 10.0}})
+    assert "0.0012" in ai and "31.0%" in ai and "7,600 Hz" in ai and "ElevenLabs" not in ai and "not proof" in ai
+    blank = generate_audio_newbie_explanation("a.wav", prof, {}, ar, {"final_status": "BLANK_OR_DEGRADED", "authenticity_probabilities": {}})
+    assert "no verdict" in blank

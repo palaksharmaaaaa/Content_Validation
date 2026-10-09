@@ -86,3 +86,12 @@ def test_a_compressed_text_chunk_cannot_expand_without_bound():
     peak = tracemalloc.get_traced_memory()[1]
     tracemalloc.stop()
     assert len(out["Comment"]) == 1000 and peak < 20 * 1024 * 1024
+
+
+def test_the_image_narrative_does_not_claim_missing_grain_when_the_grain_is_there():
+    from image_detector.explain import _synthetic_takeaway
+
+    grainy = _synthetic_takeaway(80.0, "Fully AI Generated", noise=2.4, smooth=3.0)
+    smooth = _synthetic_takeaway(80.0, "Fully AI Generated", noise=0.5, smooth=0.9)
+    assert "not unusually low" in grainy and "completely missing" not in grainy and "Midjourney" not in grainy
+    assert "is low here" in smooth and "not proof" in smooth

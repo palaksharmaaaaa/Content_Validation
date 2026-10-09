@@ -185,7 +185,7 @@ def _audio_dimension_9(c: _AudioDossierContext) -> Dict[str, Any]:
     d9 = {
         "dimension_id": 9,
         "title": "Dimension 9: Foundation Voice Model Attribution & Watermarking",
-        "description": "Identifies voice cloning engines (ElevenLabs, OpenAI Voice, Tortoise, Bark, VITS) and watermark markers.",
+        "description": "Names a voice-generation tool only when the file's own metadata declares one; otherwise reports none.",
         "attributed_generator": c.attr.get("attributed_model") or "Not attributable",
         "attribution_confidence": f"{int(c.attr.get('attribution_confidence', 0.0) * 100)}%",
         "watermark_detected": c.attr.get("watermark_detected", False),
@@ -260,25 +260,37 @@ def generate_audio_newbie_explanation(
 
     section_newbie = "### 💡 How Would You Explain This to a Newbie?\n\n"
 
-    is_ai = "SYNTHETIC" in final_status or "AI" in final_status or p_ai >= 55.0
+    cues = [str(c) for c in (audio_result.get("forensic_cues") or []) if c][:4]
+    flatness, silence = audio_result.get("spectral_flatness"), audio_result.get("digital_silence_ratio")
+    measured = []
+    if audio_result.get("cutoff_freq_hz"):
+        measured.append(f"the spectrum {'stops sharply' if audio_result.get('has_vocoder_cutoff') else 'falls off naturally'} near **{float(audio_result['cutoff_freq_hz']):,.0f} Hz**")
+    if flatness is not None:
+        measured.append(f"spectral flatness **{float(flatness):.4f}**")
+    if silence is not None:
+        measured.append(f"**{float(silence) * 100:.1f}%** of the samples are exact digital zeros")
+    in_this_file = ("In this file " + ", ".join(measured) + ".") if measured else "No spectral measurement was available for this file."
+    cue_text = (" The cues raised were: " + "; ".join(cues) + ".") if cues else ""
 
-    if is_ai:
+    if final_status == "BLANK_OR_DEGRADED":
+        body = "**The Simple Takeaway:** The recording is silent or has no usable signal, so no verdict is given."
+    elif final_status == "UNDETERMINED":
         body = (
-            f"**The Simple Takeaway:** Our forensic acoustic engine's heuristic (uncalibrated) score is **{p_ai:.1f}% AI-likelihood**, indicating this audio was most likely "
-            f"**created by an AI voice generator or clone** (such as ElevenLabs, OpenAI Voice, or Tortoise) rather than spoken by a live human.\n\n"
-            f"**Think of it like this:** When a real person speaks into a microphone, air passes through vocal cords, bounces around the mouth and chest, "
-            f"and catches subtle human imperfections — like tiny breaths, tongue clicks, and the natural echo of the room you are standing in. "
-            f"An AI voice model, on the other hand, calculates speech mathematically using a digital vocoder. "
-            f"When we analyze the sound waves under our forensic microscope, the speech harmonics are unnaturally smooth, the sound abruptly cuts off at a digital ceiling "
-            f"(the vocoder brickwall), and the silent gaps between words are pure mathematical zeros rather than real-world room ambience. "
-            f"Even though it sounds uncannily like a real person, the acoustic evidence points to a computer-generated origin."
+            f"**The Simple Takeaway:** The evidence does not settle it (heuristic, uncalibrated AI-likelihood **{p_ai:.1f}%**). "
+            f"{in_this_file} Treat this as inconclusive."
+        )
+    elif "SYNTHETIC" in final_status or p_ai >= 55.0:
+        body = (
+            f"**The Simple Takeaway:** Our heuristic (uncalibrated) score is **{p_ai:.1f}% AI-likelihood**, so this audio leans towards a "
+            f"**synthetic or cloned voice**. That is a ranking aid, not proof.\n\n"
+            f"**What that is based on:** {in_this_file}{cue_text} Voice generators tend to produce a very smooth spectrum, a sharp ceiling "
+            f"in frequency and silences that are exact zeros instead of room noise; low-bitrate encoders, phone audio and noise gates can leave the same marks."
         )
     else:
         body = (
-            f"**The Simple Takeaway:** This audio track is **consistent with a genuine human recording** (heuristic, uncalibrated estimate **{p_real:.1f}%**; a ranking aid, not proof).\n\n"
-            f"**Think of it like this:** Everything about this sound wave matches real-world acoustic physics. Natural vocal tract resonance, organic breathing rhythm, "
-            f"subtle microphone room tone, and complete high-frequency harmonic extension are all present without any neural vocoder cutoff or synthetic over-smoothing. "
-            f"No voice cloning or generative deepfake alterations were detected."
+            f"**The Simple Takeaway:** This audio is **consistent with a recording of a live source** (heuristic, uncalibrated estimate **{p_real:.1f}%**; "
+            f"a ranking aid, not proof).\n\n"
+            f"**What that is based on:** {in_this_file} No clear sign of a synthetic voice was found, but high-quality voice clones can pass these checks."
         )
 
     return section_what + section_newbie + body

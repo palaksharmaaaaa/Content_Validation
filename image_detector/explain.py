@@ -259,7 +259,7 @@ def _dimension_9(c: _DossierContext) -> Dict[str, Any]:
     d9 = {
         "dimension_id": 9,
         "title": "Dimension 9: Generative AI Frontier & Attribution Fingerprint",
-        "description": "Detects foundation model synthesis (Flux.1, Midjourney, SD 3.5, Gemini/Imagen 3, DALL-E 3), neural inpainting, deepfake face-swapping, and watermarks.",
+        "description": "Detects foundation model synthesis (Flux.1, Midjourney, SD 3.5, Gemini/Imagen 3, DALL-E 3), neural inpainting, enhancement software and watermarks.",
         "attributed_model": attributed_model,
         "region_of_origin": c.attr.get("region_of_origin") or "Not determined",
         "attribution_confidence": c.attr.get("attribution_confidence", c.attr.get("confidence", 0.0)),
@@ -351,15 +351,18 @@ def _undetermined_takeaway(p_ai: float, p_real: float) -> str:
 
 
 def _synthetic_takeaway(p_ai: float, tax_label: str, noise: float, smooth: float) -> str:
+    grain = (
+        f"The fine camera-like grain is low here (noise residual **{noise:.2f}**; photographs from cameras are usually above about 1.2) "
+        f"and the surface smoothness index is **{smooth:.2f}**, which fits a picture that was generated or heavily smoothed."
+        if noise < 1.20 else
+        f"The fine grain is not unusually low (noise residual **{noise:.2f}**, surface smoothness index **{smooth:.2f}**), so the lean towards AI "
+        f"comes from other signals; see the Evidence tab for which."
+    )
     return (
-        f"**The Simple Takeaway:** Our forensic engine's heuristic (uncalibrated) score is **{p_ai:.1f}% AI-likelihood**, indicating this image was most likely **created by generative Artificial Intelligence** "
-        f"({tax_label}) rather than captured by a physical camera.\n\n"
-        f"**Think of it like this:** When a real camera takes a photo, millions of physical light particles (photons) strike a silicon sensor chip. "
-        f"Because the physical world has microscopic imperfections and heat, every authentic photo has a natural, fine grain — very much like the tiny grains of sand "
-        f"you see on photographic film. Forensic experts call this *sensor shot noise*.\n\n"
-        f"In this image, that natural camera grain is completely missing (the measured sensor noise is only **{noise:.2f}**, whereas real camera photos usually score between 1.20 and 2.50+). "
-        f"Instead of real light hitting a lens, a computer algorithm (a neural diffusion network like Midjourney, Flux, or Gemini) mathematically calculated and smoothed each pixel "
-        f"(surface smoothness index: **{smooth:.2f}**). While it looks impressive to the naked eye, the physics under the microscope reveal that it was painted by math, not light."
+        f"**The Simple Takeaway:** Our heuristic (uncalibrated) score is **{p_ai:.1f}% AI-likelihood**, so this image leans towards "
+        f"**generative AI or heavy synthetic processing** ({tax_label}) rather than a plain camera capture. That is a ranking aid, not proof.\n\n"
+        f"**What that is based on:** A camera sensor leaves a fine grain in every photo (*sensor shot noise*); many generators produce smoother, grain-free surfaces. {grain} "
+        f"Compression, upscaling and beauty filters can also remove grain, so check the Evidence tab before relying on this."
     )
 
 
