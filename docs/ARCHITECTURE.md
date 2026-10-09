@@ -84,7 +84,7 @@ Each package follows the same shape.
 | `explain.py` | the nine-dimension dossier and the plain-English explanation |
 | `pipeline.py` | `run()` (the single analysis sequence) and `analyze()` (headless report) |
 | `learner.py`, `retrain.py`, `trainer.py` | feedback records, the fine-tuning entry point, the PyTorch trainer |
-| `batch.py`, `benchmarks.py`, `downloader.py` | a sequential headless batch runner, accuracy on a labelled folder, URL fetch via `core.security` (the app's own batches are parallel, see Operations) |
+| `batch.py`, `benchmarks.py` | a sequential headless batch runner and accuracy on a labelled folder (URLs are fetched by `core.security`; the app's own batches are parallel, see Operations) |
 | `dimension_checks/` | the isolated checks (see [CHECKS.md](CHECKS.md)) |
 
 Package-specific points:

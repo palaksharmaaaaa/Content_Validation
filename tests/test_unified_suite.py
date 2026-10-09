@@ -9,9 +9,6 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from core.decision import generate_final_decision, normalize_percentages
-from image_detector.downloader import ImageDownloader
-from audio_detector.downloader import AudioDownloader
-from video_detector.downloader import VideoDownloader
 from audio_detector.explain import build_audio_nine_dimensions_dossier, generate_audio_newbie_explanation
 from video_detector.explain import build_video_nine_dimensions_dossier, generate_video_newbie_explanation
 from video_detector.learner import VideoSelfImprover
@@ -123,35 +120,6 @@ class TestModalExplainers(unittest.TestCase):
         self.assertTrue('genuine' in narrative or 'camera' in narrative)
 
 
-class TestDownloaderSecurityDelegation(unittest.TestCase):
-    def test_ssrf_blocked_across_all_downloaders(self):
-        malicious_urls = [
-            'http://127.0.0.1:8080/secret',
-            'http://localhost/admin',
-            'http://169.254.169.254/latest/meta-data',
-            'http://10.0.0.1/internal',
-            'file:///etc/passwd',
-        ]
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            dest = Path(tmp_dir)
-            img_dl = ImageDownloader()
-            aud_dl = AudioDownloader()
-            vid_dl = VideoDownloader()
-
-            for url in malicious_urls:
-                img_res = img_dl.download_image(url, destination_dir=dest)
-                self.assertFalse(img_res['success'])
-                self.assertIn('error', img_res)
-
-                aud_res = aud_dl.download_audio(url, destination_dir=dest)
-                self.assertFalse(aud_res['success'])
-                self.assertIn('error', aud_res)
-
-                vid_res = vid_dl.download_video(url, destination_dir=dest)
-                self.assertFalse(vid_res['success'])
-                self.assertIn('error', vid_res)
-
-
 class TestVideoLearnerAtomic(unittest.TestCase):
     def test_atomic_persistence(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -211,7 +179,6 @@ def suite():
     s = unittest.TestSuite()
     s.addTests(loader.loadTestsFromTestCase(TestCoreDecision))
     s.addTests(loader.loadTestsFromTestCase(TestModalExplainers))
-    s.addTests(loader.loadTestsFromTestCase(TestDownloaderSecurityDelegation))
     s.addTests(loader.loadTestsFromTestCase(TestVideoLearnerAtomic))
     s.addTests(loader.loadTestsFromTestCase(TestForensicServiceFacade))
     s.addTests(loader.loadTestsFromTestCase(TestVideoFaceGating))

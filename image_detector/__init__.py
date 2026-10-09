@@ -16,7 +16,6 @@ Contains its own:
 - Generator model attribution (image_detector.attribution.ImageModelAttributionEngine)
 - C2PA marker-presence & EXIF provenance (image_detector.provenance.ImageProvenanceValidator)
 - Signal profiling & entropy (image_detector.profiler.ImageProfiler)
-- Safe URL image downloader (image_detector.downloader.ImageDownloader)
 - End-to-end forensic pipeline (image_detector.pipeline.ImageForensicPipeline)
 - Sequential batch runner (image_detector.batch.ImageBatchProcessor)
 """
@@ -33,7 +32,6 @@ _LAZY_EXPORTS = {
     "ImageBenchmarkSuite": ("image_detector.benchmarks", "ImageBenchmarkSuite"),
     "ImageContentAnalyzer": ("image_detector.content", "ImageContentAnalyzer"),
     "ImageDetectorTrainer": ("image_detector.trainer", "ImageDetectorTrainer"),
-    "ImageDownloader": ("image_detector.downloader", "ImageDownloader"),
     "ImageFeedbackRecord": ("image_detector.schemas", "ImageFeedbackRecord"),
     "ImageForensicPipeline": ("image_detector.pipeline", "ImageForensicPipeline"),
     "ImageForensicResult": ("image_detector.schemas", "ImageForensicResult"),
@@ -81,7 +79,6 @@ __all__ = [
     "ImageModelAttributionEngine",
     "ImageProvenanceValidator",
     "ImageProfiler",
-    "ImageDownloader",
     "build_nine_dimensions_dossier",
     "generate_newbie_explanation",
     # Training & Continual Improvement

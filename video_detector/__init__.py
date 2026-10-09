@@ -18,7 +18,6 @@ Contains its own:
 - C2PA marker-presence & container atoms (video_detector.provenance.VideoProvenanceValidator)
 - Stream profiling & specifications (video_detector.profiler.VideoProfiler)
 - Cross-modal audio-visual synchronization (video_detector.cross_modal.CrossModalConsistencyEngine)
-- Safe URL video downloader (video_detector.downloader.VideoDownloader)
 - End-to-end forensic pipeline (video_detector.pipeline.VideoForensicPipeline)
 - Sequential batch runner (video_detector.batch.VideoBatchProcessor)
 """
@@ -32,7 +31,6 @@ _LAZY_EXPORTS = {
     "VideoBenchmarkSuite": ("video_detector.benchmarks", "VideoBenchmarkSuite"),
     "VideoContentAnalyzer": ("video_detector.content", "VideoContentAnalyzer"),
     "VideoDetectorTrainer": ("video_detector.trainer", "VideoDetectorTrainer"),
-    "VideoDownloader": ("video_detector.downloader", "VideoDownloader"),
     "VideoFaceDeepfakeDetector": ("video_detector.face", "VideoFaceDeepfakeDetector"),
     "VideoFeedbackRecord": ("video_detector.schemas", "VideoFeedbackRecord"),
     "VideoForensicPipeline": ("video_detector.pipeline", "VideoForensicPipeline"),
@@ -74,7 +72,6 @@ __all__ = [
     "VideoProvenanceValidator",
     "VideoProfiler",
     "CrossModalConsistencyEngine",
-    "VideoDownloader",
     # Training & Continual Improvement
     "VideoDetectorTrainer",
     "VideoSelfImprover",

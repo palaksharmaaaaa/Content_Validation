@@ -15,7 +15,6 @@ Contains its own:
 - Voice & music synthesizer attribution (audio_detector.attribution.AudioModelAttributionEngine)
 - C2PA marker-presence & chunk provenance (audio_detector.provenance.AudioProvenanceValidator)
 - Signal profiling & dynamic range (audio_detector.profiler.AudioProfiler)
-- Safe URL audio downloader (audio_detector.downloader.AudioDownloader)
 - End-to-end forensic pipeline (audio_detector.pipeline.AudioForensicPipeline)
 - Sequential batch runner (audio_detector.batch.AudioBatchProcessor)
 """
@@ -29,7 +28,6 @@ _LAZY_EXPORTS = {
     "AudioClassifierNet": ("audio_detector.models.backbone", "AudioClassifierNet"),
     "AudioContentAnalyzer": ("audio_detector.content", "AudioContentAnalyzer"),
     "AudioDetectorTrainer": ("audio_detector.trainer", "AudioDetectorTrainer"),
-    "AudioDownloader": ("audio_detector.downloader", "AudioDownloader"),
     "AudioFeedbackRecord": ("audio_detector.schemas", "AudioFeedbackRecord"),
     "AudioForensicPipeline": ("audio_detector.pipeline", "AudioForensicPipeline"),
     "AudioForensicResult": ("audio_detector.schemas", "AudioForensicResult"),
@@ -65,7 +63,6 @@ __all__ = [
     "AudioModelAttributionEngine",
     "AudioProvenanceValidator",
     "AudioProfiler",
-    "AudioDownloader",
     # Training & Continual Improvement
     "AudioDetectorTrainer",
     "AudioSelfImprover",
