@@ -1,4 +1,4 @@
-"""A file name is not evidence: the same pixels score the same whatever the file is called."""
+"""Image honesty: a file name is not evidence, the profile shows the detector's own numbers, and untrusted chunks are bounded."""
 import shutil
 
 import numpy as np
@@ -72,3 +72,17 @@ def test_profile_noise_and_smoothness_are_the_detectors_numbers(tmp_path):
     phys = r["quantified_inventory"]["pixel_physics_metrics"]
     fm = r["ai_detection"]["forensic_metrics"]
     assert phys["prnu_noise_mean"] == round(fm["noise_residual_mean"], 3) and phys["surface_smoothness"] == fm["surface_smoothness"]
+
+
+def test_a_compressed_text_chunk_cannot_expand_without_bound():
+    import tracemalloc
+    import zlib
+
+    from image_detector.dimension_checks._common import png_text_fields
+
+    bomb = zlib.compress(b"A" * (200 * 1024 * 1024), 9)             # about 200 KB that would inflate to 200 MB
+    tracemalloc.start()
+    out = png_text_fields([("zTXt", b"Comment\x00\x00" + bomb)], max_len=1000)
+    peak = tracemalloc.get_traced_memory()[1]
+    tracemalloc.stop()
+    assert len(out["Comment"]) == 1000 and peak < 20 * 1024 * 1024

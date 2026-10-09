@@ -116,6 +116,11 @@ def parse_png_chunks(path: Path, max_chunks: int = 4096, body_limit: int = 1_000
     return out
 
 
+def _inflate_bounded(data: bytes, max_len: int) -> bytes:
+    """zlib-decompress at most ``max_len`` bytes: a few kilobytes of a crafted text chunk can otherwise expand to gigabytes."""
+    return zlib.decompressobj().decompress(data, max_len)
+
+
 def png_text_fields(chunks: List[Tuple[str, bytes]], max_len: int = 200_000) -> Dict[str, str]:
     """tEXt / zTXt / iTXt key -> text (decoded leniently, truncated)."""
     out: Dict[str, str] = {}
@@ -126,7 +131,7 @@ def png_text_fields(chunks: List[Tuple[str, bytes]], max_len: int = 200_000) -> 
                 out[key.decode("latin-1")] = val.decode("latin-1", errors="replace")[:max_len]
             elif ctype == "zTXt":
                 key, _, rest = body.partition(b"\x00")
-                out[key.decode("latin-1")] = zlib.decompress(rest[1:]).decode("utf-8", errors="replace")[:max_len]
+                out[key.decode("latin-1")] = _inflate_bounded(rest[1:], max_len).decode("utf-8", errors="replace")
             elif ctype == "iTXt":
                 key, _, rest = body.partition(b"\x00")
                 comp_flag = rest[0:1]
@@ -134,7 +139,7 @@ def png_text_fields(chunks: List[Tuple[str, bytes]], max_len: int = 200_000) -> 
                 _lang, _, rest = rest.partition(b"\x00")
                 _tkey, _, text = rest.partition(b"\x00")
                 if comp_flag == b"\x01":
-                    text = zlib.decompress(text)
+                    text = _inflate_bounded(text, max_len)
                 out[key.decode("latin-1")] = text.decode("utf-8", errors="replace")[:max_len]
         except Exception:  # malformed chunk: skip, never raise
             continue
