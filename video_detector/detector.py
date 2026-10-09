@@ -27,6 +27,8 @@ from video_detector.config import (
     DEFAULT_VIDEO_CHECKPOINT,
     NOISE_AI_THRESHOLD,
     NOISE_AI_THRESHOLD_SENSITIVE,
+    SMOOTH_AI_THRESHOLD,
+    SMOOTH_AI_THRESHOLD_SENSITIVE,
     NOISE_BASELINE,
 )
 from video_detector.extractor import VideoFrameExtractor
@@ -92,7 +94,7 @@ class VideoAIDetector:
                 self.device = device
                 logger.info("VideoAIDetector loaded video checkpoint: %s", self.checkpoint_path.name)
             except Exception as e:
-                logger.warning("Could not load video checkpoint, using statistical acoustics: %s", e)
+                logger.warning("Could not load video checkpoint, using the statistical frame analysis: %s", e)
 
         if self.frame_detector is not None and hasattr(self.frame_detector, "load"):
             self.frame_detector.load()
@@ -111,7 +113,7 @@ class VideoAIDetector:
 
         comp_noise = max(0.2, noise - NOISE_BASELINE)
         noise_thresh = NOISE_AI_THRESHOLD_SENSITIVE if sensitivity in ("high", "aggressive") else NOISE_AI_THRESHOLD
-        smooth_thresh = 3.6 if sensitivity in ("high", "aggressive") else 3.1
+        smooth_thresh = SMOOTH_AI_THRESHOLD_SENSITIVE if sensitivity in ("high", "aggressive") else SMOOTH_AI_THRESHOLD
 
         p_noise_ai = float(1.0 / (1.0 + np.exp((comp_noise - noise_thresh) * 2.0)))
         p_smooth_ai = float(1.0 / (1.0 + np.exp((smooth - smooth_thresh) * 1.3)))
@@ -313,4 +315,3 @@ class VideoAIDetector:
         return res_dict
 
     predict = analyze_video
-    predict_video = analyze_video

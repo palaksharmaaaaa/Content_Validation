@@ -63,12 +63,12 @@ class CrossModalConsistencyEngine:
             if aud_ai > vid_ai:
                 cues.append(
                     f"Modality Asymmetry: Synthetic Audio ({aud_ai:.1f}%) paired with Authentic Video ({100-vid_ai:.1f}%). "
-                    "Characteristic of AI voice clone or manipulated voiceover."
+                    "This can mean a cloned voice or a replaced voiceover, but also an authentic video with a synthetic narration added on purpose."
                 )
             else:
                 cues.append(
                     f"Modality Asymmetry: Synthetic Video ({vid_ai:.1f}%) paired with Authentic Audio ({100-aud_ai:.1f}%). "
-                    "Characteristic of synthetic video diffusion driven by real voice track."
+                    "This can mean generated footage set to a real voice track, or real footage with audio that looks synthetic to the detector."
                 )
         elif vid_ai >= 60.0 and aud_ai >= 60.0:
             cues.append(
@@ -86,7 +86,7 @@ class CrossModalConsistencyEngine:
                 anomalies += 1
                 cues.append(
                     "Acoustic/Visual Mismatch: Outdoor visual scene combined with digital zero silence in audio. "
-                    "Physical outdoor recordings always have ambient atmospheric noise."
+                    "Outdoor recordings normally carry ambient noise; exact digital silence suggests the audio was edited or generated."
                 )
 
         if anomalies >= 2:

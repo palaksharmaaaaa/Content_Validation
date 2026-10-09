@@ -190,9 +190,10 @@ class VideoForensicPipeline:
     def _write_keyframe(keyframe: Optional[np.ndarray], cache_dir: Optional[Path], filename: str) -> Optional[str]:
         if keyframe is None or cache_dir is None:
             return None
-        target = Path(cache_dir) / f"kf_{Path(filename).stem}.jpg"
-        cv2.imwrite(str(target), keyframe)
-        return str(target)
+        folder = Path(cache_dir)
+        folder.mkdir(parents=True, exist_ok=True)
+        target = folder / f"kf_{Path(filename).stem}.jpg"
+        return str(target) if cv2.imwrite(str(target), keyframe) else None          # a failed write is "no preview", not a path to nothing
 
     def analyze(
         self,

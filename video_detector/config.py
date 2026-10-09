@@ -29,6 +29,8 @@ SUPPORTED_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
 NOISE_BASELINE = 0.70
 NOISE_AI_THRESHOLD = 2.0              # balanced sensitivity: noise above the baseline below this is AI-like
 NOISE_AI_THRESHOLD_SENSITIVE = 2.4    # high / aggressive sensitivity
+SMOOTH_AI_THRESHOLD = 3.1             # bilateral-filter residual below this reads as over-smoothed (balanced sensitivity)
+SMOOTH_AI_THRESHOLD_SENSITIVE = 3.6   # high / aggressive sensitivity
 
 # Temporal Motion Variance Thresholds
 MOTION_VAR_HIGH_WARPING = 140.0

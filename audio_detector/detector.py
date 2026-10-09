@@ -79,7 +79,7 @@ class AudioAIDetector:
                 self.device = device
                 logger.info("AudioAIDetector loaded neural checkpoint: %s", self.checkpoint_path.name)
             except Exception as e:
-                logger.warning("Could not load neural checkpoint, using statistical acoustics: %s", e)
+                logger.warning("Could not load neural checkpoint, using the statistical acoustic analysis: %s", e)
         self._is_loaded = True
         return True
 
