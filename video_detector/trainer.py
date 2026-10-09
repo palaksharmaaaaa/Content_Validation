@@ -242,9 +242,8 @@ class VideoDetectorTrainer:
         lr: float = 1e-4,
     ) -> Dict[str, Any]:
         """Trains temporal model directly from a .npz feature bank with zero raw video on disk."""
-        data = np.load(str(npz_path))
-        diffs = data["diffs"]
-        labels = data["labels"]
+        with np.load(str(npz_path)) as data:
+            diffs, labels = data["diffs"], data["labels"]
 
         pairs = []
         for i in range(len(diffs)):

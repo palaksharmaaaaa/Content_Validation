@@ -13,13 +13,14 @@ Completely self-contained with zero outside dependencies.
 """
 from __future__ import annotations
 
+import hashlib
 import io
 import logging
+import os
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import cv2
-from core.imageio import imread
 import numpy as np
 from PIL import Image
 import torch
@@ -27,6 +28,7 @@ from torch import nn
 from torch.utils.data import Dataset
 from torchvision import transforms
 
+from core.imageio import imread
 from core.media_library import compute_file_sha256
 from image_detector.config import DEFAULT_CHECKPOINT, IMAGE_SIZE
 from image_detector.features import analyze_fft_radial_power_spectrum, calculate_sensor_noise_profile, calculate_surface_smoothness, compute_ela, detect_inpainting_and_manipulation, detect_screenshot
@@ -168,27 +170,28 @@ class FeatureStore:
             float(h) / max(1.0, float(w)),
         ], dtype=np.float32)
 
-        # 2. Neural Latent Embedding (512-dim vector)
-        if self.backbone is not None:
-            try:
-                rgb_pil = Image.fromarray(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB))
-                tensor = self.transform(rgb_pil).unsqueeze(0).to(self.device)
-                with torch.no_grad():
-                    # Forward through ResNet backbone up to avgpool
-                    x = self.backbone.conv1(tensor)
-                    x = self.backbone.bn1(x)
-                    x = self.backbone.relu(x)
-                    x = self.backbone.maxpool(x)
-                    x = self.backbone.layer1(x)
-                    x = self.backbone.layer2(x)
-                    x = self.backbone.layer3(x)
-                    x = self.backbone.layer4(x)
-                    x = self.backbone.avgpool(x)
-                    embedding = torch.flatten(x, 1).cpu().numpy().squeeze(0).astype(np.float32)
-            except Exception:
-                embedding = np.zeros(512, dtype=np.float32)
-        else:
-            embedding = np.zeros(512, dtype=np.float32)
+        # 2. Neural latent embedding (512-dim). Without one the row is not a feature row at all: a zero vector would train
+        #    and fit the out-of-distribution gate on numbers no image produced, so the image is skipped instead.
+        if self.backbone is None:
+            return None
+        try:
+            rgb_pil = Image.fromarray(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB))
+            tensor = self.transform(rgb_pil).unsqueeze(0).to(self.device)
+            with torch.no_grad():
+                # Forward through ResNet backbone up to avgpool
+                x = self.backbone.conv1(tensor)
+                x = self.backbone.bn1(x)
+                x = self.backbone.relu(x)
+                x = self.backbone.maxpool(x)
+                x = self.backbone.layer1(x)
+                x = self.backbone.layer2(x)
+                x = self.backbone.layer3(x)
+                x = self.backbone.layer4(x)
+                x = self.backbone.avgpool(x)
+                embedding = torch.flatten(x, 1).cpu().numpy().squeeze(0).astype(np.float32)
+        except Exception as exc:
+            logger.warning("Embedding failed (%s: %s); skipping this image", type(exc).__name__, exc)
+            return None
 
         return {
             "embedding": embedding,
@@ -213,10 +216,10 @@ class FeatureStore:
         cached: Dict[str, Tuple[np.ndarray, np.ndarray]] = {}
         if output_path.exists():
             try:
-                data = np.load(str(output_path), allow_pickle=False)
-                if str(data["fingerprint"]) == self.fingerprint:
-                    for h, e, f in zip(data["hashes"], data["embeddings"], data["forensics"]):
-                        cached[str(h)] = (e, f)
+                with np.load(str(output_path), allow_pickle=False) as data:   # closed before the file is replaced below
+                    if str(data["fingerprint"]) == self.fingerprint:
+                        for h, e, f in zip(data["hashes"], data["embeddings"], data["forensics"]):
+                            cached[str(h)] = (e, f)
             except Exception as exc:  # stale/corrupt cache is simply rebuilt
                 logger.info("Ignoring unusable feature cache %s: %s", output_path.name, exc)
 
@@ -237,7 +240,6 @@ class FeatureStore:
                 except OSError:
                     continue
             elif isinstance(item, (bytes, bytearray)):
-                import hashlib
                 content_hash = hashlib.sha256(bytes(item)).hexdigest()
             else:
                 content_hash = ""  # non-hashable in-memory input: always recomputed, never reused
@@ -262,14 +264,17 @@ class FeatureStore:
                 "total_processed": 0,
             }
 
-        np.savez_compressed(
-            str(output_path),
-            embeddings=np.array(embeddings_list, dtype=np.float32),
-            forensics=np.array(forensics_list, dtype=np.float32),
-            labels=np.array(labels_list, dtype=np.int64),
-            hashes=np.array(hashes_list),
-            fingerprint=np.array(self.fingerprint),
-        )
+        partial = output_path.with_name(output_path.name + ".partial")
+        with open(partial, "wb") as handle:                       # written aside, then swapped in: a crash never leaves a half-written cache
+            np.savez_compressed(
+                handle,
+                embeddings=np.array(embeddings_list, dtype=np.float32),
+                forensics=np.array(forensics_list, dtype=np.float32),
+                labels=np.array(labels_list, dtype=np.int64),
+                hashes=np.array(hashes_list),
+                fingerprint=np.array(self.fingerprint),
+            )
+        os.replace(partial, output_path)
         logger.info("Feature bank saved: %s (%d samples, %d reused from cache)", output_path.name, len(labels_list), reused)
         return {
             "success": True,
@@ -283,8 +288,8 @@ class FeatureStore:
     @staticmethod
     def load_feature_bank(npz_path: Union[str, Path]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Loads (embeddings, forensics, labels) from a compressed .npz archive."""
-        data = np.load(str(npz_path), allow_pickle=False)
-        return data["embeddings"], data["forensics"], data["labels"]
+        with np.load(str(npz_path), allow_pickle=False) as data:
+            return data["embeddings"], data["forensics"], data["labels"]
 
 
 class FeatureBankDataset(Dataset):

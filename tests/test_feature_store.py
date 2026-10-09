@@ -95,10 +95,10 @@ class TestZeroRetentionFeatureStore(unittest.TestCase):
         # Sources untouched; archive holds hashes + fingerprint, never filenames.
         self.assertTrue(self.img1_path.exists())
         self.assertTrue(self.img2_path.exists())
-        data = np.load(str(out_npz), allow_pickle=False)
-        self.assertNotIn("filenames", data.files)
-        self.assertEqual(len(data["hashes"][0]), 64)
-        self.assertEqual(str(data["fingerprint"]), store.fingerprint)
+        with np.load(str(out_npz), allow_pickle=False) as data:
+            self.assertNotIn("filenames", data.files)
+            self.assertEqual(len(data["hashes"][0]), 64)
+            self.assertEqual(str(data["fingerprint"]), store.fingerprint)
 
         # Second build reuses every row from the cache.
         again = store.build_feature_bank(samples, out_npz)

@@ -75,10 +75,10 @@ class OODGate:
         if not p.is_file():
             return gate
         try:
-            data = np.load(p)
-            gate.mean = data["mean"]
-            gate.inv_cov = data["inv_cov"]
-            gate.threshold = float(data["threshold"][0])
+            with np.load(p) as data:
+                gate.mean = data["mean"]
+                gate.inv_cov = data["inv_cov"]
+                gate.threshold = float(data["threshold"][0])
         except Exception:  # corrupt stats file -> treat as uncalibrated
             return cls()
         return gate

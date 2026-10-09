@@ -259,9 +259,8 @@ class AudioDetectorTrainer:
         val_split: float = 0.2,
     ) -> Dict[str, Any]:
         """Trains audio model directly from a .npz feature bank with zero raw audio on disk."""
-        data = np.load(str(npz_path))
-        X = data["features"]
-        y = data["labels"]
+        with np.load(str(npz_path)) as data:
+            X, y = data["features"], data["labels"]
         return self.train(X, y, epochs=epochs, batch_size=batch_size, lr=lr, val_split=val_split)
 
 

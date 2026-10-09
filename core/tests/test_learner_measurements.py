@@ -108,3 +108,18 @@ def test_video_trainer_pairs_come_downscaled_and_labelled(tmp_path):
     pairs = tr.prepare_data_from_videos(tmp_path)
     assert pairs and {p[2] for p in pairs} == {0, 1}
     assert pairs[0][0].shape[:2] == (224, 224)
+
+
+def test_feature_store_never_invents_an_embedding(tmp_path, monkeypatch):
+    from image_detector.feature_store import FeatureStore
+
+    store = FeatureStore.__new__(FeatureStore)
+    store.backbone, store.fingerprint, store.device = None, "no-backbone", "cpu"
+    img = np.full((40, 40, 3), 90, np.uint8)
+    assert store.extract_features(img) is None
+    p = tmp_path / "a.png"
+    from PIL import Image
+
+    Image.fromarray(img).save(p)
+    assert store.build_feature_bank([(p, 0)], tmp_path / "bank.npz")["success"] is False
+    assert not (tmp_path / "bank.npz").exists()

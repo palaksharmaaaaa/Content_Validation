@@ -112,6 +112,8 @@ def _default_embedder() -> Optional[Callable[[Path], np.ndarray]]:
 
         def embed(p: Path) -> np.ndarray:
             feats = store.extract_features(str(p))
+            if feats is None:
+                raise ValueError("no embedding could be computed for this image")
             return np.asarray(feats["embedding"], dtype=np.float64)
 
         return embed
