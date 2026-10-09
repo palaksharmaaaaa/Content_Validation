@@ -24,6 +24,8 @@ from image_detector.schemas import ImageValidationResult
 
 logger = logging.getLogger("image_detector.validator")
 
+BLANK_STD = 1.0
+
 
 def _get_file_size_mb(path: Path) -> float:
     try:
@@ -117,6 +119,8 @@ class ImageValidator:
         mean_lum = float(np.mean(gray))
         lum_std = float(np.std(gray))
 
+        # A picture whose channels barely vary (a single flat colour) has nothing to analyse; below ordinary sensor noise (std < 1 of 255).
+        is_blank = float(np.std(img_bgr)) < BLANK_STD
         is_blurry = laplacian_var < 80.0
         is_underexposed = mean_lum < 35.0
         is_overexposed = mean_lum > 225.0
@@ -145,6 +149,7 @@ class ImageValidator:
                 "sharpness_laplacian": round(laplacian_var, 2),
                 "mean_luminance": round(mean_lum, 2),
                 "contrast_std": round(lum_std, 2),
+                "is_blank": is_blank,
                 "is_blurry": is_blurry,
                 "is_underexposed": is_underexposed,
                 "is_overexposed": is_overexposed,

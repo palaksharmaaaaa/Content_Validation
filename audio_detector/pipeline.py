@@ -130,7 +130,7 @@ class AudioForensicPipeline:
 
         decision = generate_final_decision(
             file_validation={"readable": True},
-            quality_result={},
+            quality_result={"is_blank": bool(profile.get("is_silent"))},          # no signal at all: nothing to judge
             audio_result=ai_result,
             content_inventory=scene,
             provenance_result=provenance,

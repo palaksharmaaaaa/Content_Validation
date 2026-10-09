@@ -141,18 +141,12 @@ class _Evidence:
 
 
 def _read_pair(result: Dict[str, Any]) -> Tuple[float, float]:
-    """(ai%, real%) from either {ai_percentage, real_percentage} or {ai_probability} (0-1 or 0-100)."""
-    if "ai_percentage" in result:
-        return float(result.get("ai_percentage", 0.0)), float(result.get("real_percentage", 0.0))
-    if "ai_probability" in result:
-        p = float(result.get("ai_probability", 0.0))
-        ai = p * 100.0 if p <= 1.0 else p
-        return ai, 100.0 - ai
-    return 0.0, 0.0
+    """(ai%, real%) of a modality result, which carries ``ai_percentage`` and ``real_percentage``."""
+    return float(result.get("ai_percentage", 0.0)), float(result.get("real_percentage", 0.0))
 
 
 def _collect_image(ev: _Evidence, ai_result: Optional[Dict[str, Any]]) -> None:
-    if not (ai_result and (ai_result.get("is_available") or "ai_percentage" in ai_result or "ai_probability" in ai_result)):
+    if not (ai_result and (ai_result.get("is_available") or "ai_percentage" in ai_result)):
         return
     ev.img_ai, img_real = _read_pair(ai_result)
     ev.img_spatial_area = float(ai_result.get("ai_spatial_area_pct", 0.0))
@@ -161,8 +155,8 @@ def _collect_image(ev: _Evidence, ai_result: Optional[Dict[str, Any]]) -> None:
     ev.trail.extend(f"[Image Forensic] {cue}" for cue in ai_result.get("forensic_cues", []))
 
 
-def _collect_video(ev: _Evidence, video_result: Optional[Dict[str, Any]], quality_result: Dict[str, Any]) -> None:
-    vid = video_result if (video_result and "ai_percentage" in video_result) else quality_result.get("ai_video_rating", {})
+def _collect_video(ev: _Evidence, video_result: Optional[Dict[str, Any]]) -> None:
+    vid = video_result if (video_result and "ai_percentage" in video_result) else None
     if not vid:
         return
     ev.has_video = True
@@ -171,14 +165,14 @@ def _collect_video(ev: _Evidence, video_result: Optional[Dict[str, Any]], qualit
     ev.vid_dur_pct = float(vid.get("ai_duration_pct", vid.get("details", {}).get("ai_duration_pct", 0.0)))
     ev.probs.append((ev.vid_ai, vid_real, 1.2))  # slightly higher weight for temporal video
     ev.trail.extend(f"[Video Forensic] {cue}" for cue in vid.get("forensic_cues", []))
-    temp = (video_result or {}).get("temporal_consistency") or quality_result.get("temporal_consistency", {})
+    temp = vid.get("temporal_consistency") or {}
     risk = temp.get("temporal_warping_risk", "LOW")
     if risk in ("HIGH", "CRITICAL", "HIGH_WARPING_DETECTED", "SUSPICIOUS_FLICKER"):
         ev.trail.append(f"[Video Temporal] High inter-frame warping risk ({risk}, motion delta: {temp.get('mean_motion_delta', 0.0):.2f})")
 
 
 def _collect_audio(ev: _Evidence, audio_result: Optional[Dict[str, Any]]) -> None:
-    if not (audio_result and (audio_result.get("has_audio_track") or "ai_percentage" in audio_result or "ai_probability" in audio_result)):
+    if not (audio_result and (audio_result.get("has_audio_track") or "ai_percentage" in audio_result)):
         return
     ev.aud_ai, ev.aud_real = _read_pair(audio_result)
     ev.aud_dur_pct = float(audio_result.get("ai_duration_pct", 0.0))
@@ -385,7 +379,7 @@ def generate_final_decision(
             ["File failed initial container reading and format integrity."],
             content_valid=False, attribution=_attribution_stub("Unattributable / File Error"),
         )
-    if quality_result.get("is_blank", False) or quality_result.get("content_status") == "INVALID":
+    if quality_result.get("is_blank", False):
         return _terminal_dossier(
             "BLANK_OR_DEGRADED", "Media exhibits negligible information entropy or blank content.",
             ["Media contains blank, zero-variance, or completely degraded frames."],
@@ -396,7 +390,7 @@ def generate_final_decision(
     prov = provenance_result or {}
     ev = _Evidence()
     _collect_image(ev, ai_result)
-    _collect_video(ev, video_result, quality_result)
+    _collect_video(ev, video_result)
     _collect_audio(ev, audio_result)
     _collect_provenance(ev, prov)
     _collect_cross_modal(ev, cross_modal_result)

@@ -13,7 +13,7 @@
   "prov_nest": "1025410b5b57c6c3998a",
   "prov_sign": "3f97acd0781960afd245",
   "vid": "873ca05ab5881ddc404b",
-  "vid_legacy": "839eee613188e2e70a49"
+  "vid_plain": "839eee613188e2e70a49"
  },
  "kind": "dict"
 }

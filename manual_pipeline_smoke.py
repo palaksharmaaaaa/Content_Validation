@@ -123,7 +123,7 @@ def run_pipeline_test():
 
         # 8. Cross-Modal Consistency Check
         print("\n[Step 8/10] Testing Cross-Modal Consistency Engine...")
-        mock_vid_res = {"ai_video_rating": {"ai_percentage": 25.0}, "temporal_consistency": {"temporal_warping_risk": "LOW"}}
+        mock_vid_res = {"ai_percentage": 25.0, "real_percentage": 70.0, "temporal_consistency": {"temporal_warping_risk": "LOW"}}
         cross_modal_res = evaluate_cross_modal_consistency(mock_vid_res, audio_res, content_img)
         print(f" -> Cross-Modal Status: {cross_modal_res['cross_modal_status']} (Tampering Risk: {cross_modal_res['tampering_risk']})")
         print(f" -> Modality Asymmetry: {cross_modal_res['asymmetry_score']}%")

@@ -9,7 +9,7 @@ IMG_AUTH = {"ai_percentage": 12.0, "real_percentage": 80.0, "undecided_percentag
             "ai_spatial_area_pct": 3.0, "taxonomy_label": "L", "taxonomy_description": "D", "taxonomy_reasons": ["r"]}
 IMG_AI = {"ai_percentage": 91.0, "real_percentage": 5.0, "undecided_percentage": 4.0,
           "taxonomy_state": "FULLY_AI_GENERATED", "label": "LIKELY AI-GENERATED", "neural_enhancer_detected": False}
-IMG_PLAIN = {"ai_probability": 0.7}
+IMG_PLAIN = {"ai_percentage": 70.0, "real_percentage": 30.0}
 VID = {"ai_percentage": 93.0, "real_percentage": 5.0, "forensic_cues": ["f"], "temporal_consistency": {"temporal_warping_risk": "HIGH", "mean_motion_delta": 1.2}}
 AUD = {"ai_percentage": 30.0, "real_percentage": 60.0, "has_audio_track": True, "forensic_cues": ["x"], "ai_duration_pct": 10.0}
 INV = {"entities": {"humans": {"persons_count": 2, "faces_count": 1}, "animals": {"animal_types": ["dog"]}},
@@ -31,7 +31,7 @@ cases = {
     "img_ai": dict(file_validation=OK, quality_result={}, ai_result=IMG_AI, attribution_result=ATTR),
     "img_plain": dict(file_validation=OK, quality_result={}, ai_result=IMG_PLAIN),
     "vid": dict(file_validation=OK, quality_result={}, video_result=VID, audio_result=AUD, cross_modal_result=CM, content_inventory=INV, attribution_result=ATTR),
-    "vid_legacy": dict(file_validation=OK, quality_result={"ai_video_rating": {"ai_percentage": 70.0, "real_percentage": 25.0, "details": {"ai_duration_pct": 40}}}),
+    "vid_plain": dict(file_validation=OK, quality_result={}, video_result={"ai_percentage": 70.0, "real_percentage": 25.0, "ai_duration_pct": 40}),
     "aud": dict(file_validation=OK, quality_result={}, audio_result=AUD, provenance_result=PROV_AIS),
     "prov_nest": dict(file_validation=OK, quality_result={}, video_result=VID, provenance_result=PROV_NEST),
     "prov_sign": dict(file_validation=OK, quality_result={}, video_result=VID, provenance_result=PROV_SIGN),

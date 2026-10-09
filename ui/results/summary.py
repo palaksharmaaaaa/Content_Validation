@@ -28,6 +28,7 @@ _VERDICTS = (
     ("AUTHENTIC_REAL_PHOTOGRAPH", ("LIKELY_AUTHENTIC", "LIKELY REAL"), "success", "Likely a real capture",
      "Camera-like noise and physics, and no sign of generative processing. An estimate, not proof."),
 )
+_NO_CONTENT = ("info", "No usable content", "The file has no variation to analyse (a single flat colour, silence or blank frames), so no verdict is given.")
 _UNDETERMINED = ("info", "Inconclusive", "The evidence is balanced or the file is heavily compressed. The engine does not guess.")
 
 
@@ -35,6 +36,8 @@ def verdict_style(decision: Dict[str, Any]) -> Tuple[str, str, str]:
     """(st level, headline, meaning) for a decision dict."""
     state = decision.get("taxonomy_state")
     status = decision.get("final_status", "UNDETERMINED")
+    if status == "BLANK_OR_DEGRADED":
+        return _NO_CONTENT
     for tax, statuses, level, headline, meaning in _VERDICTS:
         if state == tax or status in (tax, *statuses):
             return level, headline, meaning

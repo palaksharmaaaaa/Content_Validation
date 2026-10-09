@@ -303,6 +303,7 @@ class VideoAIDetector:
             temporal_consistency=temporal_res,
             diffusion_flicker=flicker_res,
             mean_frame_noise=mean_frame_noise,
+            is_blank=bool(analyzed_frames) and not frame_ai_scores,
             temporal_segments=temporal_segments,
             forensic_cues=cues,
             metadata=metadata,
