@@ -126,3 +126,13 @@ def test_a_file_without_exif_records_nothing_it_did_not_say(tmp_path):
     for key in ("flash", "white_balance", "metering_mode", "exposure_bias", "orientation_tag", "color_space_tag"):
         assert exif[key] is None, key
     assert exif["gps_details"]["coordinates_str"] is None
+
+
+def test_narratives_for_blank_and_unmeasured_pictures():
+    from image_detector.explain import generate_newbie_explanation
+
+    prof = {"spatial_geometry": {"width": 64, "height": 64, "aspect_ratio_str": "1:1"}}
+    blank = generate_newbie_explanation("b.png", prof, {}, {}, {"final_status": "BLANK_OR_DEGRADED", "authenticity_probabilities": {}})
+    assert "no verdict" in blank and "camera photograph" not in blank
+    unmeasured = generate_newbie_explanation("u.png", prof, {}, {}, {"final_status": "LIKELY_SYNTHETIC", "authenticity_probabilities": {"p_ai": 80.0, "p_real": 10.0}})
+    assert "not available" in unmeasured and "0.00" not in unmeasured

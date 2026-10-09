@@ -345,14 +345,15 @@ def _palette_phrase(profile_data: Dict[str, Any]) -> str:
     return f", with the palette predominantly shaped by {top_name} tones ({top_hex} covering {top_pct}% of the image)"
 
 
-def _screenshot_takeaway(noise: float) -> str:
+def _screenshot_takeaway(noise: Optional[float]) -> str:
+    grain = f"zero optical camera grain (noise score: **{noise:.2f}**)" if noise is not None else "no optical camera grain measured"
     return (
         f"**The Simple Takeaway:** This image is a **digital screen capture** (a screenshot taken on a smartphone, tablet, or computer monitor), "
         f"not a photograph taken by pointing a physical camera into the real world.\n\n"
         f"**Think of it like this:** When you take a picture of a room with your phone camera, light travels through a curved glass lens and hits a silicon sensor, "
         f"creating subtle shadows, natural softness, and tiny camera grain. But when you take a screenshot, your device's graphics card simply copies the exact grid "
-        f"of pixels currently displayed on the screen — like taking a digital photocopy. Because of this, it has razor-sharp 90-degree UI edges, zero optical camera grain "
-        f"(noise score: **{noise:.2f}**), and standard display proportions."
+        f"of pixels currently displayed on the screen — like taking a digital photocopy. Because of this, it has razor-sharp 90-degree UI edges, {grain}, "
+        f"and standard display proportions."
     )
 
 
@@ -364,8 +365,10 @@ def _undetermined_takeaway(p_ai: float, p_real: float) -> str:
     )
 
 
-def _synthetic_takeaway(p_ai: float, tax_label: str, noise: float, smooth: float) -> str:
+def _synthetic_takeaway(p_ai: float, tax_label: str, noise: Optional[float], smooth: Optional[float]) -> str:
     grain = (
+        "The fine-grain and smoothness measurements were not available for this file, so the lean towards AI comes from other signals; see the Evidence tab."
+        if noise is None or smooth is None else
         f"The fine camera-like grain is low here (noise residual **{noise:.2f}**; photographs from cameras are usually above about 1.2) "
         f"and the surface smoothness index is **{smooth:.2f}**, which fits a picture that was generated or heavily smoothed."
         if noise < 1.20 else
@@ -391,11 +394,12 @@ def _edited_takeaway(tax_label: str, p_real: float) -> str:
     )
 
 
-def _authentic_takeaway(tax_label: str, p_real: float, noise: float) -> str:
+def _authentic_takeaway(tax_label: str, p_real: float, noise: Optional[float]) -> str:
+    grain_clause = f"and this picture has it (noise residual: **{noise:.2f}**) " if noise is not None else "(its level was not measured for this file) "
     return (
         f"**The Simple Takeaway:** This image is **consistent with a plain camera photograph** ({tax_label}); "
         f"the heuristic (uncalibrated) estimate is **{p_real:.1f}%**, which is a ranking aid, not proof.\n\n"
-        f"**What that is based on:** A camera sensor leaves a fine grain in every photo, and this picture has it (noise residual: **{noise:.2f}**) "
+        f"**What that is based on:** A camera sensor leaves a fine grain in every photo, {grain_clause}"
         f"without the extra smoothness or other signs of generation that this tool looks for. That does not rule out a good fake: "
         f"recent generators, careful retouching and re-photographed screens can pass these checks."
     )
@@ -438,8 +442,8 @@ def generate_newbie_explanation(
 
     metrics = ai_result.get("forensic_metrics", {})
     phys = profile_data.get("raw_physical_signals") or {}
-    noise = phys.get("flat_region_noise_mean", metrics.get("noise_residual_mean", 0.0))
-    smooth = phys.get("surface_smoothness_index", metrics.get("surface_smoothness", 0.0))
+    noise = phys.get("flat_region_noise_mean", metrics.get("noise_residual_mean"))
+    smooth = phys.get("surface_smoothness_index", metrics.get("surface_smoothness"))
 
     animals = entities.get("animals", {}).get("animal_types", [])
     vehicles = content.get("vehicles", {}).get("vehicle_types", [])
@@ -464,7 +468,9 @@ def generate_newbie_explanation(
     is_synthetic = "AI" in verdict or "SYNTHETIC" in verdict or p_ai >= 55.0
     is_edited = "EDITED" in verdict or "GRAPHIC" in verdict
     is_screenshot = "SCREENSHOT" in verdict or "SCREEN" in verdict
-    if is_screenshot:
+    if verdict == "BLANK_OR_DEGRADED":
+        body = "**The Simple Takeaway:** The picture has no variation to analyse (a single flat colour or nearly so), so no verdict is given."
+    elif is_screenshot:
         body = _screenshot_takeaway(noise)
     elif verdict == "UNDETERMINED":
         body = _undetermined_takeaway(p_ai, p_real)
