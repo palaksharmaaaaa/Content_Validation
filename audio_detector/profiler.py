@@ -9,9 +9,13 @@ Completely self-contained with zero outside dependencies.
 """
 from __future__ import annotations
 
+import json
 import logging
+import shutil
+import subprocess
+import wave
 from pathlib import Path
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from core.hashing import file_digests
 import numpy as np
@@ -24,6 +28,46 @@ logger = logging.getLogger("audio_detector.profiler")
 def compute_file_hashes(file_path: str | Path) -> Tuple[str, str, int]:
     """Calculates SHA-256, MD5, and exact file size in bytes (shared cached implementation)."""
     return file_digests(file_path)
+
+
+def _positive_int(value: Any) -> Optional[int]:
+    """``int(value)`` when it is a positive number (ffprobe reports numbers as strings, and "0" for "unknown"), else None."""
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number > 0 else None
+
+
+def read_stream_info(path: Path) -> Dict[str, Optional[Any]]:
+    """What the file itself says about its audio stream: ``sample_rate`` (native), ``channels``, ``bit_depth`` and ``codec``.
+
+    Everything the engine analyses is decoded to 16 kHz mono, so those numbers are not the file's. A PCM WAV is read from its own
+    header; any other format is asked of ``ffprobe`` when it is installed. A value that cannot be determined is ``None``: it is
+    shown as "not recorded", never guessed."""
+    info: Dict[str, Optional[Any]] = {"sample_rate": None, "channels": None, "bit_depth": None, "codec": None}
+    if path.suffix.lower() == ".wav":
+        try:
+            with wave.open(str(path), "rb") as w:
+                info.update(sample_rate=w.getframerate(), channels=w.getnchannels(), bit_depth=8 * w.getsampwidth(), codec="pcm")
+            return info
+        except (wave.Error, EOFError, OSError):
+            pass                                          # not plain PCM (float, extensible, damaged): ask ffprobe
+    ffprobe = shutil.which("ffprobe")
+    if not ffprobe:
+        return info
+    try:
+        out = subprocess.run([ffprobe, "-v", "error", "-select_streams", "a:0", "-show_entries",
+                              "stream=sample_rate,channels,bits_per_raw_sample,bits_per_sample,codec_name", "-of", "json", str(path)],
+                             capture_output=True, text=True, timeout=15, check=False)
+        stream = (json.loads(out.stdout or "{}").get("streams") or [{}])[0]
+    except (OSError, subprocess.SubprocessError, ValueError) as exc:
+        logger.debug("ffprobe failed for %s: %s", path, exc)
+        return info
+    bits = next((b for b in (_positive_int(stream.get(k)) for k in ("bits_per_raw_sample", "bits_per_sample")) if b), None)
+    info.update(sample_rate=_positive_int(stream.get("sample_rate")), channels=_positive_int(stream.get("channels")),
+                bit_depth=bits, codec=stream.get("codec_name"))
+    return info
 
 
 def _short_term_dynamic_range_db(samples: np.ndarray, sr: int, frame_ms: float = 50.0) -> float:
@@ -79,6 +123,7 @@ class AudioProfiler:
 
         is_clipped = peak >= 0.999
         is_silent = rms < 1e-4
+        stream = read_stream_info(path)
 
         return {
             "valid": True,
@@ -87,7 +132,14 @@ class AudioProfiler:
             "file_size_mb": round(size_mb, 3),
             "sha256": sha256,
             "md5": md5,
-            "sample_rate": sr,
+            "sample_rate": sr,                                  # the rate the engine analyses at (decoded), not the file's
+            "native_sample_rate": stream["sample_rate"],
+            "channels": stream["channels"],
+            "bit_depth": stream["bit_depth"],
+            "codec": stream["codec"],
+            "geometry": {"sample_rate": stream["sample_rate"], "channels": stream["channels"], "bit_depth": stream["bit_depth"],
+                         "duration_seconds": round(duration, 2)},
+            "cryptographic_hashes": {"sha256": sha256, "md5": md5},
             "duration_seconds": round(duration, 2),
             "total_samples": len(samples),
             "peak_amplitude": round(peak, 3),

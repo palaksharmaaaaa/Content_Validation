@@ -43,7 +43,7 @@ def _render_profile_section_2(v: _ProfileView) -> None:
     tot_pix = v.geom.get("total_pixels", int(w * h))
     mp = v.geom.get("megapixels", round(tot_pix / 1_000_000.0, 2))
     asp_str = v.geom.get("aspect_ratio_str", f"{v.geom.get('aspect_ratio', 0.0)}:1")
-    orient = v.geom.get("orientation", "Landscape")
+    orient = v.geom.get("orientation", "Not recorded")
 
     g1, g2, g3, g4, g5 = st.columns(5)
     g1.metric("Width x Height", f"{w} × {h} px")
@@ -54,8 +54,8 @@ def _render_profile_section_2(v: _ProfileView) -> None:
 
     d1, d2, d3, d4 = st.columns(4)
     d1.metric("DPI Resolution", v.disp.get("dpi_str", "Not recorded"))
-    d2.metric("Bit Depth", v.disp.get("bit_depth", "24-bit (3x8-bit)"))
-    d3.metric("Color Space", v.disp.get("color_space", "Standard sRGB"))
+    d2.metric("Bit Depth", v.disp.get("bit_depth", "Not recorded"))
+    d3.metric("Color Space", v.disp.get("color_space", "Not recorded"))
     d4.metric("Alpha Channel", "Present (RGBA)" if v.disp.get("has_alpha_channel") else "None (RGB)")
 
     st.markdown("---")
@@ -65,23 +65,23 @@ def _render_profile_section_3(v: _ProfileView) -> None:
     """3. Device & Acquisition EXIF Parameters"""
     st.markdown("**Camera and EXIF**")
     has_cam = bool(v.exif.get("camera_make") or v.exif.get("camera_model"))
-    cam_make = v.exif.get("camera_make") or "Unspecified Hardware"
+    cam_make = v.exif.get("camera_make") or ""
     cam_model = v.exif.get("camera_model") or ""
-    lens = v.exif.get("lens_model") or "Standard Lens / Unspecified"
-    shutter = v.exif.get("exposure_time") or "N/A"
-    aperture = v.exif.get("aperture") or "N/A"
-    iso_val = v.exif.get("iso") or "N/A"
-    focal = v.exif.get("focal_length") or "N/A"
-    flash = v.exif.get("flash", "Not Fired")
-    wb = v.exif.get("white_balance", "Auto")
-    gps_str = v.exif.get("gps_details", {}).get("coordinates_str", "Not Embedded")
-    software = v.exif.get("software") or "None (Clean Exif)"
-    date_str = v.exif.get("date_time") or "Unknown / Stripped"
+    lens = v.exif.get("lens_model") or "not recorded"
+    shutter = v.exif.get("exposure_time") or "Not recorded"
+    aperture = v.exif.get("aperture") or "Not recorded"
+    iso_val = v.exif.get("iso") or "Not recorded"
+    focal = v.exif.get("focal_length") or "Not recorded"
+    flash = v.exif.get("flash") or "not recorded"
+    wb = v.exif.get("white_balance") or "not recorded"
+    gps_str = (v.exif.get("gps_details") or {}).get("coordinates_str") or "not recorded"
+    software = v.exif.get("software") or "not recorded"
+    date_str = v.exif.get("date_time") or "not recorded"
 
     if has_cam:
         st.success(f"Camera hardware EXIF tags present (unauthenticated): **{cam_make} {cam_model}** | Lens: `{lens}`")
     else:
-        st.info("ℹ No embedded hardware camera EXIF tags found (characteristic of stripped web/social uploads or AI synthesis).")
+        st.info("ℹ No camera make or model is recorded in this file. Many platforms strip it, so its absence says nothing either way.")
 
     e1, e2, e3, e4, e5 = st.columns(5)
     e1.metric("Shutter Speed", shutter)
@@ -143,7 +143,7 @@ def _render_profile_section_5(v: _ProfileView) -> None:
         palette_html += "</div>"
         st.markdown(palette_html, unsafe_allow_html=True)
     else:
-        st.write("• Color palette extracted.")
+        st.write("• No dominant colours were extracted.")
 
     st.markdown("---")
 
@@ -154,7 +154,7 @@ def _render_profile_section_6(v: _ProfileView) -> None:
     prnu_noise = v.phys.get("prnu_noise_mean", 0.0)
     flat_noise = v.phys.get("flat_region_noise_mean", prnu_noise)
     smoothness = v.phys.get("surface_smoothness_index", 0.0)
-    fft_alpha = v.phys.get("fft_decay_alpha", 2.05)
+    fft_alpha = v.phys.get("fft_decay_alpha")
     edges_pct = v.phys.get("canny_edge_pct", 0.0)
     dark_lines = v.phys.get("dark_line_art_pct", 0.0)
     sharpness = v.phys.get("laplacian_sharpness_var", 0.0)
@@ -163,13 +163,12 @@ def _render_profile_section_6(v: _ProfileView) -> None:
     n1.metric("PRNU Sensor Noise", f"{prnu_noise:.3f}")
     n2.metric("Flat-Region Noise", f"{flat_noise:.3f}")
     n3.metric("Surface Smoothness", f"{smoothness:.3f}")
-    n4.metric("Fourier Decay Alpha", f"{fft_alpha:.2f}")
+    n4.metric("Fourier Decay Alpha", "Not measured" if fft_alpha is None else f"{fft_alpha:.2f}")
     n5.metric("Focus / Sharpness Var", f"{sharpness:.1f}")
 
     st.caption(
         f"• **Edge Density:** `{edges_pct:.2f}%` Canny edges | "
-        f"• **Contour Density:** `{dark_lines:.2f}%` dark line-art strokes | "
-        f"• **Optical Shot Noise Baseline:** `{'Preserved (>= 1.20)' if flat_noise >= 1.20 else 'Synthetic / Denoiser Absence (< 1.20)'}`"
+        f"• **Contour Density:** `{dark_lines:.2f}%` dark line-art strokes"
     )
 
 
@@ -214,28 +213,33 @@ def render_pre_analysis_specifications(
             render_section(v)
 
 
+def _or_unknown(value: Any, text: str) -> str:
+    """The formatted value, or 'Not recorded' when the profile has none (a missing measurement is never shown as zero)."""
+    return "Not recorded" if value in (None, "") else text
+
+
 def render_video_stream_specs(profile_data: Dict[str, Any]) -> None:
     """Show the video stream profile (codec, resolution, frame rate, duration)."""
     st.markdown("#### Stream profile")
-    st.caption("Low-level container headers, stream geometry, frame rates, codecs, and cryptographic hashes extracted before running detection.")
-    geom = profile_data.get("geometry", {})
-    codec = profile_data.get("codec_and_container", {})
-    hashes = profile_data.get("cryptographic_hashes", {})
+    st.caption("Container and stream facts read from the file before any detector runs.")
+    geom = profile_data.get("geometry") or {}
+    codec = profile_data.get("codec_and_container") or {}
+    hashes = profile_data.get("cryptographic_hashes") or {}
 
+    w_val, h_val = geom.get("width"), geom.get("height")
+    fps, dur, frames = geom.get("fps"), geom.get("duration_seconds"), geom.get("total_frames")
     c1, c2, c3, c4 = st.columns(4)
-    w_val = geom.get("width", 0)
-    h_val = geom.get("height", 0)
-    c1.metric("Dimensions", f"{w_val} × {h_val} px" if w_val else "N/A")
-    c2.metric("Frame Rate", f"{geom.get('fps', 0.0):.1f} fps")
-    c3.metric("Duration", f"{geom.get('duration_seconds', 0.0):.2f} s")
-    c4.metric("Total Frames", f"{geom.get('total_frames', 0):,}")
+    c1.metric("Dimensions", f"{w_val} × {h_val} px" if w_val and h_val else "Not recorded")
+    c2.metric("Frame Rate", f"{fps:.1f} fps" if fps else "Not recorded")
+    c3.metric("Duration", f"{dur:.2f} s" if dur else "Not recorded")
+    c4.metric("Total Frames", f"{frames:,}" if frames else "Not recorded")
 
     c5, c6, c7, c8 = st.columns(4)
-    c5.metric("Container / Codec", f"{codec.get('container', 'MP4')} • {codec.get('codec', 'AVC')}")
-    c6.metric("Aspect Ratio", geom.get("aspect_ratio", "N/A"))
-    c7.metric("Bitrate", f"{codec.get('bitrate_kbps', 0.0):.0f} kbps" if codec.get('bitrate_kbps') else "N/A")
-    sha_str = hashes.get("sha256", "")
-    c8.metric("SHA-256", sha_str or "N/A")
+    c5.metric("Container / Codec", f"{codec.get('container') or 'Not recorded'} • {codec.get('codec') or 'Not recorded'}")
+    c6.metric("Aspect Ratio", _or_unknown(geom.get("aspect_ratio"), f"{geom.get('aspect_ratio')}:1"))
+    bitrate = codec.get("bitrate_kbps")
+    c7.metric("Average bitrate", f"{bitrate:,.0f} kbps" if bitrate else "Not recorded", help="File size divided by duration (video and audio together).")
+    c8.metric("SHA-256", hashes.get("sha256") or "Not recorded")
 
     st.markdown("---")
 
@@ -243,24 +247,25 @@ def render_video_stream_specs(profile_data: Dict[str, Any]) -> None:
 def render_audio_signal_specs(item: Dict[str, Any], profile_data: Dict[str, Any]) -> None:
     """Show the audio signal profile (format, sample rate, levels, dynamics)."""
     st.markdown("#### Signal profile")
-    st.caption("Low-level container headers, sampling rates, bit depths, dynamic ranges, and cryptographic hashes extracted before running detection.")
-    sr_val = item.get("sr") or profile_data.get("sample_rate", 44100)
-    dur_val = item.get("duration") or profile_data.get("duration", 0.0)
-    ch_val = profile_data.get("channels", 1)
-    fmt_val = profile_data.get("format", "WAV")
+    st.caption("Stream facts read from the file's own header, and level measurements from the decoded signal.")
+    sr_val = profile_data.get("native_sample_rate")
+    dur_val = item.get("duration") or profile_data.get("duration_seconds")
+    ch_val = profile_data.get("channels")
+    fmt_val = profile_data.get("format")
 
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Sampling Rate", f"{sr_val:,} Hz")
-    c2.metric("Duration", f"{dur_val:.2f} s")
-    c3.metric("Channels", "Stereo (2 Ch)" if ch_val == 2 else "Mono (1 Ch)")
-    c4.metric("Format / Container", str(fmt_val).upper())
+    c1.metric("Sampling Rate", f"{sr_val:,} Hz" if sr_val else "Not recorded")
+    c2.metric("Duration", f"{dur_val:.2f} s" if dur_val else "Not recorded")
+    c3.metric("Channels", {1: "Mono (1 channel)", 2: "Stereo (2 channels)"}.get(ch_val, f"{ch_val} channels" if ch_val else "Not recorded"))
+    c4.metric("Format / Container", str(fmt_val).upper() if fmt_val else "Not recorded")
 
-    hashes = profile_data.get("cryptographic_hashes", {})
-    sha_str = hashes.get("sha256", "")
+    sha_str = (profile_data.get("cryptographic_hashes") or {}).get("sha256") or profile_data.get("sha256", "")
+    bits = profile_data.get("bit_depth")
+    rms, dyn = profile_data.get("rms_energy"), profile_data.get("dynamic_range_db")
     c5, c6, c7, c8 = st.columns(4)
-    c5.metric("Bit Depth", profile_data.get("bit_depth", "16-bit PCM"))
-    c6.metric("RMS Energy", f"{profile_data.get('rms_energy', 0.0):.4f}" if profile_data.get('rms_energy') else "Normal")
-    c7.metric("Dynamic Range", f"{profile_data.get('dynamic_range_db', 0.0):.1f} dB" if profile_data.get('dynamic_range_db') else "Standard")
-    c8.metric("SHA-256", sha_str or "N/A")
+    c5.metric("Bit Depth", f"{bits}-bit" if bits else "Not recorded")
+    c6.metric("RMS Energy", f"{rms:.4f}" if rms is not None else "Not recorded")
+    c7.metric("Dynamic Range", f"{dyn:.1f} dB" if dyn is not None else "Not recorded")
+    c8.metric("SHA-256", sha_str or "Not recorded")
 
     st.markdown("---")

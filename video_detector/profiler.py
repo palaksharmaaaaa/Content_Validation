@@ -61,6 +61,10 @@ class VideoProfiler:
         codec = "".join([chr((fourcc_int >> 8 * i) & 0xFF) for i in range(4)]).strip()
         if not codec:
             codec = path.suffix.lstrip(".").upper()
+        aspect = round(float(width) / max(1.0, float(height)), 2)
+        # Average bitrate of the whole file (video and audio together) = size / duration; unknown when the duration is.
+        bitrate_kbps = round(size_bytes * 8 / duration / 1000.0, 1) if duration > 0 else None
+        container = path.suffix.lstrip(".").upper()
 
         return {
             "valid": True,
@@ -74,7 +78,13 @@ class VideoProfiler:
             "total_frames": total_frames,
             "width": width,
             "height": height,
-            "aspect_ratio": round(float(width) / max(1.0, float(height)), 2),
+            "aspect_ratio": aspect,
             "codec": codec,
-            "container_format": path.suffix.lstrip(".").upper(),
+            "container_format": container,
+            # The nested blocks below are what the dossier, the explanation and the result page read.
+            "geometry": {"width": width, "height": height, "fps": round(fps, 2), "duration_seconds": round(duration, 2),
+                         "total_frames": total_frames, "aspect_ratio": aspect},
+            "codec_and_container": {"container": container, "codec": codec, "bitrate_kbps": bitrate_kbps},
+            "cryptographic_hashes": {"sha256": sha256, "md5": md5},
+            "bitrate_kbps": bitrate_kbps,
         }

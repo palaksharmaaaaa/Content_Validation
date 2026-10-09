@@ -29,6 +29,15 @@ class _AudioDossierContext(NamedTuple):
     cutoff_hz: Any
 
 
+def _channels_text(channels: Any) -> str:
+    """Channel layout from the file's own header, or 'Not recorded' when it could not be read."""
+    if channels == 1:
+        return "Mono (1 channel)"
+    if channels == 2:
+        return "Stereo (2 channels)"
+    return f"{channels} channels" if isinstance(channels, int) and channels > 2 else "Not recorded"
+
+
 def _audio_dimension_1(c: _AudioDossierContext) -> Dict[str, Any]:
     """1. Hardware & Container Provenance"""
     has_c2pa = c.prov.get("c2pa_present", False)
@@ -51,7 +60,7 @@ def _audio_dimension_2(c: _AudioDossierContext) -> Dict[str, Any]:
         "description": "Examines sampling rate, bit depth, duration, and channel spatial configuration.",
         "sample_rate": f"{c.sr:,} Hz" if c.sr else "Not recorded",
         "duration": f"{c.duration:.2f} seconds",
-        "channels": f"{'Stereo (2 Ch)' if c.channels == 2 else 'Mono (1 Ch)'}",
+        "channels": _channels_text(c.channels),
         "bit_depth": c.prof.get("bit_depth") or "Not recorded",
     }
     return d2
@@ -201,9 +210,10 @@ def build_audio_nine_dimensions_dossier(
     inv = content_inventory or {}
     acoustics = aud_res.get("acoustic_features", {})
 
-    sr = prof.get("sample_rate", geom.get("sample_rate"))
-    duration = prof.get("duration", geom.get("duration_seconds", 0.0))
-    channels = prof.get("channels", geom.get("channels", 1))
+    # The file's own sample rate, channel count and duration (the profile's "sample_rate" is the 16 kHz the engine decodes to).
+    sr = prof.get("native_sample_rate") or geom.get("sample_rate")
+    duration = prof.get("duration_seconds") or geom.get("duration_seconds") or 0.0
+    channels = prof.get("channels") or geom.get("channels")
 
     cutoff_hz = float(acoustics.get("cutoff_freq_hz", 0.0))
     c = _AudioDossierContext(prof=prof, geom=geom, aud_res=aud_res, prov=prov, attr=attr, inv=inv, acoustics=acoustics, sr=sr, duration=duration, channels=channels, cutoff_hz=cutoff_hz)
@@ -228,8 +238,8 @@ def generate_audio_newbie_explanation(
     decision: Dict[str, Any],
 ) -> str:
     """Generates an engaging, accessible narrative explanation of audio forensics for non-technical users."""
-    duration = profile_data.get("duration", 0.0)
-    sr = profile_data.get("sample_rate")
+    duration = profile_data.get("duration_seconds") or 0.0
+    sr = profile_data.get("native_sample_rate")
 
     probs = decision.get("authenticity_probabilities", {})
     p_ai = probs.get("p_ai", 0.0)
