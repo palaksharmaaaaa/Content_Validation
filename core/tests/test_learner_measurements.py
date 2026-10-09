@@ -1,4 +1,5 @@
 """Feedback moves calibration only by what was measured; it never falls back to a stand-in number."""
+import numpy as np
 import pytest
 
 from audio_detector.learner import AudioSelfImprover
@@ -86,3 +87,24 @@ def test_audio_training_and_scoring_use_the_same_feature_vector(tmp_path):
     assert list(X[0]) == pytest.approx(feature_vector(f), abs=1e-3)
     report = tr.export_feature_dataset(tmp_path, tmp_path / "f.npz")
     assert report["success"] and report["samples_processed"] == 2
+
+
+def test_video_trainer_pairs_come_downscaled_and_labelled(tmp_path):
+    import cv2
+
+    from video_detector.trainer import VideoDetectorTrainer
+
+    rng = np.random.default_rng(0)
+    for sub in ("ai_generated", "real"):
+        (tmp_path / sub).mkdir()
+        w = cv2.VideoWriter(str(tmp_path / sub / "v.mp4"), cv2.VideoWriter_fourcc(*"mp4v"), 10, (320, 240))
+        for _ in range(20):
+            w.write(rng.integers(0, 256, (240, 320, 3), dtype=np.uint8))
+        w.release()
+    tr = VideoDetectorTrainer.__new__(VideoDetectorTrainer)
+    from video_detector.extractor import VideoFrameExtractor
+
+    tr.extractor = VideoFrameExtractor(max_frames=20)
+    pairs = tr.prepare_data_from_videos(tmp_path)
+    assert pairs and {p[2] for p in pairs} == {0, 1}
+    assert pairs[0][0].shape[:2] == (224, 224)

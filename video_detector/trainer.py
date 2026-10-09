@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 from pathlib import Path
 import random
 from typing import Any, Dict, List, Optional, Tuple
@@ -28,6 +29,17 @@ from video_detector.extractor import VideoFrameExtractor
 from video_detector.models.backbone import VideoTemporalTransitionModel
 
 logger = logging.getLogger("video_detector.trainer")
+
+
+def _labelled(root: Path, per_class: Optional[int] = None) -> List[Tuple[Path, int]]:
+    """Videos under ``root/ai_generated`` (label 0) and ``root/real`` (label 1), in a stable order, at most ``per_class`` of each."""
+    out: List[Tuple[Path, int]] = []
+    for sub_dir, label in (("ai_generated", 0), ("real", 1)):
+        folder = root / sub_dir
+        if folder.is_dir():
+            found = [p for p in sorted(folder.rglob("*")) if p.is_file() and p.suffix.lower() in SUPPORTED_EXTENSIONS]
+            out += [(p, label) for p in (found[:per_class] if per_class else found)]
+    return out
 
 
 class FrameTransitionDataset(Dataset):
@@ -75,32 +87,11 @@ class VideoDetectorTrainer:
     def prepare_data_from_videos(
         self, dataset_dir: Path | str, max_videos_per_class: int = 50
     ) -> List[Tuple[np.ndarray, np.ndarray, int]]:
-        """Extracts consecutive frame pairs from video datasets with subdirectories 'ai_generated' and 'real'."""
-        dataset_path = Path(dataset_dir)
-        ai_dir = dataset_path / "ai_generated"
-        real_dir = dataset_path / "real"
-
-        ai_vids = [p for p in ai_dir.rglob("*") if p.suffix.lower() in SUPPORTED_EXTENSIONS][:max_videos_per_class] if ai_dir.exists() else []
-        real_vids = [p for p in real_dir.rglob("*") if p.suffix.lower() in SUPPORTED_EXTENSIONS][:max_videos_per_class] if real_dir.exists() else []
-
-        pairs: List[Tuple[np.ndarray, np.ndarray, int]] = []
-
-        # AI videos (label 0)
-        for vid in ai_vids:
-            frames, _, _ = self.extractor.extract_sampled_frames(vid, max_frames=12)
-            for i in range(len(frames) - 1):
-                pairs.append((frames[i], frames[i+1], 0))
-
-        # Real videos (label 1)
-        for vid in real_vids:
-            frames, _, _ = self.extractor.extract_sampled_frames(vid, max_frames=12)
-            for i in range(len(frames) - 1):
-                pairs.append((frames[i], frames[i+1], 1))
-
-        random.seed(42)
-        random.shuffle(pairs)
-
-        logger.info("Extracted %d frame transition pairs from %d videos.", len(pairs), len(ai_vids) + len(real_vids))
+        """Consecutive frame pairs from a folder with ``ai_generated/`` and ``real/`` (at most ``max_videos_per_class`` of each), shuffled with a fixed seed."""
+        samples = _labelled(Path(dataset_dir), max_videos_per_class)
+        pairs = self.pairs_from_samples(samples)
+        random.Random(42).shuffle(pairs)
+        logger.info("Extracted %d frame transition pairs from %d videos.", len(pairs), len(samples))
         return pairs
 
     def train(
@@ -196,7 +187,9 @@ class VideoDetectorTrainer:
             "model_state_dict": self.model.state_dict(),
             "class_to_idx": {"ai_generated": 0, "real": 1},
         }
-        torch.save(checkpoint, save_path)
+        partial = save_path.with_name(save_path.name + ".partial")
+        torch.save(checkpoint, partial)
+        os.replace(partial, save_path)                            # a crash mid-write never leaves a half-written checkpoint
         logger.info("Saved trained Video AI detector checkpoint to %s", save_path)
 
     def export_feature_dataset(
@@ -211,36 +204,16 @@ class VideoDetectorTrainer:
         output_path = Path(output_npz_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        dataset_path = Path(dataset_dir)
-        ai_dir = dataset_path / "ai_generated"
-        real_dir = dataset_path / "real"
-
-        ai_vids = [p for p in ai_dir.rglob("*") if p.suffix.lower() in SUPPORTED_EXTENSIONS][:max_videos_per_class] if ai_dir.exists() else []
-        real_vids = [p for p in real_dir.rglob("*") if p.suffix.lower() in SUPPORTED_EXTENSIONS][:max_videos_per_class] if real_dir.exists() else []
-
         diff_tensors: List[np.ndarray] = []
         labels: List[int] = []
         total_source_bytes = 0
 
-        for vid in ai_vids:
-            if vid.is_file():
-                total_source_bytes += vid.stat().st_size
+        for vid, label in _labelled(Path(dataset_dir), max_videos_per_class):
+            total_source_bytes += vid.stat().st_size
             frames, _, _ = self.extractor.extract_sampled_frames(vid, max_frames=12)
-            for i in range(len(frames) - 1):
-                diff = cv2.absdiff(frames[i], frames[i+1])
-                diff_small = cv2.resize(diff, (112, 112))
-                diff_tensors.append(diff_small)
-                labels.append(0)
-
-        for vid in real_vids:
-            if vid.is_file():
-                total_source_bytes += vid.stat().st_size
-            frames, _, _ = self.extractor.extract_sampled_frames(vid, max_frames=12)
-            for i in range(len(frames) - 1):
-                diff = cv2.absdiff(frames[i], frames[i+1])
-                diff_small = cv2.resize(diff, (112, 112))
-                diff_tensors.append(diff_small)
-                labels.append(1)
+            for first, second in zip(frames, frames[1:]):
+                diff_tensors.append(cv2.resize(cv2.absdiff(first, second), (112, 112)))
+                labels.append(label)
 
         if not diff_tensors:
             return {"success": False, "error": "No valid video frame transitions extracted."}
