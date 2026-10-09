@@ -16,7 +16,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from core.forensics.bytescan import read_windows
+from core.forensics.bytescan import extract_xmp, read_windows  # noqa: F401  (extract_xmp is re-exported to the checks)
 
 logger = logging.getLogger(__name__)
 
@@ -144,17 +144,6 @@ def png_text_fields(chunks: List[Tuple[str, bytes]], max_len: int = 200_000) -> 
         except Exception:  # malformed chunk: skip, never raise
             continue
     return out
-
-
-def extract_xmp(data: bytes) -> str:
-    start = data.find(b"<x:xmpmeta")
-    if start == -1:
-        start = data.find(b"<?xpacket")
-    if start == -1:
-        return ""
-    end = data.find(b"</x:xmpmeta>", start)
-    end = end + len(b"</x:xmpmeta>") if end != -1 else min(len(data), start + 262144)
-    return data[start:end].decode("utf-8", errors="replace")
 
 
 def collect_text_fields(path: Path) -> Dict[str, str]:

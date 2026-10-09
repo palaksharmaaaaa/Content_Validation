@@ -10,9 +10,10 @@ core.forensics.gates: pre-analysis gates that short-circuit the pipeline.
 from __future__ import annotations
 
 import struct
+import threading
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, Set, Union
+from typing import Any, Dict, Optional, Set, Tuple, Union
 
 from core.forensics.config import hardblock_file
 from core.hashing import file_sha256
@@ -32,14 +33,30 @@ class GateResult:
         return {"status": self.status, "sha256": self.sha256, "triggered": self.triggered}
 
 
+_blocklist_cache: Dict[Tuple[str, int, int], Set[str]] = {}
+_blocklist_lock = threading.Lock()
+
+
 def _load_blocklist(path: Path) -> Optional[Set[str]]:
-    if not path.is_file():
+    """The SHA-256 entries of the block list (None when there is no list). A large list is parsed once and again only if the file changes."""
+    try:
+        stat = path.stat()
+    except OSError:
         return None
+    key = (str(path), stat.st_mtime_ns, stat.st_size)
+    with _blocklist_lock:
+        cached = _blocklist_cache.get(key)
+    if cached is not None:
+        return cached
     out: Set[str] = set()
     for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
-        token = line.strip().split()[0].lower() if line.strip() and not line.strip().startswith("#") else ""
+        line = line.strip()
+        token = line.split()[0].lower() if line and not line.startswith("#") else ""
         if len(token) == 64 and set(token) <= _HEX:
             out.add(token)
+    with _blocklist_lock:
+        _blocklist_cache.clear()
+        _blocklist_cache[key] = out
     return out
 
 

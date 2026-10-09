@@ -7,7 +7,7 @@ library). Unfitted, it reports NOT_CALIBRATED -- it never invents a threshold.
 from __future__ import annotations
 
 import logging
-
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
@@ -65,7 +65,10 @@ class OODGate:
             raise ValueError("Cannot save an uncalibrated OODGate")
         p = Path(path)
         p.parent.mkdir(parents=True, exist_ok=True)
-        np.savez_compressed(p, mean=self.mean, inv_cov=self.inv_cov, threshold=np.array([self.threshold]))
+        partial = p.with_name(p.name + ".partial")
+        with open(partial, "wb") as handle:                       # written aside, then swapped in: a crash never leaves half a file
+            np.savez_compressed(handle, mean=self.mean, inv_cov=self.inv_cov, threshold=np.array([self.threshold]))
+        os.replace(partial, p)
 
     @classmethod
     def load(cls, path: Union[str, Path]) -> "OODGate":
