@@ -111,9 +111,9 @@ class AudioForensicPipeline:
         path = Path(audio_path)
         gates = gates if gates is not None else check_audio_gates(path)
 
-        profile = self.profiler.profile_audio(path)
-        provenance = self.provenance.analyze_provenance(path)
         samples, sr, dur = decoded if decoded is not None else self.validator.extract_pcm_samples(path)
+        profile = self.profiler.profile_audio(path, decoded=(samples, sr, dur))      # one decode serves the profile and the detector
+        provenance = self.provenance.analyze_provenance(path)
 
         # Dimension checks (integrity / container / signal) -> capped score terms
         dim_analysis = AudioDimensionAnalysis(path, profile=profile, provenance=provenance, samples=(samples, sr, dur))

@@ -112,3 +112,21 @@ def test_compressed_audio_stream_facts_come_from_ffprobe(tmp_path):
     info = read_stream_info(mp3)
     assert info["sample_rate"] == 48000 and info["channels"] == 2 and info["codec"] == "mp3"
     assert info["bit_depth"] is None                                   # lossy: there is no bit depth to report, and none is invented
+
+
+def test_the_audio_file_is_decoded_once_per_analysis(tmp_path, monkeypatch):
+    from audio_detector.tests.audio_fixtures import tone, write_wav
+    from audio_detector.validator import AudioValidator
+    from services.forensic_service import ForensicService
+
+    p = write_wav(tmp_path / "once.wav", tone(2.0, noise=0.05, seed=2))
+    calls = []
+    original = AudioValidator.extract_pcm_samples
+
+    def counting(self, path):
+        calls.append(str(path))
+        return original(self, path)
+
+    monkeypatch.setattr(AudioValidator, "extract_pcm_samples", counting)
+    ForensicService.get_instance().audio_pipeline.analyze(p)
+    assert len(calls) == 1

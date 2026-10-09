@@ -93,8 +93,9 @@ class AudioProfiler:
     def __init__(self):
         self.validator = AudioValidator()
 
-    def profile_audio(self, file_path: str | Path) -> Dict[str, Any]:
-        """Extracts complete signal specifications and hashes from an audio file."""
+    def profile_audio(self, file_path: str | Path, decoded: Optional[Tuple[Any, int, float]] = None) -> Dict[str, Any]:
+        """Extracts complete signal specifications and hashes from an audio file. ``decoded`` is the (samples, rate, seconds) the
+        caller already decoded; passing it avoids decoding the file a second time."""
         path = Path(file_path)
         if not path.is_file():
             return {"valid": False, "error": f"File not found: {path}"}
@@ -102,7 +103,7 @@ class AudioProfiler:
         sha256, md5, size_bytes = compute_file_hashes(path)
         size_mb = size_bytes / (1024.0 * 1024.0)
 
-        samples, sr, duration = self.validator.extract_pcm_samples(path)
+        samples, sr, duration = decoded if decoded is not None else self.validator.extract_pcm_samples(path)
         if samples is None or len(samples) == 0:
             return {
                 "valid": False,
