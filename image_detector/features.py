@@ -1083,7 +1083,7 @@ def detect_spectral_modality(
 ) -> Dict[str, Any]:
     """
     Classifies electromagnetic spectrum and sensor capture modality:
-    - Visible Spectrum Bayer RGB (Standard color photography)
+    - Visible light, colour RGB (standard colour image)
     - True Monochrome / Greyscale (Zero chrominance across all pixels)
     - Near-Infrared / Astrophotography / Deep Space (NIR / Narrowband H-alpha emissions)
     - Medical / Multispectral / Scientific (X-ray, CT, Ultrasound, Electron Microscopy)
@@ -1096,7 +1096,7 @@ def detect_spectral_modality(
 
     if img_bgr is None or img_bgr.size == 0:
         return {
-            "sensor_spectrum": "Visible Spectrum (Bayer RGB)",
+            "sensor_spectrum": "Visible light (colour RGB)",
             "is_monochrome": False,
             "color_cast": "Neutral",
             "details": "Standard RGB default",
@@ -1115,10 +1115,10 @@ def detect_spectral_modality(
     if mean_chroma_diff < 0.85:
         # Check if medical or standard greyscale
         return {
-            "sensor_spectrum": "Monochrome / Grayscale Sensor",
+            "sensor_spectrum": "Monochrome / greyscale",
             "is_monochrome": True,
             "color_cast": "Monochrome",
-            "details": f"True monochrome capture (mean chrominance channel delta: {mean_chroma_diff:.2f})",
+            "details": f"Monochrome image (mean chrominance channel delta: {mean_chroma_diff:.2f})",
         }
 
     # 2. Astrophotography / Narrowband Emission or Thermal
@@ -1135,11 +1135,11 @@ def detect_spectral_modality(
             "details": "Narrowband / Deep Sky astrophotographical emission signature",
         }
 
-    # 3. Standard Bayer RGB
+    # 3. Standard colour RGB
     return {
-        "sensor_spectrum": "Visible Spectrum (Bayer RGB)",
+        "sensor_spectrum": "Visible light (colour RGB)",
         "is_monochrome": False,
         "color_cast": "Full RGB",
-        "details": f"Visible light trichromatic Bayer capture (mean chrominance delta: {mean_chroma_diff:.2f})",
+        "details": f"Colour image (mean chrominance delta: {mean_chroma_diff:.2f})",
     }
 

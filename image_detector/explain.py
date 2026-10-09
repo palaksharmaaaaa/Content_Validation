@@ -242,7 +242,7 @@ def _dimension_8(c: _DossierContext) -> Dict[str, Any]:
     d8 = {
         "dimension_id": 8,
         "title": "Dimension 8: Electromagnetic Spectrum & Acquisition Modalities",
-        "description": "Identifies imaging wavelength: Visible Bayer RGB (400-700nm), Monochrome, Infrared (NIR/LWIR), UV, Biomedical (X-Ray/SEM), or Satellite/SAR.",
+        "description": "Identifies imaging wavelength: visible colour RGB (400-700nm), Monochrome, Infrared (NIR/LWIR), UV, Biomedical (X-Ray/SEM), or Satellite/SAR.",
         "sensor_spectrum": spectrum,
         "color_channels": c.profile_data.get("channels", 3),
         "diagnosis": f"Acquisition modality operates in {spectrum}",

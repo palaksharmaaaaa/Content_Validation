@@ -269,7 +269,7 @@ class ImageForensicPipeline:
             "iptc_digital_source_type": r.nine_dimensions["dimension_1"]["iptc_digital_source_type"],
             "primary_genre": content_res.get("purpose_and_depiction", {}).get("primary_genre") or ai_res.get("subject_genre") or "Not determined",
             "visual_medium": ai_res.get("visual_medium", "Photographic Capture"),
-            "sensor_spectrum": ai_res.get("sensor_spectrum", "Visible Spectrum (Bayer RGB)"),
+            "sensor_spectrum": ai_res.get("sensor_spectrum", "Visible light (colour RGB)"),
             "document_layout": content_res.get("purpose_and_depiction", {}).get("document_layout", "None (Standard Visual Content)"),
         }
         return {

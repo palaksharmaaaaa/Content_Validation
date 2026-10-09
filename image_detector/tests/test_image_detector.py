@@ -390,9 +390,9 @@ class TestImageDetector(unittest.TestCase):
         cv2.imwrite(str(mono_path), mono_img)
         res_mono = detect_spectral_modality(mono_path, mono_img)
         self.assertTrue(res_mono["is_monochrome"])
-        self.assertEqual(res_mono["sensor_spectrum"], "Monochrome / Grayscale Sensor")
+        self.assertEqual(res_mono["sensor_spectrum"], "Monochrome / greyscale")
 
-        # Color Bayer RGB test
+        # Colour RGB test
         color_img = np.zeros((128, 128, 3), dtype=np.uint8)
         color_img[:, :, 0] = 50   # Blue
         color_img[:, :, 1] = 120  # Green
@@ -401,7 +401,7 @@ class TestImageDetector(unittest.TestCase):
         cv2.imwrite(str(color_path), color_img)
         res_color = detect_spectral_modality(color_path, color_img)
         self.assertFalse(res_color["is_monochrome"])
-        self.assertEqual(res_color["sensor_spectrum"], "Visible Spectrum (Bayer RGB)")
+        self.assertEqual(res_color["sensor_spectrum"], "Visible light (colour RGB)")
 
     def test_procedural_cgi_synthetic_state(self):
         from image_detector.scoring import evaluate_taxonomy_classification

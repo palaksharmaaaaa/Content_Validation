@@ -280,7 +280,7 @@ def _stage_declared_or_art_synthesis(c: _TaxonomyInputs, S: Any) -> _Outcome:
     if (c.is_digital_art and c.art.get("visual_medium") == "Digital 3D CGI / AI Neural Painting"
             and not c.has_watermark and not c.has_ai_iptc and not c.has_pure_ai_meta):
         reasons.append("Deterministic procedural 3D ray-traced rendering / CGI synthetic model detected")
-        reasons.append(c.art.get("details", "Absence of natural Bayer sensor PRNU noise"))
+        reasons.append(c.art.get("details", "Absence of natural camera-sensor noise"))
         return S.PROCEDURAL_CGI_SYNTHETIC, reasons
 
     if c.has_watermark:

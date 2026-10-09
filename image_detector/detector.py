@@ -483,7 +483,7 @@ class ImageAIDetector:
         )
         prediction = _PREDICTION_BY_TAXONOMY.get(tax_state, "LIKELY REAL")
         visual_medium = sig.art.get("visual_medium", "Photographic Capture")
-        sensor_spectrum = sig.spectral.get("sensor_spectrum", "Visible Spectrum (Bayer RGB)")
+        sensor_spectrum = sig.spectral.get("sensor_spectrum", "Visible light (colour RGB)")
 
         return ImageForensicResult(
             is_available=True,

@@ -129,7 +129,7 @@ class ImageForensicResult:
     # Multi-Dimensional Taxonomy Categorization (Dimensions B, C, D, E)
     subject_genre: Optional[str] = None
     visual_medium: str = "Photographic Capture"
-    sensor_spectrum: str = "Visible Spectrum (Bayer RGB)"
+    sensor_spectrum: str = "Visible light (colour RGB)"
     document_layout: str = "None (Standard Visual Content)"
     watermark_detected: bool = False
     watermark_details: Optional[str] = None
