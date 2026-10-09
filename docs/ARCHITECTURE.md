@@ -105,7 +105,7 @@ Package-specific points:
 | `bands.py`, `calibration_report.py` | the five probability bands; accuracy, false-positive rate, Brier score and ECE from labelled pairs. |
 | `forensics/` | `schemas.py` (Finding, DimensionReport), `registry.py` (isolated checks), `gates.py`, `ood.py`, `bytescan.py`, `jsonl_index.py` (re-use indexes read once per change), `reporting.py`, `config.py`. |
 | `hashing.py`, `imageio.py` | one streaming file-digest implementation; image reading that works for every file name and bit depth. |
-| `frame_scorer.py`, `ffmpeg.py`, `c2pa.py` | the one hardened way to call ffmpeg/ffprobe (file and pipe protocols only, no stdin, bounded decode) and the one PCM decoder; the one C2PA presence scan used by all three packages. |
+| `frame_scorer.py`, `ffmpeg.py`, `c2pa.py` | the one per-frame scorer; the one hardened way to call ffmpeg/ffprobe (file and pipe protocols only, no stdin, bounded decode) and the one PCM decoder; the one C2PA presence scan used by all three packages. |
 | `batch.py`, `benchmark.py` | the sequential headless batch runner (one failing file never stops the run; results bucketed by exact status) and the labelled-folder scorer (rank-based ROC-AUC, abstentions and failures reported). |
 | `shared_results.py`, `provenance_view.py`, `metrics_util.py` | result shapes and label rules shared by the three packages; the single nested provenance shape used by the decision layer and the UI; conversion of metric values to JSON-safe scalars. |
 | `filecache.py`, `lazy.py`, `logging_filters.py` | a memoiser for expensive per-file parses that invalidates when the file changes; lazy package re-exports so light imports do not load torch; a filter for one benign Windows asyncio log line. |
