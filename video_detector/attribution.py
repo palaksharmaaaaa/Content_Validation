@@ -164,8 +164,11 @@ def _score_vendor_signatures(provenance_data: Dict[str, Any], scores: Dict[str, 
 
 
 def _score_temporal_characteristics(temporal_data: Dict[str, Any], scores: Dict[str, float]) -> None:
-    m_var = float(temporal_data.get("temporal_consistency", {}).get("motion_variance", 0.0))
-    if m_var > 140.0:
+    raw_var = (temporal_data.get("temporal_consistency") or {}).get("motion_variance")
+    m_var = float(raw_var) if raw_var is not None else None            # None: too few frames, no reading
+    if m_var is None:
+        pass
+    elif m_var > 140.0:
         scores["luma_dream_machine"] += 0.25
         scores["runway_gen"] += 0.20
     elif 5.0 < m_var < 30.0:

@@ -276,7 +276,7 @@ def generate_video_newbie_explanation(
     measured = []
     if temporal.get("temporal_warping_risk") is not None:
         measured.append(f"frame-to-frame motion variance **{temporal.get('motion_variance', 0.0)}** (risk: {str(temporal['temporal_warping_risk']).replace('_', ' ').lower()})")
-    if flicker:
+    if flicker.get("has_diffusion_flicker") is not None:
         measured.append("**diffusion-style flicker " + ("was" if flicker.get("has_diffusion_flicker") else "was not") + " seen** between frames")
     if video_result.get("mean_frame_noise") is not None:
         measured.append(f"average fine-grain level per frame **{video_result['mean_frame_noise']}**")

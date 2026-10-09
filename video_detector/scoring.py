@@ -34,8 +34,8 @@ def calculate_video_epistemic_uncertainty(prob_ai: float) -> float:
 
 def pool_video_temporal_score(
     mean_frame_ai: float,
-    warping_risk: str,
-    has_flicker: bool,
+    warping_risk: Optional[str],
+    has_flicker: Optional[bool],
     temporal_weights: Optional[Dict[str, float]] = None,
     sensitivity_offset: float = 0.0,
     neural_prob: Optional[float] = None,
@@ -60,6 +60,11 @@ def pool_video_temporal_score(
     w_warp = weights.get("motion_warping", DEFAULT_WEIGHT_WARPING)
     w_flick = weights.get("diffusion_flicker", DEFAULT_WEIGHT_FLICKER)
     w_neural = weights.get("neural_temporal", 0.35) if neural_prob is not None else 0.0
+    # A cue that could not be measured (too few frames) takes no part: its weight goes to the cues that were.
+    if warping_risk is None:
+        w_warp = 0.0
+    if has_flicker is None:
+        w_flick = 0.0
 
     # Normalize weights
     total_w = w_frame + w_warp + w_flick + w_neural

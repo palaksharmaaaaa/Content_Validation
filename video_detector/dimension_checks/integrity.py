@@ -55,7 +55,10 @@ def _declared_end(ctx_path, head: bytes, size: int) -> Tuple[str, Optional[int],
             return fmt, size, extras
         return fmt, top["end_offset"], extras
     if fmt == "avi" and len(head) >= 8:
-        return fmt, 8 + int.from_bytes(head[4:8], "little"), {"truncated": False}
+        riff_size = int.from_bytes(head[4:8], "little")
+        if riff_size in (0, 0xFFFFFFFF):
+            return fmt, None, {}                  # a streamed AVI leaves the size unset: there is no declared end to compare
+        return fmt, 8 + riff_size, {"truncated": False}
     return fmt, None, {}
 
 

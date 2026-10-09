@@ -25,6 +25,18 @@ from video_detector.config import (
 )
 
 
+MIN_MOTION_SAMPLES = 3     # frame-to-frame differences needed before their variance means anything
+
+# Returned when there were not enough comparable frames: no reading at all, never a calm "LOW".
+_UNMEASURED_MOTION = {
+    "mean_motion_delta": None,
+    "motion_variance": None,
+    "temporal_warping_risk": None,
+    "is_anomalous_motion": False,
+    "measured": False,
+}
+
+
 def compute_interframe_motion_variance(
     frames: List[np.ndarray],
     temporal_step: int = 1,
@@ -37,12 +49,7 @@ def compute_interframe_motion_variance(
     staccato warping, sudden object appearance/disappearance, or unnatural stillness.
     """
     if len(frames) < 2:
-        return {
-            "mean_motion_delta": 0.0,
-            "motion_variance": 0.0,
-            "temporal_warping_risk": "LOW",
-            "is_anomalous_motion": False,
-        }
+        return dict(_UNMEASURED_MOTION)
 
     deltas: List[float] = []
     norm_factor = math.sqrt(max(1, temporal_step))
@@ -61,13 +68,8 @@ def compute_interframe_motion_variance(
             deltas.append(normalized_delta)
         prev_gray = gray
 
-    if not deltas:
-        return {
-            "mean_motion_delta": 0.0,
-            "motion_variance": 0.0,
-            "temporal_warping_risk": "LOW",
-            "is_anomalous_motion": False,
-        }
+    if len(deltas) < MIN_MOTION_SAMPLES:
+        return dict(_UNMEASURED_MOTION)
 
     mean_delta = float(np.mean(deltas))
     var_delta = float(np.var(deltas))
@@ -99,6 +101,7 @@ def compute_interframe_motion_variance(
         "motion_variance": round(var_delta, 2),
         "temporal_warping_risk": warping_risk,
         "is_anomalous_motion": is_anomalous,
+        "measured": True,
     }
 
 
@@ -109,7 +112,7 @@ def detect_diffusion_flickering(frames: List[np.ndarray]) -> Dict[str, Any]:
     where details shimmer unnaturally across frames.
     """
     if len(frames) < 3:
-        return {"flicker_score": 0.0, "has_diffusion_flicker": False, "frames_compared": len(frames)}
+        return {"flicker_score": None, "has_diffusion_flicker": None, "frames_compared": len(frames), "measured": False}
 
     luminances = [float(np.mean(cv2.cvtColor(f, cv2.COLOR_BGR2GRAY))) for f in frames]
     lum_diffs = np.abs(np.diff(luminances))
@@ -133,6 +136,7 @@ def detect_diffusion_flickering(frames: List[np.ndarray]) -> Dict[str, Any]:
         "mean_lum_jump": round(mean_lum_jump, 2),
         "has_diffusion_flicker": has_flicker,
         "frames_compared": len(frames),
+        "measured": True,
     }
 
 

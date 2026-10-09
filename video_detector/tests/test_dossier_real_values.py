@@ -157,3 +157,19 @@ def test_a_vendor_name_must_stand_alone_in_the_file(tmp_path):
     named.write_bytes(b"\x00\x00\x00\x18ftypmp42" + b"\x00" * 8 + b" encoder=Made with Google Veo \x00" + b"\x00" * 50)
     out2 = VideoProvenanceValidator().analyze_provenance(named)
     assert "google veo" in out2["vendor_signatures_found"]
+
+
+def test_too_few_frames_is_no_reading_and_takes_no_part_in_the_score():
+    from video_detector.scoring import pool_video_temporal_score
+    from video_detector.temporal import compute_interframe_motion_variance, detect_diffusion_flickering
+
+    rng = np.random.default_rng(2)
+    frames = [rng.integers(0, 256, (48, 64, 3), dtype=np.uint8) for _ in range(3)]            # 2 differences: not enough
+    t = compute_interframe_motion_variance(frames)
+    assert t["temporal_warping_risk"] is None and t["motion_variance"] is None and t["measured"] is False
+    f = detect_diffusion_flickering(frames[:2])
+    assert f["has_diffusion_flicker"] is None and f["flicker_score"] is None
+    only_frames, _ = pool_video_temporal_score(0.7, None, None)
+    assert only_frames == 0.7                                                  # the frame score alone, not diluted by invented 'calm' cues
+    calm, _ = pool_video_temporal_score(0.7, "LOW", False)
+    assert calm < only_frames
