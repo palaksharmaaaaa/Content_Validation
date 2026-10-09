@@ -72,6 +72,8 @@ def walk_riff(path: Path, max_chunks: int = 4096) -> Dict[str, Any]:
             cid = hdr[:4].decode("latin-1")
             (csize,) = struct.unpack("<I", hdr[4:8])
             out["chunks"].append({"id": cid, "offset": pos, "size": csize})
+            if cid == "data" and csize == 0xFFFFFFFF:
+                break                              # a streamed WAV leaves the data size unset: the data simply runs to the end of the file
             end = pos + 8 + csize
             if end > size:
                 if cid == "data":
@@ -188,8 +190,6 @@ def parse_id3v2(data: bytes) -> Optional[Dict[str, Any]]:
             _desc, _, val = payload[4:].partition(term)
             text[f"COMM:{_decode_text(enc, _desc)}"] = _decode_text(enc, val).strip("\x00 ")
         i += hdr_len + size
-        if size == 0 and fid_s == "":
-            break
     footer = 10 if (major == 4 and flags & 0x10) else 0
     return {
         "version": f"2.{major}.{rev}", "flags": flags, "tag_size": tag_size, "frames": frames, "text": text,

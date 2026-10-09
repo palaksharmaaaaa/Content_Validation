@@ -182,3 +182,19 @@ def test_a_streamed_wav_with_an_unset_riff_size_is_not_called_truncated(tmp_path
     p.write_bytes(bytes(raw))
     f = check_trailing_data(CheckContext(path=p, modality="audio"))
     assert f.status.name == "NOT_APPLICABLE"
+
+
+def test_a_streamed_wav_data_chunk_is_not_reported_as_truncated(tmp_path):
+    import struct
+    import wave
+
+    from audio_detector.dimension_checks._common import walk_riff
+
+    p = tmp_path / "s2.wav"
+    with wave.open(str(p), "wb") as w:
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(8000); w.writeframes(b"\x01\x00" * 800)
+    raw = bytearray(p.read_bytes())
+    i = raw.index(b"data")
+    raw[i + 4:i + 8] = struct.pack("<I", 0xFFFFFFFF)
+    p.write_bytes(bytes(raw))
+    assert walk_riff(p)["issues"] == []
