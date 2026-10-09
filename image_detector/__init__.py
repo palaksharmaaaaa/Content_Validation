@@ -28,7 +28,6 @@ _LAZY_EXPORTS = {
     "FeatureStore": ("image_detector.feature_store", "FeatureStore"),
     "ImageAIDetector": ("image_detector.detector", "ImageAIDetector"),
     "ImageBatchProcessor": ("image_detector.batch", "ImageBatchProcessor"),
-    "ImageBenchmarkMetrics": ("image_detector.schemas", "ImageBenchmarkMetrics"),
     "ImageBenchmarkSuite": ("image_detector.benchmarks", "ImageBenchmarkSuite"),
     "ImageContentAnalyzer": ("image_detector.content", "ImageContentAnalyzer"),
     "ImageDetectorTrainer": ("image_detector.trainer", "ImageDetectorTrainer"),
@@ -110,6 +109,5 @@ __all__ = [
     "ImageForensicResult",
     "ImageValidationResult",
     "ImageFeedbackRecord",
-    "ImageBenchmarkMetrics",
     "ImageTaxonomyState",
 ]

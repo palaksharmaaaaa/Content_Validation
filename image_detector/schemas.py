@@ -250,28 +250,3 @@ class ImageFeedbackRecord:
             "metrics": self.metrics,
             "notes": self.notes,
         }
-
-
-@dataclass
-class ImageBenchmarkMetrics:
-    """Evaluation metrics over benchmark test sets."""
-    total_images: int = 0
-    accuracy: float = 0.0
-    precision: float = 0.0
-    recall: float = 0.0
-    f1_score: float = 0.0
-    roc_auc: float = 0.0
-    mean_latency_ms: float = 0.0
-    confusion_matrix: Dict[str, int] = field(default_factory=dict)
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "total_images": self.total_images,
-            "accuracy": round(self.accuracy, 4),
-            "precision": round(self.precision, 4),
-            "recall": round(self.recall, 4),
-            "f1_score": round(self.f1_score, 4),
-            "roc_auc": round(self.roc_auc, 4),
-            "mean_latency_ms": round(self.mean_latency_ms, 2),
-            "confusion_matrix": self.confusion_matrix,
-        }

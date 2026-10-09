@@ -23,7 +23,6 @@ from core.lazy import install_lazy_exports
 _LAZY_EXPORTS = {
     "AudioAIDetector": ("audio_detector.detector", "AudioAIDetector"),
     "AudioBatchProcessor": ("audio_detector.batch", "AudioBatchProcessor"),
-    "AudioBenchmarkMetrics": ("audio_detector.schemas", "AudioBenchmarkMetrics"),
     "AudioBenchmarkSuite": ("audio_detector.benchmarks", "AudioBenchmarkSuite"),
     "AudioClassifierNet": ("audio_detector.models.backbone", "AudioClassifierNet"),
     "AudioContentAnalyzer": ("audio_detector.content", "AudioContentAnalyzer"),
@@ -90,5 +89,4 @@ __all__ = [
     "AudioForensicResult",
     "AudioValidationResult",
     "AudioFeedbackRecord",
-    "AudioBenchmarkMetrics",
 ]

@@ -165,26 +165,3 @@ class VideoFeedbackRecord:
             "metrics": self.metrics,
             "notes": self.notes,
         }
-
-
-@dataclass
-class VideoBenchmarkMetrics:
-    """Benchmark evaluation metrics for video datasets."""
-    total_videos: int = 0
-    total_frames_analyzed: int = 0
-    video_accuracy: float = 0.0
-    video_f1_score: float = 0.0
-    video_roc_auc: float = 0.0
-    mean_latency_seconds: float = 0.0
-    confusion_matrix: Dict[str, int] = field(default_factory=dict)
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "total_videos": self.total_videos,
-            "total_frames_analyzed": self.total_frames_analyzed,
-            "video_accuracy": round(self.video_accuracy, 4),
-            "video_f1_score": round(self.video_f1_score, 4),
-            "video_roc_auc": round(self.video_roc_auc, 4),
-            "mean_latency_seconds": round(self.mean_latency_seconds, 2),
-            "confusion_matrix": self.confusion_matrix,
-        }

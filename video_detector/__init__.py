@@ -27,7 +27,6 @@ _LAZY_EXPORTS = {
     "CrossModalConsistencyEngine": ("video_detector.cross_modal", "CrossModalConsistencyEngine"),
     "VideoAIDetector": ("video_detector.detector", "VideoAIDetector"),
     "VideoBatchProcessor": ("video_detector.batch", "VideoBatchProcessor"),
-    "VideoBenchmarkMetrics": ("video_detector.schemas", "VideoBenchmarkMetrics"),
     "VideoBenchmarkSuite": ("video_detector.benchmarks", "VideoBenchmarkSuite"),
     "VideoContentAnalyzer": ("video_detector.content", "VideoContentAnalyzer"),
     "VideoDetectorTrainer": ("video_detector.trainer", "VideoDetectorTrainer"),
@@ -99,5 +98,4 @@ __all__ = [
     "VideoForensicResult",
     "VideoValidationResult",
     "VideoFeedbackRecord",
-    "VideoBenchmarkMetrics",
 ]

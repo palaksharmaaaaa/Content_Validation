@@ -170,26 +170,3 @@ class AudioFeedbackRecord:
             "features": self.features,
             "notes": self.notes,
         }
-
-
-@dataclass
-class AudioBenchmarkMetrics:
-    """Benchmark evaluation metrics for audio datasets."""
-    total_audio_files: int = 0
-    total_duration_seconds: float = 0.0
-    audio_accuracy: float = 0.0
-    audio_f1_score: float = 0.0
-    audio_roc_auc: float = 0.0
-    mean_latency_seconds: float = 0.0
-    confusion_matrix: Dict[str, int] = field(default_factory=dict)
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "total_audio_files": self.total_audio_files,
-            "total_duration_seconds": round(self.total_duration_seconds, 2),
-            "audio_accuracy": round(self.audio_accuracy, 4),
-            "audio_f1_score": round(self.audio_f1_score, 4),
-            "audio_roc_auc": round(self.audio_roc_auc, 4),
-            "mean_latency_seconds": round(self.mean_latency_seconds, 3),
-            "confusion_matrix": self.confusion_matrix,
-        }
