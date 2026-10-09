@@ -66,16 +66,16 @@ class ImageTaxonomyState:
 
     DESCRIPTIONS = {
         AUTHENTIC_REAL_PHOTOGRAPH: (
-            "Authentic camera or mobile-phone photographic capture containing natural sensor noise, "
-            "coherent optical properties, genuine lens depth-of-field, and unmanipulated physical geometry and EXIF metadata."
+            "Looks like a camera or mobile-phone photograph: it has camera-like fine grain and shows none of the signs of generation "
+            "or manipulation that this tool checks for. This is a heuristic reading, not proof of origin."
         ),
         AUTHENTIC_EDITED: (
-            "Genuine photographic capture subjected to conventional software edits (cropping, canvas resizing, "
-            "background removal/cutout, color grading, or Canva/Photoshop graphic composition) without generative AI synthesis."
+            "Looks like a photograph that went through conventional software edits (cropping, canvas resizing, "
+            "background removal/cutout, color grading, or Canva/Photoshop graphic composition) with no sign of generative AI synthesis."
         ),
         AUTHENTIC_RECAPTURED_SCREEN: (
-            "Authentic optical camera capture of a physical display screen (CRT/LCD/OLED), exhibiting characteristic "
-            "spatial-frequency Moiré interference patterns and subpixel matrix grid geometry."
+            "Looks like a camera photograph of a physical display screen (CRT/LCD/OLED), showing the "
+            "spatial-frequency Moiré interference patterns such re-photography leaves."
         ),
         AI_ENHANCED_COMPOSITE: (
             "Real base capture augmented or modified via neural models (generative inpainting, "
@@ -83,15 +83,15 @@ class ImageTaxonomyState:
         ),
         FULLY_AI_GENERATED: (
             "Synthesized end-to-end via generative diffusion or autoregressive transformer models (Midjourney, DALL-E, "
-            "Stable Diffusion, Flux, Imagen), confirmed by structural artifacts, synthetic watermarks/emblems, or algorithmic IPTC metadata."
+            "Stable Diffusion, Flux, Imagen), supported by the pixel statistics, a visible watermark, or algorithmic IPTC metadata (the metadata is unauthenticated)."
         ),
         PROCEDURAL_CGI_SYNTHETIC: (
             "Synthetic imagery generated via deterministic procedural 3D ray-tracing/rasterization engines (Blender, Unreal Engine, "
             "Maya) characterized by mathematical geometric polygons and non-stochastic texture shaders."
         ),
         AUTHENTIC_SCREENSHOT: (
-            "Digital screen capture from a mobile phone, tablet, laptop, or desktop monitor displaying authentic OS/app UI, "
-            "documents, or unmanipulated photographic content."
+            "Digital screen capture from a mobile phone, tablet, laptop, or desktop monitor showing OS/app UI, "
+            "documents, or photographic content with no sign of AI manipulation."
         ),
         AI_ENHANCED_SCREENSHOT: (
             "Digital screen capture containing or displaying media modified by AI tools or generative enhancement."
