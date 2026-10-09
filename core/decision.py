@@ -186,11 +186,11 @@ def _collect_provenance(ev: _Evidence, prov: Dict[str, Any]) -> None:
     c2pa = prov.get("c2pa") or prov  # nested (UI validator) or flat (package provenance) shape
     ev.c2pa = c2pa
     exif = prov.get("exif", {})
-    if c2pa.get("c2pa_present") or prov.get("c2pa_status") in ("VERIFIED", "AI_DECLARED"):
-        if c2pa.get("ai_declaration") or prov.get("c2pa_status") == "AI_DECLARED":
+    if c2pa.get("c2pa_present"):
+        if c2pa.get("ai_declaration"):
             ev.trail.append("[C2PA Provenance] Manifest explicitly asserts generative AI creation.")
             ev.probs.append((98.0, 1.0, 2.0))
-        elif c2pa.get("is_signed") or prov.get("c2pa_status") == "VERIFIED":
+        elif c2pa.get("is_signed"):
             ev.trail.append("[C2PA Provenance] Content Credentials signature markers present (not cryptographically verified; no score credit).")
     elif exif.get("ai_signature_found") or prov.get("ai_signature_found"):
         details = exif.get("signature_details") or prov.get("signature_details") or "AI signature detected"

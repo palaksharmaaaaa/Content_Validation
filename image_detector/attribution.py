@@ -238,10 +238,10 @@ def _score_declarations(
         cues.append("Embedded metadata declares: 'Made with Google AI' (trainedAlgorithmicMedia; unauthenticated label)")
     if "topaz photo ai" in software or "topaz" in creator:
         scores["topaz_photo_ai"] += 1.5
-        cues.append(f"Metadata confirms enhancement software: Topaz Photo AI ({meta.get('software') or meta.get('creator_tool')})")
+        cues.append(f"Metadata names the enhancement software: Topaz Photo AI ({meta.get('software') or meta.get('creator_tool')})")
     if "canva" in software or "canva" in creator:
         scores["canva"] += 1.5
-        cues.append(f"Metadata confirms Canva graphic design export: {meta.get('creator_tool') or 'Canva'}")
+        cues.append(f"Metadata names Canva as the export tool: {meta.get('creator_tool') or 'Canva'}")
     return watermark
 
 
