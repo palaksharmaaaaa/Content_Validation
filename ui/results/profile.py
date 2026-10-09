@@ -195,7 +195,7 @@ def render_pre_analysis_specifications(
     geom = profile_data.get("spatial_geometry") or profile_data.get("pixel_specifications") or {}
     disp = profile_data.get("display_attributes") or {}
     pcol = profile_data.get("pixel_color_profile") or {}
-    exif = profile_data.get("exif_device_details") or profile_data.get("provenance_metadata") or {}
+    exif = profile_data.get("exif_device_details") or {}
     phys = profile_data.get("raw_physical_signals") or {}
     file_id = profile_data.get("file_identity") or {}
 
