@@ -78,9 +78,9 @@ class VideoContentAnalyzer:
         elif blue_ratio > 0.22:
             setting = "Outdoor / Open Sky or Coast"
         else:
-            setting = "Indoor or Studio Scene"
+            setting = "Not determined"
 
-        genre = "Portrait / Presentation" if human_count == 1 else ("Group / Social Scene" if human_count > 1 else "Cinematic / General Scene")
+        genre = "Portrait / Presentation" if human_count == 1 else ("Group / Social Scene" if human_count > 1 else "Not determined")
 
         return {
             "living_entities": {

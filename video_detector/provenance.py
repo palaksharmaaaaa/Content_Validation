@@ -6,6 +6,7 @@ Completely self-contained with zero outside dependencies.
 from __future__ import annotations
 
 import logging
+import re
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -23,11 +24,17 @@ KNOWN_VIDEO_ATOMS = [b"ftyp", b"moov", b"mdat", b"udta", b"meta", b"mvhd", b"tra
 # container-signature matching reads this field, not container_atoms.
 KNOWN_VIDEO_GENERATOR_SIGNATURES = [
     "bytedance", "jimeng", "kling", "kuaishou", "runway", "gen-2", "gen-3",
-    "sora", "openai", "veo", "deepmind", "luma", "dream machine", "pika labs",
+    "sora", "openai", "google veo", "veo 2", "veo 3", "deepmind", "luma", "dream machine", "pika labs",
     "hailuo", "minimax",
     "tongyi", "wanxiang", "hunyuan", "vidu", "shengshu", "pixverse",
     "movie gen", "moviegen", "firefly", "nova reel", "novareel",
 ]
+
+
+def _whole_word(word: str, text: str) -> bool:
+    """True if ``word`` occurs in ``text`` not glued to other letters or digits. A short name such as "veo" or "dji" turns up by
+    chance inside compressed video data; only a standalone occurrence, as in a metadata string, counts."""
+    return re.search(r"(?<![a-z0-9])" + re.escape(word) + r"(?![a-z0-9])", text) is not None
 
 
 class VideoProvenanceValidator:
@@ -39,10 +46,10 @@ class VideoProvenanceValidator:
     @staticmethod
     def _container_camera_brand(head: bytes) -> Optional[str]:
         """Camera/device brand string found in the first container bytes (unauthenticated; None if absent)."""
-        low = head.lower()
-        for brand in (b"Apple", b"GoPro", b"DJI", b"Sony", b"Canon", b"Nikon", b"Samsung", b"Panasonic"):
-            if brand.lower() in low:
-                return brand.decode("ascii")
+        low = head.decode("latin-1").lower()
+        for brand in ("Apple", "GoPro", "DJI", "Sony", "Canon", "Nikon", "Samsung", "Panasonic"):
+            if _whole_word(brand.lower(), low):
+                return brand
         return None
 
     def scan_c2pa(self, file_path: str | Path) -> Dict[str, Any]:
@@ -74,9 +81,9 @@ class VideoProvenanceValidator:
                     if atom in head or atom in tail:
                         atoms_found.append(atom.decode("ascii", errors="ignore"))
 
-            text_blob = (head + tail).lower()
+            text_blob = (head + tail).decode("latin-1").lower()
             for sig in KNOWN_VIDEO_GENERATOR_SIGNATURES:
-                if sig.encode("ascii") in text_blob:
+                if _whole_word(sig, text_blob):
                     vendor_signatures_found.append(sig)
         except Exception as exc:
             logger.debug("Container atom inspection bypassed for %s: %s", path, exc)
@@ -87,7 +94,7 @@ class VideoProvenanceValidator:
             cues.append("C2PA Content Credentials markers found in video container (presence only; not cryptographically verified).")
         elif atoms_found:
             status = "STANDARD_CONTAINER_ATOMS"
-            cues.append(f"Standard video atoms verified: {', '.join(atoms_found)}")
+            cues.append(f"Standard video atoms found: {', '.join(atoms_found)}")
         else:
             status = "UNKNOWN_CONTAINER"
             cues.append("Non-standard or stripped container atoms.")

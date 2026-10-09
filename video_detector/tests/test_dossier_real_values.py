@@ -137,3 +137,23 @@ def test_a_real_analysis_carries_the_share_of_the_timeline_flagged(tmp_path):
     w.release()
     r = VideoAIDetector().analyze_video(p)
     assert r["ai_duration_pct"] is not None and 0.0 <= r["ai_duration_pct"] <= 100.0
+
+
+def test_a_vendor_name_must_stand_alone_in_the_file(tmp_path):
+    import os
+
+    from video_detector.provenance import VideoProvenanceValidator
+
+    rng = np.random.default_rng(11)
+    noise = bytearray(rng.integers(0, 256, 200_000, dtype=np.uint8).tobytes())
+    noise[5000:5003] = b"VEO"                      # three letters inside compressed data
+    noise[7000:7003] = b"dji"
+    noise[9000:9004] = b"kling"[:4]                # a fragment glued to other bytes
+    p = tmp_path / "noise.mp4"
+    p.write_bytes(bytes(noise))
+    out = VideoProvenanceValidator().analyze_provenance(p)
+    assert out["vendor_signatures_found"] == [] and out["camera_make"] is None
+    named = tmp_path / "named.mp4"
+    named.write_bytes(b"\x00\x00\x00\x18ftypmp42" + b"\x00" * 8 + b" encoder=Made with Google Veo \x00" + b"\x00" * 50)
+    out2 = VideoProvenanceValidator().analyze_provenance(named)
+    assert "google veo" in out2["vendor_signatures_found"]
