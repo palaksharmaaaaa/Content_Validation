@@ -136,3 +136,14 @@ def test_narratives_for_blank_and_unmeasured_pictures():
     assert "no verdict" in blank and "camera photograph" not in blank
     unmeasured = generate_newbie_explanation("u.png", prof, {}, {}, {"final_status": "LIKELY_SYNTHETIC", "authenticity_probabilities": {"p_ai": 80.0, "p_real": 10.0}})
     assert "not available" in unmeasured and "0.00" not in unmeasured
+
+
+def test_software_needles_match_whole_words_only(tmp_path):
+    from image_detector.attribution import ImageModelAttributionEngine
+
+    Image.new("RGB", (70, 70)).save(tmp_path / "a.png")
+    eng = ImageModelAttributionEngine()
+    other = eng.attribute_image(tmp_path / "a.png", provenance_data={"metadata": {"software": "Maxaimag Studio 3"}})
+    assert other["model_key"] == "unknown"
+    named = eng.attribute_image(tmp_path / "a.png", provenance_data={"metadata": {"software": "xAI Grok Imagine"}})
+    assert named["model_key"] == "grok_imagine"

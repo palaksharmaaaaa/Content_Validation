@@ -24,6 +24,7 @@ calibration yet. Add real calibration for them only once backed by actual sample
 """
 from __future__ import annotations
 import logging
+import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -248,7 +249,7 @@ def _score_declarations(
 def _score_software_header(provenance_data: Dict[str, Any], software: str, scores: Dict[str, float], cues: List[str]) -> bool:
     declared = False
     for needles, key, weight, cue in _SOFTWARE_SIGNATURES:
-        if any(n in software for n in needles):
+        if any(re.search(r"(?<![a-z0-9])" + re.escape(n) + r"(?![a-z0-9])", software) for n in needles):      # whole words: "xai" must not match inside another name
             scores[key] += weight
             cues.append(cue.format(sw=software))
             declared = True
