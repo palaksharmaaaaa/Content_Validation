@@ -40,3 +40,11 @@ def test_a_big_picture_without_a_scanner_frame_is_not_a_scan():
     framed = big.copy()
     framed[:60] = 10
     assert detect_scanned_photo("x.png", framed, {"has_exif": True})["is_scanned"] is True
+
+
+def test_screenshot_is_decided_from_the_picture_not_its_name():
+    from image_detector.features import detect_screenshot
+
+    rng = np.random.default_rng(1)
+    photo = rng.integers(0, 256, (300, 400, 3), dtype=np.uint8)
+    assert detect_screenshot("Screenshot_2026.png", photo, {})["is_screenshot"] is False

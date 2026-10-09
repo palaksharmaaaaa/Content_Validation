@@ -741,11 +741,6 @@ def generate_spatial_manipulation_heatmap(img_bgr: np.ndarray) -> Dict[str, Any]
     }
 
 
-_SCREENSHOT_FILENAME_MARKERS = (
-    "screenshot", "screen_shot", "screen-shot", "screencap", "capture_", "snip", "screen shot",
-)
-
-
 def _device_from_aspect(orientation: str, aspect_ratio: float) -> Optional[str]:
     """Device class guessed from aspect ratio and orientation when no canonical resolution matched.
 
@@ -828,7 +823,7 @@ def detect_screenshot(
     in any orientation (Portrait, Landscape, Square).
     Analyzes:
     1. Canonical display resolutions and aspect ratios (19.5:9, 20:9, 16:9, 16:10, 4:3, etc.)
-    2. Filename signatures ('screenshot', 'screen_shot', 'screencap', 'snip', 'capture_')
+    2. The capture tool named in the EXIF Software tag
     3. UI bar edge profiles (top status bar with battery/wifi icons, bottom gesture navigation pill/buttons, desktop taskbars)
     4. Discrete UI color profiles (large areas of pure uniform background color and anti-aliased font glyphs)
     5. Absence of optical camera sensor noise (PRNU) in UI regions
@@ -867,24 +862,17 @@ def detect_screenshot(
         ui_elements.append(f"canonical_resolution ({matched_desc})")
         confidence += 0.50
 
-    # 2. Filename Signature
-    fname = str(Path(image_path).name).lower()
-    has_screenshot_filename = any(k in fname for k in _SCREENSHOT_FILENAME_MARKERS)
-    if has_screenshot_filename:
-        ui_elements.append("filename_signature")
-        confidence += 0.45
-
-    # 3. Software & EXIF Signature
+    # 2. Software & EXIF Signature
     if meta.get("screenshot_software_found"):
         sw_name = meta.get("screenshot_software_name") or "Screen Capture Tool"
         ui_elements.append(f"software_signature ({sw_name})")
         confidence += 0.50
 
-    # 4. Aspect Ratio Evaluation
+    # 3. Aspect Ratio Evaluation
     if not matched_device:
         device_type = _device_from_aspect(orientation, aspect_ratio) or device_type
 
-    # 5. Visual UI Structure Analysis
+    # 4. Visual UI Structure Analysis
     gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
     sample = _downsample_if_needed(gray, max_dim=1024)
     flat_noise = float(np.mean(cv2.absdiff(sample, cv2.medianBlur(sample, 3))))
@@ -899,7 +887,7 @@ def detect_screenshot(
         if snip_device and device_type == "None":
             device_type = snip_device
 
-    if has_screenshot_filename or meta.get("screenshot_software_found"):
+    if meta.get("screenshot_software_found"):
         is_screenshot = True
     elif has_cam or flat_noise >= 1.45:
         # Optical sensor noise present or verified camera hardware -> Authentic photograph, not screenshot
