@@ -382,12 +382,12 @@ def _synthetic_takeaway(p_ai: float, tax_label: str, noise: float, smooth: float
 
 def _edited_takeaway(tax_label: str, p_real: float) -> str:
     return (
-        f"**The Simple Takeaway:** This is an **authentic real photograph that was edited or designed with graphic software** "
-        f"({tax_label}) — it has a **{p_real:.1f}% authentic optical capture foundation**.\n\n"
+        f"**The Simple Takeaway:** This looks like a **photograph that was edited or designed with graphic software** "
+        f"({tax_label}); the heuristic (uncalibrated) camera-likelihood is **{p_real:.1f}%**, a ranking aid, not proof.\n\n"
         f"**Think of it like this:** Imagine taking a real physical photograph of someone with a regular camera, and then bringing that photo into an app like "
         f"Photoshop or Canva. You might cut out the background, place the person on a clean studio color backdrop, adjust the lighting, or add graphic text. "
-        f"That's exactly what happened here: the central subject preserves genuine camera sensor grain and real lens optics, but the background edges and composition "
-        f"show conventional digital editing layers rather than artificial AI generation."
+        f"That is what the signals suggest here: the subject keeps camera-like grain, while the background edges and composition "
+        f"show conventional editing rather than AI generation. These checks cannot rule out generative edits."
     )
 
 

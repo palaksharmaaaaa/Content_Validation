@@ -326,8 +326,8 @@ def _stage_camera_base_heavily_altered(c: _TaxonomyInputs, S: Any) -> _Outcome:
         return None
     cam = f"{c.metadata.get('camera_make', '') or ''} {c.metadata.get('camera_model', '') or ''}".strip()
     return S.AI_ENHANCED_COMPOSITE, [
-        f"Genuine camera hardware base capture ({cam})",
-        f"Overwhelming synthetic-leaning pixel evidence despite authentic base ({c.ai_pct:.1f}% AI) -- "
+        f"Camera hardware tags present ({cam}); unauthenticated metadata",
+        f"Overwhelming synthetic-leaning pixel evidence despite camera tags ({c.ai_pct:.1f}% AI) -- "
         "consistent with an AI upscaler/denoiser/generative-fill pass, or with the phone's own beautify/HDR/night-mode processing, that left no metadata footprint",
     ]
 

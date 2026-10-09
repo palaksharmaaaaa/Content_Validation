@@ -326,7 +326,7 @@ class ImageAIDetector:
                     "pixel evidence; unauthenticated metadata is treated as untrusted (possible forged EXIF)."
                 )
             else:
-                ev.cues.append(f"Genuine camera hardware detected ({meta['camera_make']} {meta['camera_model']})")
+                ev.cues.append(f"Camera hardware tags present ({meta['camera_make']} {meta['camera_model']}); unauthenticated metadata")
         discount = (has_camera and not exif_untrusted) or scanned
 
         if discount:
