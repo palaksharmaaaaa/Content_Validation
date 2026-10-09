@@ -315,7 +315,7 @@ def _raw_physical_signals(gray: np.ndarray) -> Dict[str, Any]:
         "prnu_noise_std": round(float(np.std(diff_med)), 3),
         "flat_region_noise_mean": round(flat_noise, 3),
         "surface_smoothness_index": round(smoothness, 3),
-        "fft_decay_alpha": round(_fft_decay_alpha(sample), 3),
+        "fft_decay_alpha": round(_fft_decay_alpha(sample), 3) + 0.0,
         "canny_edge_pct": round(float(np.sum(edges > 0) / max(1, edges.size) * 100.0), 2),
         "dark_line_art_pct": round(float(np.sum(dark_edges) / max(1, edges.size) * 100.0), 2),
         "laplacian_sharpness_var": round(float(cv2.Laplacian(sample, cv2.CV_64F).var()), 1),
