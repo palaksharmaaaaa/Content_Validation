@@ -73,7 +73,7 @@ class TestAudioDetector(unittest.TestCase):
         analyzer = AudioContentAnalyzer()
         samples = np.sin(np.linspace(0, 50, 4000)).astype(np.float32)
         res = analyzer.analyze_audio_scene(samples, 16000)
-        self.assertIn("setting", res)
+        self.assertIn("signal_level", res)
         self.assertIn("dominant_modality", res)
 
     def test_attribution_engine(self):

@@ -58,3 +58,24 @@ def test_no_frames_is_never_reported_clear():
 def test_unavailable_model_fails_closed():
     r = V.screen_video_frames([np.zeros((8, 8, 3), np.uint8)], estimator=_Stub([_res(status="UNAVAILABLE", age=None)]))
     assert r["status"] == "UNAVAILABLE" and r["review_required"] is True
+
+
+def test_an_unreadable_video_is_never_reported_clear_even_if_probing_raises(monkeypatch):
+    from core.perception import age_video, video_sampling
+
+    monkeypatch.setattr(video_sampling, "probe_video", lambda p: (_ for _ in ()).throw(RuntimeError("codec exploded")))
+    r = age_video.screen_video_file("whatever.mp4")
+    assert r["status"] == "NO_FRAMES" and r["review_required"] is True and "RuntimeError" in r["reason"]
+
+
+def test_a_frame_that_could_not_be_screened_makes_the_video_unavailable_not_clear():
+    import numpy as np
+
+    from core.perception import age_video
+
+    class Est:
+        def assess(self, frame):
+            return {"status": "UNAVAILABLE", "youngest_age": None, "contains_minor": False, "review_required": True, "subjects": [], "model": "m"}
+
+    r = age_video.screen_video_frames([np.zeros((50, 50, 3), np.uint8)] * 3, estimator=Est())
+    assert r["status"] == "UNAVAILABLE" and r["review_required"] is True and r["frames_flagged"] == 3

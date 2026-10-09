@@ -3,7 +3,8 @@ services.system_status: a plain-language snapshot of what is configured on this 
 
 The engine ships blank: every modality starts in heuristic mode with default priors. This reports, per component,
 whether it is active, so the UI (and a user debugging a surprising result) can see at a glance what the verdict is
-based on. Read-only: nothing here writes files or loads models.
+based on. Read-only: nothing here writes files. It loads only the small bundled models (face detector, expression, identity,
+face authenticity) and never the large downloaded ones.
 """
 from __future__ import annotations
 
@@ -85,14 +86,16 @@ def collect_status() -> List[StatusRow]:
     faces_ok = get_face_finder().available
     rows.append(StatusRow("Face detector", OK if faces_ok else WARN, "YuNet loaded" if faces_ok else "Unavailable",
                           "Counts faces with a trained network." if faces_ok else "Model file core/models/face_detection_yunet_2023mar.onnx is missing; faces will not be counted."))
-    from core.perception.detector import MODEL_ID as DETECTOR_ID
+    from core.perception.detector import MODEL_ID as DETECTOR_ID, MODEL_REVISION as DETECTOR_REV
     from core.perception.face_attributes import get_face_attributes
-    from core.perception.recognizer import MODEL_ID as RECOGNIZER_ID
+    from core.perception.recognizer import MODEL_ID as RECOGNIZER_ID, MODEL_REVISION as RECOGNIZER_REV
     from services.fetch_models import present
 
-    for label, repo, what in (("Object detector", DETECTOR_ID, "RF-DETR Small: people, animals, vehicles, objects"),
-                              ("Scene and species recognizer", RECOGNIZER_ID, "SigLIP 2 Base: place, animal species, vehicle type, kind of photo")):
-        have = present(repo)
+    # The loaders insist on the pinned revision, so "present" must mean that revision, not just any cached copy of the repository.
+    for label, repo, revision, what in (
+            ("Object detector", DETECTOR_ID, DETECTOR_REV, "RF-DETR Small: people, animals, vehicles, objects"),
+            ("Scene and species recognizer", RECOGNIZER_ID, RECOGNIZER_REV, "SigLIP 2 Base: place, animal species, vehicle type, kind of photo")):
+        have = present(repo, revision)
         rows.append(StatusRow(label, OK if have else WARN, "Ready" if have else "Not downloaded",
                               what if have else "Run: python -m services.fetch_models"))
     attrs = get_face_attributes()

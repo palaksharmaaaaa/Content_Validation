@@ -89,3 +89,56 @@ def test_exhausted_redirect_budget_is_an_error_not_a_download(fetcher, monkeypat
     r = fetcher.fetch("https://example.com/a", dest_dir=tmp_path)
     assert not r["success"] and "redirect" in r["error"].lower()
     assert list(tmp_path.iterdir()) == []
+
+
+def test_padded_url_is_pinned_to_its_real_host_and_filename_keeps_an_extension(monkeypatch, tmp_path):
+    """Whitespace around a URL must not make the DNS pin apply to an empty host name."""
+    pinned = []
+
+    class Recorder:
+        def __init__(self, host, ips):
+            pinned.append(host)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    monkeypatch.setattr(security, "validate_secure_url", lambda u: (True, "ok", ["93.184.216.34"]))
+    monkeypatch.setattr(security, "_PinnedResolver", Recorder)
+    _serve(monkeypatch, [FakeResp(headers={"content-type": "image/jpeg"})])
+    r = SecureUrlFetcher(max_mb=1).fetch("  https://Example.com/download  ", dest_dir=tmp_path, expected_type="image")
+    assert r["success"] and pinned == ["example.com"]
+    assert r["filename"] == "download.jpg"
+
+
+def test_response_is_closed_on_success_and_on_rejection(fetcher, monkeypatch, tmp_path):
+    closed = []
+
+    class Closing(FakeResp):
+        def close(self):
+            closed.append(1)
+
+    _serve(monkeypatch, [Closing(headers={"content-type": "image/png"})])
+    assert fetcher.fetch("https://example.com/a.png", dest_dir=tmp_path)["success"]
+    _serve(monkeypatch, [Closing(headers={"content-type": "text/html"})])
+    assert not fetcher.fetch("https://example.com/a.png", dest_dir=tmp_path)["success"]
+    assert len(closed) == 2
+
+
+def test_a_failing_cleanup_does_not_replace_the_real_error(fetcher, monkeypatch, tmp_path):
+    from pathlib import Path
+
+    _serve(monkeypatch, [FakeResp(headers={"content-type": "image/png"}, chunks=(b"x" * 10,))])
+    monkeypatch.setattr(security.SecureUrlFetcher, "_stream_to_file", lambda self, resp, path: (_ for _ in ()).throw(OSError("disk full")))
+    real_unlink = Path.unlink
+
+    def broken_unlink(self, *a, **k):
+        if self.name.startswith("sec_fetch_"):
+            raise PermissionError("locked")
+        return real_unlink(self, *a, **k)
+
+    monkeypatch.setattr(Path, "unlink", broken_unlink)
+    r = fetcher.fetch("https://example.com/a.png", dest_dir=tmp_path)
+    assert r["success"] is False and "disk full" in r["error"]

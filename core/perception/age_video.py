@@ -38,21 +38,50 @@ def pick_frames(n_available: int, max_frames: int) -> List[int]:
     return sorted({int(round(i * (n_available - 1) / (max_frames - 1))) for i in range(max_frames)}) if max_frames > 1 else [0]
 
 
+def _unreadable(reason: str) -> Dict[str, Any]:
+    return {**_empty_result(0), "status": "NO_FRAMES", "review_required": True, "reason": reason}
+
+
+def _flag_entry(result: Dict[str, Any], frame: Optional[int], time: Optional[float]) -> Dict[str, Any]:
+    """One flagged frame for the report: where it is, the youngest apparent age and which assessments fired."""
+    return {"frame": frame, "time": time, "youngest_age": result["youngest_age"], "likely_minor": result["contains_minor"],
+            "assessments": sorted({s["assessment"] for s in result["subjects"] if s["assessment"] != "ADULT"}) or [result["status"]]}
+
+
+def _summarise(flagged: List[Dict[str, Any]], ages: List[float], statuses: List[str], model: Optional[str], examined: int,
+               scope: str) -> Dict[str, Any]:
+    """The result shared by both entry points. A frame whose screening was UNAVAILABLE makes the whole video UNAVAILABLE and
+    review_required: a video is never cleared on frames that could not be checked."""
+    status = "UNAVAILABLE" if "UNAVAILABLE" in statuses else "OK"
+    n_flagged = len(flagged)
+    return {**_empty_result(examined), "scope": scope, "status": status, "model": model, "frames_flagged": n_flagged,
+            "priority": _priority(n_flagged, examined), "contains_minor": any(f["likely_minor"] for f in flagged),
+            "contains_possible_minor": n_flagged > 0, "review_required": n_flagged > 0 or status == "UNAVAILABLE",
+            "youngest_age": min(ages) if ages else None, "flagged_frames": flagged}
+
+
 def screen_video_file(path, estimator: Optional[AgeEstimator] = None, max_frames: int = ADAPTIVE_MAX_FRAMES) -> Dict[str, Any]:
     """Minor screening of a video file with adaptive sampling (core.perception.video_sampling): the frames after every content
     change plus a grid of at most one a second, a frame that looks like the last examined one reusing its result. Same result
     shape as ``screen_video_frames`` plus ``sampling``: how many frames were examined, how many were reused, and the longest
-    stretch of the video that no examined frame covers."""
+    stretch of the video that no examined frame covers. Never raises: a file that cannot be read gives ``NO_FRAMES`` with
+    ``review_required``."""
     from core.perception import video_sampling as vs
 
     est = estimator or get_age_estimator()
-    probes = vs.probe_video(path)
-    times, info = vs.choose_times(probes, max_frames)
-    frames = vs.read_frames(path, times)
+    try:
+        probes = vs.probe_video(path)
+        times, info = vs.choose_times(probes, max_frames)
+        frames = vs.read_frames(path, times)
+    except Exception as exc:  # noqa: BLE001 - an unreadable video is reported, never passed as clear
+        return _unreadable(f"the video could not be read ({type(exc).__name__}), so nothing was checked")
     if not frames:
-        return {**_empty_result(0), "status": "NO_FRAMES", "review_required": True, "reason": "the video could not be read, so nothing was checked"}
+        return _unreadable("the video could not be read, so nothing was checked")
 
-    flagged, ages, statuses, model = [], [], [], None
+    flagged: List[Dict[str, Any]] = []
+    ages: List[float] = []
+    statuses: List[str] = []
+    model: Optional[str] = None
     last_thumb, last = None, None
     assessed = reused = 0
     for t, frame in frames:
@@ -67,18 +96,13 @@ def screen_video_file(path, estimator: Optional[AgeEstimator] = None, max_frames
         if r["youngest_age"] is not None:
             ages.append(r["youngest_age"])
         if r["review_required"]:
-            flagged.append({"frame": None, "time": round(t, 2), "youngest_age": r["youngest_age"], "likely_minor": r["contains_minor"],
-                            "assessments": sorted({sub["assessment"] for sub in r["subjects"] if sub["assessment"] != "ADULT"}) or [r["status"]]})
-    status = "UNAVAILABLE" if "UNAVAILABLE" in statuses else "OK"
-    n_flagged = len(flagged)
-    priority = _priority(n_flagged, len(frames))
-    sampling = {"duration_seconds": round(probes.duration, 1), "frames_examined": len(frames), "frames_assessed": assessed, "frames_reused": reused,
-                "content_changes": info["changes"], "grid_seconds": info["grid_seconds"],
-                "longest_unexamined_seconds": vs.longest_gap([t for t, _ in frames], probes.duration)}
-    return {**_empty_result(len(frames)), "scope": "video_adaptive_frames", "status": status, "model": model, "frames_available": len(frames),
-            "frames_flagged": n_flagged, "priority": priority, "contains_minor": any(f["likely_minor"] for f in flagged),
-            "contains_possible_minor": n_flagged > 0, "review_required": n_flagged > 0 or status == "UNAVAILABLE",
-            "youngest_age": min(ages) if ages else None, "flagged_frames": flagged, "sampling": sampling}
+            flagged.append(_flag_entry(r, None, round(t, 2)))
+    result = _summarise(flagged, ages, statuses, model, len(frames), "video_adaptive_frames")
+    result["frames_available"] = len(frames)
+    result["sampling"] = {"duration_seconds": round(probes.duration, 1), "frames_examined": len(frames), "frames_assessed": assessed,
+                          "frames_reused": reused, "content_changes": info["changes"], "grid_seconds": info["grid_seconds"],
+                          "longest_unexamined_seconds": vs.longest_gap([t for t, _ in frames], probes.duration)}
+    return result
 
 
 def _priority(n_flagged: int, n_examined: int) -> str:
@@ -99,13 +123,14 @@ def screen_video_frames(frames_bgr: Sequence[np.ndarray], timestamps: Optional[S
     """Minor screening for a list of video frames (BGR arrays); see the module doc for the result's meaning."""
     est = estimator or get_age_estimator()
     picks = pick_frames(len(frames_bgr), max_frames)
-    base: Dict[str, Any] = {"scope": "video_sampled_frames", "frames_available": len(frames_bgr), "frames_examined": len(picks),
-                            "frames_flagged": 0, "priority": "NONE", "contains_minor": False, "contains_possible_minor": False,
-                            "review_required": False, "youngest_age": None, "flagged_frames": [], "model": None}
     if not picks:
-        return {**base, "status": "NO_FRAMES", "review_required": True, "reason": "no frames could be read, so nothing was checked"}
+        return {**_empty_result(len(frames_bgr)), "frames_examined": 0, "status": "NO_FRAMES", "review_required": True,
+                "reason": "no frames could be read, so nothing was checked"}
 
-    flagged, ages, statuses, model = [], [], [], None
+    flagged: List[Dict[str, Any]] = []
+    ages: List[float] = []
+    statuses: List[str] = []
+    model: Optional[str] = None
     for i in picks:
         r = est.assess(frames_bgr[i])
         model = r.get("model", model)
@@ -113,18 +138,7 @@ def screen_video_frames(frames_bgr: Sequence[np.ndarray], timestamps: Optional[S
         if r["youngest_age"] is not None:
             ages.append(r["youngest_age"])
         if r["review_required"]:
-            flagged.append({"frame": i, "time": None if timestamps is None or i >= len(timestamps) else timestamps[i],
-                            "youngest_age": r["youngest_age"], "likely_minor": r["contains_minor"],
-                            "assessments": sorted({s["assessment"] for s in r["subjects"] if s["assessment"] != "ADULT"}) or [r["status"]]})
-    status = "UNAVAILABLE" if "UNAVAILABLE" in statuses else "OK"
-    n_flagged = len(flagged)
-    if n_flagged == 0:
-        priority = "NONE"
-    elif n_flagged >= REPEATED_MIN_FRAMES and n_flagged / len(picks) >= REPEATED_MIN_SHARE:
-        priority = "REPEATED"
-    else:
-        priority = "SINGLE_FRAME"
-    return {**base, "status": status, "model": model, "frames_flagged": n_flagged, "priority": priority,
-            "contains_minor": any(f["likely_minor"] for f in flagged), "contains_possible_minor": n_flagged > 0,
-            "review_required": n_flagged > 0 or status == "UNAVAILABLE",
-            "youngest_age": min(ages) if ages else None, "flagged_frames": flagged}
+            flagged.append(_flag_entry(r, i, None if timestamps is None or i >= len(timestamps) else timestamps[i]))
+    result = _summarise(flagged, ages, statuses, model, len(picks), "video_sampled_frames")
+    result["frames_available"] = len(frames_bgr)
+    return result

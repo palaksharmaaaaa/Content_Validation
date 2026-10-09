@@ -26,6 +26,7 @@ ACCEPT_SCORE_SMALL = 0.70   # ... and a face under SMALL_SIDE px needs only this
 SMALL_SIDE = 28
 NMS_THRESHOLD = 0.30
 MIN_SIDE = 12               # smallest face (original pixels) worth reporting
+MIN_WORK_SIDE = 32           # the shorter side is kept at least this long when a huge image is shrunk
 MAX_SIDE = 2560             # larger images are shrunk first: a face is still big enough there, and the tile count stays bounded
 TILE = 400                  # tile edge before enlargement
 TILE_STRIDE = 300           # tiles overlap by 100 px so a face on a seam is whole in at least one tile
@@ -79,16 +80,18 @@ class ScreeningFaceFinder:
     def __init__(self) -> None:
         self._net: Optional["cv2.FaceDetectorYN"] = None
         self._lock = threading.Lock()
+        self._init_lock = threading.Lock()
         self._failed = False
 
     def _ensure(self):
-        if self._net is None and not self._failed:
-            try:
-                self._net = cv2.FaceDetectorYN.create(str(MODEL_PATH), "", (320, 320), SCORE_THRESHOLD, NMS_THRESHOLD, 5000)
-            except Exception as exc:
-                self._failed = True
-                logger.warning("Screening face finder unavailable: %s", exc)
-        return self._net
+        with self._init_lock:                 # the warm-up thread and a request may ask at once: build the network once
+            if self._net is None and not self._failed:
+                try:
+                    self._net = cv2.FaceDetectorYN.create(str(MODEL_PATH), "", (320, 320), SCORE_THRESHOLD, NMS_THRESHOLD, 5000)
+                except Exception as exc:
+                    self._failed = True
+                    logger.warning("Screening face finder unavailable: %s", exc)
+            return self._net
 
     def _detect(self, frame: np.ndarray) -> List[Tuple[Box, float]]:
         with self._lock:
@@ -109,8 +112,10 @@ class ScreeningFaceFinder:
         elif image_bgr.shape[2] == 4:
             image_bgr = cv2.cvtColor(image_bgr, cv2.COLOR_BGRA2BGR)
         h0, w0 = image_bgr.shape[:2]
-        shrink = MAX_SIDE / max(h0, w0) if max(h0, w0) > MAX_SIDE else 1.0
-        work = cv2.resize(image_bgr, (int(w0 * shrink), int(h0 * shrink)), interpolation=cv2.INTER_AREA) if shrink < 1.0 else image_bgr
+        # Shrink very large images, but never so far that the short side drops below MIN_WORK_SIDE: a 40000 x 20 strip stays whole
+        # (and is scanned tile by tile) instead of becoming a one-pixel-tall frame the network cannot take.
+        shrink = min(1.0, max(MAX_SIDE / max(h0, w0), MIN_WORK_SIDE / min(h0, w0))) if max(h0, w0) > MAX_SIDE else 1.0
+        work = cv2.resize(image_bgr, (max(1, int(w0 * shrink)), max(1, int(h0 * shrink))), interpolation=cv2.INTER_AREA) if shrink < 1.0 else image_bgr
         h, w = work.shape[:2]
 
         found: List[Tuple[Box, float]] = [((x, y, bw, bh), s) for (x, y, bw, bh), s in self._detect(work)]
@@ -133,7 +138,6 @@ class ScreeningFaceFinder:
             if x2 - x1 >= MIN_SIDE and y2 - y1 >= MIN_SIDE and score >= (ACCEPT_SCORE_SMALL if small else ACCEPT_SCORE):
                 boxes.append(((x1, y1, x2 - x1, y2 - y1), score))
         return boxes
-
 
     def find_rotated(self, image_bgr: np.ndarray, rotations: Sequence[int] = (90, 270, 180)) -> List[dict]:
         """Faces that are sideways or upside down: the image is rotated, scanned as usual, and the boxes mapped back. Each hit is

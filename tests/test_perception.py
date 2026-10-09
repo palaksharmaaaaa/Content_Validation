@@ -103,3 +103,20 @@ def test_shipped_embeddings_equal_a_fresh_computation_and_the_text_tower_is_rele
             assert np.allclose(data[name], computed, atol=1e-5), name
     img = np.full((224, 224, 3), (200, 160, 80), np.uint8)
     assert rec.classify([img], "scene", top_k=1)[0]                 # image classification still works without the tower
+
+
+def test_face_finder_survives_an_extremely_wide_strip():
+    """A 64-megapixel strip scales to a zero-pixel side; it must be handled, not crash cv2.resize."""
+    from core.face_detection import FaceFinder
+
+    strip = np.zeros((20, 40000, 3), np.uint8)
+    assert FaceFinder().find(strip) == []
+    assert FaceFinder().find(np.zeros((40000, 20, 3), np.uint8)) == []
+
+
+def test_screening_face_finder_survives_extreme_strips_and_keeps_the_short_side():
+    from core.perception.face_scan import ScreeningFaceFinder
+
+    finder = ScreeningFaceFinder()
+    assert finder.find(np.zeros((20, 40000, 3), np.uint8)) == []
+    assert finder.find(np.zeros((40000, 20, 3), np.uint8)) == []

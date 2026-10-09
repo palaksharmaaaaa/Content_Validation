@@ -7,7 +7,7 @@ from __future__ import annotations
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 
 from audio_detector import AudioAIDetector
@@ -24,6 +24,22 @@ from ui.profile_view import add_ui_profile_blocks
 from ui.validators import validate_file
 
 
+def _precheck(path: str, filename: str, gates: Dict[str, Any], short_circuit: Callable[[str, Dict[str, Any]], Dict[str, Any]],
+              noun: str, source: Optional[str] = None) -> Tuple[Optional[Dict[str, Any]], Dict[str, Any]]:
+    """What happens before any model runs, identical for every modality: a fired gate (hard-block list, recognised scientific
+    format) short-circuits to a decision stub, and an unreadable file becomes an error result. Returns ``(result, file_res)``;
+    ``result`` is None when the file may be analysed."""
+    extra = {} if source is None else {"source": source}
+    if gates["triggered"]:
+        return {"filename": filename, "path": path, **extra, "success": True, "gate_blocked": True, "gate": gates,
+                "decision": short_circuit(path, gates), "file_res": {"readable": True}}, {}
+    file_res = validate_file(path)
+    if not file_res.get("readable"):
+        return {"filename": filename, "path": path, **extra, "success": False,
+                "error": file_res.get("error", f"{noun} corrupted or unreadable"), "file_res": file_res}, file_res
+    return None, file_res
+
+
 def process_single_image(
     img_path: str,
     filename: str,
@@ -36,29 +52,9 @@ def process_single_image(
     """Runs end-to-end forensic pipeline on a single image."""
     # 0. Pre-analysis gates (before decoding): hard-block hash list + out-of-scope scientific formats.
     gates = check_image_gates(img_path)
-    if gates["triggered"]:
-        stub = gate_short_circuit_result(img_path, gates)
-        return {
-            "filename": filename,
-            "path": img_path,
-            "source": source,
-            "success": True,
-            "gate_blocked": True,
-            "gate": gates,
-            "decision": stub,
-            "file_res": {"readable": True},
-        }
-
-    file_res = validate_file(img_path)
-    if not file_res.get("readable"):
-        return {
-            "filename": filename,
-            "path": img_path,
-            "source": source,
-            "success": False,
-            "error": file_res.get("error", "File corrupted or unreadable"),
-            "file_res": file_res,
-        }
+    early, file_res = _precheck(img_path, filename, gates, gate_short_circuit_result, "Image", source=source)
+    if early is not None:
+        return early
 
     pipeline = ImageForensicPipeline(detector=detector, content_analyzer=content_analyzer, attribution_engine=attribution_engine)
     run = pipeline.run(img_path, sensitivity=sensitivity, source=source, filename=filename, gates=gates)
@@ -102,26 +98,9 @@ def process_single_video(
     """Runs end-to-end forensic pipeline on a single video."""
     # 0. Pre-analysis gates (before decoding): hard-block hash list + scientific-format recognition.
     gates = check_video_gates(vid_path)
-    if gates["triggered"]:
-        return {
-            "filename": filename,
-            "path": vid_path,
-            "success": True,
-            "gate_blocked": True,
-            "gate": gates,
-            "decision": video_gate_short_circuit_result(vid_path, gates),
-            "file_res": {"readable": True},
-        }
-
-    file_res = validate_file(vid_path)
-    if not file_res.get("readable"):
-        return {
-            "filename": filename,
-            "path": vid_path,
-            "success": False,
-            "error": file_res.get("error", "Video corrupted or unreadable"),
-            "file_res": file_res,
-        }
+    early, file_res = _precheck(vid_path, filename, gates, video_gate_short_circuit_result, "Video")
+    if early is not None:
+        return early
 
     pipeline = VideoForensicPipeline(
         detector=video_detector or VideoAIDetector(frame_detector=detector),
@@ -167,26 +146,9 @@ def process_single_audio(
     """Runs end-to-end forensic pipeline on a single audio file."""
     # 0. Pre-analysis gates (before decoding): hard-block hash list + symbolic-music recognition.
     gates = check_audio_gates(aud_path)
-    if gates["triggered"]:
-        return {
-            "filename": filename,
-            "path": aud_path,
-            "success": True,
-            "gate_blocked": True,
-            "gate": gates,
-            "decision": audio_gate_short_circuit_result(aud_path, gates),
-            "file_res": {"readable": True},
-        }
-
-    file_res = validate_file(aud_path)
-    if not file_res.get("readable"):
-        return {
-            "filename": filename,
-            "path": aud_path,
-            "success": False,
-            "error": file_res.get("error", "Audio corrupted or unreadable"),
-            "file_res": file_res,
-        }
+    early, file_res = _precheck(aud_path, filename, gates, audio_gate_short_circuit_result, "Audio")
+    if early is not None:
+        return early
 
     pipeline = AudioForensicPipeline(detector=audio_detector, content_analyzer=content_analyzer, attribution_engine=attribution_engine)
     run = pipeline.run(aud_path, sensitivity=sensitivity, filename=filename, gates=gates)

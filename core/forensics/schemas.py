@@ -1,7 +1,7 @@
 """
 core.forensics.schemas: typed result objects shared by every modality's dimension checks.
 
-A ``Finding`` is one check's outcome. Only PHYSICAL_SIGNAL / METADATA_WEAK findings may carry
+A ``Finding`` is one check's outcome. Only PHYSICAL_SIGNAL, LEARNED_SIGNAL and METADATA_WEAK findings may carry
 a log-odds contribution (``llr``); every other evidence class is advisory and never moves P.
 """
 from __future__ import annotations
@@ -35,7 +35,7 @@ class FindingStatus(str, Enum):
 
 
 class EvidenceClass(str, Enum):
-    """What kind of evidence a finding is. Only physical-signal and weak-metadata findings may affect the score."""
+    """What kind of evidence a finding is. Only physical-signal, learned-signal and weak-metadata findings may affect the score."""
     PHYSICAL_SIGNAL = "PHYSICAL_SIGNAL"
     LEARNED_SIGNAL = "LEARNED_SIGNAL"
     METADATA_WEAK = "METADATA_WEAK"

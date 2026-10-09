@@ -37,6 +37,7 @@ class FaceFinder:
         self._path = Path(model_path)
         self._net: Optional["cv2.FaceDetectorYN"] = None
         self._lock = threading.Lock()
+        self._init_lock = threading.Lock()
         self._failed = False
 
     @property
@@ -45,13 +46,14 @@ class FaceFinder:
         return self._ensure() is not None
 
     def _ensure(self):
-        if self._net is None and not self._failed:
-            try:
-                self._net = cv2.FaceDetectorYN.create(str(self._path), "", (320, 320), SCORE_THRESHOLD, NMS_THRESHOLD, 5000)
-            except Exception as exc:
-                self._failed = True
-                logger.warning("Face detector unavailable (%s): %s", self._path.name, exc)
-        return self._net
+        with self._init_lock:                 # the warm-up thread and a request may ask at the same moment: build the network once
+            if self._net is None and not self._failed:
+                try:
+                    self._net = cv2.FaceDetectorYN.create(str(self._path), "", (320, 320), SCORE_THRESHOLD, NMS_THRESHOLD, 5000)
+                except Exception as exc:
+                    self._failed = True
+                    logger.warning("Face detector unavailable (%s): %s", self._path.name, exc)
+            return self._net
 
     def find(self, image_bgr: np.ndarray) -> List[Face]:
         """Faces in a BGR image as (x, y, w, h, confidence) in original pixel coordinates, most confident first."""
@@ -73,7 +75,7 @@ class FaceFinder:
         if net is None:
             return []
         scale = MAX_SIDE / max(h, w) if max(h, w) > MAX_SIDE else 1.0
-        frame = cv2.resize(image_bgr, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA) if scale < 1.0 else image_bgr
+        frame = cv2.resize(image_bgr, (max(1, int(w * scale)), max(1, int(h * scale))), interpolation=cv2.INTER_AREA) if scale < 1.0 else image_bgr
         with self._lock:
             net.setInputSize((frame.shape[1], frame.shape[0]))
             _ok, raw = net.detect(np.ascontiguousarray(frame, dtype=np.uint8))

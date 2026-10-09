@@ -10,6 +10,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import streamlit as st
 
+from core.forensics.schemas import SCORE_ELIGIBLE_CLASSES
 from ui.layout import render_table
 
 _STATUS = {
@@ -41,7 +42,7 @@ _BAND = {
     "HIGH_CONFIDENCE_AUTHENTIC": ("🟢", "Very likely a real capture"),
 }
 
-_SCORE_ELIGIBLE = {"PHYSICAL_SIGNAL", "METADATA_WEAK", "LEARNED_SIGNAL"}
+_SCORE_ELIGIBLE = {c.value for c in SCORE_ELIGIBLE_CLASSES}          # one definition, shared with the scoring code
 
 
 def status_badge(status: str) -> Tuple[str, str]:

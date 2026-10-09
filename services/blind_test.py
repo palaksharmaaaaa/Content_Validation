@@ -106,7 +106,15 @@ def summary(out: Path, truth: Dict[str, str], split: str = "all") -> Dict[str, A
         from core.hashing import file_sha256
         from core.media_library import partition
 
-        rows = [r for r in rows if r["verdict"] == "ERROR" or partition(file_sha256(r["path"], cached=False)) == split]
+        def in_split(r: Dict[str, Any]) -> bool:
+            if r["verdict"] == "ERROR":
+                return True
+            try:
+                return partition(file_sha256(r["path"], cached=False)) == split
+            except OSError:                        # the file moved or was deleted since the run: it cannot be assigned to a split
+                return False
+
+        rows = [r for r in rows if in_split(r)]
     groups: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
     for r in rows:
         label = next((v for k, v in truth.items() if k.replace("\\", "/") in r["path"].replace("\\", "/")), None)

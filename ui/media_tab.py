@@ -7,7 +7,6 @@ directory, results are cached by file content, several files get a comparison ta
 """
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List
@@ -15,6 +14,7 @@ from typing import Any, Callable, Dict, List
 import streamlit as st
 
 from core.hashing import file_sha256
+from core.security import sanitize_filename
 from ui.adapters import run_batch_pipeline
 from ui.batch_views import render_batch_overview
 from ui.validators import fetch_media_from_url
@@ -33,6 +33,17 @@ class MediaTabSpec:
     tag_upload_source: bool = False  # image items record where they came from
 
 
+def _save_upload(spec_key: str, session_dir: Path, up: Any, index: int) -> Path:
+    """Write one uploaded file to the session folder and return its path. Streamlit re-runs the whole script on every click, so a
+    file already saved under the same upload id and size is not written again (a 500 MB video would otherwise be rewritten on
+    every widget interaction). The name carries Streamlit's per-upload id, so two files with the same name never collide."""
+    ident = getattr(up, "file_id", None) or f"{index}_{up.size}"
+    path = session_dir / f"{spec_key}_{ident}_{sanitize_filename(up.name, max_len=80)}"
+    if not (path.is_file() and path.stat().st_size == up.size):
+        path.write_bytes(up.getbuffer())
+    return path
+
+
 def _ingest_uploads(spec: MediaTabSpec, session_dir: Path) -> List[Dict[str, Any]]:
     round_key = f"{spec.key}_uploader_round"
     uploaded = st.file_uploader(
@@ -48,11 +59,7 @@ def _ingest_uploads(spec: MediaTabSpec, session_dir: Path) -> List[Dict[str, Any
                 st.rerun()
     items: List[Dict[str, Any]] = []
     for idx, up in enumerate(uploaded or []):
-        clean_name = re.sub(r"[^a-zA-Z0-9_.-]", "_", up.name)
-        save_path = str(session_dir / f"{spec.key}_batch_{idx}_{clean_name}")
-        with open(save_path, "wb") as f:
-            f.write(up.getbuffer())
-        item = {"path": save_path, "filename": up.name, "size": up.size}
+        item = {"path": str(_save_upload(spec.key, session_dir, up, idx)), "filename": up.name, "size": up.size}
         if spec.tag_upload_source:
             item["source"] = "Local Device Upload"
         items.append(item)
@@ -60,28 +67,34 @@ def _ingest_uploads(spec: MediaTabSpec, session_dir: Path) -> List[Dict[str, Any
 
 
 def _ingest_urls(spec: MediaTabSpec, session_dir: Path) -> List[Dict[str, Any]]:
-    items: List[Dict[str, Any]] = []
+    """Links the user asked to fetch. They are fetched when the button is pressed and then kept in the session, because Streamlit
+    re-runs the script on every interaction and the button is only "pressed" in the run that follows the click."""
+    url_key = f"{spec.key}_url_items"
     with st.expander("Or analyse files from links"):
         urls_input = st.text_area("Direct links, one per line", placeholder=spec.url_placeholder, key=f"{spec.key}_urls_input")
         clicked = st.button("Fetch and analyse", key=f"btn_fetch_{spec.key}", disabled=not urls_input.strip())
-    if not clicked:
-        return items
-    urls = [u.strip() for u in urls_input.replace(",", "\n").splitlines() if u.strip().startswith("http")]
-    if not urls:
-        st.error("Enter at least one link starting with http:// or https://")
-        return items
-    for idx, url in enumerate(urls):
-        with st.spinner(f"Downloading {idx + 1} of {len(urls)}"):
-            fetched = fetch_media_from_url(url, expected_type=spec.modality, dest_dir=session_dir)
-        if not fetched.get("success"):
-            st.error(f"Could not download {url}: {fetched.get('error')}")
-            continue
-        path = fetched["file_path"]
-        item = {"path": path, "filename": fetched["filename"], "size": Path(path).stat().st_size}
-        if spec.tag_upload_source:
-            item["source"] = f"Link ({url})"
-        items.append(item)
-    return items
+        if st.session_state.get(url_key) and st.button("Forget fetched links", key=f"btn_forget_{spec.key}"):
+            st.session_state[url_key] = []
+    if clicked:
+        urls = [u.strip() for u in urls_input.replace(",", "\n").splitlines() if u.strip().startswith("http")]
+        if not urls:
+            st.error("Enter at least one link starting with http:// or https://")
+        else:
+            fetched_items: List[Dict[str, Any]] = []
+            for idx, url in enumerate(urls):
+                with st.spinner(f"Downloading {idx + 1} of {len(urls)}"):
+                    fetched = fetch_media_from_url(url, expected_type=spec.modality, dest_dir=session_dir)
+                if not fetched.get("success"):
+                    st.error(f"Could not download {url}: {fetched.get('error')}")
+                    continue
+                path = fetched["file_path"]
+                item = {"path": path, "filename": fetched["filename"], "size": Path(path).stat().st_size}
+                if spec.tag_upload_source:
+                    item["source"] = f"Link ({url})"
+                fetched_items.append(item)
+            st.session_state[url_key] = fetched_items
+    # a file the user wiped with "Clear uploaded files" no longer exists: drop it instead of analysing a missing path
+    return [it for it in st.session_state.get(url_key, []) if Path(it["path"]).is_file()]
 
 
 def _analyse(spec: MediaTabSpec, items: List[Dict[str, Any]], detectors: Dict[str, Any], sensitivity_key: str, session_dir: Path) -> List[Dict[str, Any]]:

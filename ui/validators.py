@@ -10,50 +10,29 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 from urllib.parse import urlparse
 
 from PIL import Image
 
-logger = logging.getLogger("ui.validators")
-
+import audio_detector.config as audio_cfg
+import image_detector.config as image_cfg
+import video_detector.config as video_cfg
 from audio_detector import AudioValidator
+from core.security import SAFE_MAX_IMAGE_PIXELS, SecureUrlFetcher, validate_secure_url
 from image_detector.validator import ImageValidator
 from video_detector.validator import VideoValidator
-from core.security import SAFE_MAX_IMAGE_PIXELS, SecureUrlFetcher, validate_secure_url
+
+logger = logging.getLogger("ui.validators")
 
 Image.MAX_IMAGE_PIXELS = SAFE_MAX_IMAGE_PIXELS
 
-MAX_FILE_SIZE_MB = 100
-
-SUPPORTED_IMAGE_EXTENSIONS = {
-    ".jpg",
-    ".jpeg",
-    ".jfif",
-    ".tif",
-    ".png",
-    ".webp",
-    ".bmp",
-    ".tiff",
-}
-
-SUPPORTED_VIDEO_EXTENSIONS = {
-    ".mp4",
-    ".mov",
-    ".avi",
-    ".mkv",
-    ".webm",
-}
-
-SUPPORTED_AUDIO_EXTENSIONS = {
-    ".mp3",
-    ".wav",
-    ".m4a",
-    ".aac",
-    ".flac",
-    ".ogg",
-    ".wma",
-}
+# Supported extensions and size limits come from each package's own config: one definition, so the app can never accept a file
+# its engine rejects (or reject one the documentation says is supported).
+SUPPORTED_IMAGE_EXTENSIONS = set(image_cfg.SUPPORTED_EXTENSIONS)
+SUPPORTED_VIDEO_EXTENSIONS = set(video_cfg.SUPPORTED_EXTENSIONS)
+SUPPORTED_AUDIO_EXTENSIONS = set(audio_cfg.SUPPORTED_EXTENSIONS)
+MAX_FILE_SIZE_MB_BY_TYPE = {"image": image_cfg.MAX_FILE_SIZE_MB, "video": video_cfg.MAX_FILE_SIZE_MB, "audio": audio_cfg.MAX_FILE_SIZE_MB}
 
 PLATFORM_DOMAINS = {
     "Instagram": [
@@ -102,7 +81,7 @@ def get_file_size_mb(file_path: str | Path) -> float:
 
 
 def detect_media_type(file_path: str | Path) -> str:
-    """'image', 'video' or 'audio' from the extension, or None."""
+    """'image', 'video' or 'audio' from the extension, or 'unknown'."""
     extension = get_file_extension(file_path)
     if extension in SUPPORTED_IMAGE_EXTENSIONS:
         return "image"
@@ -113,67 +92,38 @@ def detect_media_type(file_path: str | Path) -> str:
     return "unknown"
 
 
-def validate_image_file(file_path: str | Path) -> Dict[str, Any]:
-    """Check an image file with the image validator."""
+def _validation_result(validator_factory: Callable[[], Any], limit_mb: float, file_path: str | Path, kind: str) -> Dict[str, Any]:
+    """Run one package validator and package its verdict for the UI; any failure is a clear "not readable" result."""
     try:
-        val_res = ImageValidator(max_file_size_mb=MAX_FILE_SIZE_MB).validate(file_path)
+        val_res = validator_factory().validate(file_path)
         return {
             "readable": val_res.valid,
             "format_valid": val_res.valid,
-            "size_valid": val_res.file_size_mb <= MAX_FILE_SIZE_MB,
+            "size_valid": val_res.file_size_mb <= limit_mb,
             "error": val_res.error,
             "details": val_res.to_dict(),
         }
     except Exception as exc:
-        logger.debug("validate_image_file error: %s", exc)
-        return {
-            "readable": False,
-            "format_valid": False,
-            "size_valid": False,
-            "error": str(exc),
-        }
+        logger.debug("validate_%s_file error: %s", kind, exc)
+        return {"readable": False, "format_valid": False, "size_valid": False, "error": str(exc)}
+
+
+def validate_image_file(file_path: str | Path) -> Dict[str, Any]:
+    """Check an image file with the image validator (limit from ``image_detector.config``)."""
+    limit = MAX_FILE_SIZE_MB_BY_TYPE["image"]
+    return _validation_result(lambda: ImageValidator(max_file_size_mb=limit), limit, file_path, "image")
 
 
 def validate_video_file(file_path: str | Path) -> Dict[str, Any]:
-    """Check a video file with the video validator."""
-    try:
-        val_res = VideoValidator(max_file_size_mb=MAX_FILE_SIZE_MB).validate(file_path)
-        return {
-            "readable": val_res.valid,
-            "format_valid": val_res.valid,
-            "size_valid": val_res.file_size_mb <= MAX_FILE_SIZE_MB,
-            "error": val_res.error,
-            "details": val_res.to_dict(),
-        }
-    except Exception as exc:
-        logger.debug("validate_video_file error: %s", exc)
-        return {
-            "readable": False,
-            "format_valid": False,
-            "size_valid": False,
-            "error": str(exc),
-        }
+    """Check a video file with the video validator (limit from ``video_detector.config``)."""
+    limit = MAX_FILE_SIZE_MB_BY_TYPE["video"]
+    return _validation_result(lambda: VideoValidator(max_file_size_mb=limit), limit, file_path, "video")
 
 
 def validate_audio_file(file_path: str | Path) -> Dict[str, Any]:
-    """Check an audio file with the audio validator."""
-    try:
-        val_res = AudioValidator(max_size_mb=MAX_FILE_SIZE_MB).validate(file_path)
-        return {
-            "readable": val_res.valid,
-            "format_valid": val_res.valid,
-            "size_valid": val_res.file_size_mb <= MAX_FILE_SIZE_MB,
-            "error": val_res.error,
-            "details": val_res.to_dict(),
-        }
-    except Exception as exc:
-        logger.debug("validate_audio_file error: %s", exc)
-        return {
-            "readable": False,
-            "format_valid": False,
-            "size_valid": False,
-            "error": str(exc),
-        }
+    """Check an audio file with the audio validator (limit from ``audio_detector.config``)."""
+    limit = MAX_FILE_SIZE_MB_BY_TYPE["audio"]
+    return _validation_result(lambda: AudioValidator(max_size_mb=limit), limit, file_path, "audio")
 
 
 def validate_file(file_path: str | Path) -> Dict[str, Any]:
@@ -221,7 +171,7 @@ def normalize_domain(domain: str) -> str:
 
 
 def detect_platform(url: str) -> str:
-    """Which social platform a link belongs to (Instagram, YouTube, Facebook, TikTok, X) or None."""
+    """Which social platform a link belongs to (Instagram, YouTube, Facebook, TikTok, X), or 'Unknown'."""
     try:
         parsed = urlparse(url)
         domain = normalize_domain(parsed.netloc)
@@ -284,12 +234,13 @@ def validate_expected_platform(url: str, expected_platform: str) -> Dict[str, An
 
 
 def fetch_media_from_url(
-    url: str, expected_type: str = "image", max_mb: int = MAX_FILE_SIZE_MB, dest_dir: Optional[Path] = None
+    url: str, expected_type: str = "image", max_mb: Optional[int] = None, dest_dir: Optional[Path] = None
 ) -> Dict[str, Any]:
-    """Downloads remote media via anti-SSRF SecureUrlFetcher, enforcing size limits and format checks.
+    """Downloads remote media via anti-SSRF SecureUrlFetcher, enforcing the size limit of the media type (or ``max_mb``).
 
     Pass the session's scratch directory as ``dest_dir`` so the sidebar wipe removes the download."""
-    fetcher = SecureUrlFetcher(max_mb=max_mb, timeout_seconds=120)
+    limit = int(max_mb if max_mb is not None else MAX_FILE_SIZE_MB_BY_TYPE.get(expected_type, image_cfg.MAX_FILE_SIZE_MB))
+    fetcher = SecureUrlFetcher(max_mb=limit, timeout_seconds=120)
     fetch_res = fetcher.fetch(url, dest_dir=dest_dir, expected_type=expected_type)
     if not fetch_res.get("success"):
         return {"success": False, "error": fetch_res.get("error", "Download failed")}

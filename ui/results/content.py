@@ -101,15 +101,21 @@ def render_scene_and_content_intelligence(content_data: Dict[str, Any], modality
 
     elif modality == "audio":
         col1, col2, col3 = st.columns(3)
-        col1.metric(" Audio Stream Type", content_data.get("dominant_audio_type", "Audio"))
-        col2.metric(" Acoustic Environment", content_data.get("acoustic_environment", "Studio"))
-        col3.metric(" Vocal Delivery & Tone", content_data.get("vocal_tone_and_delivery", "Conversational"))
+        col1.metric("Sound type", str(content_data.get("dominant_modality") or "Not determined"))
+        col2.metric("Dynamics", str(content_data.get("delivery_style") or "Not determined"))
+        col3.metric("Signal level", str(content_data.get("signal_level") or "Not determined"))
 
-        with st.expander("View Acoustic Environment & Speech Details", expanded=True):
-            st.write(f"• **Audio Purpose / Genre:** `{content_data.get('audio_purpose', 'N/A')}`")
-            st.write(f"• **Estimated Speakers:** `{content_data.get('estimated_speakers', 0)}`")
-            st.write(f"• **Silence Ratio:** `{content_data.get('silence_ratio_pct', 0)}%`")
-            st.write(f"• **Dynamic Range Index:** `{content_data.get('dynamic_range_index', 0)}`")
+        with st.expander("Measurements", expanded=True):
+            for label, key, unit in (("Share of energy in the voice band", "speech_ratio", None), ("RMS level", "rms_energy", ""),
+                                     ("Crest factor (peak / RMS)", "crest_factor", "")):
+                value = content_data.get(key)
+                if value is None:
+                    shown = "not measured"
+                elif key == "speech_ratio":
+                    shown = f"{float(value) * 100:.0f}%"
+                else:
+                    shown = f"{value}"
+                st.write(f"• **{label}:** `{shown}`")
 
 
 def render_image_type_and_category(
@@ -208,7 +214,8 @@ def render_minor_screening(content: Dict[str, Any]) -> None:
         return
     status = minors.get("status")
     if status == "UNAVAILABLE":
-        st.info("**Minor screening did not run** (the age model is not available), so nobody in this file was checked.")
+        reason = minors.get("reason")
+        st.info("**Minor screening did not run**, so nobody in this file was checked." + (f" Reason: {reason}." if reason else ""))
         return
     if status in ("NO_FRAMES", "NO_IMAGE"):
         st.info("**Minor screening did not run**: the file could not be read.")

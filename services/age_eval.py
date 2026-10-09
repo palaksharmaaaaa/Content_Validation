@@ -31,6 +31,16 @@ def band_of(age: int) -> str:
     return next(f"{lo}-{hi}" for lo, hi in BANDS if lo <= age <= hi)
 
 
+def _single_face_subject(est, img) -> dict:
+    """The one subject of a pre-cropped face. If the screening could not run (model missing, inference failure) the evaluation
+    stops with the reason: a measurement taken from a screening that did not look would be meaningless."""
+    h, w = img.shape[:2]
+    result = est.assess(img, faces=[(0, 0, w, h)], persons=[])
+    if result["status"] != "OK" or not result["subjects"]:
+        raise RuntimeError(f"age screening did not run ({result['status']}): {result.get('reason', 'no subject returned')}")
+    return result["subjects"][0]
+
+
 def run(faces: Path, out: Path, per_minor_band: int, per_adult_band: int, seed: int = 21) -> int:
     """Age a stratified sample of the images; one JSON line each. Returns the number analysed."""
     from core.imageio import imread
@@ -51,8 +61,10 @@ def run(faces: Path, out: Path, per_minor_band: int, per_adult_band: int, seed: 
     with out.open("w", encoding="utf-8") as fh:
         for i, f in enumerate(chosen, 1):
             img = imread(str(f))
-            h, w = img.shape[:2]
-            subject = est.assess(img, faces=[(0, 0, w, h)], persons=[])["subjects"][0]
+            if img is None:
+                print(f"skip {f.name}: unreadable image", flush=True)
+                continue
+            subject = _single_face_subject(est, img)
             fh.write(json.dumps({"file": f.name, "true": int(f.name.split("_")[0]), "est": subject["age"],
                                  "share": subject["minor_group_share"], "assessment": subject["assessment"]}) + "\n")
             if i % 200 == 0:
@@ -71,9 +83,11 @@ def summary(out: Path) -> str:
         rs = bands.get(f"{lo}-{hi}", [])
         if not rs:
             continue
-        err = [r["est"] - r["true"] for r in rs]
+        err = [r["est"] - r["true"] for r in rs if r["est"] is not None]
         flagged = sum(r["assessment"] in ("LIKELY_MINOR", "POSSIBLE_MINOR") for r in rs)
-        lines.append(f"{lo}-{hi:<6}{len(rs):5}{statistics.median(abs(e) for e in err):12.1f}{statistics.mean(err):18.1f}{100 * flagged / len(rs):15.1f}%")
+        median_err = f"{statistics.median(abs(e) for e in err):12.1f}" if err else f"{'n/a':>12}"
+        mean_err = f"{statistics.mean(err):18.1f}" if err else f"{'n/a':>18}"
+        lines.append(f"{lo}-{hi:<6}{len(rs):5}{median_err}{mean_err}{100 * flagged / len(rs):15.1f}%")
     minors = [r for r in rows if r["true"] < 18]
     if minors:
         caught = sum(r["assessment"] in ("LIKELY_MINOR", "POSSIBLE_MINOR") for r in minors)
@@ -190,8 +204,10 @@ def fairface(parquet: Path, out: Path, per_young_group: int = 400, per_other_gro
     with out.open("w", encoding="utf-8") as fh:
         for i, ix in enumerate(rows, 1):
             img = cv2.imdecode(np.frombuffer(df.loc[ix, "image"]["bytes"], np.uint8), cv2.IMREAD_COLOR)
-            h, w = img.shape[:2]
-            subject = est.assess(img, faces=[(0, 0, w, h)], persons=[])["subjects"][0]
+            if img is None:
+                print(f"skip row {ix}: undecodable image", flush=True)
+                continue
+            subject = _single_face_subject(est, img)
             fh.write(json.dumps({"group": FAIRFACE_GROUPS[int(df.loc[ix, "age"])], "est": subject["age"], "share": subject["minor_group_share"],
                                  "assessment": subject["assessment"]}) + "\n")
             if i % 200 == 0:
@@ -206,7 +222,9 @@ def fairface_summary(out: Path) -> str:
     for g in FAIRFACE_GROUPS:
         rs = [r for r in rows if r["group"] == g]
         if rs:
-            lines.append(f"{g:<14}{len(rs):5}{statistics.median(r['est'] for r in rs):14.1f}{100 * sum(r['assessment'] != 'ADULT' for r in rs) / len(rs):15.1f}%")
+            ests = [r["est"] for r in rs if r["est"] is not None]
+            median_est = f"{statistics.median(ests):14.1f}" if ests else f"{'n/a':>14}"
+            lines.append(f"{g:<14}{len(rs):5}{median_est}{100 * sum(r['assessment'] != 'ADULT' for r in rs) / len(rs):15.1f}%")
     return "\n".join(lines)
 
 

@@ -139,3 +139,29 @@ def compute_file_sha256_bytes(data: bytes) -> str:
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_two_library_objects_adding_at_once_do_not_lose_each_others_entries(tmp_path):
+    """Each Streamlit session builds its own MediaLibrary; both must end up in the manifest."""
+    import threading
+
+    from core.media_library import MediaLibrary
+
+    manifest = tmp_path / "library.json"
+    files = []
+    for i in range(12):
+        f = tmp_path / f"f{i}.bin"
+        f.write_bytes(bytes([i]) * 50)
+        files.append(f)
+    a, b = MediaLibrary(manifest), MediaLibrary(manifest)          # both loaded the (empty) manifest before either wrote
+
+    def work(lib, items, label):
+        for f in items:
+            lib.add(f, label)
+
+    ts = [threading.Thread(target=work, args=(a, files[:6], "real")), threading.Thread(target=work, args=(b, files[6:], "ai_generated"))]
+    [t.start() for t in ts]
+    [t.join() for t in ts]
+    final = MediaLibrary(manifest)
+    assert len(final.entries()) == 12
+    assert final.counts()["real"] == 6 and final.counts()["ai_generated"] == 6

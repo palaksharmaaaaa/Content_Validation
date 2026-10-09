@@ -8,8 +8,14 @@ from pathlib import Path
 from typing import Any, Callable
 
 
+_KEY_TYPES = (int, float, str, bytes, bool, type(None))
+
+
 def stat_cached(maxsize: int = 16) -> Callable:
-    """Memoise ``fn(path, *args)`` per (path, size, mtime_ns, args). Results must be treated as read-only."""
+    """Memoise ``fn(path, *args)`` per (path, size, mtime_ns, args). Results must be treated as read-only.
+
+    Only plain arguments (numbers, strings, bytes, None) take part in the key. A call with any other argument is not cached at all:
+    keying it by ``id()`` could return a stale result once the object is garbage-collected and its id reused."""
 
     def deco(fn: Callable) -> Callable:
         cache: "OrderedDict[tuple, Any]" = OrderedDict()
@@ -18,8 +24,10 @@ def stat_cached(maxsize: int = 16) -> Callable:
         @functools.wraps(fn)
         def wrapper(path, *args):
             p = Path(path)
+            if not all(isinstance(a, _KEY_TYPES) for a in args):
+                return fn(p, *args)
             st = p.stat()
-            key = (str(p.resolve()), st.st_size, st.st_mtime_ns) + tuple(a if isinstance(a, (int, str, type(None))) else id(a) for a in args)
+            key = (str(p.resolve()), st.st_size, st.st_mtime_ns, *args)
             with lock:
                 if key in cache:
                     cache.move_to_end(key)

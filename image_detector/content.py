@@ -101,7 +101,7 @@ class ImageContentAnalyzer:
         human_count, faces_detected, single_character_detected = self._count_humans(sample_bgr, person_boxes, faces_detected)
 
         # 2b. Age and minor screening for everyone found (recall-first; see core.perception.age)
-        age_info = get_age_estimator().assess(sample_bgr, persons=person_boxes)
+        age_info = get_age_estimator().assess(sample_bgr, persons=person_boxes, persons_available=get_object_detector().available)
 
         # 3. Lighting & Daytime Analysis
         scene = describe_scene(sample_bgr)

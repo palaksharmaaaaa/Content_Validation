@@ -50,6 +50,7 @@ MIN_FACE_SIDE = 28              # a face crop smaller than this (px) is too coar
 MIN_BODY_SIDE = 48
 MINOR_LABELS = ("baby", "toddler", "child", "teenager")
 _CROP_PAD = 0.10
+AGE_BATCH = 16                  # people aged per forward pass
 
 Box = Tuple[int, int, int, int]  # x, y, w, h
 
@@ -147,13 +148,19 @@ class AgeEstimator:
         return self._ensure() is not None
 
     def _ages(self, face_crops: Sequence[Optional[np.ndarray]], body_crops: Sequence[Optional[np.ndarray]]) -> List[float]:
+        """Apparent age per (face, body) pair, in chunks of ``AGE_BATCH`` so a crowd photograph cannot exhaust memory (each pair is
+        3.5 MB of input). The network is in eval mode, so a chunk's result does not depend on its neighbours."""
         import torch
 
-        batch = np.stack([np.concatenate([_letterbox_normalise(f), _letterbox_normalise(b)], axis=0) for f, b in zip(face_crops, body_crops)])
-        with torch.inference_mode():
-            out = self._model(torch.from_numpy(batch))
-        raw = out[:, 2].float().numpy()                                  # columns 0-1 are the gender logits, which are not used
-        return [float(np.clip(r * (MAX_AGE - MIN_AGE) + AVG_AGE, MIN_AGE, MAX_AGE)) for r in raw]
+        ages: List[float] = []
+        for start in range(0, len(face_crops), AGE_BATCH):
+            pairs = zip(face_crops[start:start + AGE_BATCH], body_crops[start:start + AGE_BATCH], strict=True)
+            batch = np.stack([np.concatenate([_letterbox_normalise(f), _letterbox_normalise(b)], axis=0) for f, b in pairs])
+            with torch.inference_mode():
+                out = self._model(torch.from_numpy(batch))
+            raw = out[:, 2].float().numpy()                              # columns 0-1 are the gender logits, which are not used
+            ages += [float(np.clip(r * (MAX_AGE - MIN_AGE) + AVG_AGE, MIN_AGE, MAX_AGE)) for r in raw]
+        return ages
 
     @staticmethod
     def _age_group_shares(crops_bgr: Sequence[np.ndarray]) -> List[Optional[float]]:
@@ -192,32 +199,59 @@ class AgeEstimator:
         return {"rot": best["rot"], "face": face, "body": turned, "face_box": [bx + x0, by + y0, bw, bh]}
 
     def assess(self, image_bgr: np.ndarray, faces: Optional[Sequence[Box]] = None, persons: Optional[Sequence[Box]] = None,
-               scan_rotated: bool = True) -> Dict[str, Any]:
+               scan_rotated: bool = True, persons_available: Optional[bool] = None) -> Dict[str, Any]:
         """Age and minor screening for everyone in the image. ``faces`` / ``persons`` are (x, y, w, h) boxes in the pixels of
         ``image_bgr``; when omitted they are detected here (YuNet faces, RF-DETR persons). A person with no upright face is also
         searched for a sideways or upside-down one (``scan_rotated``); if one is found the person is aged both ways and the younger
-        age and the larger child share are kept, so a false face can only add a review, never remove one."""
+        age and the larger child share are kept, so a false face can only add a review, never remove one.
+
+        Never raises, and never reports "nobody" when it could not look: if the age model fails, or the person detector is missing
+        and no face was found, the result is ``status: UNAVAILABLE`` with ``review_required: True``. Callers that pass ``persons``
+        from their own detector say so with ``persons_available=False`` when that detector could not run."""
         base: Dict[str, Any] = {"model": f"{MODEL_ID}@{MODEL_REVISION[:7]}", "subjects": [], "n_subjects": 0, "youngest_age": None,
                                 "contains_minor": False, "contains_possible_minor": False, "review_required": False}
         if image_bgr is None or image_bgr.ndim != 3:
             return {**base, "status": "NO_IMAGE"}
-        if faces is None:
-            from core.perception.face_scan import get_screening_finder
+        try:
+            if faces is None:
+                from core.perception.face_scan import get_screening_finder
 
-            faces = get_screening_finder().find(image_bgr)
-        if persons is None:
-            from core.perception.detector import get_object_detector
+                faces = get_screening_finder().find(image_bgr)
+            if persons is None:
+                from core.perception.detector import get_object_detector
 
-            persons = [d["box"] for d in get_object_detector().detect(image_bgr) if d["label"] == "person"]
-        faces, persons = [tuple(int(v) for v in b) for b in faces], [tuple(int(v) for v in b) for b in persons]
-        pairs = pair_faces_with_persons(faces, persons)
-        if not pairs:
-            return {**base, "status": "NO_PEOPLE"}
-        if self._ensure() is None:
-            return {**base, "status": "UNAVAILABLE", "n_subjects": len(pairs), "review_required": True,
-                    "reason": "age model could not be loaded; people were found but not aged"}
+                detector = get_object_detector()
+                persons_available = detector.available
+                persons = [d["box"] for d in detector.detect(image_bgr) if d["label"] == "person"] if persons_available else []
+            faces, persons = [tuple(int(v) for v in b) for b in faces], [tuple(int(v) for v in b) for b in persons]
+            pairs = pair_faces_with_persons(faces, persons)
+            if not pairs and persons_available is False:
+                return {**base, "status": "UNAVAILABLE", "review_required": True,
+                        "reason": "the person detector could not run and no face was found, so people without a visible face cannot be ruled out"}
+            if not pairs:
+                return {**base, "status": "NO_PEOPLE"}
+            if self._ensure() is None:
+                return {**base, "status": "UNAVAILABLE", "n_subjects": len(pairs), "review_required": True,
+                        "reason": "age model could not be loaded; people were found but not aged"}
+            subjects = self._judge(image_bgr, faces, persons, pairs, scan_rotated)
+        except Exception as exc:  # noqa: BLE001 - a screening that cannot finish must say so, never pass the image
+            logger.warning("Age screening failed: %s: %s", type(exc).__name__, exc)
+            return {**base, "status": "UNAVAILABLE", "review_required": True,
+                    "reason": f"age screening failed ({type(exc).__name__}); the people in this image were not checked"}
 
-        # Every subject is judged from one or more (face crop, body crop) variants; the youngest age and the largest child share win.
+        known = [s["age"] for s in subjects if s["age"] is not None]
+        flags = {s["assessment"] for s in subjects}
+        return {**base, "status": "OK", "subjects": subjects, "n_subjects": len(subjects),
+                "youngest_age": min(known) if known else None,
+                "contains_minor": "LIKELY_MINOR" in flags,
+                "contains_possible_minor": bool(flags & {"LIKELY_MINOR", "POSSIBLE_MINOR"}),
+                "review_required": bool(flags & {"LIKELY_MINOR", "POSSIBLE_MINOR", "UNDETERMINED"}),
+                "person_detector_available": persons_available}
+
+    def _judge(self, image_bgr: np.ndarray, faces: List[Box], persons: List[Box],
+               pairs: List[Tuple[Optional[int], Optional[int]]], scan_rotated: bool) -> List[Dict[str, Any]]:
+        """One verdict per (face, person) pair. Every subject is judged from one or more (face crop, body crop) variants; the
+        youngest age and the largest child share win."""
         variants: List[Tuple[int, Optional[np.ndarray], Optional[np.ndarray]]] = []
         evidence: List[str] = []
         face_boxes: List[Optional[List[int]]] = []
@@ -243,17 +277,17 @@ class AgeEstimator:
         ages: Dict[int, float] = {}
         shares: Dict[int, Optional[float]] = {}
         if variants:
-            for (i, _f, _b), a in zip(variants, self._ages([v[1] for v in variants], [v[2] for v in variants])):
+            for (i, _f, _b), a in zip(variants, self._ages([v[1] for v in variants], [v[2] for v in variants]), strict=True):
                 ages[i] = min(a, ages.get(i, a))
             group_crops = [v[1] if v[1] is not None else v[2] for v in variants]
-            for (i, _f, _b), sh in zip(variants, self._age_group_shares(group_crops)):
+            for (i, _f, _b), sh in zip(variants, self._age_group_shares(group_crops), strict=True):
                 if sh is not None:
                     shares[i] = max(sh, shares.get(i, sh))
                 else:
                     shares.setdefault(i, None)
 
         subjects = []
-        for i, (fi, pi) in enumerate(pairs):
+        for i, (_fi, pi) in enumerate(pairs):
             age, share = ages.get(i), shares.get(i)
             subjects.append({
                 "age": None if age is None else round(age, 1),
@@ -264,13 +298,7 @@ class AgeEstimator:
                 "face_box": face_boxes[i],
                 "person_box": None if pi is None else list(persons[pi]),
             })
-        known = [s["age"] for s in subjects if s["age"] is not None]
-        flags = {s["assessment"] for s in subjects}
-        return {**base, "status": "OK", "subjects": subjects, "n_subjects": len(subjects),
-                "youngest_age": min(known) if known else None,
-                "contains_minor": "LIKELY_MINOR" in flags,
-                "contains_possible_minor": bool(flags & {"LIKELY_MINOR", "POSSIBLE_MINOR"}),
-                "review_required": bool(flags & {"LIKELY_MINOR", "POSSIBLE_MINOR", "UNDETERMINED"})}
+        return subjects
 
 
 _default: Optional[AgeEstimator] = None

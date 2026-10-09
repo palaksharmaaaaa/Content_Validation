@@ -153,7 +153,10 @@ def sanitize_filename(filename: str, max_len: int = 90) -> str:
     cleaned = re.sub(r"[^a-zA-Z0-9_\-\.]", "_", base).strip("._")
     if not cleaned:
         cleaned = "sanitized_media"
-    return cleaned[:max_len]
+    if len(cleaned) > max_len:
+        suffix = Path(cleaned).suffix[:12]            # a long name is shortened in the middle: the extension says what the file is
+        cleaned = cleaned[: max_len - len(suffix)] + suffix if suffix else cleaned[:max_len]
+    return cleaned
 
 
 def generate_secure_cache_name(prefix: str, seed: str, extension: str) -> str:
@@ -300,49 +303,56 @@ class SecureUrlFetcher:
         expected_type: str = "image",
     ) -> Dict[str, Any]:
         """Safely downloads remote media, verifying payload integrity. A file is created only for an accepted download."""
+        url = (url or "").strip()                # the same text is validated, parsed and requested: no pin can be skipped by padding
         valid, msg, resolved_ips = validate_secure_url(url)
         if not valid:
             return self._failure(f"Security validation rejected URL: {msg}")
 
         parsed = urlparse(url)
         suffix = Path(parsed.path).suffix.lower() or self._DEFAULT_SUFFIXES.get(expected_type, ".bin")
-        safe_name = sanitize_filename(Path(parsed.path).name) or f"downloaded_{expected_type}{suffix}"
-
-        session = requests.Session()
-        session.mount("http://", HTTPAdapter(max_retries=1))
-        session.mount("https://", HTTPAdapter(max_retries=1))
+        safe_name = sanitize_filename(Path(parsed.path).name)
+        if not Path(safe_name).suffix:
+            safe_name += suffix                  # a link like https://host/download still yields a typed file name
 
         temp_path: Optional[Path] = None
-        try:
-            resp, error = self._get_following_redirects(session, url, (parsed.hostname or "").strip().lower(), resolved_ips)
-            if error:
-                return self._failure(error)
-            resp.raise_for_status()
-            rejection = self._response_rejection(resp)
-            if rejection:
-                return self._failure(rejection)
+        resp = None
+        with requests.Session() as session:
+            session.mount("http://", HTTPAdapter(max_retries=1))
+            session.mount("https://", HTTPAdapter(max_retries=1))
+            try:
+                resp, error = self._get_following_redirects(session, url, (parsed.hostname or "").strip().lower(), resolved_ips)
+                if error or resp is None:
+                    return self._failure(error or "No response received from remote server.")
+                resp.raise_for_status()
+                rejection = self._response_rejection(resp)
+                if rejection:
+                    return self._failure(rejection)
 
-            target_dir = dest_dir or Path(tempfile.gettempdir())
-            target_dir.mkdir(parents=True, exist_ok=True)
-            fd, temp_path_str = tempfile.mkstemp(dir=str(target_dir), prefix="sec_fetch_", suffix=suffix)
-            os.close(fd)
-            temp_path = Path(temp_path_str)
+                target_dir = dest_dir or Path(tempfile.gettempdir())
+                target_dir.mkdir(parents=True, exist_ok=True)
+                fd, temp_path_str = tempfile.mkstemp(dir=str(target_dir), prefix="sec_fetch_", suffix=suffix)
+                os.close(fd)
+                temp_path = Path(temp_path_str)
 
-            if not self._stream_to_file(resp, temp_path):
-                temp_path.unlink(missing_ok=True)
-                return self._failure(f"Download aborted: media size exceeded {self.max_bytes / (1024*1024):.0f} MB ceiling.")
-
-            return {
-                "success": True,
-                "file_path": str(temp_path),
-                "filename": safe_name,
-                "size_mb": round(temp_path.stat().st_size / (1024 * 1024), 2),
-                "content_type": resp.headers.get("content-type", "").lower(),
-            }
-        except Exception as exc:
-            if temp_path is not None:
-                try:
+                if not self._stream_to_file(resp, temp_path):
                     temp_path.unlink(missing_ok=True)
-                except Exception as exc:
-                    logger.debug("fetch: ignored %s: %s", type(exc).__name__, exc)
-            return self._failure(f"Secure media download failed: {exc}")
+                    return self._failure(f"Download aborted: media size exceeded {self.max_bytes / (1024*1024):.0f} MB ceiling.")
+
+                return {
+                    "success": True,
+                    "file_path": str(temp_path),
+                    "filename": safe_name,
+                    "size_mb": round(temp_path.stat().st_size / (1024 * 1024), 2),
+                    "content_type": resp.headers.get("content-type", "").lower(),
+                }
+            except Exception as exc:
+                if temp_path is not None:
+                    try:
+                        temp_path.unlink(missing_ok=True)
+                    except OSError as cleanup_exc:
+                        logger.debug("fetch: could not remove %s: %s", temp_path, cleanup_exc)
+                return self._failure(f"Secure media download failed: {exc}")
+            finally:
+                close = getattr(resp, "close", None)
+                if callable(close):
+                    close()

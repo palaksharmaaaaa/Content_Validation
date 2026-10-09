@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from typing import Dict
+from typing import Dict, Optional
 
 from core.perception.detector import MODEL_ID as DETECTOR_ID, MODEL_REVISION as DETECTOR_REV
 from core.perception.recognizer import MODEL_ID as RECOGNIZER_ID, MODEL_REVISION as RECOGNIZER_REV
@@ -21,7 +21,7 @@ MODELS: Dict[str, tuple] = {      # label -> (repository, pinned revision)
 }
 
 
-def present(repo_id: str, revision: str = None) -> bool:
+def present(repo_id: str, revision: Optional[str] = None) -> bool:
     """True if the pinned revision of the model is already in the local cache."""
     from core.perception.hub import is_cached
 

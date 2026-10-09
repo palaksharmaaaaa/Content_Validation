@@ -17,7 +17,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
-from core.atomic_io import atomic_read_json, atomic_write_json
+from core.atomic_io import atomic_read_json, atomic_write_json, serialized_on
 from core.hashing import file_sha256
 
 logger = logging.getLogger("core.media_library")
@@ -26,7 +26,7 @@ LABELS = ("ai_generated", "real")
 _VAL_DENOMINATOR = 5  # sha-derived bucket: 1 in 5 files (~20%) is validation, always.
 
 
-def compute_file_sha256(path: str | Path, chunk_size: int = 1024 * 1024) -> str:
+def compute_file_sha256(path: str | Path) -> str:
     """Streams the file and returns its hex SHA-256 (uncached: callers rely on a fresh read)."""
     return file_sha256(path, cached=False)
 
@@ -50,6 +50,10 @@ class MediaLibrary:
 
     def __init__(self, manifest_path: str | Path):
         self.path = Path(manifest_path)
+        self._reload()
+
+    def _reload(self) -> None:
+        """Replace the in-memory registry with the manifest on disk (another session may have changed it since)."""
         data = atomic_read_json(self.path, default=None)
         entries = data.get("entries", {}) if isinstance(data, dict) else {}
         self._entries: Dict[str, Dict[str, Any]] = entries if isinstance(entries, dict) else {}
@@ -98,21 +102,26 @@ class MediaLibrary:
             return True
         return False
 
+    @serialized_on("path")
     def add(self, path: str | Path, label: str) -> bool:
         """Registers one file. Returns True if the registry changed (new content or relabel)."""
+        self._reload()                      # mutations are read-modify-write under the manifest's lock, so no session loses another's entries
         changed = self._add_no_save(path, label)
         self._save()
         return changed
 
+    @serialized_on("path")
     def add_many(self, paths: Iterable[str | Path], label: str) -> int:
-        """Registers many files with a single manifest write. Returns how many changed the registry."""
+        """Registers many files with a single manifest write. Returns how many changed the registry. An invalid label raises;
+        an unreadable file is skipped with a warning."""
+        if label not in LABELS:
+            raise ValueError(f"label must be one of {LABELS}, got {label!r}")
+        self._reload()
         changed = 0
         for p in paths:
             try:
                 changed += 1 if self._add_no_save(p, label) else 0
-            except (OSError, ValueError) as exc:
-                if isinstance(exc, ValueError):
-                    raise
+            except OSError as exc:
                 logger.warning("Skipping unreadable file %s: %s", p, exc)
         self._save()
         return changed
@@ -150,12 +159,14 @@ class MediaLibrary:
         """Content hashes whose files can no longer be found at their recorded path."""
         return [sha for sha in self._entries if self.resolve(sha) is None]
 
+    @serialized_on("path")
     def rescan(self, roots: Iterable[str | Path]) -> int:
         """
         Re-links entries whose path went stale by walking `roots`. Only files whose size matches
         a missing entry are hashed, so a rescan over a huge folder stays cheap.
         Returns the number of entries relinked.
         """
+        self._reload()
         missing = set(self.missing())
         if not missing:
             return 0
@@ -234,8 +245,10 @@ class MediaLibrary:
         new = sum(1 for e in self._entries.values() if e.get("status") == "new")
         return {"ai_generated": ai, "real": real, "total": ai + real, "new": new, "missing": len(self.missing())}
 
+    @serialized_on("path")
     def mark_seen(self, shas: Iterable[str]) -> None:
         """Marks entries as folded into a promoted checkpoint (no longer 'new')."""
+        self._reload()
         for sha in shas:
             if sha in self._entries:
                 self._entries[sha]["status"] = "seen"

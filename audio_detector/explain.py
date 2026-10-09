@@ -135,16 +135,14 @@ def _audio_dimension_5(c: _AudioDossierContext) -> Dict[str, Any]:
 
 
 def _audio_dimension_6(c: _AudioDossierContext) -> Dict[str, Any]:
-    """6. Speaker Identification & Scene Setting"""
-    speakers = c.inv.get("estimated_speakers")
+    """6. Sound type and delivery (what the recording is, as far as a spectrum and a level can say)"""
     d6 = {
         "dimension_id": 6,
-        "title": "Dimension 6: Vocal Entities & Acoustic Environment",
-        "description": "Catalogs estimated speakers, speaking cadence, and acoustic recording environment.",
-        "estimated_speakers": speakers,
-        "dominant_type": c.inv.get("dominant_audio_type") or "Not determined",
-        "environment": c.inv.get("acoustic_environment") or "Not determined",
-        "vocal_tone": c.inv.get("vocal_tone_and_delivery") or "Not determined",
+        "title": "Dimension 6: Sound Type & Delivery",
+        "description": "Classifies the whole recording by where its energy lies (voice band, high frequencies) and describes its dynamics and level. It does not count speakers or identify rooms.",
+        "dominant_type": c.inv.get("dominant_modality") or "Not determined",
+        "vocal_tone": c.inv.get("delivery_style") or "Not determined",
+        "signal_level": c.inv.get("signal_level") or "Not determined",
     }
     return d6
 
@@ -239,17 +237,10 @@ def generate_audio_newbie_explanation(
     final_status = decision.get("final_status", "")
 
     inv = content_inventory or {}
-    spk_cnt = inv.get("estimated_speakers")
-    audio_type = inv.get("dominant_audio_type")
-
-    speaker_str = None if spk_cnt is None else (f"{spk_cnt} speaker" if spk_cnt == 1 else f"{spk_cnt} speakers")
-    content_phrase = ""
-    if speaker_str and audio_type:
-        content_phrase = f"Acoustically, it features **{speaker_str}** delivering **{audio_type.lower()}**."
-    elif audio_type:
-        content_phrase = f"Acoustically, it is **{audio_type.lower()}**."
-    elif speaker_str:
-        content_phrase = f"Acoustically, it features **{speaker_str}**."
+    audio_type = inv.get("dominant_modality")
+    delivery = inv.get("delivery_style")
+    known = [x for x in (audio_type, delivery) if x and x != "Unknown"]
+    content_phrase = f"Acoustically, it is **{'; '.join(x[0].lower() + x[1:] for x in known)}**." if known else ""
 
     section_what = (
         f"### 🎙️ What We Identified in this Audio Track\n\n"

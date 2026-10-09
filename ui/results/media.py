@@ -9,11 +9,30 @@ import streamlit as st
 from ui.layout import render_table
 
 
+PREVIEW_MAX_SIDE = 1600
+
+
+def _preview_source(path: str | Path) -> Any:
+    """What to hand ``st.image``: the file itself when it is modest, otherwise a copy shrunk to PREVIEW_MAX_SIDE. Streamlit decodes
+    and re-encodes whatever it is given, which for a 60-megapixel photograph costs seconds just to draw a thumbnail."""
+    from PIL import Image
+
+    try:
+        with Image.open(path) as im:
+            if max(im.size) <= PREVIEW_MAX_SIDE:
+                return str(path)
+            preview = im.convert("RGB") if im.mode not in ("RGB", "L") else im.copy()
+            preview.thumbnail((PREVIEW_MAX_SIDE, PREVIEW_MAX_SIDE))
+            return preview
+    except Exception:                       # an unusual format Pillow cannot open: let Streamlit try the original
+        return str(path)
+
+
 def render_image_preview(item: Dict[str, Any], profile_data: Dict[str, Any], ai_result: Dict[str, Any]) -> None:
     """Show the image, plus the spatial anomaly heatmap when one exists."""
     left, right = st.columns(2)
     with left:
-        st.image(item["path"], caption=f"Original ({profile_data.get('width', 0)} x {profile_data.get('height', 0)} px)", width="stretch")
+        st.image(_preview_source(item["path"]), caption=f"Original ({profile_data.get('width', 0)} x {profile_data.get('height', 0)} px)", width="stretch")
     with right:
         heatmap = ai_result.get("heatmap_rgb")
         if heatmap is not None:

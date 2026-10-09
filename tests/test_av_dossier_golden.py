@@ -26,7 +26,7 @@ def audio_case(r):
     res = {"acoustic_features": ac}
     put(r, res, "has_vocoder_cutoff", r.random() < .5, .4); put(r, res, "synthesis_medium", "TTS", .4); put(r, res, "is_synthetic", True, .4); put(r, res, "ai_duration_pct", 33.3, .5)
     inv = {}
-    put(r, inv, "estimated_speakers", 3); put(r, inv, "dominant_audio_type", "Music"); put(r, inv, "acoustic_environment", "Hall"); put(r, inv, "vocal_tone_and_delivery", "Calm")
+    put(r, inv, "dominant_modality", "Music-like"); put(r, inv, "signal_level", "Strong signal"); put(r, inv, "delivery_style", "Natural dynamics")
     prov = {}
     put(r, prov, "c2pa_present", True); put(r, prov, "provenance_status", "X")
     attr = {}

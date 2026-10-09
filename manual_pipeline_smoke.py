@@ -98,7 +98,7 @@ def run_pipeline_test():
 
         print(f" -> Image Content: Persons={humans_cnt}, Faces={faces_cnt}, Text Regions={text_cnt}")
         print(f" -> Surroundings: {setting_typ} | Daytime: {daytime_est} | Tone: {tone_est}")
-        print(f" -> Audio Content: Dominant={content_aud.get('dominant_modality', 'Vocal')}, Setting={content_aud.get('setting', 'Studio')}")
+        print(f" -> Audio Content: Dominant={content_aud.get('dominant_modality')}, Level={content_aud.get('signal_level')}")
 
         # 6. Deep Media Profiler (Pixel Specs, Entropy, Bit Depth)
         print("\n[Step 6/9] Running Deep Media Profiler (Pixel Specs, Entropy, Hashes)...")

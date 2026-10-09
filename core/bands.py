@@ -1,5 +1,5 @@
 """
-core.bands: the five calibrated operational probability bands from the taxonomy reports.
+core.bands: the five operational probability bands a score maps to.
 
 Bands apply to the in-distribution P(AI) score only. OOD, open-set attribution, hard-block and
 context channels are independent of the band.

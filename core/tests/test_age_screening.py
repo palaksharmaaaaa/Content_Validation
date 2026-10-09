@@ -151,3 +151,61 @@ def test_a_git_lfs_pointer_is_reported_clearly_not_as_a_parse_error(tmp_path):
     real.write_bytes(b"x" * 5000)
     ensure_not_lfs_pointer(real)                                   # a genuine file passes
     ensure_not_lfs_pointer(tmp_path / "missing.bin")               # absent is the caller's concern
+
+
+# --- fail-safe behaviour: a screening that could not look must never read as "nobody there" ---------------------------------------
+
+def test_missing_person_detector_with_no_face_is_unavailable_not_no_people(monkeypatch):
+    est = _estimator_with(monkeypatch, variant_ages=[30.0])
+    r = est.assess(_IMG, faces=[], persons=[], persons_available=False)
+    assert r["status"] == "UNAVAILABLE" and r["review_required"] is True and "person detector" in r["reason"]
+
+
+def test_missing_person_detector_but_a_face_found_is_still_screened(monkeypatch):
+    est = _estimator_with(monkeypatch, variant_ages=[12.0])
+    r = est.assess(_IMG, faces=[(60, 40, 60, 60)], persons=[], persons_available=False)
+    assert r["status"] == "OK" and r["contains_minor"] is True and r["person_detector_available"] is False
+
+
+def test_an_inference_crash_becomes_unavailable_and_review_required(monkeypatch):
+    est = _estimator_with(monkeypatch, variant_ages=[30.0])
+    monkeypatch.setattr(est, "_ages", lambda faces, bodies: (_ for _ in ()).throw(MemoryError("out of memory")))
+    r = est.assess(_IMG, faces=[], persons=[_PERSON])
+    assert r["status"] == "UNAVAILABLE" and r["review_required"] is True and "MemoryError" in r["reason"]
+
+
+def test_a_crowd_is_aged_in_chunks_not_one_giant_batch(monkeypatch):
+    import torch
+
+    est = A.AgeEstimator()
+    sizes = []
+
+    class Net:
+        def __call__(self, batch):
+            sizes.append(batch.shape[0])
+            return torch.zeros(batch.shape[0], 3)
+
+    monkeypatch.setattr(est, "_model", Net())
+    crops = [np.full((60, 60, 3), 100, np.uint8)] * (A.AGE_BATCH * 2 + 3)
+    ages = est._ages(crops, crops)
+    assert len(ages) == len(crops) and sizes == [A.AGE_BATCH, A.AGE_BATCH, 3]
+
+
+def test_age_eval_stops_with_a_reason_when_the_screening_did_not_run_and_summarises_unaged_faces(tmp_path):
+    import json
+
+    import pytest
+
+    from services import age_eval
+
+    class Dead:
+        def assess(self, img, faces=None, persons=None):
+            return {"status": "UNAVAILABLE", "subjects": [], "reason": "weights missing"}
+
+    with pytest.raises(RuntimeError, match="weights missing"):
+        age_eval._single_face_subject(Dead(), np.zeros((40, 40, 3), np.uint8))
+    rows = [{"file": "a", "true": 30, "est": None, "share": None, "assessment": "UNDETERMINED"},
+            {"file": "b", "true": 31, "est": 29.0, "share": 0.0, "assessment": "ADULT"}]
+    out = tmp_path / "r.jsonl"
+    out.write_text("\n".join(json.dumps(r) for r in rows), encoding="utf-8")
+    assert "26-35" in age_eval.summary(out)                                   # no TypeError on the face without an age

@@ -48,5 +48,7 @@ def render_batch_overview(results: List[Dict[str, Any]], modality: str) -> Optio
     )
 
     names = [f"{row['File']}: {row['Verdict']}" for row in table.to_dict("records")]
-    chosen = st.selectbox("Open a file", names, key=f"{modality}_selector")
-    return results[names.index(chosen)] if chosen else None
+    # Choose by position: two files with the same name and verdict have identical labels, and mapping a label back to its
+    # first occurrence would open the wrong file.
+    chosen = st.selectbox("Open a file", range(len(names)), format_func=lambda i: names[i], key=f"{modality}_selector")
+    return results[chosen] if chosen is not None and chosen < len(results) else None

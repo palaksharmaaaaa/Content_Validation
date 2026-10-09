@@ -29,3 +29,15 @@ def test_age_row_reports_missing_pointer_and_ready(tmp_path, monkeypatch):
     assert row.state == "Git LFS pointer" and row.level == "warn" and "git lfs pull" in row.hint
     deep.write_bytes(b"x" * 5000)
     assert system_status._age_row().level == "ok"
+
+
+def test_large_model_rows_check_the_pinned_revision_not_any_cached_copy(monkeypatch):
+    from core.perception.detector import MODEL_REVISION as DETECTOR_REV
+    from core.perception.recognizer import MODEL_REVISION as RECOGNIZER_REV
+    from services import fetch_models, system_status
+
+    asked = {}
+    monkeypatch.setattr(fetch_models, "present", lambda repo, revision=None: asked.setdefault(repo, revision) or True)
+    rows = {r.component: r for r in system_status.collect_status()}
+    assert set(asked.values()) == {DETECTOR_REV, RECOGNIZER_REV}
+    assert rows["Object detector"].state == "Ready" and rows["Scene and species recognizer"].state == "Ready"

@@ -3,6 +3,8 @@ import ast
 import json
 from pathlib import Path
 
+import pytest
+
 from audio_detector import AudioSelfImprover
 from audio_detector.tests.audio_fixtures import tone, write_wav
 
@@ -60,6 +62,10 @@ def test_submit_feedback_routes_to_owning_learner(monkeypatch, tmp_path):
     for media, modality, tag in (("a.JPG", "auto", "image"), ("b.mp4", "auto", "video"), ("c.wav", "auto", "audio"), ("d.bin", "image", "image")):
         fu._submit_feedback(tmp_path / media, modality, {"x": 1}, "AI-generated", "note")
     assert [c[0] for c in calls] == ["image", "video", "audio", "image"]
+    for bad, modality in (("x.xyz", "auto"), ("x.jpg", "Pictures"), ("x.jpg", "")):
+        with pytest.raises(ValueError):
+            fu._resolve_feedback_modality(modality, tmp_path / bad)           # never guess: a wrong guess skews the wrong learner
+    assert fu._resolve_feedback_modality("Image", "x.mp4") == "image"
     assert all(c[2] == "AI" for c in calls)
     assert "note" in calls[0][3] and "[AI-generated]" in calls[0][3]
 

@@ -18,19 +18,23 @@ TRUTH_CHOICES = {
     "Real / authentic": "REAL",
     "Edited or partly AI": "AI",
 }
-_IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff")
-_VIDEO_SUFFIXES = (".mp4", ".mov", ".avi", ".mkv", ".webm")
 _LEARNERS = {"image": ImageSelfImprover, "video": VideoSelfImprover, "audio": AudioSelfImprover}
 
 
 def _resolve_feedback_modality(modality: str, media_path: str | Path) -> str:
-    """'image' | 'video' | 'audio' (auto-detected from the extension when modality == 'auto')."""
-    name = str(media_path).lower()
-    if modality == "image" or (modality == "auto" and name.endswith(_IMAGE_SUFFIXES)):
-        return "image"
-    if modality == "video" or (modality == "auto" and name.endswith(_VIDEO_SUFFIXES)):
-        return "video"
-    return "audio"
+    """'image' | 'video' | 'audio'. ``"auto"`` reads it from the file extension. Anything else raises: guessing would file a
+    correction under the wrong learner and silently skew its calibration."""
+    from ui.profile_view import modality_of_extension
+
+    name = str(modality).lower()
+    if name in _LEARNERS:
+        return name
+    if name == "auto":
+        found = modality_of_extension(Path(str(media_path)).suffix.lower())
+        if found:
+            return found
+        raise ValueError(f"cannot tell the media type of {Path(str(media_path)).name!r} from its extension")
+    raise ValueError(f"unknown modality {modality!r}; expected image, video, audio or auto")
 
 
 def _submit_feedback(media_path: str | Path, modality: str, forensic_data: Any, truth: str, note: str) -> None:

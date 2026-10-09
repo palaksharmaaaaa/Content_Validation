@@ -60,6 +60,12 @@ def start_background_warmup(loaders: Optional[Sequence[Callable[[], object]]] = 
     chosen = list(loaders) if loaders is not None else list(default_loaders())
 
     def run() -> None:
+        try:
+            from core.atomic_io import purge_stale_sessions
+
+            purge_stale_sessions()                       # scratch folders of sessions that ended without clearing their files
+        except Exception as exc:  # noqa: BLE001 - housekeeping must never stop the warm-up
+            logger.warning("stale-session sweep failed: %s", exc)
         for load in chosen:
             try:
                 load()

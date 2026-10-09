@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from audio_detector import AudioProfiler
 from image_detector import ImageProfiler
@@ -32,21 +32,34 @@ def add_ui_profile_blocks(modality: str, res: Dict[str, Any]) -> Dict[str, Any]:
         "filename": res.get("filename"),
         "container_format": res.get(container),
         "size_kb": (res.get("file_size_bytes", 0) / 1024.0),
-        "mime_type": f"{modality}/{res.get(container, _MIME_DEFAULT[modality]).lower()}",
+        "mime_type": f"{modality}/{(res.get(container) or _MIME_DEFAULT[modality]).lower()}",
         "sha256": res.get("sha256"),
     }
     res.update(_spec_block(modality, res))
     return res
 
 
+def modality_of_extension(suffix: str) -> Optional[str]:
+    """The modality whose package supports this file extension (the packages' own SUPPORTED_EXTENSIONS, so they cannot drift)."""
+    import audio_detector.config as audio_cfg
+    import image_detector.config as image_cfg
+    import video_detector.config as video_cfg
+
+    for modality, cfg in (("image", image_cfg), ("video", video_cfg), ("audio", audio_cfg)):
+        if suffix in cfg.SUPPORTED_EXTENSIONS:
+            return modality
+    return None
+
+
 def profile_media(file_path: str | Path, modality: str = "auto", source: str = "User Upload") -> Dict[str, Any]:
     """Profile a file with its modality's profiler and add the display blocks the result page shows."""
     p = Path(file_path)
-    suffix = p.suffix.lower()
-    if modality == "image" or (modality == "auto" and suffix in (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff")):
+    if modality == "auto":
+        modality = modality_of_extension(p.suffix.lower()) or "unknown"
+    if modality == "image":
         return add_ui_profile_blocks("image", ImageProfiler().profile_image(file_path, source=source))
-    if modality == "video" or (modality == "auto" and suffix in (".mp4", ".mov", ".avi", ".mkv", ".webm")):
+    if modality == "video":
         return add_ui_profile_blocks("video", VideoProfiler().profile_video(file_path))
-    if modality == "audio" or (modality == "auto" and suffix in (".wav", ".mp3", ".aac", ".flac", ".ogg", ".m4a")):
+    if modality == "audio":
         return add_ui_profile_blocks("audio", AudioProfiler().profile_audio(file_path))
-    return {"success": False, "error": f"Unknown format: {suffix}"}
+    return {"success": False, "error": f"Unknown format: {p.suffix.lower()}"}

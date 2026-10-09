@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import shutil
 from pathlib import Path
 import tempfile
 import threading
@@ -30,7 +31,7 @@ _REGISTRY_LOCK = threading.Lock()
 
 def _get_path_lock(target_path: Path) -> threading.RLock:
     """Returns a dedicated re-entrant lock for the specified file path."""
-    canonical = str(target_path.resolve()).lower()
+    canonical = os.path.normcase(str(target_path.resolve()))          # case-folded only where the file system is case-insensitive
     with _REGISTRY_LOCK:
         lock = _FILE_LOCKS.get(canonical)
         if lock is None:
@@ -95,10 +96,9 @@ def atomic_write_json(file_path: str | Path, data: Any, indent: int = 2) -> None
                     time.sleep(0.015 * (attempt + 1))
         except Exception as exc:
             try:
-                if tmp_path.exists():
-                    tmp_path.unlink(missing_ok=True)
-            except Exception as exc:
-                logger.debug("atomic_write_json: ignored %s: %s", type(exc).__name__, exc)
+                tmp_path.unlink(missing_ok=True)
+            except OSError as cleanup_exc:
+                logger.debug("atomic_write_json: could not remove %s: %s", tmp_path, cleanup_exc)
             logger.error("Failed atomic JSON write to %s: %s", target, exc)
             raise
 
@@ -160,7 +160,7 @@ def get_session_cache_dir(session_id: str) -> Path:
     safe = "".join(c for c in str(session_id) if c.isalnum() or c in "-_")[:64]
     if not safe:
         raise ValueError("session_id must contain at least one alphanumeric character")
-    d = get_ephemeral_cache_dir() / f"session_{safe}"
+    d = get_ephemeral_cache_dir() / f"{SESSION_DIR_PREFIX}{safe}"
     d.mkdir(parents=True, exist_ok=True)
     return d
 
@@ -181,3 +181,29 @@ def purge_ephemeral_cache(cache_dir: Optional[Path] = None) -> int:
     except Exception as exc:
         logger.debug("purge_ephemeral_cache: ignored %s: %s", type(exc).__name__, exc)
     return purged
+
+
+SESSION_DIR_PREFIX = "session_"
+STALE_SESSION_SECONDS = 24 * 3600
+
+
+def purge_stale_sessions(max_age_seconds: float = STALE_SESSION_SECONDS, now: Optional[float] = None) -> int:
+    """Remove per-session scratch folders nobody has touched for ``max_age_seconds`` (default a day).
+
+    Sessions are cleaned when their user presses "Clear uploaded files"; a closed browser tab never does, so without this sweep
+    uploaded media would sit in the temp directory for as long as the machine runs. Only ``session_*`` folders directly inside the
+    scratch directory are considered, and a folder is judged by its newest file. Returns the number of folders removed."""
+    root = get_ephemeral_cache_dir()
+    cutoff = (time.time() if now is None else now) - max_age_seconds
+    removed = 0
+    for folder in root.iterdir():
+        if not (folder.is_dir() and folder.name.startswith(SESSION_DIR_PREFIX)):
+            continue
+        try:
+            newest = max([folder.stat().st_mtime] + [p.stat().st_mtime for p in folder.rglob("*")])
+        except OSError:
+            continue                                         # vanished or unreadable while scanning: leave it
+        if newest < cutoff:
+            shutil.rmtree(folder, ignore_errors=True)
+            removed += 0 if folder.exists() else 1
+    return removed

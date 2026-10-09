@@ -320,10 +320,9 @@ def _inventory_summary(inv: Dict[str, Any]) -> Dict[str, Any]:
         "atmospheric_mood": tone.get("atmospheric_mood", "Balanced"),
         "photographic_purpose": purpose.get("photographic_purpose", "General Depiction"),
         "depiction_summary": purpose.get("depiction_summary", ""),
-        "audio_speakers": inv.get("estimated_speakers", inv.get("audio_speakers", 0)),
-        "dominant_audio_type": inv.get("dominant_audio_type", "N/A"),
-        "acoustic_environment": inv.get("acoustic_environment", "N/A"),
-        "vocal_tone": inv.get("vocal_tone_and_delivery", "N/A"),
+        "dominant_audio_type": inv.get("dominant_modality", "N/A"),
+        "signal_level": inv.get("signal_level", "N/A"),
+        "delivery_style": inv.get("delivery_style", "N/A"),
     }
 
 

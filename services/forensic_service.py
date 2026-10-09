@@ -69,6 +69,9 @@ class ForensicService:
         with cls._init_lock:
             if cls._instance is None:
                 cls._instance = cls(checkpoint_path=checkpoint_path)
+            elif checkpoint_path is not None and Path(checkpoint_path) != cls._instance.checkpoint_path:
+                logger.warning("ForensicService already exists with checkpoint %s; ignoring the requested %s",
+                               cls._instance.checkpoint_path, checkpoint_path)
             return cls._instance
 
     def _lock_for(self, name: str) -> threading.RLock:
@@ -207,72 +210,34 @@ class ForensicService:
     # -------------------------------------------------------------------------
     # Core Service Methods
     # -------------------------------------------------------------------------
-    def analyze_image(
-        self,
-        image_path: str | Path,
-        sensitivity: str = "balanced",
-        source: str = "User Upload",
-    ) -> Dict[str, Any]:
+    @staticmethod
+    def _guarded(kind: str, path: str | Path, run) -> Dict[str, Any]:
+        """Run one analysis; any failure becomes a ``PROCESSING_ERROR`` report instead of an exception, so a batch or a UI
+        callback never dies on one bad file."""
+        try:
+            return run()
+        except Exception as exc:
+            logger.error("%s analysis failed for %s: %s", kind, path, exc, exc_info=True)
+            return {
+                "content_valid": False,
+                "filename": Path(path).name,
+                "path": str(path),
+                "error": str(exc),
+                "final_status": "PROCESSING_ERROR",
+            }
+
+    def analyze_image(self, image_path: str | Path, sensitivity: str = "balanced", source: str = "User Upload") -> Dict[str, Any]:
         """Runs the linear 5-stage forensic evaluation on a single image."""
-        try:
-            return self.image_pipeline.analyze(
-                image_path=image_path,
-                sensitivity=sensitivity,
-                source=source,
-            )
-        except Exception as exc:
-            logger.error("Image analysis failed for %s: %s", image_path, exc, exc_info=True)
-            return {
-                "content_valid": False,
-                "filename": Path(image_path).name,
-                "path": str(image_path),
-                "error": str(exc),
-                "final_status": "PROCESSING_ERROR",
-            }
+        return self._guarded("Image", image_path, lambda: self.image_pipeline.analyze(image_path=image_path, sensitivity=sensitivity, source=source))
 
-    def analyze_audio(
-        self,
-        audio_path: str | Path,
-        sensitivity: str = "balanced",
-    ) -> Dict[str, Any]:
+    def analyze_audio(self, audio_path: str | Path, sensitivity: str = "balanced") -> Dict[str, Any]:
         """Runs the linear acoustic forensic evaluation pipeline on an audio track."""
-        try:
-            return self.audio_pipeline.analyze(
-                audio_path=audio_path,
-                sensitivity=sensitivity,
-            )
-        except Exception as exc:
-            logger.error("Audio analysis failed for %s: %s", audio_path, exc, exc_info=True)
-            return {
-                "content_valid": False,
-                "filename": Path(audio_path).name,
-                "path": str(audio_path),
-                "error": str(exc),
-                "final_status": "PROCESSING_ERROR",
-            }
+        return self._guarded("Audio", audio_path, lambda: self.audio_pipeline.analyze(audio_path=audio_path, sensitivity=sensitivity))
 
-    def analyze_video(
-        self,
-        video_path: str | Path,
-        sensitivity: str = "balanced",
-        audio_forensics: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+    def analyze_video(self, video_path: str | Path, sensitivity: str = "balanced", audio_forensics: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Runs the multi-modal temporal forensic evaluation pipeline on a video file."""
-        try:
-            return self.video_pipeline.analyze(
-                video_path=video_path,
-                sensitivity=sensitivity,
-                audio_forensics=audio_forensics,
-            )
-        except Exception as exc:
-            logger.error("Video analysis failed for %s: %s", video_path, exc, exc_info=True)
-            return {
-                "content_valid": False,
-                "filename": Path(video_path).name,
-                "path": str(video_path),
-                "error": str(exc),
-                "final_status": "PROCESSING_ERROR",
-            }
+        return self._guarded("Video", video_path, lambda: self.video_pipeline.analyze(
+            video_path=video_path, sensitivity=sensitivity, audio_forensics=audio_forensics))
 
     def record_feedback(
         self,
