@@ -249,4 +249,3 @@ class AudioAIDetector:
             return self._failure_result(path, "ERROR", f"Audio processing error: {exc}", f"Error: {exc}", str(exc))
 
     predict = analyze_audio_file
-    predict_audio = analyze_audio_file

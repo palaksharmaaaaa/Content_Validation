@@ -8,7 +8,6 @@ Provides:
 """
 from __future__ import annotations
 
-import hashlib
 import ipaddress
 import logging
 import os
@@ -157,13 +156,6 @@ def sanitize_filename(filename: str, max_len: int = 90) -> str:
         suffix = Path(cleaned).suffix[:12]            # a long name is shortened in the middle: the extension says what the file is
         cleaned = cleaned[: max_len - len(suffix)] + suffix if suffix else cleaned[:max_len]
     return cleaned
-
-
-def generate_secure_cache_name(prefix: str, seed: str, extension: str) -> str:
-    """Generates an unguessable collision-free SHA-256 hashed cache filename."""
-    h = hashlib.sha256(seed.encode("utf-8", errors="ignore")).hexdigest()[:16]
-    ext = extension if extension.startswith(".") else f".{extension}"
-    return f"{prefix}_{h}{ext}"
 
 
 class _PinnedResolver:

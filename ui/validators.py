@@ -68,18 +68,6 @@ def get_file_extension(filename: str | Path) -> str:
     return Path(filename).suffix.lower()
 
 
-def get_file_size_mb(file_path: str | Path) -> float:
-    """File size in megabytes."""
-    try:
-        p = Path(file_path)
-        if not p.is_file():
-            return 0.0
-        return p.stat().st_size / (1024 * 1024)
-    except Exception as exc:
-        logger.debug("get_file_size_mb: ignored %s: %s", type(exc).__name__, exc)
-        return 0.0
-
-
 def detect_media_type(file_path: str | Path) -> str:
     """'image', 'video' or 'audio' from the extension, or 'unknown'."""
     extension = get_file_extension(file_path)
@@ -254,15 +242,3 @@ def fetch_media_from_url(
         "content_type": fetch_res["content_type"],
         "platform": platform if platform != "Unknown" else "Direct Link",
     }
-
-
-def cleanup_url_download(file_path: str | Path | None) -> None:
-    """Safely cleans up downloaded temporary URL media files."""
-    if not file_path:
-        return
-    try:
-        p = Path(file_path)
-        if p.is_file():
-            p.unlink(missing_ok=True)
-    except Exception as exc:
-        logger.debug("cleanup_url_download: ignored %s: %s", type(exc).__name__, exc)

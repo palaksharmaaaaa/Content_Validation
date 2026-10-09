@@ -19,13 +19,6 @@ MEMORY_FILE = DATA_DIR / "video_memory.json"
 CALIBRATION_FILE = DATA_DIR / "video_calibration.json"
 
 
-def ensure_directories() -> None:
-    """Safely creates runtime data directories when needed without import-time side effects."""
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    MODELS_DIR.mkdir(parents=True, exist_ok=True)
-    DATASET_DIR.mkdir(parents=True, exist_ok=True)
-
-
 # Sampling & Limits
 DEFAULT_MAX_FRAMES = 30
 DEFAULT_KEYFRAME_TIMELINE_PCT = 0.15

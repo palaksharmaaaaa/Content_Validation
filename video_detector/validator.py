@@ -12,7 +12,6 @@ from __future__ import annotations
 import logging
 
 from pathlib import Path
-from typing import Any, Dict
 
 import cv2
 
@@ -126,10 +125,3 @@ class VideoValidator:
             aspect_ratio=meta.get("aspect_ratio", 1.0),
             codec=meta.get("codec", "UNKNOWN"),
         )
-
-
-
-def validate_video_stream(video_path: str | Path, **kwargs) -> Dict[str, Any]:
-    """Inspects video stream validity and dimensions, returning flat dictionary."""
-    res = VideoValidator().validate(video_path)
-    return res.to_dict()

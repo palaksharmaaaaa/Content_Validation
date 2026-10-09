@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-import subprocess
 from typing import Any, Dict, List, Optional, Tuple
 
 import cv2
@@ -19,7 +18,6 @@ import numpy as np
 
 from video_detector.config import DEFAULT_MAX_FRAMES
 
-_FFMPEG_MISSING_WARNED = False
 
 logger = logging.getLogger("video_detector.extractor")
 
@@ -126,71 +124,3 @@ class VideoFrameExtractor:
         finally:
             cap.release()
 
-    extract_frames = extract_sampled_frames
-
-    @staticmethod
-    def extract_keyframe(
-        video_path: str | Path,
-        timeline_pct: float = 0.15,
-        output_path: Optional[Path | str] = None,
-    ) -> Optional[np.ndarray]:
-        """Extracts a representative keyframe at timeline_pct (defaults to 15% to skip black titles)."""
-        cap = cv2.VideoCapture(str(video_path))
-        try:
-            if not cap.isOpened():
-                return None
-            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            target_idx = max(0, int(total_frames * timeline_pct))
-            cap.set(cv2.CAP_PROP_POS_FRAMES, target_idx)
-            ret, frame = cap.read()
-            if (not ret or frame is None) and target_idx > 0:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                ret, frame = cap.read()
-
-            if ret and frame is not None and output_path:
-                cv2.imwrite(str(output_path), frame)
-            return frame if ret else None
-        finally:
-            cap.release()
-
-    @staticmethod
-    def extract_audio_track(
-        video_path: str | Path, output_wav: Path | str
-    ) -> bool:
-        """Extracts audio track from video to 16kHz mono WAV using FFmpeg."""
-        cmd = [
-            "ffmpeg",
-            "-y",
-            "-i",
-            str(video_path),
-            "-vn",
-            "-acodec",
-            "pcm_s16le",
-            "-ar",
-            "16000",
-            "-ac",
-            "1",
-            str(output_wav),
-        ]
-        try:
-            res = subprocess.run(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                timeout=120,
-            )
-            return res.returncode == 0 and Path(output_wav).is_file() and Path(output_wav).stat().st_size > 44
-        except FileNotFoundError:
-            global _FFMPEG_MISSING_WARNED
-            if not _FFMPEG_MISSING_WARNED:
-                logger.warning(
-                    "ffmpeg executable not found in PATH. video_detector requires the "
-                    "ffmpeg system binary (not a pip package) to extract embedded audio "
-                    "tracks -- install it from https://ffmpeg.org/download.html and "
-                    "ensure it's on PATH. Audio-in-video analysis will be skipped."
-                )
-                _FFMPEG_MISSING_WARNED = True
-            return False
-        except Exception as exc:
-            logger.debug("Audio extraction failed for %s: %s", video_path, exc)
-            return False

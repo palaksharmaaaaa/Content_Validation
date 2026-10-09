@@ -146,7 +146,7 @@ class VideoForensicPipeline:
 
         frames = video_result.get("keyframes")
         if not frames:
-            frames, _, _ = self.detector.extractor.extract_frames(path, max_frames=12)
+            frames, _, _ = self.detector.extractor.extract_sampled_frames(path, max_frames=12)
         content = self.content_analyzer.analyze_video_frames(frames, video_path=path)
         keyframe = self.content_analyzer.representative_frame(frames) if frames else None
         keyframe_path = self._write_keyframe(keyframe, cache_dir, filename or path.name)

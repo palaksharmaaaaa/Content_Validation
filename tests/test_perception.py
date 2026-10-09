@@ -88,7 +88,6 @@ def test_shipped_vocabulary_embeddings_match_the_current_vocabularies():
 
 @needs_recognizer
 def test_shipped_embeddings_equal_a_fresh_computation_and_the_text_tower_is_released():
-    import torch
 
     from core.perception.recognizer import EMBEDDINGS_FILE
 

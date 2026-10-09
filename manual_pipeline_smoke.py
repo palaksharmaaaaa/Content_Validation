@@ -170,7 +170,7 @@ def run_pipeline_test():
         print("\n" + "=" * 70)
         print("          OFFICIAL MEDIA FORENSICS DOSSIER REPORT")
         print("=" * 70)
-        print(f" AUTHENTICITY PROBABILITIES:")
+        print(" AUTHENTICITY PROBABILITIES:")
         print(f"   • P(AI-Generated):       {probs['p_ai']}%")
         print(f"   • P(Authentic Capture):  {probs['p_real']}%")
         print(f"   • P(Undetermined / OOD): {probs['p_undecided']}%")

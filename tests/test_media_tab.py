@@ -1,5 +1,4 @@
 """The upload/link tab: results survive unrelated interactions, files are written once, long names keep their extension."""
-from pathlib import Path
 
 import numpy as np
 from PIL import Image

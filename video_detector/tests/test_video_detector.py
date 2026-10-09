@@ -48,7 +48,7 @@ class TestVideoDetector(unittest.TestCase):
 
     def test_extractor(self):
         extractor = VideoFrameExtractor()
-        frames, timestamps, step = extractor.extract_frames(self.vid_file, max_frames=5)
+        frames, timestamps, step = extractor.extract_sampled_frames(self.vid_file, max_frames=5)
         self.assertGreater(len(frames), 0)
         self.assertGreater(len(timestamps), 0)
         self.assertGreater(step, 0)

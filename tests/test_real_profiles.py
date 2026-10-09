@@ -1,5 +1,4 @@
 """What the result pages and explanations say about a file must be what the file is: real values, never zero or invented defaults."""
-import struct
 import wave
 
 import cv2

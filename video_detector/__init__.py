@@ -55,7 +55,6 @@ _LAZY_EXPORTS = {
     "group_temporal_segments": ("video_detector.temporal", "group_temporal_segments"),
     "normalize_percentages": ("video_detector.scoring", "normalize_percentages"),
     "pool_video_temporal_score": ("video_detector.scoring", "pool_video_temporal_score"),
-    "validate_video_stream": ("video_detector.validator", "validate_video_stream"),
 }
 install_lazy_exports(__name__, _LAZY_EXPORTS, globals())
 
