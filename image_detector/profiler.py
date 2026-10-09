@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Tuple
 
 from core.hashing import file_digests
 from core.perception.colors import dominant_colors, name_color
+from image_detector.features import analyze_fft_radial_power_spectrum
 
 import cv2
 from core.imageio import imread
@@ -277,27 +278,6 @@ def _dominant_palette(img_bgr: np.ndarray, gray: np.ndarray, channels: int) -> T
     return palette, len(colors)
 
 
-def _fft_decay_alpha(sample_gray: np.ndarray) -> float:
-    """Slope of the radially averaged Fourier magnitude spectrum in log-log space (default 2.05 on failure)."""
-    try:
-        mag_spec = np.abs(np.fft.fftshift(np.fft.fft2(sample_gray.astype(np.float32))))
-        cy, cx = sample_gray.shape[0] // 2, sample_gray.shape[1] // 2
-        y_mesh, x_mesh = np.ogrid[:sample_gray.shape[0], :sample_gray.shape[1]]
-        r_mesh = np.hypot(x_mesh - cx, y_mesh - cy).astype(int)
-        r_max = min(cx, cy) - 1
-        stop = max(6, r_max)
-        radii = r_mesh.ravel()
-        sums = np.bincount(radii, weights=mag_spec.ravel(), minlength=stop)[:stop]
-        counts = np.bincount(radii, minlength=stop)[:stop]
-        profile = [float(s) / int(c) for s, c in zip(sums[5:stop], counts[5:stop])]      # every radius below the half-size has pixels
-        if len(profile) > 5:
-            freqs = np.arange(5, 5 + len(profile))
-            return float(-np.polyfit(np.log(freqs), np.log(np.maximum(1e-6, profile)), 1)[0])
-    except Exception as exc:
-        logger.debug("_fft_decay_alpha: ignored %s: %s", type(exc).__name__, exc)
-    return 2.05
-
-
 def _raw_physical_signals(gray: np.ndarray) -> Dict[str, Any]:
     """PRNU-style noise residuals, bilateral smoothness, spectral decay, edge density and sharpness."""
     h, w = gray.shape[:2]
@@ -318,7 +298,7 @@ def _raw_physical_signals(gray: np.ndarray) -> Dict[str, Any]:
         "prnu_noise_std": round(float(np.std(diff_med)), 3),
         "flat_region_noise_mean": round(flat_noise, 3),
         "surface_smoothness_index": round(smoothness, 3),
-        "fft_decay_alpha": round(_fft_decay_alpha(sample), 3) + 0.0,
+        "fft_decay_alpha": analyze_fft_radial_power_spectrum(gray).get("spectral_decay_alpha"),   # the detector's own measurement, one definition
         "canny_edge_pct": round(float(np.sum(edges > 0) / max(1, edges.size) * 100.0), 2),
         "dark_line_art_pct": round(float(np.sum(dark_edges) / max(1, edges.size) * 100.0), 2),
         "laplacian_sharpness_var": round(float(cv2.Laplacian(sample, cv2.CV_64F).var()), 1),

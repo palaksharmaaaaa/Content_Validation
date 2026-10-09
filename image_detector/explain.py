@@ -178,18 +178,21 @@ def _dimension_4(c: _DossierContext) -> Dict[str, Any]:
 
 def _dimension_5(c: _DossierContext) -> Dict[str, Any]:
     """Dimension 5: 2D Fourier FFT Frequency Power Spectrum Decay"""
-    fft_alpha = c.phys.get("fft_decay_alpha", c.f_metrics.get("spectral_decay_alpha", 2.05))
+    fft_alpha = c.phys.get("fft_decay_alpha", c.f_metrics.get("spectral_decay_alpha"))
+    unmeasured = fft_alpha is None
     d5 = {
         "dimension_id": 5,
         "title": "Dimension 5: 2D Fourier FFT Frequency Power Spectrum Decay",
         "description": "Verifies natural optical power-law decay P(f) proportional to f^(-alpha), where natural optical captures exhibit alpha in [1.8, 2.2].",
         "spectral_decay_alpha": fft_alpha,
-        "is_anomalous_decay": fft_alpha < 1.65 or fft_alpha > 3.45,
+        "is_anomalous_decay": False if unmeasured else (fft_alpha < 1.65 or fft_alpha > 3.45),
         "mathematical_physics": "P(f) ~ f^(-alpha). Natural optical: alpha in [1.8, 2.2]. Synthetic: alpha < 1.4 or alpha > 3.4.",
         "diagnosis": (
-            f"Anomalous Fourier spectral slope (alpha={round(float(fft_alpha), 2) + 0.0:.2f}); deviates from physical optical decay"
+            "Not measured (the picture is too small to fit a spectral slope)"
+            if unmeasured
+            else f"Anomalous Fourier spectral slope (alpha={float(fft_alpha):.2f}); deviates from physical optical decay"
             if (fft_alpha < 1.65 or fft_alpha > 3.45)
-            else f"Standard Fourier radial spectral decay slope (alpha={round(float(fft_alpha), 2) + 0.0:.2f}) adhering to optical physics"
+            else f"Standard Fourier radial spectral decay slope (alpha={float(fft_alpha):.2f}) adhering to optical physics"
         ),
     }
     return d5

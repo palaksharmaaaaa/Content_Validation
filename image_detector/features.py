@@ -551,6 +551,11 @@ def calculate_surface_smoothness(gray_img: np.ndarray) -> float:
     return float(np.mean(diff))
 
 
+# Returned when no spectrum could be measured (unreadable or tiny picture): no slope, nothing anomalous, no directional peaks.
+_UNMEASURED_FFT: Dict[str, Any] = {
+    "spectral_decay_alpha": None, "is_anomalous_decay": False, "azimuthal_directional_variance": 0.0, "peak_energy_ratio": 1.0, "measured": False,
+}
+
 _fft_memo: Dict[str, Any] = {"key": None, "value": None}
 _fft_memo_lock = threading.Lock()
 
@@ -579,7 +584,7 @@ def _analyze_fft_radial_power_spectrum(gray_img: np.ndarray | str | Path) -> Dic
     if isinstance(gray_img, (str, Path)):
         loaded = imread(str(gray_img), cv2.IMREAD_GRAYSCALE)
         if loaded is None:
-            return {"spectral_decay_alpha": 2.0, "is_anomalous_decay": False}
+            return _UNMEASURED_FFT
         gray_img = loaded
     elif gray_img.ndim == 3:
         gray_img = cv2.cvtColor(gray_img, cv2.COLOR_BGR2GRAY)
@@ -622,7 +627,7 @@ def _analyze_fft_radial_power_spectrum(gray_img: np.ndarray | str | Path) -> Dic
         poly = np.polyfit(log_f, log_p, 1)
         spectral_decay_alpha = -float(poly[0])
     else:
-        spectral_decay_alpha = 2.0
+        return _UNMEASURED_FFT                                    # too small to fit a slope: say so rather than report a typical one
 
     is_anomalous_decay = bool(spectral_decay_alpha < 1.4 or spectral_decay_alpha > 3.6)
 
@@ -651,6 +656,7 @@ def _analyze_fft_radial_power_spectrum(gray_img: np.ndarray | str | Path) -> Dic
         "is_anomalous_decay": is_anomalous_decay,
         "azimuthal_directional_variance": round(azimuthal_var, 3),
         "peak_energy_ratio": round(peak_energy_ratio, 2),
+        "measured": True,
     }
 
 

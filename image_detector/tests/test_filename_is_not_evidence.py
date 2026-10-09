@@ -48,3 +48,15 @@ def test_screenshot_is_decided_from_the_picture_not_its_name():
     rng = np.random.default_rng(1)
     photo = rng.integers(0, 256, (300, 400, 3), dtype=np.uint8)
     assert detect_screenshot("Screenshot_2026.png", photo, {})["is_screenshot"] is False
+
+
+def test_profile_and_detector_report_the_same_fourier_slope(tmp_path):
+    from image_detector.pipeline import ImageForensicPipeline
+
+    rng = np.random.default_rng(5)
+    p = tmp_path / "x.png"
+    Image.fromarray(rng.integers(0, 256, (300, 300, 3), dtype=np.uint8)).save(p)
+    report = ImageForensicPipeline().analyze(p)
+    shown = report["quantified_inventory"]["pixel_physics_metrics"]["fourier_fft_alpha"]
+    used = report["ai_detection"]["forensic_metrics"]["spectral_decay_alpha"]
+    assert shown is not None and shown == used == report["nine_dimensions_dossier"]["dimension_5"]["spectral_decay_alpha"]

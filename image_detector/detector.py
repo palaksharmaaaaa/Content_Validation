@@ -359,9 +359,12 @@ class ImageAIDetector:
         return lr_noise, lr_smooth
 
     @staticmethod
-    def _fft_term(sig: _Signals, has_camera: bool, w_fft: float, ev: _Terms) -> Tuple[float, bool]:
-        """2D FFT radial power-spectrum decay term. Returns (alpha, is_anomaly)."""
-        alpha = float(sig.fft.get("spectral_decay_alpha", 2.05))
+    def _fft_term(sig: _Signals, has_camera: bool, w_fft: float, ev: _Terms) -> Tuple[Optional[float], bool]:
+        """2D FFT radial power-spectrum decay term. Returns (alpha, is_anomaly); alpha is None when no spectrum was measured."""
+        alpha = sig.fft.get("spectral_decay_alpha")
+        if alpha is None:
+            return None, False
+        alpha = float(alpha)
         is_jpeg = str(sig.path).lower().endswith((".jpg", ".jpeg"))
         if has_camera or is_jpeg or sig.scanned.get("is_scanned"):
             z_fft = (alpha - FFT_DECAY_ALPHA_JPEG) / 0.35
@@ -522,7 +525,7 @@ class ImageAIDetector:
             forensic_metrics={
                 "noise_residual_mean": round(sig.noise_mean, 3),
                 "surface_smoothness": round(sig.smoothness, 3),
-                "spectral_decay_alpha": round(alpha, 3),
+                "spectral_decay_alpha": None if alpha is None else round(alpha, 3),
                 "is_canonical_gen": is_canonical_gen,
                 "is_cutout": sig.cutout["is_cutout"],
                 "is_scanned": sig.scanned["is_scanned"],

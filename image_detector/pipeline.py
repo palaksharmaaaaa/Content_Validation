@@ -68,7 +68,7 @@ def _quantified_inventory(
             "prnu_noise_mean": profile_res.get("raw_physical_signals", {}).get("prnu_noise_mean", 0.0),
             "flat_region_noise": profile_res.get("raw_physical_signals", {}).get("flat_region_noise_mean", 0.0),
             "surface_smoothness": profile_res.get("raw_physical_signals", {}).get("surface_smoothness_index", 0.0),
-            "fourier_fft_alpha": profile_res.get("raw_physical_signals", {}).get("fft_decay_alpha", 2.05),
+            "fourier_fft_alpha": profile_res.get("raw_physical_signals", {}).get("fft_decay_alpha"),
             "highlight_clipped_pct": profile_res.get("pixel_color_profile", {}).get("highlight_clipped_pct", 0.0),
             "shadow_crushed_pct": profile_res.get("pixel_color_profile", {}).get("shadow_crushed_pct", 0.0),
         },

@@ -140,7 +140,9 @@ class FeatureStore:
         noise_mean, noise_std = calculate_sensor_noise_profile(gray)
         smoothness = calculate_surface_smoothness(gray)
         fft_res = analyze_fft_radial_power_spectrum(gray)
-        fft_alpha = float(fft_res.get("spectral_decay_alpha", 2.0))
+        if fft_res.get("spectral_decay_alpha") is None:
+            return None                                           # no measurable spectrum: not a feature row
+        fft_alpha = float(fft_res["spectral_decay_alpha"])
         fft_anomalous = 1.0 if fft_res.get("is_anomalous_decay") else 0.0
         azimuthal_var = float(fft_res.get("azimuthal_directional_variance", 0.0))
         peak_energy_ratio = float(fft_res.get("peak_energy_ratio", 1.0))
