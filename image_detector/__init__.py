@@ -34,7 +34,6 @@ _LAZY_EXPORTS = {
     "ImageFeedbackRecord": ("image_detector.schemas", "ImageFeedbackRecord"),
     "ImageForensicPipeline": ("image_detector.pipeline", "ImageForensicPipeline"),
     "ImageForensicResult": ("image_detector.schemas", "ImageForensicResult"),
-    "ImageModalityScore": ("image_detector.schemas", "ImageModalityScore"),
     "ImageModelAttributionEngine": ("image_detector.attribution", "ImageModelAttributionEngine"),
     "ImageProfiler": ("image_detector.profiler", "ImageProfiler"),
     "ImageProvenanceValidator": ("image_detector.provenance", "ImageProvenanceValidator"),
@@ -54,13 +53,11 @@ _LAZY_EXPORTS = {
     "compute_pixel_entropy": ("image_detector.profiler", "compute_pixel_entropy"),
     "detect_inpainting_and_manipulation": ("image_detector.features", "detect_inpainting_and_manipulation"),
     "detect_screenshot": ("image_detector.features", "detect_screenshot"),
-    "extract_all_image_details": ("image_detector.profiler", "extract_all_image_details"),
     "extract_image_metadata": ("image_detector.features", "extract_image_metadata"),
     "generate_newbie_explanation": ("image_detector.explain", "generate_newbie_explanation"),
     "generate_spatial_manipulation_heatmap": ("image_detector.features", "generate_spatial_manipulation_heatmap"),
     "normalize_percentages": ("image_detector.scoring", "normalize_percentages"),
     "pool_bayesian_log_odds": ("image_detector.scoring", "pool_bayesian_log_odds"),
-    "rgb_to_color_name": ("image_detector.profiler", "rgb_to_color_name"),
 }
 install_lazy_exports(__name__, _LAZY_EXPORTS, globals())
 
@@ -96,8 +93,6 @@ __all__ = [
     "detect_inpainting_and_manipulation",
     "compute_file_hashes",
     "compute_pixel_entropy",
-    "extract_all_image_details",
-    "rgb_to_color_name",
     # Scoring
     "pool_bayesian_log_odds",
     "normalize_percentages",
@@ -105,7 +100,6 @@ __all__ = [
     # Models
     "build_image_classifier",
     # Schemas
-    "ImageModalityScore",
     "ImageForensicResult",
     "ImageValidationResult",
     "ImageFeedbackRecord",

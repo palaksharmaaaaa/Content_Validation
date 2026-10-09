@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 from core.hashing import file_digests
-from core.perception.colors import dominant_colors, name_color
+from core.perception.colors import dominant_colors
 from image_detector.features import analyze_fft_radial_power_spectrum, calculate_sensor_noise_profile, calculate_surface_smoothness
 
 import cv2
@@ -53,11 +53,6 @@ def compute_pixel_entropy(image_bgr: np.ndarray) -> float:
     except Exception as exc:
         logger.debug("compute_pixel_entropy: ignored %s: %s", type(exc).__name__, exc)
         return 0.0
-
-
-def rgb_to_color_name(r: int, g: int, b: int) -> str:
-    """Everyday name of an sRGB colour (nearest in CIELAB, see core.perception.colors)."""
-    return name_color(r, g, b).title()
 
 
 def parse_gps_info(gps_dict: dict) -> Dict[str, Any]:
@@ -400,8 +395,3 @@ class ImageProfiler:
             "exif_device_details": container["exif_info"],
             "raw_physical_signals": _raw_physical_signals(gray),
         }
-
-
-def extract_all_image_details(file_path: str | Path, source: str = "User Upload") -> Dict[str, Any]:
-    """Convenience helper to extract each and every detail out of an image file before running predictions."""
-    return ImageProfiler().profile_image(file_path, source=source)

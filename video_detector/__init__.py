@@ -35,12 +35,10 @@ _LAZY_EXPORTS = {
     "VideoForensicPipeline": ("video_detector.pipeline", "VideoForensicPipeline"),
     "VideoForensicResult": ("video_detector.schemas", "VideoForensicResult"),
     "VideoFrameExtractor": ("video_detector.extractor", "VideoFrameExtractor"),
-    "VideoModalityScore": ("video_detector.schemas", "VideoModalityScore"),
     "VideoModelAttributionEngine": ("video_detector.attribution", "VideoModelAttributionEngine"),
     "VideoProfiler": ("video_detector.profiler", "VideoProfiler"),
     "VideoProvenanceValidator": ("video_detector.provenance", "VideoProvenanceValidator"),
     "VideoSelfImprover": ("video_detector.learner", "VideoSelfImprover"),
-    "VideoTemporalSegment": ("video_detector.schemas", "VideoTemporalSegment"),
     "VideoTemporalTransitionModel": ("video_detector.models.backbone", "VideoTemporalTransitionModel"),
     "VideoValidationResult": ("video_detector.schemas", "VideoValidationResult"),
     "VideoValidator": ("video_detector.validator", "VideoValidator"),
@@ -92,8 +90,6 @@ __all__ = [
     # Models
     "VideoTemporalTransitionModel",
     # Schemas
-    "VideoModalityScore",
-    "VideoTemporalSegment",
     "VideoForensicResult",
     "VideoValidationResult",
     "VideoFeedbackRecord",

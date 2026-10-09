@@ -9,59 +9,6 @@ from typing import Any, Dict, List, Optional
 
 
 @dataclass
-class AudioModalityScore:
-    """Three-state authenticity percentage distribution for audio."""
-    ai_percentage: float = 0.0
-    real_percentage: float = 0.0
-    undecided_percentage: float = 100.0
-    confidence: float = 0.0
-    label: str = "UNDECIDED"
-    details: Dict[str, Any] = field(default_factory=dict)
-
-    def __post_init__(self):
-        self.ai_percentage = max(0.0, float(self.ai_percentage))
-        self.real_percentage = max(0.0, float(self.real_percentage))
-        self.undecided_percentage = max(0.0, float(self.undecided_percentage))
-        total = self.ai_percentage + self.real_percentage + self.undecided_percentage
-        if total > 0 and abs(total - 100.0) > 0.05:
-            self.ai_percentage = (self.ai_percentage / total) * 100.0
-            self.real_percentage = (self.real_percentage / total) * 100.0
-            self.undecided_percentage = max(0.0, 100.0 - (self.ai_percentage + self.real_percentage))
-        self.confidence = max(0.0, min(1.0, float(self.confidence)))
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "ai_percentage": round(self.ai_percentage, 1),
-            "real_percentage": round(self.real_percentage, 1),
-            "undecided_percentage": round(self.undecided_percentage, 1),
-            "confidence": round(self.confidence, 2),
-            "label": self.label,
-            "details": self.details,
-        }
-
-
-@dataclass
-class AudioTemporalSegment:
-    """Contiguous timeline interval with audio classification."""
-    start_seconds: float
-    end_seconds: float
-    duration_seconds: float
-    label: str
-    ai_prob: float = 0.0
-    has_vocoder_cutoff: bool = False
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "start_seconds": round(self.start_seconds, 2),
-            "end_seconds": round(self.end_seconds, 2),
-            "duration_seconds": round(self.duration_seconds, 2),
-            "label": self.label,
-            "ai_prob": round(self.ai_prob, 3),
-            "has_vocoder_cutoff": self.has_vocoder_cutoff,
-        }
-
-
-@dataclass
 class AudioForensicResult:
     """Complete audio forensic analysis output schema."""
     valid: bool
