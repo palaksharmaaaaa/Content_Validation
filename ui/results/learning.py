@@ -5,7 +5,6 @@ import importlib
 from pathlib import Path
 from typing import Any, Dict, List
 
-import pandas as pd
 import streamlit as st
 
 from audio_detector import AudioSelfImprover

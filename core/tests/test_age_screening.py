@@ -127,3 +127,14 @@ def test_no_rotated_face_found_keeps_the_body_only_judgement(monkeypatch):
     est = _estimator_with(monkeypatch, variant_ages=[22.0], hits=[])
     s = est.assess(_IMG, faces=[], persons=[_PERSON])["subjects"][0]
     assert s["evidence"] == "body" and s["assessment"] == "POSSIBLE_MINOR"
+
+
+def test_loading_the_age_model_leaves_autograd_enabled_for_the_rest_of_the_process():
+    """Retraining in the same process (the app retrains detectors) needs gradients; loading MiVOLO must not switch them off."""
+    import torch
+
+    est = A.get_age_estimator()
+    if est._ensure() is None:
+        pytest.skip("age model weights not available")
+    assert torch.is_grad_enabled()
+    assert not any(p.requires_grad for p in est._ensure().parameters())

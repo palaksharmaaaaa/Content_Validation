@@ -123,7 +123,6 @@ class AgeEstimator:
         with self._lock:
             if self._model is None and not self._failed:
                 try:
-                    import torch
                     from safetensors.torch import load_file
 
                     from core.perception.mivolo_vendor.mivolo_net import MiVOLOModel
@@ -132,8 +131,7 @@ class AgeEstimator:
                                       embed_dims=(192, 384, 384, 384), num_heads=(6, 12, 12, 12))
                     state = {k.replace("mivolo.model.", "", 1): v.float() for k, v in load_file(str(self._weights)).items()}
                     net.load_state_dict(state, strict=True)
-                    self._model = net.eval()
-                    torch.set_grad_enabled(False)
+                    self._model = net.eval().requires_grad_(False)       # frozen here only; autograd stays on for the rest of the process
                 except Exception as exc:
                     logger.warning("Age model unavailable (%s): %s", self._weights, exc)
                     self._failed = True

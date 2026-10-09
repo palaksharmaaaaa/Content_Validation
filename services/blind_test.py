@@ -1,7 +1,7 @@
 """
 services.blind_test: run the full image pipeline over folders of photos without ever looking at labels, then score it.
 
-    python -m services.blind_test run     --out reports/blind.jsonl  "<dir>/new" "<dir>/Wallpapers"
+    python -m services.blind_test run     --out reports/blind.jsonl  "<photo dir 1>" "<photo dir 2>"
     python -m services.blind_test summary --out reports/blind.jsonl [--truth "Human Faces Dataset/AI-Generated Images=ai"]
 
 ``run`` is blind: it records only what the engine says (path, verdict AI / REAL / UNSURE, scores, faces, scene) and is

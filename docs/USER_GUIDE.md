@@ -97,7 +97,7 @@ Rules the trainer follows:
 The Evidence tab's **Faces** check uses a classifier that judges whether each face is a real photograph or AI-generated. It is trained from two folders of face images:
 
 ```bash
-python -m image_detector.face_training --real "<dir>/Human Faces Dataset/Real Images" --ai "<dir>/Human Faces Dataset/AI-Generated Images" --epochs 6
+python -m image_detector.face_training --real "<dir of real face photos>" --ai "<dir of AI-generated face images>" --epochs 6
 ```
 
 It reads the files in place, holds out about 20 % by file hash, and writes `image_detector/models/face_authenticity.pt` (about 43 MB, stored with Git LFS). Training takes roughly 25 minutes on a laptop CPU. The report prints accuracy on held-out images, on held-out images degraded the same way for both classes, and through the exact inference path.

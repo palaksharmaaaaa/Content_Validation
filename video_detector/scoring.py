@@ -13,7 +13,7 @@ from typing import Dict, Optional, Tuple
 
 import numpy as np
 
-from core.decision import normalize_percentages
+from core.decision import normalize_percentages  # noqa: F401  (re-exported: other modules import it from here)
 from core.shared_results import three_way_label
 from video_detector.config import (
     AI_THRESHOLD_BALANCED,

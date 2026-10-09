@@ -132,7 +132,7 @@ class VideoSelfImprover:
             logger.error("Failed to save video memory atomically: %s", e)
 
         m_thresh = calib.setdefault("motion_thresholds", {})
-        t_weights = calib.setdefault("temporal_weights", {})
+        calib.setdefault("temporal_weights", {})
         offsets = calib.setdefault("sensitivity_offsets", {})
         calib["samples_processed"] = len(memory)
 

@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-import pandas as pd
 import streamlit as st
 
 from ui.layout import render_table

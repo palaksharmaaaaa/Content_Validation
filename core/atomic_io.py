@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 import tempfile
 import threading
-from typing import Any
+from typing import Any, Optional
 
 import time
 import weakref

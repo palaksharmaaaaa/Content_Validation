@@ -5,7 +5,7 @@ import functools
 import threading
 from collections import OrderedDict
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 
 def stat_cached(maxsize: int = 16) -> Callable:

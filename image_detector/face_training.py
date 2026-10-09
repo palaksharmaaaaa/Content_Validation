@@ -1,7 +1,7 @@
 """
 image_detector.face_training: train the face-authenticity classifier from folders of face crops.
 
-    python -m image_detector.face_training --real "D:/.../Real Images" --ai "D:/.../AI-Generated Images" --epochs 6
+    python -m image_detector.face_training --real "<real photos dir>" --ai "<AI images dir>" --epochs 6
 
 Files are read in place (nothing is copied). The train/validation split comes from each file's content hash
 (``core.media_library.partition``), so validation faces are never trained on and the split never reshuffles.

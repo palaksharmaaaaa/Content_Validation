@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from core.provenance_view import build_c2pa_block, build_exif_block, build_provenance_view
 

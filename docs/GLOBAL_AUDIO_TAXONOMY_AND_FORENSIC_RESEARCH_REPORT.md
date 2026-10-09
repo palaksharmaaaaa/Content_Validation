@@ -5,7 +5,7 @@
 **Classification:** Technical Architecture & Omnidimensional Acoustic Forensic Specification  
 **Publication Date:** October 2, 2026  
 **Timestamp:** 2026-10-02  
-**Repository Working Directory:** `<repo>`  
+**Repository Working Directory:** the repository root  
 **Author:** Antigravity Advanced Agentic Coding & Acoustic Forensic Engineering Team  
 
 ---

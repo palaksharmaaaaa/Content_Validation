@@ -92,7 +92,6 @@ class ImageBenchmarkSuite:
         if num_pos > 0 and num_neg > 0:
             tp_cum, fp_cum = 0, 0
             auc = 0.0
-            prev_fp = 0
             for score, label in sorted_pairs:
                 if label == 1:
                     tp_cum += 1

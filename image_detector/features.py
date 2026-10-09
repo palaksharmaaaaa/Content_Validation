@@ -326,10 +326,8 @@ def detect_background_cutout(image_path: str | Path, img_bgr: Optional[np.ndarra
 
     # 2. Check perimeter borders for solid uniform studio fill
     h, w = img_bgr.shape[:2]
-    border_thick_h = max(2, int(h * 0.04))
     border_thick_w = max(2, int(w * 0.04))
 
-    top = img_bgr[:border_thick_h, :]
     left = img_bgr[:, :border_thick_w]
     right = img_bgr[:, -border_thick_w:]
 
@@ -368,7 +366,6 @@ def detect_scanned_photo(image_path: str | Path, img_bgr: np.ndarray, meta: Dict
     if total_mp >= 20.0:
         # Check outer frame margin for scanner border (often dark or distinct margin at the extreme 1%)
         margin_h = max(2, int(h * 0.01))
-        margin_w = max(2, int(w * 0.01))
         edge_top = img_bgr[:margin_h, :]
         edge_bottom = img_bgr[-margin_h:, :]
 
