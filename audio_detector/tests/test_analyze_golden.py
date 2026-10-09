@@ -1,6 +1,5 @@
 """Golden regression for AudioAIDetector.analyze_audio_file across fixtures, sensitivities and dimension terms."""
 import json
-from pathlib import Path
 
 import numpy as np
 

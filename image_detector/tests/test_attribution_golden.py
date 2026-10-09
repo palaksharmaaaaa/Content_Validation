@@ -1,8 +1,6 @@
 """Seeded 1500-case golden for image generator attribution."""
 import json
 import random
-import tempfile
-from pathlib import Path
 
 from PIL import Image
 

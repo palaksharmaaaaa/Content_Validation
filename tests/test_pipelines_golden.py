@@ -1,7 +1,5 @@
 """Golden for the three headless pipelines (image jpg/png, audio wav, video mp4): the complete report dicts."""
 import json
-import pytest
-from pathlib import Path
 
 import cv2
 import numpy as np

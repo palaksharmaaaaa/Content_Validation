@@ -7,7 +7,7 @@ Completely self-contained with zero outside dependencies.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 import cv2
 import numpy as np
 
@@ -22,25 +22,16 @@ class VideoFaceDeepfakeDetector:
     def __init__(self):
         pass
 
-    def detect_faces(
-        self,
-        image_bgr: np.ndarray,
-        person_boxes: Optional[List[Tuple[int, int, int, int]]] = None,
-    ) -> List[Tuple[int, int, int, int, float]]:
-        """Faces found by the YuNet detector as (x, y, w, h, confidence). ``person_boxes`` is accepted for compatibility
-        and ignored: a real face detector needs no help from the person detector."""
+    def detect_faces(self, image_bgr: np.ndarray) -> List[Tuple[int, int, int, int, float]]:
+        """Faces found by the YuNet detector, as (x, y, w, h, confidence)."""
         return get_face_finder().find(image_bgr)
 
-    def analyze_frame_faces(
-        self,
-        frame_bgr: np.ndarray,
-        person_boxes: Optional[List[Tuple[int, int, int, int]]] = None,
-    ) -> Dict[str, Any]:
+    def analyze_frame_faces(self, frame_bgr: np.ndarray) -> Dict[str, Any]:
         """Analyzes a single frame for facial deepfakes."""
         if frame_bgr is None or not hasattr(frame_bgr, "shape"):
             return {"faces_detected": 0, "deepfake_risk": "NONE", "facial_ai_confidence": 0.0, "face_boxes": []}
 
-        faces = self.detect_faces(frame_bgr, person_boxes=person_boxes)
+        faces = self.detect_faces(frame_bgr)
         if not faces:
             return {"faces_detected": 0, "deepfake_risk": "NO_FACES_DETECTED", "facial_ai_confidence": 0.0, "face_boxes": []}
 

@@ -1,7 +1,6 @@
 """Seeded golden for the audio and video nine-dimension dossiers (random key presence)."""
 import json
 import random
-from pathlib import Path
 
 from audio_detector.explain import build_audio_nine_dimensions_dossier
 from video_detector.explain import build_video_nine_dimensions_dossier

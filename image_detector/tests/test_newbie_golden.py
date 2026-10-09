@@ -1,7 +1,5 @@
 """Seeded 1000-case golden for the plain-English image narrative (also pins deterministic entity ordering)."""
-import json
 import random
-from pathlib import Path
 
 from image_detector.explain import generate_newbie_explanation
 

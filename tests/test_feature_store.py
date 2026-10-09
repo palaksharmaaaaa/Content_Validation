@@ -3,20 +3,17 @@ Unit test suite verifying zero-retention in-memory processing,
 compressed .npz feature caching, and zero-media model training.
 """
 import io
-import shutil
 import tempfile
 import unittest
 from pathlib import Path
 
 import cv2
 import numpy as np
-from PIL import Image
 import torch
 
 from core.atomic_io import get_ephemeral_cache_dir, purge_ephemeral_cache
 from image_detector import (
     FeatureBankDataset,
-    FeatureClassifierHead,
     FeatureStore,
     ImageAIDetector,
     ImageDetectorTrainer,

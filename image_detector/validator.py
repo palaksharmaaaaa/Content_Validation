@@ -152,9 +152,6 @@ class ImageValidator:
             },
         )
 
-    def validate_image(self, image_path: str | Path) -> ImageValidationResult:
-        """Alias for validate to ensure backwards compatibility across services and callers."""
-        return self.validate(image_path)
 
 
 def analyze_image(image_path: str | Path) -> Dict[str, Any]:

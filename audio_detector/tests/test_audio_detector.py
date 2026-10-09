@@ -12,13 +12,12 @@ from audio_detector.attribution import AudioModelAttributionEngine
 from audio_detector.batch import AudioBatchProcessor
 from audio_detector.content import AudioContentAnalyzer
 from audio_detector.detector import AudioAIDetector
-from audio_detector.downloader import AudioDownloader
 from audio_detector.features import compute_spectral_features, generate_spectrogram_image
 from audio_detector.learner import AudioSelfImprover
 from audio_detector.pipeline import AudioForensicPipeline
 from audio_detector.profiler import AudioProfiler
 from audio_detector.provenance import AudioProvenanceValidator
-from audio_detector.scoring import normalize_percentages, pool_acoustic_evidence
+from audio_detector.scoring import normalize_percentages
 from audio_detector.validator import AudioValidator
 
 

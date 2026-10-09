@@ -1,7 +1,6 @@
 """Seeded 1500-case golden for the image nine-dimension dossier (random key presence)."""
 import json
 import random
-from pathlib import Path
 
 from image_detector.explain import IPTC_SOURCE_TYPE_MAPPING, build_nine_dimensions_dossier
 

@@ -1,6 +1,5 @@
 """Integration: extra_log_lrs in the detector, gates + dimension report in the pipeline."""
 import hashlib
-import struct
 
 import numpy as np
 import pytest

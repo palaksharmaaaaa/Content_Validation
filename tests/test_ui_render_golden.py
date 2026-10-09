@@ -1,9 +1,5 @@
 """Golden for the Streamlit result pages: the element tree (types and text) for image/audio/video items."""
-import hashlib
-import json
-import pytest
 import re
-from pathlib import Path
 
 import cv2
 import numpy as np

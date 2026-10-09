@@ -1,6 +1,4 @@
 """Golden regression: the decision layer's output for 14 representative evidence combinations must not drift."""
-import json
-from pathlib import Path
 
 from core.decision import generate_final_decision as g
 from tests.golden_support import assert_golden

@@ -12,7 +12,6 @@ from image_detector.attribution import ImageModelAttributionEngine
 from image_detector.batch import ImageBatchProcessor
 from image_detector.content import ImageContentAnalyzer
 from image_detector.detector import ImageAIDetector
-from image_detector.downloader import ImageDownloader
 from image_detector.face import FaceDeepfakeDetector
 from image_detector.features import (
     analyze_fft_radial_power_spectrum,
@@ -22,9 +21,9 @@ from image_detector.features import (
 )
 from image_detector.learner import ImageSelfImprover
 from image_detector.pipeline import ImageForensicPipeline
-from image_detector.profiler import ImageProfiler, compute_pixel_entropy
+from image_detector.profiler import ImageProfiler
 from image_detector.provenance import ImageProvenanceValidator
-from image_detector.scoring import normalize_percentages, pool_bayesian_log_odds
+from image_detector.scoring import normalize_percentages
 from image_detector.validator import ImageValidator
 
 

@@ -1,13 +1,12 @@
 """Video signal checks: interlacing/combing and temporal cadence (duplicates, pulldown)."""
 import cv2
 import numpy as np
-import pytest
 
 from core.forensics.registry import CheckContext
 from core.forensics.schemas import EvidenceClass, FindingStatus
 from video_detector.dimension_checks import _common as C
 from video_detector.dimension_checks import signal
-from video_detector.tests.video_fixtures import box, build_mp4, fiel, moving_square_frames, trak, write_clip
+from video_detector.tests.video_fixtures import build_mp4, fiel, moving_square_frames, trak, write_clip
 
 
 def _gray(frames):

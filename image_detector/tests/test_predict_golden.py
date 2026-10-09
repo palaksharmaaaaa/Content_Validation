@@ -1,8 +1,6 @@
 """Golden regression for the image scoring pipeline."""
 import json
-from pathlib import Path
 
-import pytest
 
 import cv2
 import numpy as np

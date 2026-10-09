@@ -81,6 +81,3 @@ class AudioContentAnalyzer:
             "crest_factor": round(crest_factor, 2),
         }
 
-    def analyze_audio_content(self, samples: np.ndarray, sample_rate: int = 16000, duration: float = 0.0) -> Dict[str, Any]:
-        """Alias for backward compatibility."""
-        return self.analyze_audio_scene(samples, sample_rate)

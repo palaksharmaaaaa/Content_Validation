@@ -1,7 +1,6 @@
 """Golden regression for VideoAIDetector.analyze_video on synthetic clips (noise, still, moving, flat, flicker)."""
 import hashlib
 import json
-from pathlib import Path
 
 import cv2
 import numpy as np

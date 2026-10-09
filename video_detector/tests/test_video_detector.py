@@ -13,14 +13,13 @@ from video_detector.batch import VideoBatchProcessor
 from video_detector.content import VideoContentAnalyzer
 from video_detector.cross_modal import CrossModalConsistencyEngine
 from video_detector.detector import VideoAIDetector
-from video_detector.downloader import VideoDownloader
 from video_detector.extractor import VideoFrameExtractor
 from video_detector.face import VideoFaceDeepfakeDetector
 from video_detector.learner import VideoSelfImprover
 from video_detector.pipeline import VideoForensicPipeline
 from video_detector.profiler import VideoProfiler
 from video_detector.provenance import VideoProvenanceValidator
-from video_detector.scoring import normalize_percentages, pool_video_temporal_score
+from video_detector.scoring import normalize_percentages
 from video_detector.temporal import compute_interframe_motion_variance, detect_diffusion_flickering
 from video_detector.validator import VideoValidator
 

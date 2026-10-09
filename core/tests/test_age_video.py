@@ -1,6 +1,5 @@
 """Video minor screening: frame choice, aggregation, and that a flagged frame clears nothing."""
 import numpy as np
-import pytest
 
 from core.perception import age_video as V
 

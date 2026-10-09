@@ -8,7 +8,7 @@ import pytest
 
 from audio_detector.detector import AudioAIDetector
 from audio_detector.pipeline import AudioForensicPipeline
-from audio_detector.tests.audio_fixtures import id3v23, tone, write_wav, write_wav_with_chunks
+from audio_detector.tests.audio_fixtures import write_wav, write_wav_with_chunks
 
 
 @pytest.fixture(scope="module")

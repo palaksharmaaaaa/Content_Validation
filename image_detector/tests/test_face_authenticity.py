@@ -1,6 +1,5 @@
 """Face authenticity: cropping, graceful absence of a model, and the training-data preparation that removes shortcuts."""
 import numpy as np
-import pytest
 from PIL import Image
 
 from image_detector.face_authenticity import INPUT_SIZE, FaceAuthenticityClassifier, crop_face

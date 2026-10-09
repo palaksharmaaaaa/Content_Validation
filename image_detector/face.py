@@ -24,20 +24,11 @@ class FaceDeepfakeDetector:
     def __init__(self):
         pass
 
-    def detect_faces(
-        self,
-        image_bgr: np.ndarray,
-        person_boxes: Optional[List[Tuple[int, int, int, int]]] = None,
-    ) -> List[Tuple[int, int, int, int, float]]:
-        """Faces found by the YuNet detector as (x, y, w, h, confidence). ``person_boxes`` is accepted for compatibility
-        and ignored: a real face detector needs no help from the person detector."""
+    def detect_faces(self, image_bgr: np.ndarray) -> List[Tuple[int, int, int, int, float]]:
+        """Faces found by the YuNet detector, as (x, y, w, h, confidence)."""
         return get_face_finder().find(image_bgr)
 
-    def analyze_faces(
-        self,
-        image_bgr: np.ndarray,
-        person_boxes: Optional[List[Tuple[int, int, int, int]]] = None,
-    ) -> Dict[str, Any]:
+    def analyze_faces(self, image_bgr: np.ndarray) -> Dict[str, Any]:
         """
         Localizes faces and evaluates synthetic skin smoothing, bilateral texture anomalies,
         and deepfake-associated cues.

@@ -1,6 +1,5 @@
 """Audio container / metadata checks: ID3, RIFF+bext, FLAC MD5, MP3 encoder tag, Ogg structure."""
 import shutil
-import struct
 import subprocess
 
 import pytest

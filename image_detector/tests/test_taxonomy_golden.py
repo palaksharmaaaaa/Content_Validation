@@ -1,7 +1,5 @@
 """Seeded 4000-case fuzz golden for the taxonomy decision tree (covers all 9 reachable states)."""
-import json
 import random
-from pathlib import Path
 
 from image_detector.scoring import evaluate_taxonomy_classification as ev
 from tests.golden_support import assert_golden

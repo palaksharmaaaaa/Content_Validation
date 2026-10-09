@@ -95,7 +95,7 @@ class ImageContentAnalyzer:
         recognize_details(sample_bgr, vehicle_details, "vehicle")
 
         # 2. Faces: detection, texture risk, expression, same-person groups
-        face_info = self.face_detector.analyze_faces(sample_bgr, person_boxes=person_boxes)
+        face_info = self.face_detector.analyze_faces(sample_bgr)
         faces_detected = face_info["faces_detected"]
 
         human_count, faces_detected, single_character_detected = self._count_humans(sample_bgr, person_boxes, faces_detected)
@@ -341,13 +341,6 @@ class ImageContentAnalyzer:
                     detected_items.append(label)
                 item_details.append({"name": label, "score": round(score, 2), "bbox": bbox_dict})
         return person_boxes, detected_animals, animal_details, detected_vehicles, vehicle_details, detected_items, item_details
-
-    def _classify_semantic_categories(
-        self, img_bgr: np.ndarray
-    ) -> Tuple[List[str], List[str], List[str]]:
-        """Classifies objects into items, animals, and vehicles (backwards compatible)."""
-        _, animals, _, vehicles, _, items, _ = self._detect_objects(img_bgr)
-        return items, animals, vehicles
 
     def _analyze_lighting(self, img_bgr: np.ndarray) -> Dict[str, Any]:
         """Infers lighting conditions from luminance distribution."""

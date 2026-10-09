@@ -1,4 +1,3 @@
-import os
 import sys
 import tempfile
 import unittest
@@ -10,7 +9,6 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from core.decision import generate_final_decision, normalize_percentages
-from core.security import validate_secure_url, SecureUrlFetcher
 from image_detector.downloader import ImageDownloader
 from audio_detector.downloader import AudioDownloader
 from video_detector.downloader import VideoDownloader
@@ -196,21 +194,15 @@ class TestForensicServiceFacade(unittest.TestCase):
         self.assertIsNotNone(self.service.video_pipeline)
         self.assertIsNotNone(self.service.audio_pipeline)
 
-    def test_audio_validator_alias(self):
-        validator = AudioValidator()
-        self.assertTrue(hasattr(validator, "validate_audio"))
-        # Test with non-existent file
-        res = validator.validate_audio("non_existent_file.wav")
+    def test_audio_validator_rejects_a_missing_file(self):
+        res = AudioValidator().validate("non_existent_file.wav")
         self.assertFalse(res.is_valid)
         self.assertEqual(res.get("readable"), False)
 
 
 class TestVideoFaceGating(unittest.TestCase):
-    def test_empty_person_boxes_returns_empty_faces(self):
-        detector = VideoFaceDeepfakeDetector()
-        dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
-        # Passing empty person boxes should immediately gate and return empty faces list
-        faces = detector.detect_faces(dummy_frame, person_boxes=[])
+    def test_a_blank_frame_has_no_faces(self):
+        faces = VideoFaceDeepfakeDetector().detect_faces(np.zeros((480, 640, 3), dtype=np.uint8))
         self.assertEqual(faces, [])
 
 

@@ -1,7 +1,6 @@
 """Seeded 1200-case golden for video generator attribution."""
 import json
 import random
-from pathlib import Path
 
 from video_detector.attribution import VideoModelAttributionEngine
 from video_detector.provenance import KNOWN_VIDEO_GENERATOR_SIGNATURES

@@ -1,10 +1,8 @@
 """Golden for ImageContentAnalyzer on synthetic scenes (noise, silhouette, text, large, sky/ground)."""
 import json
-from pathlib import Path
 
 import cv2
 import numpy as np
-from PIL import Image
 
 from image_detector.content import ImageContentAnalyzer
 

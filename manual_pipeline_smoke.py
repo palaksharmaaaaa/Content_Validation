@@ -15,17 +15,14 @@ import wave
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-import cv2
 import numpy as np
 from PIL import Image, ImageDraw
 
-from audio_detector import AudioAIDetector, AudioSelfImprover, AudioContentAnalyzer
+from audio_detector import AudioAIDetector, AudioContentAnalyzer
 from image_detector import (
-    FaceDeepfakeDetector,
     ImageAIDetector,
     ImageContentAnalyzer,
     ImageModelAttributionEngine as ModelAttributionEngine,
-    ImageSelfImprover,
     analyze_image,
 )
 from video_detector import evaluate_cross_modal_consistency
@@ -91,7 +88,7 @@ def run_pipeline_test():
         content_analyzer = ImageContentAnalyzer()
         aud_content_analyzer = AudioContentAnalyzer()
         content_img = content_analyzer.analyze_image_content(str(tmp_img_path))
-        content_aud = aud_content_analyzer.analyze_audio_content(signal, sr, 3.0)
+        content_aud = aud_content_analyzer.analyze_audio_scene(signal, sr)
         humans_cnt = content_img["entities"]["humans"]["persons_count"]
         faces_cnt = content_img["entities"]["humans"]["faces_count"]
         text_cnt = content_img["contents_and_items"]["text_regions_count"]

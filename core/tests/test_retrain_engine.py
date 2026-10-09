@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from core.checkpoint_log import append_row, read_last_accuracy
+from core.checkpoint_log import read_last_accuracy
 from core.media_library import MediaLibrary, register_feedback
 from core.retrain_engine import run_retrain
 

@@ -2,7 +2,6 @@
 import io
 import zipfile
 
-import pytest
 from PIL import Image, PngImagePlugin
 
 from core.forensics.registry import CheckContext

@@ -1,7 +1,6 @@
 """Adaptive video sampling: content changes and the one-per-second grid are examined, static footage is not re-examined."""
 import cv2
 import numpy as np
-import pytest
 
 from core.perception import age_video as V
 from core.perception import video_sampling as S

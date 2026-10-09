@@ -1,6 +1,5 @@
 """Seeded 300-case golden for screenshot detection (canonical sizes, UI bars, taskbars, noise, metadata)."""
 import json
-from pathlib import Path
 import random
 
 import cv2

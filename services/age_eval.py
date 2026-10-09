@@ -172,7 +172,6 @@ FAIRFACE_GROUPS = ["0-2", "3-9", "10-19", "20-29", "30-39", "40-49", "50-59", "6
 def fairface(parquet: Path, out: Path, per_young_group: int = 400, per_other_group: int = 120, seed: int = 4) -> int:
     """Age a stratified sample of FairFace (CC BY 4.0) faces. FairFace only gives 10-year groups, so 0-2 and 3-9 are certain
     minors, 10-19 mixes minors with 18-19 year-olds, and 20+ are adults. MiVOLO v2 was not trained on FairFace."""
-    import io
 
     import cv2
     import pandas as pd
