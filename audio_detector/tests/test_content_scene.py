@@ -60,3 +60,16 @@ def test_a_cutoff_near_the_recordings_own_nyquist_is_not_a_vocoder():
     plain = pool_acoustic_evidence(feats, {}, None, 0.0, {})[0]
     flagged = pool_acoustic_evidence({**feats, "has_vocoder_cutoff": True}, {}, None, 0.0, {})[0]
     assert plain < flagged
+
+
+def test_audio_is_named_only_when_its_metadata_says_so(tmp_path):
+    from audio_detector.attribution import AudioModelAttributionEngine
+    from audio_detector.tests.audio_fixtures import tone, write_wav
+
+    p = write_wav(tmp_path / "a.wav", tone(2.0, noise=0.05, seed=1))
+    eng = AudioModelAttributionEngine()
+    acoustic = {"spectral_features": {"has_vocoder_cutoff": True, "cutoff_freq_hz": 7600.0, "spectral_flatness": 0.001, "digital_silence_ratio": 0.3}}
+    out = eng.attribute_audio(p, acoustic_data=acoustic, provenance_data={"metadata": {}})
+    assert out["model_key"] == "unknown" and out["top_candidates"] == [] and out["cues"]
+    named = eng.attribute_audio(p, acoustic_data=acoustic, provenance_data={"metadata": {"comment": "made with ElevenLabs"}})
+    assert named["model_key"] == "elevenlabs"

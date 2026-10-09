@@ -29,7 +29,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from core.shared_results import unknown_attribution
+from core.shared_results import finalize_attribution, unknown_attribution
 
 logger = logging.getLogger("video_detector.attribution")
 
@@ -141,23 +141,26 @@ def _region_for(model_key: str) -> str:
     return "United States" if model_key in _UNITED_STATES else "Global"
 
 
-def _score_vendor_signatures(provenance_data: Dict[str, Any], scores: Dict[str, float], cues: List[str]) -> None:
+def _score_vendor_signatures(provenance_data: Dict[str, Any], scores: Dict[str, float], cues: List[str]) -> bool:
     """Vendor strings found in container metadata (unauthenticated claims: they steer the guess, never the verdict).
 
     container_atoms only ever holds generic MP4 box type names and can never contain a vendor identifier; vendor
     strings are scanned separately into vendor_signatures_found.
     """
+    declared = False
     for sig in provenance_data.get("vendor_signatures_found", []):
         sig_str = str(sig).lower()
         for needles, key, cue in _VENDOR_SIGNATURES:
             if any(n in sig_str for n in needles):
                 scores[key] += 0.85
                 cues.append(cue)
+                declared = True
                 break
     if provenance_data.get("c2pa_present"):
         scores["openai_sora"] += 0.45
         scores["google_veo"] += 0.35
         cues.append("C2PA Content Credentials markers present in video stream (unverified)")
+    return declared
 
 
 def _score_temporal_characteristics(temporal_data: Dict[str, Any], scores: Dict[str, float]) -> None:
@@ -194,40 +197,15 @@ class VideoModelAttributionEngine:
         scores: Dict[str, float] = {k: 0.05 for k in KNOWN_VIDEO_GENERATORS}
         cues: List[str] = []
 
-        if provenance_data:
-            _score_vendor_signatures(provenance_data, scores, cues)
+        declared = _score_vendor_signatures(provenance_data, scores, cues) if provenance_data else False
         if temporal_data:
             _score_temporal_characteristics(temporal_data, scores)
 
-        # Normalize scores
-        total = sum(scores.values())
-        norm = {k: v / total for k, v in scores.items()} if total > 0 else scores
-        top_candidates = sorted(norm.items(), key=lambda x: x[1], reverse=True)
-
-        best_key, best_score = top_candidates[0]
-        if best_score < 0.25:
-            return {
-                "attributed_model": "Unknown / Generic Video Diffusion",
-                "model_key": "unknown",
-                "confidence": round(best_score, 2),
-                "cues": cues or ["No distinctive video foundation model fingerprints isolated."],
-                "top_candidates": [{"model": KNOWN_VIDEO_GENERATORS[k]["name"], "confidence": round(s, 2)} for k, s in top_candidates[:3]],
-            }
-
-        best_info = KNOWN_VIDEO_GENERATORS[best_key]
-        conf = round(best_score, 2)
-        region = _region_for(best_key)
-        return {
-            "attributed_model": best_info["name"],
-            "model_key": best_key,
-            "provider": best_info["provider"],
-            "confidence": conf,
-            "attribution_confidence": conf,
-            "region_of_origin": region,
-            "watermark_detected": False,
-            "cues": cues or [f"Temporal motion and container dynamics match {best_info['name']}"],
-            "top_candidates": [{"model": KNOWN_VIDEO_GENERATORS[k]["name"], "confidence": round(s, 2)} for k, s in top_candidates[:3]],
-        }
+        return finalize_attribution(
+            scores, KNOWN_VIDEO_GENERATORS, declared=declared, cues=cues,
+            unknown_name="Unknown / Generic Video Diffusion", no_cue_text="No generator is declared in the file's metadata.",
+            region_of=_region_for,
+        )
 
     def attribute_media(
         self,

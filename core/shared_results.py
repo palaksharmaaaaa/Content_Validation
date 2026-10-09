@@ -45,3 +45,51 @@ def shift_probability_by_log_odds(p_ai: float, extra_log_lrs: Optional[Dict[str,
     shifted = float(np.clip(1.0 / (1.0 + 10.0 ** (-logit)), 0.01, 0.99))
     cues = [f"Dimension check '{k}' adjusted log-odds by {float(v):+.2f}" for k, v in (extra_log_lrs or {}).items() if v]
     return shifted, 1.0 - shifted, cues
+
+
+NAMING_THRESHOLD = 0.25
+
+
+def finalize_attribution(
+    scores: Dict[str, float],
+    catalog: Dict[str, Dict[str, Any]],
+    *,
+    declared: bool,
+    cues: List[str],
+    unknown_name: str,
+    no_cue_text: str,
+    region_of: Any,
+    watermark_detected: bool = False,
+) -> Dict[str, Any]:
+    """The shared last step of every attribution engine.
+
+    A generator is named only when the file itself declares one (a visible watermark, a metadata or software claim). Signal statistics
+    (spectral slope, motion variance, a cutoff frequency, a canvas size) are shared by many generators and by ordinary cameras and
+    codecs, so they can rank candidates but never put a product name on a file by themselves; without a declaration the answer is
+    "unknown" and the candidate list is withheld rather than offered as a guess.
+    """
+    total = sum(scores.values())
+    ranked = sorted(((k, v / total if total > 0 else v) for k, v in scores.items()), key=lambda kv: kv[1], reverse=True)
+    top3 = [{"model": catalog[k]["name"], "confidence": round(s, 2)} for k, s in ranked[:3]]
+    best_key, best_score = ranked[0]
+    if not declared or best_score < NAMING_THRESHOLD:
+        return {
+            "attributed_model": unknown_name,
+            "model_key": "unknown",
+            "confidence": round(best_score, 2) if declared else 0.0,
+            "cues": cues or [no_cue_text],
+            "top_candidates": top3 if declared else [],
+        }
+    info = catalog[best_key]
+    conf = round(best_score, 2)
+    return {
+        "attributed_model": info["name"],
+        "model_key": best_key,
+        "provider": info["provider"],
+        "confidence": conf,
+        "attribution_confidence": conf,
+        "region_of_origin": region_of(best_key),
+        "watermark_detected": watermark_detected,
+        "cues": cues or [f"The file declares {info['name']}."],
+        "top_candidates": top3,
+    }

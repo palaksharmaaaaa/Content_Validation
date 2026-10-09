@@ -544,24 +544,35 @@ def test_a_misspelled_taxonomy_argument_raises_instead_of_being_ignored():
         evaluate_taxonomy_classification(ai_pct=50.0, real_pct=40.0, metadata_abscent=True)
 
 
-def test_attribution_follows_the_measured_spectrum_and_smoothness(tmp_path):
-    """The spectral evidence used to be read from keys the detector never produces, so it was ignored and every AI image listed the same
-    three generators. It is read from forensic_metrics now."""
+def test_attribution_follows_the_measured_spectrum_and_smoothness():
+    """The spectral evidence used to be read from keys the detector never produces, so it was ignored. It is read from
+    forensic_metrics now; it ranks candidates, and a name is given only when the file declares one (see test_a_name_needs_a_declaration)."""
+    from image_detector.attribution import KNOWN_IMAGE_GENERATORS, _score_spectral
+
+    def scored(alpha, smooth):
+        scores = {k: 0.05 for k in KNOWN_IMAGE_GENERATORS}
+        _score_spectral({"forensic_metrics": {"spectral_decay_alpha": alpha, "surface_smoothness": smooth}}, scores, [])
+        return scores
+
+    flat, steep, mid = scored(1.2, 3.5), scored(3.0, 3.5), scored(2.0, 3.5)
+    assert flat != steep
+    assert max(steep, key=steep.get) == "stable_diffusion"
+    assert max(flat, key=flat.get) == "midjourney"
+    assert mid == {k: 0.05 for k in KNOWN_IMAGE_GENERATORS}           # a mid-range slope adds evidence for nobody
+    assert scored(None, None) == mid                                   # no measurement adds evidence for nobody
+
+
+def test_a_name_needs_a_declaration(tmp_path):
     from PIL import Image as PILImage
 
     from image_detector.attribution import ImageModelAttributionEngine
 
     p = tmp_path / "x.png"
-    PILImage.fromarray(np.full((640, 480, 3), 100, np.uint8)).save(p)
+    PILImage.fromarray(np.full((1024, 1024, 3), 100, np.uint8)).save(p)          # a canonical generator canvas, no claims in the file
     eng = ImageModelAttributionEngine()
-
-    def ranking(alpha, smooth):
-        fd = {"taxonomy_state": "FULLY_AI_GENERATED", "forensic_metrics": {"spectral_decay_alpha": alpha, "surface_smoothness": smooth}}
-        return [(c["model"], c["confidence"]) for c in eng.attribute_image(p, forensic_data=fd)["top_candidates"]]
-
-    flat, steep = ranking(1.2, 3.5), ranking(3.0, 3.5)
-    assert flat != steep                                              # the measurement changes the answer
-    assert "stable diffusion" in steep[0][0].lower()                  # a steep spectrum favours Stable Diffusion, a flat one Midjourney / Flux
-    assert any(name in flat[0][0].lower() for name in ("midjourney", "black forest"))
-    no_metrics = [(c["model"], c["confidence"]) for c in eng.attribute_image(p, forensic_data={"taxonomy_state": "FULLY_AI_GENERATED"})["top_candidates"]]
-    assert no_metrics == ranking(2.0, 3.5)            # no measurement, or a mid-range one, adds evidence for nobody
+    fd = {"taxonomy_state": "FULLY_AI_GENERATED", "digital_art_detected": True,
+          "forensic_metrics": {"spectral_decay_alpha": 1.2, "surface_smoothness": 1.0}}
+    out = eng.attribute_image(p, forensic_data=fd)
+    assert out["model_key"] == "unknown" and out["top_candidates"] == []
+    declared = eng.attribute_image(p, forensic_data=fd, provenance_data={"metadata": {"software": "Midjourney v6"}})
+    assert declared["model_key"] != "unknown" and "midjourney" in declared["attributed_model"].lower()

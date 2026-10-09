@@ -65,3 +65,16 @@ def test_the_app_path_measures_frame_noise_too(tmp_path):
     r = ForensicService.get_instance().video_pipeline.analyze(noisy)
     d3 = r["nine_dimensions_dossier"]["dimension_3"]
     assert d3["noise_score"] is not None and d3["is_natural_noise"] is True and "Not measured" not in d3["diagnosis"]
+
+
+def test_video_is_named_only_when_its_metadata_says_so(tmp_path):
+    from video_detector.attribution import VideoModelAttributionEngine
+
+    p = tmp_path / "v.mp4"
+    p.write_bytes(b"x")
+    eng = VideoModelAttributionEngine()
+    temporal = {"temporal_consistency": {"motion_variance": 200.0}, "diffusion_flicker": {"has_diffusion_flicker": True}}
+    out = eng.attribute_video(p, temporal_data=temporal, provenance_data={"vendor_signatures_found": []})
+    assert out["model_key"] == "unknown" and out["top_candidates"] == []
+    named = eng.attribute_video(p, temporal_data=temporal, provenance_data={"vendor_signatures_found": ["Made with Pika Labs"]})
+    assert named["model_key"] == "pika"

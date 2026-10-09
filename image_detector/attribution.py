@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from PIL import Image
-from core.shared_results import unknown_attribution
+from core.shared_results import finalize_attribution, unknown_attribution
 
 logger = logging.getLogger("image_detector.attribution")
 
@@ -245,17 +245,20 @@ def _score_declarations(
     return watermark
 
 
-def _score_software_header(provenance_data: Dict[str, Any], software: str, scores: Dict[str, float], cues: List[str]) -> None:
+def _score_software_header(provenance_data: Dict[str, Any], software: str, scores: Dict[str, float], cues: List[str]) -> bool:
+    declared = False
     for needles, key, weight, cue in _SOFTWARE_SIGNATURES:
         if any(n in software for n in needles):
             scores[key] += weight
             cues.append(cue.format(sw=software))
+            declared = True
             break
     if provenance_data.get("c2pa_present"):
         scores["openai_dalle3"] += 0.35
         scores["google_imagen"] += 0.30
         scores["adobe_firefly"] += 0.40
         cues.append("C2PA Content Credentials markers present (unverified)")
+    return declared
 
 
 def _score_canonical_resolution(path: Path, scores: Dict[str, float], cues: List[str]) -> None:
@@ -319,40 +322,18 @@ class ImageModelAttributionEngine:
         meta = provenance_data.get("metadata", {}) if provenance_data else {}
 
         watermark_detected = _score_declarations(path, forensic_data, meta, scores, cues)
+        declared = any(v > 0.05 for v in scores.values())          # only the file's own claims have scored so far
         if provenance_data:
-            _score_software_header(provenance_data, str(meta.get("software", "")).lower(), scores, cues)
+            declared = _score_software_header(provenance_data, str(meta.get("software", "")).lower(), scores, cues) or declared
         _score_canonical_resolution(path, scores, cues)
         if forensic_data:
             _score_spectral(forensic_data, scores, cues)
 
-        total = sum(scores.values())
-        norm_scores = {k: v / total for k, v in scores.items()} if total > 0 else scores
-        top_candidates = sorted(norm_scores.items(), key=lambda x: x[1], reverse=True)
-        top3 = [{"model": KNOWN_IMAGE_GENERATORS[k]["name"], "confidence": round(s, 2)} for k, s in top_candidates[:3]]
-
-        best_key, best_score = top_candidates[0]
-        if best_score < 0.25:
-            return {
-                "attributed_model": "Unknown / Generic Diffusion",
-                "model_key": "unknown",
-                "confidence": round(best_score, 2),
-                "cues": cues or ["No distinctive generator-specific signatures isolated."],
-                "top_candidates": top3,
-            }
-
-        best_info = KNOWN_IMAGE_GENERATORS[best_key]
-        conf = round(best_score, 2)
-        return {
-            "attributed_model": best_info["name"],
-            "model_key": best_key,
-            "provider": best_info["provider"],
-            "confidence": conf,
-            "attribution_confidence": conf,
-            "region_of_origin": _REGION_BY_KEY.get(best_key, "Global / Open-Source"),
-            "watermark_detected": watermark_detected,
-            "cues": cues or [f"Aesthetic, metadata, and spectral fingerprint matches {best_info['name']}"],
-            "top_candidates": top3,
-        }
+        return finalize_attribution(
+            scores, KNOWN_IMAGE_GENERATORS, declared=declared, cues=cues,
+            unknown_name="Unknown / Generic Diffusion", no_cue_text="No generator is declared in the file or its watermark.",
+            region_of=lambda key: _REGION_BY_KEY.get(key, "Global / Open-Source"), watermark_detected=watermark_detected,
+        )
 
     def _unknown_attribution(self, reason: str) -> Dict[str, Any]:
         return unknown_attribution(reason)
