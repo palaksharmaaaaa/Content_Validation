@@ -441,6 +441,7 @@ class ImageAIDetector:
             return ImageForensicResult(
                 is_available=False, backend=self.backend, prediction="UNDECIDED", label="UNDECIDED", confidence=0.0,
                 ai_percentage=0.0, real_percentage=0.0, undecided_percentage=100.0,
+                taxonomy_state="UNDETERMINED", taxonomy_label=ImageTaxonomyState.get_label("UNDETERMINED"),
                 error="Could not read image file or in-memory stream.",
             ).to_dict()
 

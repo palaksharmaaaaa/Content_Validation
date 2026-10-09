@@ -107,3 +107,10 @@ def test_an_empty_profile_yields_not_recorded_not_invented_readings():
     assert d["dimension_4"]["is_diffusion_smoothed"] is None and d["dimension_4"]["diagnosis"] == "Not measured"
     assert d["dimension_1"]["software_signature"] == "Not recorded" and d["dimension_1"]["date_taken"] == "Not recorded"
     assert d["dimension_8"]["color_channels"] is None
+
+
+def test_an_unreadable_input_is_not_labelled_an_authentic_photograph():
+    from image_detector.detector import ImageAIDetector
+
+    r = ImageAIDetector().predict(b"not an image")
+    assert r["is_available"] is False and r["taxonomy_state"] == "UNDETERMINED" and r["taxonomy_label"] == "Undetermined"
