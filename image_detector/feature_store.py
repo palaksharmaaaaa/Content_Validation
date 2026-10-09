@@ -109,6 +109,9 @@ class FeatureStore:
             )
             if has_checkpoint:
                 state_dict = torch.load(self.checkpoint_path, map_location=self.device, weights_only=True)
+                architecture = state_dict.get("architecture", "resnet18") if isinstance(state_dict, dict) else "resnet18"
+                if architecture != "resnet18":
+                    raise ValueError(f"the feature store embeds with ResNet-18 (512 values); the checkpoint is {architecture}")
                 if isinstance(state_dict, dict) and "model_state_dict" in state_dict:
                     state_dict = state_dict["model_state_dict"]
                 full_model.load_state_dict(state_dict)

@@ -39,7 +39,7 @@ def build_image_classifier(
             nn.ReLU(),
             nn.Linear(hidden_dim, num_classes),
         )
-    else:
+    elif arch == "resnet18":
         weights = models.ResNet18_Weights.DEFAULT if pretrained else None
         model = models.resnet18(weights=weights)
         in_features = model.fc.in_features
@@ -49,5 +49,8 @@ def build_image_classifier(
             nn.ReLU(),
             nn.Linear(hidden_dim, num_classes),
         )
+
+    else:
+        raise ValueError(f"unknown architecture {architecture!r}; expected resnet18, resnet50 or mobilenet_v3")
 
     return model

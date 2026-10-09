@@ -153,19 +153,10 @@ class ImageAIDetector:
                 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
                 checkpoint = torch.load(self.checkpoint_path, map_location=device, weights_only=True)
 
-                model = build_image_classifier(architecture="resnet18", pretrained=False)
+                # The trainer records which architecture it built; a checkpoint without that note is the default ResNet-18.
+                architecture = checkpoint.get("architecture", "resnet18") if isinstance(checkpoint, dict) else "resnet18"
+                model = build_image_classifier(architecture=architecture, pretrained=False)
                 state_dict = checkpoint.get("model_state_dict", checkpoint)
-
-                # Accommodate both sequential head (fc.1, fc.3) and linear head (fc.weight)
-                if any("fc.1" in k for k in state_dict.keys()):
-                    model.fc = torch.nn.Sequential(
-                        torch.nn.Dropout(p=0.2),
-                        torch.nn.Linear(512, 64),
-                        torch.nn.ReLU(),
-                        torch.nn.Linear(64, 2),
-                    )
-                else:
-                    model.fc = torch.nn.Linear(512, 2)
 
                 model.load_state_dict(state_dict)
                 model.to(device)
