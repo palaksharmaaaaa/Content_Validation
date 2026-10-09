@@ -18,6 +18,7 @@ import argparse
 import io
 import json
 import logging
+import os
 import random
 import time
 from pathlib import Path
@@ -188,6 +189,8 @@ def train(real_dirs: List[Path], ai_dirs: List[Path], epochs: int, out: Path, ba
     tr = faces(r_tr, 0) + faces(a_tr, 1)                      # label 1 = AI-generated
     va = faces(r_va, 0) + faces(a_va, 1)
     n_real, n_ai = len(faces(r_tr, 0)), len(faces(a_tr, 1))
+    if not n_real or not n_ai or not va:
+        raise ValueError(f"need faces of both classes in training and some in validation; found real {n_real}, ai {n_ai}, validation {len(va)}")
     logger.info("train %d faces (real %d, ai %d) | validation %d faces (real %d, ai %d) from %d + %d images",
                 len(tr), n_real, n_ai, len(va), len(faces(r_va, 0)), len(faces(a_va, 1)), len(r_files), len(a_files))
     weights = torch.tensor([1.0, n_real / max(1, n_ai)])        # balance the classes in the loss
@@ -218,7 +221,9 @@ def train(real_dirs: List[Path], ai_dirs: List[Path], epochs: int, out: Path, ba
             out.parent.mkdir(parents=True, exist_ok=True)
             meta = {"epochs_run": epoch + 1, "val_stress": stress, "val_clean": clean, "train_samples": len(tr), "val_samples": len(va),
                     "input_size": INPUT_SIZE, "label_1": "ai_generated"}
-            torch.save({"model_state_dict": model.state_dict(), "meta": meta}, out)
+            partial = out.with_name(out.name + ".partial")
+            torch.save({"model_state_dict": model.state_dict(), "meta": meta}, partial)
+            os.replace(partial, out)                      # a crash mid-write never leaves a half-written checkpoint
     final = evaluate_inference(out, va, boxes)
     logger.info("inference-path validation (detector -> crop -> classifier, no degradation): %s", json.dumps(final))
     return {"best_stress_accuracy": best, "inference_path": final, "history": history}

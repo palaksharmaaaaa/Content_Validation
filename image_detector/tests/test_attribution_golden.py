@@ -34,7 +34,6 @@ def _run(tmp):
         fd = None
         if r.random() < .8:
             fd = {"taxonomy_state": r.choice(STATES), "watermark_detected": r.random() < .15, "watermark_details": "wm",
-                  "face_swap_detected": r.random() < .15, "face_swap_details": "fs",
                   "spectral_features": {"spectral_decay_slope": r.uniform(1.0, 3.0)},
                   "surface_smoothness": r.uniform(0.5, 4), "digital_art_detected": r.random() < .2,
                   "forensic_metrics": {"is_digital_art": r.random() < .2}}

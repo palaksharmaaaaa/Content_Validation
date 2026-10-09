@@ -54,7 +54,6 @@ from image_detector.features import (
     detect_ai_watermark,
     detect_background_cutout,
     detect_digital_art_and_painting,
-    detect_face_swap_artifacts,
     detect_inpainting_and_manipulation,
     detect_scanned_photo,
     detect_screen_rephotography_moire,
@@ -101,7 +100,6 @@ class _Signals:
     watermark: Dict[str, Any]
     cutout: Dict[str, Any]
     scanned: Dict[str, Any]
-    face_swap: Dict[str, Any]
     art: Dict[str, Any]
     screenshot: Dict[str, Any]
     inpainting: Dict[str, Any]
@@ -228,7 +226,6 @@ class ImageAIDetector:
             watermark=detect_ai_watermark(path, img_bgr),
             cutout=detect_background_cutout(path, img_bgr),
             scanned=detect_scanned_photo(path, img_bgr, meta),
-            face_swap=detect_face_swap_artifacts(path, img_bgr),
             art=detect_digital_art_and_painting(path, img_bgr, metadata=meta),
             screenshot=detect_screenshot(path, img_bgr, meta),
             inpainting=detect_inpainting_and_manipulation(path, img_bgr, ela_map),
@@ -279,7 +276,7 @@ class ImageAIDetector:
 
     @staticmethod
     def _detector_flag_terms(sig: _Signals, has_camera: bool, ev: _Terms) -> None:
-        """Terms from the discrete detectors (watermark, scan, face swap, inpainting, screenshot, art, cutout)."""
+        """Terms from the discrete detectors (watermark, scan, inpainting, screenshot, art, cutout)."""
         scanned = sig.scanned.get("is_scanned")
         if sig.watermark.get("watermark_detected"):
             ev.lrs["ai_watermark"] = 3.5
@@ -287,9 +284,6 @@ class ImageAIDetector:
         if scanned:
             ev.lrs["scanned_print"] = -2.2
             ev.cues.append(sig.scanned["details"])
-        if sig.face_swap.get("is_face_swap"):
-            ev.lrs["face_swap"] = 2.2
-            ev.cues.append(sig.face_swap["details"])
         # Uneven local noise is a statistic of the sensor grain, which a thumbnail no longer has: on the real small-photo sets the
         # finding fires on 6-20 % of photographs but on only 4 % of AI faces, so below SMALL_IMAGE_MAX_SIDE it is not evidence.
         if sig.inpainting.get("is_manipulated") and max(sig.img_bgr.shape[:2]) > SMALL_IMAGE_MAX_SIDE:
@@ -481,7 +475,7 @@ class ImageAIDetector:
         tax_state, tax_label, tax_desc, tax_reasons = evaluate_taxonomy_classification(
             ai_pct=ai_pct, real_pct=real_pct, metadata=sig.meta,
             watermark_data=sig.watermark, cutout_data=sig.cutout, scanned_data=sig.scanned,
-            face_swap_data=sig.face_swap, art_data=sig.art, screenshot_data=sig.screenshot,
+            art_data=sig.art, screenshot_data=sig.screenshot,
             inpainting_data=sig.inpainting, screen_recapture_data=sig.screen_recapture,
             noise_mean=sig.noise_mean, smoothness=sig.smoothness,
             is_square_gen=is_square_gen, is_canonical_gen=is_canonical_gen,
@@ -515,7 +509,6 @@ class ImageAIDetector:
             screen_recapture_detected=sig.screen_recapture.get("is_screen_recapture", False),
             screen_recapture_details=sig.screen_recapture,
             neural_enhancer_detected=sig.meta.get("ai_enhancer_signature_found", False),
-            face_swap_detected=sig.face_swap["is_face_swap"],
             digital_art_detected=sig.art.get("is_digital_art", False),
             screenshot_detected=sig.screenshot.get("is_screenshot", False),
             screenshot_details=sig.screenshot,
@@ -536,7 +529,6 @@ class ImageAIDetector:
                 "is_screen_recaptured": sig.screen_recapture.get("is_screen_recapture", False),
                 "sensor_spectrum": sensor_spectrum,
                 "visual_medium": visual_medium,
-                "is_face_swap": sig.face_swap["is_face_swap"],
                 "is_digital_art": sig.art.get("is_digital_art", False),
                 "is_screenshot": sig.screenshot.get("is_screenshot", False),
                 "screenshot_device": sig.screenshot.get("device_type", "None"),

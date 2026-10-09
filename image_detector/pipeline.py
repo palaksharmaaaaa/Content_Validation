@@ -301,7 +301,6 @@ class ImageForensicPipeline:
             "background_cutout_detected": ai_res.get("background_cutout_detected", False),
             "screen_recapture_detected": ai_res.get("screen_recapture_detected", False),
             "screen_recapture_analysis": ai_res.get("screen_recapture_details", {}),
-            "face_swap_detected": ai_res.get("face_swap_detected", False),
             "digital_art_detected": ai_res.get("digital_art_detected", False),
             "screenshot_detected": ai_res.get("screenshot_detected", False),
             "screenshot_analysis": ai_res.get("screenshot_details", {}),

@@ -77,10 +77,6 @@ CANONICAL_RESOLUTIONS = {
     (1080, 1920),
 }
 
-# Physical Screen Re-photography Moiré Frequency Range (Cycles per pixel / Spatial Band)
-SCREEN_MOIRE_MIN_PEAK_ENERGY_RATIO = 2.45
-SCREEN_MOIRE_MIN_CONFIDENCE = 0.50
-
 # Canonical Device Screen Resolutions & Profiles (Mobile, Tablet, Laptop, Desktop)
 CANONICAL_SCREEN_RESOLUTIONS = {
     # Mobile Phones
@@ -122,8 +118,8 @@ CANONICAL_SCREEN_RESOLUTIONS = {
 }
 
 # Known AI Software Fingerprints in Metadata (EXIF/XMP Software, Creator, or Processing tags).
-# Single source of truth: features.py and provenance.py both import this list rather than
-# keeping their own copies, so there is exactly one place to update as new tools ship.
+# Single source of truth: features.extract_image_metadata matches against this list (provenance reads its result),
+# so there is exactly one place to update as new tools ship.
 KNOWN_AI_SOFTWARE_SIGNATURES = [
     "midjourney",
     "stable diffusion",

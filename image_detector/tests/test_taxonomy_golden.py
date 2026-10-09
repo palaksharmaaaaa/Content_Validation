@@ -22,7 +22,6 @@ def rnd_case(r):
         watermark_data={"watermark_detected": b(.12), "details": "wm"},
         cutout_data={"is_cutout": b(.2), "details": "cut"},
         scanned_data={"is_scanned": b(.12), "details": "scan"},
-        face_swap_data={"is_face_swap": b(.12), "details": "fs"},
         art_data={"is_digital_art": b(.2), "visual_medium": r.choice(["Digital 3D CGI / AI Neural Painting", "Other"]), "details": "art"},
         screenshot_data={"is_screenshot": b(.15), "device_type": "Phone", "orientation": "Portrait", "screen_resolution": "1x1", "details": "ss"},
         inpainting_data={"is_manipulated": b(.12), "details": "inp"},

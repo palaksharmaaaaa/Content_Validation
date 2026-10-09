@@ -16,7 +16,7 @@ Profiles image characteristics against major commercial & open-source image synt
 - Remini (enhancer)
 Completely self-contained with zero outside dependencies.
 
-NOTE on scoring confidence per entry: the original entries (through Canva/face-swap) have
+NOTE on scoring confidence per entry: the original entries (through Canva) have
 dedicated resolution-table and spectral-decay signals in addition to metadata matching. The
 2025/2026 additions (Leonardo.Ai, Grok Imagine, Seedream, Hunyuan Image, Qwen-Image, Kolors,
 Remini, Nano Banana) are currently metadata-signature-only -- no resolution table or spectral
@@ -107,12 +107,6 @@ KNOWN_IMAGE_GENERATORS = {
         "provider": "Canva Pty Ltd",
         "telltales": ["Canva CreatorTool tag", "digital layout composition", "clipped transparent background"],
         "resolutions": [],
-    },
-    "face_swap_pipeline": {
-        "name": "Neural Face Swap (InsightFace / ReActor / Roop)",
-        "provider": "Open-Source Neural Synthesis",
-        "telltales": ["Neural face graft", "CodeFormer / GFPGAN airbrushed skin", "jawline feather seam"],
-        "resolutions": [(512, 512), (768, 768), (1024, 1024)],
     },
     "leonardo_ai": {
         "name": "Leonardo.Ai",
@@ -226,23 +220,19 @@ def _authentic_attribution(tax_state: str) -> Dict[str, Any]:
 def _score_declarations(
     path: Path, forensic_data: Optional[Dict[str, Any]], meta: Dict[str, Any], scores: Dict[str, float], cues: List[str]
 ) -> bool:
-    """Direct watermark / filename / embedded-label / software declarations. Returns whether a watermark was seen.
+    """Direct watermark / embedded-label / software declarations (a file name is never used: anyone can name a file anything). Returns whether a watermark was seen.
 
     All of these are unauthenticated claims (filenames and metadata are trivially editable): they steer the
     attribution guess, which is explanation only and is never scored as evidence of synthesis.
     """
     software = str(meta.get("software", "")).lower()
     creator = str(meta.get("creator_tool", "")).lower()
-    fname = path.name.lower()
     watermark = False
 
     if forensic_data and forensic_data.get("watermark_detected"):
         watermark = True
         scores["google_imagen"] += 1.2
         cues.append(f"Visual watermark detected: {forensic_data.get('watermark_details') or 'AI Watermark'}")
-    if "gemini" in fname:
-        scores["google_imagen"] += 0.80
-        cues.append(f"Filename signature indicates Google Gemini export: '{path.name}'")
     if meta.get("photoshop_credit") == "Made with Google AI" or meta.get("iptc_digital_source_type") == "trainedAlgorithmicMedia":
         scores["google_imagen"] += 1.5
         cues.append("Embedded metadata declares: 'Made with Google AI' (trainedAlgorithmicMedia; unauthenticated label)")
@@ -252,12 +242,6 @@ def _score_declarations(
     if "canva" in software or "canva" in creator:
         scores["canva"] += 1.5
         cues.append(f"Metadata confirms Canva graphic design export: {meta.get('creator_tool') or 'Canva'}")
-    if forensic_data and forensic_data.get("face_swap_detected"):
-        scores["face_swap_pipeline"] += 1.2
-        cues.append(f"Forensic cues indicate neural face-swapping: {forensic_data.get('face_swap_details', 'Face graft artifacts')}")
-    if "face-swap" in fname or "faceswap" in fname:
-        scores["face_swap_pipeline"] += 0.90
-        cues.append(f"Filename explicitly declares face-swap pipeline: '{path.name}'")
     return watermark
 
 

@@ -78,7 +78,7 @@ class ImageTaxonomyState:
             "spatial-frequency Moiré interference patterns and subpixel matrix grid geometry."
         ),
         AI_ENHANCED_COMPOSITE: (
-            "Real base capture augmented or modified via neural models (neural face swapping/deepfakes, generative inpainting, "
+            "Real base capture augmented or modified via neural models (generative inpainting, "
             "AI object addition/removal, or deep learning upscaling/restoration software such as Topaz Photo AI)."
         ),
         FULLY_AI_GENERATED: (
@@ -94,7 +94,7 @@ class ImageTaxonomyState:
             "documents, or unmanipulated photographic content."
         ),
         AI_ENHANCED_SCREENSHOT: (
-            "Digital screen capture containing or displaying media modified by AI tools, neural face swaps, or generative enhancement."
+            "Digital screen capture containing or displaying media modified by AI tools or generative enhancement."
         ),
         AI_GENERATED_SCREENSHOT: (
             "Digital screen capture displaying fully synthetic AI-generated content (e.g. generative AI prompt outputs, "
@@ -138,7 +138,6 @@ class ImageForensicResult:
     screen_recapture_detected: bool = False
     screen_recapture_details: Optional[Dict[str, Any]] = None
     neural_enhancer_detected: bool = False
-    face_swap_detected: bool = False
     digital_art_detected: bool = False
     screenshot_detected: bool = False
     screenshot_details: Optional[Dict[str, Any]] = None
@@ -177,7 +176,6 @@ class ImageForensicResult:
             "screen_recapture_detected": self.screen_recapture_detected,
             "screen_recapture_details": self.screen_recapture_details,
             "neural_enhancer_detected": self.neural_enhancer_detected,
-            "face_swap_detected": self.face_swap_detected,
             "digital_art_detected": self.digital_art_detected,
             "screenshot_detected": self.screenshot_detected,
             "screenshot_details": self.screenshot_details,

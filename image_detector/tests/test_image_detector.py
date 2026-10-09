@@ -137,20 +137,18 @@ class TestImageDetector(unittest.TestCase):
             watermark_detected=True,
             metadata={"ai_signature_found": True},
             cutout_detected=False,
-            scanned_detected=False,
-            face_swap_detected=False
+            scanned_detected=False
         )
         self.assertEqual(s1, ImageTaxonomyState.FULLY_AI_GENERATED)
         self.assertEqual(l1, "Fully AI Generated")
 
-        # 2. AI-Enhanced / Composite (Face Swap)
+        # 2. AI-Enhanced / Composite (declared composite)
         s2, l2, d2, r2 = evaluate_taxonomy_classification(
             prob_ai=0.75, prob_real=0.25,
             watermark_detected=False,
-            metadata={},
+            metadata={"iptc_digital_source_type": "compositeWithTrainedAlgorithmicMedia"},
             cutout_detected=False,
             scanned_detected=False,
-            face_swap_detected=True
         )
         self.assertEqual(s2, ImageTaxonomyState.AI_ENHANCED_COMPOSITE)
         self.assertEqual(l2, "AI-Enhanced / Composite (Mix)")
@@ -161,8 +159,7 @@ class TestImageDetector(unittest.TestCase):
             watermark_detected=False,
             metadata={"ai_enhancer_signature_found": True, "signature_details": "Topaz Photo AI"},
             cutout_detected=False,
-            scanned_detected=False,
-            face_swap_detected=False
+            scanned_detected=False
         )
         self.assertEqual(s3, ImageTaxonomyState.AI_ENHANCED_COMPOSITE)
 
@@ -172,8 +169,7 @@ class TestImageDetector(unittest.TestCase):
             watermark_detected=False,
             metadata={},
             cutout_detected=True,
-            scanned_detected=False,
-            face_swap_detected=False
+            scanned_detected=False
         )
         self.assertEqual(s4, ImageTaxonomyState.AUTHENTIC_EDITED)
         self.assertEqual(l4, "Authentic Created Photograph (Edited / Graphic Design)")
@@ -184,8 +180,7 @@ class TestImageDetector(unittest.TestCase):
             watermark_detected=False,
             metadata={"graphic_editor_signature_found": True, "software": "Canva"},
             cutout_detected=False,
-            scanned_detected=False,
-            face_swap_detected=False
+            scanned_detected=False
         )
         self.assertEqual(s5, ImageTaxonomyState.AUTHENTIC_EDITED)
 
@@ -195,8 +190,7 @@ class TestImageDetector(unittest.TestCase):
             watermark_detected=False,
             metadata={"camera_make": "Canon", "camera_model": "EOS"},
             cutout_detected=False,
-            scanned_detected=False,
-            face_swap_detected=False
+            scanned_detected=False
         )
         self.assertEqual(s6, ImageTaxonomyState.AUTHENTIC_REAL_PHOTOGRAPH)
         self.assertEqual(l6, "Authentic Real Photograph")
@@ -241,8 +235,7 @@ class TestImageDetector(unittest.TestCase):
             metadata={},
             cutout_detected=True,
             art_detected=True,
-            scanned_detected=False,
-            face_swap_detected=False
+            scanned_detected=False
         )
         self.assertEqual(s, ImageTaxonomyState.FULLY_AI_GENERATED)
         self.assertIn("Synthetic 3D asset with transparent alpha background cutout", r)
@@ -307,14 +300,12 @@ class TestImageDetector(unittest.TestCase):
         self.assertEqual(s_ai, ImageTaxonomyState.AI_GENERATED_SCREENSHOT)
         self.assertEqual(l_ai, "AI-Generated Content Screenshot")
 
-        # Screenshot displaying AI face swap / composite
+        # Screenshot displaying AI-enhanced media
         s_comp, l_comp, _, _ = evaluate_taxonomy_classification(
             screenshot_data=res_m,
             screenshot_detected=True,
-            face_swap_detected=True,
-            face_swap_data={"is_face_swap": True, "details": "Neural face-swap graft"},
             noise_mean=0.3,
-            metadata={},
+            metadata={"ai_enhancer_signature_found": True},
         )
         self.assertEqual(s_comp, ImageTaxonomyState.AI_ENHANCED_SCREENSHOT)
         self.assertEqual(l_comp, "AI-Enhanced / Composite Screenshot")

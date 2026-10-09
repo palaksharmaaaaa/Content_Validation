@@ -144,7 +144,7 @@ def _apply_xmp_signatures(xmp_str: str, info: Dict[str, Any]) -> None:
         info["creator_tool"] = "Topaz Photo AI"
         info["ai_enhancer_signature_found"] = True
         info["signature_details"] = "Processed with Topaz Photo AI (Neural Restoration / Denoising / Upscaling)"
-    if "Canva" in xmp_str or "Attrib:Ads" in xmp_str:
+    if _whole_word("canva", xmp_str.lower()) or "Attrib:Ads" in xmp_str:
         info["creator_tool"] = "Canva"
         info["graphic_editor_signature_found"] = True
         info["signature_details"] = "Graphic layout designed and exported via Canva"
@@ -355,8 +355,8 @@ def detect_background_cutout(image_path: str | Path, img_bgr: Optional[np.ndarra
 def detect_scanned_photo(image_path: str | Path, img_bgr: np.ndarray, meta: Dict[str, Any]) -> Dict[str, Any]:
     """
     Detects high-resolution flatbed scans of physical photographic prints.
-    Telltales: Ultra-high megapixel count (>20 MP), physical scanner paper borders,
-    optical halftone/halftone print grain, absence of digital camera EXIF or presence of scanner mark.
+    Telltales: an ultra-high megapixel count (>= 20 MP) together with the dark frame a flatbed leaves at the image edge. A big
+    picture without that frame (a stripped photo, an upscaled render) is not called a scan.
     """
     if img_bgr is None or img_bgr.size == 0:
         return {"is_scanned": False, "details": None}
@@ -371,8 +371,7 @@ def detect_scanned_photo(image_path: str | Path, img_bgr: np.ndarray, meta: Dict
         edge_top = img_bgr[:margin_h, :]
         edge_bottom = img_bgr[-margin_h:, :]
 
-        # Look for dark/scanner frame boundary
-        if float(np.mean(edge_top)) < 60.0 or float(np.mean(edge_bottom)) < 60.0 or not meta.get("has_exif"):
+        if float(np.mean(edge_top)) < 60.0 or float(np.mean(edge_bottom)) < 60.0:
             return {
                 "is_scanned": True,
                 "megapixels": round(total_mp, 1),
@@ -380,45 +379,6 @@ def detect_scanned_photo(image_path: str | Path, img_bgr: np.ndarray, meta: Dict
             }
 
     return {"is_scanned": False, "details": None}
-
-
-def detect_face_swap_artifacts(image_path: str | Path, img_bgr: np.ndarray) -> Dict[str, Any]:
-    """
-    Detects neural face swap (Roop/ReActor/InsightFace) and deepfake restoration cues:
-    - Distinct filename signatures ('face-swap', 'swap', 'reactor', 'roop')
-    - Target square geometry paired with neural synthesis markers
-    """
-    fname = str(image_path).lower()
-    has_swap_filename = any(s in fname for s in ("face-swap", "faceswap", "face_swap", "deepfake", "reactor", "roop"))
-
-    if img_bgr is None or img_bgr.size == 0:
-        return {
-            "is_face_swap": has_swap_filename,
-            "confidence": 0.90 if has_swap_filename else 0.0,
-            "details": "Face swap filename signature detected" if has_swap_filename else None,
-        }
-
-    h, w = img_bgr.shape[:2]
-    is_square = (w == h and w in (512, 768, 1024, 1536))
-
-    if has_swap_filename and is_square:
-        return {
-            "is_face_swap": True,
-            "confidence": 0.95,
-            "details": f"Neural face-swap composite detected (target geometry {w}x{h}, filename signature '{Path(image_path).name}')",
-        }
-    elif has_swap_filename:
-        return {
-            "is_face_swap": True,
-            "confidence": 0.85,
-            "details": f"Neural face-swap signature detected in filename ('{Path(image_path).name}')",
-        }
-
-    return {
-        "is_face_swap": False,
-        "confidence": 0.0,
-        "details": None,
-    }
 
 
 def _opaque_saturation(image_path: str | Path, hsv_sat: np.ndarray) -> np.ndarray:

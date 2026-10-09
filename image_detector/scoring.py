@@ -94,7 +94,6 @@ def evaluate_taxonomy_classification(
     watermark_data: Optional[Dict[str, Any]] = None,
     cutout_data: Optional[Dict[str, Any]] = None,
     scanned_data: Optional[Dict[str, Any]] = None,
-    face_swap_data: Optional[Dict[str, Any]] = None,
     art_data: Optional[Dict[str, Any]] = None,
     noise_mean: float = 2.0,
     smoothness: float = 2.0,
@@ -105,7 +104,6 @@ def evaluate_taxonomy_classification(
     watermark_detected: Optional[bool] = None,
     cutout_detected: Optional[bool] = None,
     scanned_detected: Optional[bool] = None,
-    face_swap_detected: Optional[bool] = None,
     art_detected: Optional[bool] = None,
     screenshot_data: Optional[Dict[str, Any]] = None,
     screenshot_detected: Optional[bool] = None,
@@ -122,7 +120,7 @@ def evaluate_taxonomy_classification(
     each image strictly to one of the taxonomy states:
     1. AUTHENTIC_REAL_PHOTOGRAPH: Authentic real-life camera/mobile capture or physical scan.
     2. AUTHENTIC_EDITED: Real photo with conventional edits (cropping, background removal, Canva, Photoshop).
-    3. AI_ENHANCED_COMPOSITE: Real photo augmented via neural models (face swap, deepfake, inpainting, Topaz Photo AI).
+    3. AI_ENHANCED_COMPOSITE: Real photo augmented via neural models (inpainting, Topaz Photo AI and similar enhancers).
     4. FULLY_AI_GENERATED: Synthesized end-to-end via generative diffusion/transformer models.
     5. SCREENSHOTS: Screen captures from any device (Mobile, Tablet, Laptop, Desktop) in any orientation,
        with sub-classification of inner content (Authentic, AI-Enhanced, AI-Generated).
@@ -141,7 +139,6 @@ def evaluate_taxonomy_classification(
         watermark=_with_flag(watermark_data, "watermark_detected", watermark_detected),
         cutout=_with_flag(cutout_data, "is_cutout", cutout_detected),
         scanned=_with_flag(scanned_data, "is_scanned", scanned_detected),
-        face_swap=_with_flag(face_swap_data, "is_face_swap", face_swap_detected),
         art=_with_flag(art_data, "is_digital_art", art_detected),
         screenshot=_with_flag(screenshot_data, "is_screenshot", screenshot_detected),
         inpainting=_with_flag(inpainting_data, "is_manipulated", inpainting_detected),
@@ -180,7 +177,6 @@ class _TaxonomyInputs:
     watermark: Dict[str, Any]
     cutout: Dict[str, Any]
     scanned: Dict[str, Any]
-    face_swap: Dict[str, Any]
     art: Dict[str, Any]
     screenshot: Dict[str, Any]
     inpainting: Dict[str, Any]
@@ -224,10 +220,6 @@ class _TaxonomyInputs:
         return bool(self.scanned.get("is_scanned"))
 
     @property
-    def is_face_swap(self) -> bool:
-        return bool(self.face_swap.get("is_face_swap"))
-
-    @property
     def is_ai_enhancer(self) -> bool:
         return bool(self.metadata.get("ai_enhancer_signature_found"))
 
@@ -265,10 +257,8 @@ def _stage_screenshot(c: _TaxonomyInputs, S: Any) -> _Outcome:
         reasons.append(details)
         return S.AI_GENERATED_SCREENSHOT, reasons
 
-    if c.is_face_swap or c.is_ai_enhancer or c.is_inpainted:
+    if c.is_ai_enhancer or c.is_inpainted:
         reasons.append(f"Screen capture from {device} ({orient} orientation) displaying AI-enhanced / spliced media")
-        if c.is_face_swap:
-            reasons.append(c.face_swap.get("details", "Neural face-swap / facial graft boundary detected"))
         if c.is_inpainted:
             reasons.append(c.inpainting.get("details", "Localized generative inpainting / composite detected"))
         if c.is_ai_enhancer:
@@ -312,17 +302,14 @@ def _stage_declared_or_art_synthesis(c: _TaxonomyInputs, S: Any) -> _Outcome:
 
 
 def _stage_enhanced_composite(c: _TaxonomyInputs, S: Any) -> _Outcome:
-    """3. AI-enhanced / composite: explicit enhancer, face-swap, composite label or inpainting evidence."""
+    """3. AI-enhanced / composite: explicit enhancer, composite label or inpainting evidence."""
     composite_label = c.metadata.get("iptc_digital_source_type") == "compositeWithTrainedAlgorithmicMedia"
     # Local noise inconsistency alone (HDR, portrait-mode blur, selective retouching) is not evidence of AI: it
     # only counts as a composite when the pixel score also leans synthetic.
     inpainting_counts = c.is_inpainted and c.ai_pct >= _COMPOSITE_MIN_AI_PCT
-    if not (c.is_ai_enhancer or c.is_face_swap or composite_label or inpainting_counts):
+    if not (c.is_ai_enhancer or composite_label or inpainting_counts):
         return None
     reasons: List[str] = []
-    if c.is_face_swap:
-        reasons.append(c.face_swap.get("details", "Neural face-swap and facial graft boundary detected"))
-        reasons.append("Discontinuity between facial airbrushing and sharp facial hair/accessories")
     if inpainting_counts:
         reasons.append(c.inpainting.get("details", "Localized generative inpainting / composite detected"))
     if c.is_ai_enhancer:
