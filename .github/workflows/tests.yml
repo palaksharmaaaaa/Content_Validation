@@ -33,4 +33,6 @@ jobs:
       - name: Download pretrained models (RF-DETR Small, SigLIP 2 Base)
         run: python -m services.fetch_models
       - name: Test
-        run: python -m pytest -q
+        env:
+          GOLDEN_DUMP: "1"
+        run: python -m pytest -q -s

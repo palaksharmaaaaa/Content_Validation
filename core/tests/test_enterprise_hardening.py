@@ -77,6 +77,7 @@ class TestEnterpriseHardening(unittest.TestCase):
         """Verifies directory traversal and path injection sanitization."""
         self.assertEqual(sanitize_filename("../../../etc/passwd"), "passwd")
         self.assertEqual(sanitize_filename("..\\..\\windows\\system32\\cmd.exe"), "cmd.exe")
+        self.assertEqual(sanitize_filename(r"C:\Users\x/..\mixed/separators.png"), "separators.png")   # same result on every OS
         cleaned = sanitize_filename("bad;rm -rf /;evil.png")
         self.assertNotIn(";", cleaned)
         self.assertNotIn(" ", cleaned)

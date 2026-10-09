@@ -78,6 +78,12 @@ def assert_golden(name: str, actual) -> None:
     else:
         n = max(len(expected["items"]), len(current["items"]))
         bad = [i for i in range(n) if (expected["items"][i:i + 1] or [None]) != (current["items"][i:i + 1] or [None])]
+    if os.environ.get("GOLDEN_DUMP") == "1" and isinstance(actual, dict):          # CI sets this to show the values behind a drift
+        out = DATA.parent.parent / "reports" / "golden_actual"
+        out.mkdir(parents=True, exist_ok=True)
+        for k in bad[:8]:
+            (out / f"{name}__{str(k).replace('/', '_')}.json").write_text(_canonical(actual.get(k)), encoding="utf-8")
+            print(f"GOLDEN_ACTUAL {name} {k} " + _canonical(actual.get(k)))
     raise AssertionError(
         f"golden '{name}' differs in {len(bad)} case(s): {bad[:8]}{' ...' if len(bad) > 8 else ''}. "
         f"If the change is intended run: UPDATE_GOLDEN=1 python -m pytest -k {name.split('_')[0]}"

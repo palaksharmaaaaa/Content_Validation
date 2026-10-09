@@ -12,7 +12,7 @@ import hashlib
 import ipaddress
 import logging
 import os
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import re
 import socket
 import tempfile
@@ -149,7 +149,7 @@ def sanitize_filename(filename: str, max_len: int = 90) -> str:
     if not filename:
         return "unnamed_file"
 
-    base = Path(filename).name
+    base = PureWindowsPath(filename).name        # treats both / and \ as separators on every OS (Path would not on Linux)
     cleaned = re.sub(r"[^a-zA-Z0-9_\-\.]", "_", base).strip("._")
     if not cleaned:
         cleaned = "sanitized_media"
