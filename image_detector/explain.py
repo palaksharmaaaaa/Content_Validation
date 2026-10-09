@@ -379,11 +379,13 @@ def _edited_takeaway(tax_label: str, p_real: float) -> str:
 
 def _authentic_takeaway(tax_label: str, p_real: float, noise: float) -> str:
     return (
-        f"**The Simple Takeaway:** This image is **consistent with a genuine real-world photograph** captured through an optical glass camera lens ({tax_label}); "
-        f"the heuristic (uncalibrated) estimate is **{p_real:.1f}%**, which is a ranking aid, not proof.\n\n"
-        f"**Think of it like this:** Everything about this file matches real-world optical physics. When light bounced off the subject and entered the camera lens, "
-        f"it left behind authentic physical sensor grain (noise residual: **{noise:.2f}**), natural organic skin and fabric micro-textures, and optical depth-of-field "
-        f"(where the focus gently falls off naturally in a way computers struggle to replicate). No generative AI alterations or deceptive digital manipulations were detected."
+        f"**The Simple Takeaway:** This image is **consistent with a plain camera photograph** ({tax_label}); "
+        f"the heuristic (uncalibrated) estimate is **{p_real:.1f}%**, which is a ranking aid, not proof.
+
+"
+        f"**What that is based on:** A camera sensor leaves a fine grain in every photo, and this picture has it (noise residual: **{noise:.2f}**) "
+        f"without the extra smoothness or other signs of generation that this tool looks for. That does not rule out a good fake: "
+        f"recent generators, careful retouching and re-photographed screens can pass these checks."
     )
 
 
