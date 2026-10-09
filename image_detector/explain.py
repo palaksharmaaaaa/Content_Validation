@@ -184,9 +184,9 @@ def _dimension_5(c: _DossierContext) -> Dict[str, Any]:
         "is_anomalous_decay": fft_alpha < 1.65 or fft_alpha > 3.45,
         "mathematical_physics": "P(f) ~ f^(-alpha). Natural optical: alpha in [1.8, 2.2]. Synthetic: alpha < 1.4 or alpha > 3.4.",
         "diagnosis": (
-            f"Anomalous Fourier spectral slope (alpha={fft_alpha:.2f}); deviates from physical optical decay"
+            f"Anomalous Fourier spectral slope (alpha={round(float(fft_alpha), 2) + 0.0:.2f}); deviates from physical optical decay"
             if (fft_alpha < 1.65 or fft_alpha > 3.45)
-            else f"Standard Fourier radial spectral decay slope (alpha={fft_alpha:.2f}) adhering to optical physics"
+            else f"Standard Fourier radial spectral decay slope (alpha={round(float(fft_alpha), 2) + 0.0:.2f}) adhering to optical physics"
         ),
     }
     return d5

@@ -13,7 +13,7 @@ from streamlit.testing.v1 import AppTest
 from audio_detector import AudioContentAnalyzer, AudioModelAttributionEngine
 from audio_detector.tests.audio_fixtures import tone, write_wav
 from services.forensic_service import ForensicService
-from tests.golden_support import assert_golden, skip_unless_state_matches
+from tests.golden_support import _HEX_DIGEST, assert_golden, skip_unless_state_matches
 from ui.adapters import process_single_audio, process_single_image, process_single_video
 
 
@@ -60,7 +60,7 @@ def render(fn, item, tmp):
     for variant in (raw, raw.replace("\\", "\\\\"), raw.replace("\\", "/")):
         text = text.replace(variant, "<TMP>")
     text = re.sub(r"tmp[0-9a-z_]{8}", "<TMP>", text)
-    return text
+    return _HEX_DIGEST.sub("<hash>", text)          # hashes of the generated test files differ with the OS's image/video encoders
 
 
 

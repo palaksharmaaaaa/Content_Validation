@@ -9,7 +9,7 @@ from PIL import Image
 
 from audio_detector.tests.audio_fixtures import tone, write_wav
 from services.forensic_service import ForensicService
-from tests.golden_support import assert_golden, skip_unless_state_matches
+from tests.golden_support import assert_golden, scrub_encoding, skip_unless_state_matches
 
 
 def norm(o):
@@ -55,4 +55,4 @@ def test_headless_pipelines_match_golden(tmp_path):
     vw.release()
     r = strip(svc.video_pipeline.analyze(tmp / "v.mp4")); r.pop("path", None)
     res["vid"] = norm(r)
-    assert_golden("pipelines_golden", res)
+    assert_golden("pipelines_golden", scrub_encoding(res))

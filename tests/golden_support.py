@@ -41,6 +41,7 @@ def skip_unless_state_matches(meta_name: str, files: list) -> None:
 # and review what changed (the failure message names the differing cases).
 # ---------------------------------------------------------------------------------------------------------------
 import os
+import re
 
 DATA = ROOT / "tests" / "data"
 
@@ -59,6 +60,22 @@ def _digests(actual) -> dict:
     if isinstance(actual, (list, tuple)):
         return {"kind": "list", "items": [_digest(v) for v in actual]}
     return {"kind": "scalar", "items": [_digest(actual)]}
+
+
+_HEX_DIGEST = re.compile(r"\b(?:[0-9a-f]{64}|[0-9a-f]{32})\b")
+_ENCODER_DEPENDENT_KEYS = {"file_size_bytes", "declared_end", "libavcodec"}
+
+
+def scrub_encoding(obj):
+    """Blank what depends on how the test's own input files were encoded (their hashes and byte size, the ffmpeg version that
+    wrote them) rather than on the product, so a golden recorded on one OS also holds on another."""
+    if isinstance(obj, dict):
+        return {k: ("<encoding>" if k in _ENCODER_DEPENDENT_KEYS else scrub_encoding(v)) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [scrub_encoding(v) for v in obj]
+    if isinstance(obj, str):
+        return _HEX_DIGEST.sub("<hash>", obj)
+    return obj
 
 
 def assert_golden(name: str, actual) -> None:
