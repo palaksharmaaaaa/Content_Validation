@@ -68,12 +68,12 @@ Your files stay where they are. A local registry (`<modality>_detector/data/libr
 
 ```bash
 # register labelled media by reference (files or folders, recursive)
-python -m core.media_library image add --label real "<dir>/camera"
-python -m core.media_library image add --label ai_generated "<dir>/midjourney"
+python -m core.media_library image add --label real "<folder of real photos>"
+python -m core.media_library image add --label ai_generated "<folder of AI-generated images>"
 python -m core.media_library image stats
 
 # after moving folders, re-link files by content
-python -m core.media_library image rescan "<dir>"
+python -m core.media_library image rescan "<moved folder>"
 ```
 
 Then fine-tune from Python (same API in `audio_detector` and `video_detector`):

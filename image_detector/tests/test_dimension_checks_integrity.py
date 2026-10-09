@@ -98,21 +98,21 @@ def test_multi_picture_jpeg_trailing_is_info_not_polyglot(tmp_path):
 
 def test_svg_active_content(tmp_path):
     bad = tmp_path / "bad.svg"
-    bad.write_text('<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>')
+    bad.write_text('<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>', encoding="utf-8")
     f = integrity.check_svg_active_content(_ctx(bad))
     assert f.status == FindingStatus.FAIL
     assert "script" in f.data["indicators"]
 
     xxe = tmp_path / "xxe.svg"
-    xxe.write_text('<?xml version="1.0"?><!DOCTYPE svg [<!ENTITY x SYSTEM "file:///etc/passwd">]><svg>&x;</svg>')
+    xxe.write_text('<?xml version="1.0"?><!DOCTYPE svg [<!ENTITY x SYSTEM "file:///etc/passwd">]><svg>&x;</svg>', encoding="utf-8")
     assert integrity.check_svg_active_content(_ctx(xxe)).status == FindingStatus.FAIL
 
     handler = tmp_path / "h.svg"
-    handler.write_text('<svg xmlns="http://www.w3.org/2000/svg"><rect onload="x()" width="1" height="1"/></svg>')
+    handler.write_text('<svg xmlns="http://www.w3.org/2000/svg"><rect onload="x()" width="1" height="1"/></svg>', encoding="utf-8")
     assert integrity.check_svg_active_content(_ctx(handler)).status == FindingStatus.FAIL
 
     clean = tmp_path / "ok.svg"
-    clean.write_text('<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/></svg>')
+    clean.write_text('<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/></svg>', encoding="utf-8")
     assert integrity.check_svg_active_content(_ctx(clean)).status == FindingStatus.PASS
 
     assert integrity.check_svg_active_content(_ctx(_png(tmp_path))).status == FindingStatus.NOT_APPLICABLE

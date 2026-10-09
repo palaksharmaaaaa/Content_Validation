@@ -125,6 +125,10 @@ class AgeEstimator:
                 try:
                     from safetensors.torch import load_file
 
+                    from core.perception.hub import ensure_not_lfs_pointer
+
+                    ensure_not_lfs_pointer(self._weights)
+
                     from core.perception.mivolo_vendor.mivolo_net import MiVOLOModel
 
                     net = MiVOLOModel(layers=(4, 4, 8, 2), img_size=INPUT_SIZE, in_chans=6, num_classes=3,

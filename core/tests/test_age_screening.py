@@ -138,3 +138,16 @@ def test_loading_the_age_model_leaves_autograd_enabled_for_the_rest_of_the_proce
         pytest.skip("age model weights not available")
     assert torch.is_grad_enabled()
     assert not any(p.requires_grad for p in est._ensure().parameters())
+
+
+def test_a_git_lfs_pointer_is_reported_clearly_not_as_a_parse_error(tmp_path):
+    from core.perception.hub import ensure_not_lfs_pointer
+
+    pointer = tmp_path / "model.safetensors"
+    pointer.write_bytes(b"version https://git-lfs.github.com/spec/v1\noid sha256:abc\nsize 115078528\n")
+    with pytest.raises(RuntimeError, match="git lfs pull"):
+        ensure_not_lfs_pointer(pointer)
+    real = tmp_path / "real.bin"
+    real.write_bytes(b"x" * 5000)
+    ensure_not_lfs_pointer(real)                                   # a genuine file passes
+    ensure_not_lfs_pointer(tmp_path / "missing.bin")               # absent is the caller's concern

@@ -43,7 +43,7 @@ def test_context_no_index(tmp_path, monkeypatch):
 def test_context_index_hit_and_miss(tmp_path, monkeypatch):
     p = _clip(tmp_path)
     idx = tmp_path / "idx.jsonl"
-    idx.write_text(json.dumps({"phashes": context.video_fingerprint_hashes(p), "label": "2018 exercise", "source": "archive"}) + "\n")
+    idx.write_text(json.dumps({"phashes": context.video_fingerprint_hashes(p), "label": "2018 exercise", "source": "archive"}) + "\n", encoding="utf-8")
     monkeypatch.setenv("OMNI_VIDEO_FP_INDEX", str(idx))
     hit = context.check_video_fingerprint(_ctx(p))
     assert hit.status == FindingStatus.WARN and hit.data["matches"][0]["label"] == "2018 exercise"

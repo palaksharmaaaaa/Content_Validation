@@ -16,9 +16,11 @@ A local tool that checks whether an **image, video or audio file** is likely AI-
 
 ## Quick start
 
-Requirements: Python 3.10+ and, for video and non-WAV audio, [`ffmpeg`](https://ffmpeg.org/download.html) on your `PATH`.
+Requirements: Python 3.10+, [Git LFS](https://git-lfs.com) (the trained checkpoints are stored with it) and, for video and non-WAV audio, [`ffmpeg`](https://ffmpeg.org/download.html) on your `PATH`.
 
 ```bash
+git lfs install               # once per machine, before cloning
+git clone <repository-url> && cd <repository-folder>
 python -m venv .venv
 .venv/Scripts/activate        # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt

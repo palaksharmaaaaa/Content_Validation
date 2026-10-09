@@ -92,6 +92,9 @@ class FaceAuthenticityClassifier:
                 try:
                     import torch
 
+                    from core.perception.hub import ensure_not_lfs_pointer
+
+                    ensure_not_lfs_pointer(self._path)
                     state = torch.load(self._path, map_location="cpu", weights_only=True)
                     net = build_model(pretrained=False)
                     net.load_state_dict(state["model_state_dict"])

@@ -33,3 +33,26 @@ def test_no_media_file_is_tracked():
 @pytest.mark.parametrize("path", REQUIRED_MODELS)
 def test_required_model_is_tracked(path):
     assert path in _tracked(), f"{path} is not tracked, so a fresh clone would not have it"
+
+
+# --- no machine-specific paths -------------------------------------------------------------------------------------------
+import re
+
+_TEXT = {".py", ".md", ".json", ".txt", ".yml", ".yaml", ".ini", ".toml", ".cfg"}
+_MACHINE_PATH = re.compile(r"(?<![A-Za-z0-9])[A-Za-z]:[\\/](?!/)|/Users/[^/\s]|/home/[a-z][^/\s]*/|AppData|OneDrive|/mnt/[a-z]/|\\\\[A-Za-z0-9_.-]+\\")
+# Deliberate inputs of the security tests (a hostile file name / URL), not paths the product uses.
+_ALLOWED = {
+    "tests/test_repo_hygiene.py",
+    "core/tests/test_enterprise_hardening.py",
+}
+
+
+def test_no_machine_specific_path_is_tracked():
+    hits = []
+    for rel in _tracked():
+        if Path(rel).suffix.lower() not in _TEXT or rel in _ALLOWED or rel.startswith("tests/data/"):
+            continue
+        for n, line in enumerate((ROOT / rel).read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+            if _MACHINE_PATH.search(line):
+                hits.append(f"{rel}:{n}: {line.strip()[:100]}")
+    assert not hits, "paths that only exist on one machine/OS:\n" + "\n".join(hits)

@@ -73,7 +73,7 @@ def test_generator_tag_moves_score_toward_ai(pipeline, tmp_path):
 def test_hard_block_short_circuits(pipeline, tmp_path, monkeypatch):
     p = _speechy(tmp_path / "blocked.wav")
     bl = tmp_path / "bl.txt"
-    bl.write_text(hashlib.sha256(p.read_bytes()).hexdigest() + "\n")
+    bl.write_text(hashlib.sha256(p.read_bytes()).hexdigest() + "\n", encoding="utf-8")
     monkeypatch.setenv("OMNI_HARDBLOCK_SHA256_FILE", str(bl))
     res = pipeline.analyze(p)
     assert res["final_status"] == "HARD_BLOCK_ESCALATE"

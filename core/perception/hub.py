@@ -54,3 +54,15 @@ def load_kwargs(repo_id: str, revision: Optional[str] = None) -> Dict[str, objec
     if is_cached(repo_id, revision):
         kwargs["local_files_only"] = True
     return kwargs
+
+
+def ensure_not_lfs_pointer(path) -> None:
+    """Raise a clear error when a weights file is a Git LFS pointer (a ~130 byte text stub) instead of the real file, which is what
+    a clone made without Git LFS contains. Without this the loader fails with an obscure parsing error."""
+    from pathlib import Path
+
+    p = Path(path)
+    if p.is_file() and p.stat().st_size < 1024:
+        with p.open("rb") as fh:
+            if fh.read(40).startswith(b"version https://git-lfs"):
+                raise RuntimeError(f"{p.name} is a Git LFS pointer, not the model: run `git lfs install` then `git lfs pull` in the repository")

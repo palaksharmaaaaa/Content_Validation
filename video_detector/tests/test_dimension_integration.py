@@ -76,7 +76,7 @@ def test_real_ffmpeg_comment_tag_scores_toward_ai(pipeline, tmp_path):
 def test_hard_block_short_circuits(pipeline, tmp_path, monkeypatch):
     p = _clip(tmp_path, "blocked.mp4")
     bl = tmp_path / "bl.txt"
-    bl.write_text(hashlib.sha256(p.read_bytes()).hexdigest() + "\n")
+    bl.write_text(hashlib.sha256(p.read_bytes()).hexdigest() + "\n", encoding="utf-8")
     monkeypatch.setenv("OMNI_HARDBLOCK_SHA256_FILE", str(bl))
     res = pipeline.analyze(p)
     assert res["final_status"] == "HARD_BLOCK_ESCALATE"

@@ -135,7 +135,7 @@ class TestZeroRetentionFeatureStore(unittest.TestCase):
         """Verifies that purge_ephemeral_cache() removes files from temporary storage."""
         cache_dir = get_ephemeral_cache_dir()
         test_file = cache_dir / "transient_test.tmp"
-        test_file.write_text("transient_data")
+        test_file.write_text("transient_data", encoding="utf-8")
         self.assertTrue(test_file.exists())
 
         purged_count = purge_ephemeral_cache()

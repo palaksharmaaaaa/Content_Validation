@@ -48,7 +48,7 @@ def test_context_no_index(tmp_path, monkeypatch):
 def test_context_index_hit(tmp_path, monkeypatch):
     ref = _noise(20, seed=9)
     idx = tmp_path / "idx.jsonl"
-    idx.write_text(json.dumps({"fp": context.fingerprint_hex(ref), "label": "2019 speech", "source": "archive"}) + "\n")
+    idx.write_text(json.dumps({"fp": context.fingerprint_hex(ref), "label": "2019 speech", "source": "archive"}) + "\n", encoding="utf-8")
     monkeypatch.setenv("OMNI_AUDIO_FP_INDEX", str(idx))
     f = context.check_audio_fingerprint(_ctx(tmp_path / "a.wav", ref[16000 * 3 : 16000 * 12]))
     assert f.status == FindingStatus.WARN

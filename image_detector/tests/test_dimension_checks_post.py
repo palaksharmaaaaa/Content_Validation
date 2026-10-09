@@ -52,7 +52,7 @@ def test_context_index_hit_warns(tmp_path, monkeypatch):
     with Image.open(p) as im:
         ph = C.to_hex64(C.phash64(im))
     idx = tmp_path / "idx.jsonl"
-    idx.write_text(json.dumps({"phash": ph, "label": "2018 conflict photo", "source": "archive"}) + "\n")
+    idx.write_text(json.dumps({"phash": ph, "label": "2018 conflict photo", "source": "archive"}) + "\n", encoding="utf-8")
     monkeypatch.setenv("OMNI_CONTEXT_HASH_INDEX", str(idx))
     f = context.check_perceptual_hash(_ctx(p))
     assert f.status == FindingStatus.WARN
