@@ -50,6 +50,8 @@ desktop.ini
 # Trained detector checkpoints ARE tracked (via Git LFS, see .gitattributes); other weights stay ignored.
 !**/models/*.pt
 *.onnx
+# The three small OpenCV face models are part of the product (core/models) and must be in the repo.
+!core/models/*.onnx
 *.bin
 *.weights
 *.ckpt

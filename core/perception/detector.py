@@ -13,6 +13,7 @@ silence_noise()
 logger = logging.getLogger("core.perception.detector")
 
 MODEL_ID = "Roboflow/rf-detr-small"
+MODEL_REVISION = "3bdc465063270f99769da5a1b4c00c68bd2d439d"   # pinned: identical weights on every machine
 DEFAULT_THRESHOLD = 0.50
 
 ANIMALS = {"bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe"}
@@ -36,8 +37,8 @@ class ObjectDetector:
                     import torch
                     from transformers import AutoImageProcessor, AutoModelForObjectDetection
 
-                    self._proc = AutoImageProcessor.from_pretrained(self._id, **load_kwargs(self._id))
-                    self._model = AutoModelForObjectDetection.from_pretrained(self._id, **load_kwargs(self._id)).eval()
+                    self._proc = AutoImageProcessor.from_pretrained(self._id, **load_kwargs(self._id, MODEL_REVISION if self._id == MODEL_ID else None))
+                    self._model = AutoModelForObjectDetection.from_pretrained(self._id, **load_kwargs(self._id, MODEL_REVISION if self._id == MODEL_ID else None)).eval()
                     if torch.cuda.is_available():
                         self._model = self._model.to("cuda")
                 except Exception as exc:

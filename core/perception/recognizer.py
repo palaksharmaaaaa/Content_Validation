@@ -19,6 +19,7 @@ silence_noise()
 logger = logging.getLogger("core.perception.recognizer")
 
 MODEL_ID = "google/siglip2-base-patch16-224"
+MODEL_REVISION = "75de2d55ec2d0b4efc50b3e9ad70dba96a7b2fa2"   # pinned: identical weights on every machine
 TEXT_LEN = 64            # SigLIP 2 text tower is trained with fixed-length 64 token prompts
 
 
@@ -39,8 +40,8 @@ class ZeroShotRecognizer:
                 try:
                     from transformers import AutoModel, AutoProcessor
 
-                    self._proc = AutoProcessor.from_pretrained(self._id, **load_kwargs(self._id))
-                    self._model = AutoModel.from_pretrained(self._id, **load_kwargs(self._id)).eval()
+                    self._proc = AutoProcessor.from_pretrained(self._id, **load_kwargs(self._id, MODEL_REVISION if self._id == MODEL_ID else None))
+                    self._model = AutoModel.from_pretrained(self._id, **load_kwargs(self._id, MODEL_REVISION if self._id == MODEL_ID else None)).eval()
                 except Exception as exc:
                     logger.warning("Zero-shot recognizer %s unavailable: %s", self._id, exc)
                     self._failed = True
