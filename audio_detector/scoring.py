@@ -82,7 +82,7 @@ def pool_acoustic_evidence(
     if flatness < flatness_low_limit:
         flatness_score = 0.85
     elif flatness > SYNTHETIC_FLATNESS_HIGH_THRESHOLD:
-        flatness_score = 0.70
+        flatness_score = 0.15          # a noise-like spectrum is what any hissy recording has; it is no evidence of synthesis
     else:
         flatness_score = 0.15
 

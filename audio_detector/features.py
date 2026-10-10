@@ -124,8 +124,6 @@ def compute_spectral_features(samples: np.ndarray, sample_rate: int) -> Dict[str
         p_score += 0.50
     if spectral_flatness < 0.002:
         p_score += 0.25
-    elif spectral_flatness > 0.45:
-        p_score += 0.15
     if digital_silence_ratio > 0.12:
         p_score += 0.30
 

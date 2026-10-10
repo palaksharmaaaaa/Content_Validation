@@ -15,6 +15,9 @@ from core.provenance_view import build_c2pa_block, build_exif_block, build_prove
 logger = logging.getLogger("audio_detector.provenance")
 
 
+# Tag names in which a software or generator declaration is meaningful (not title, artist or album).
+_SOFTWARE_TAGS = {"TSSE", "TSS", "TENC", "TEN", "TPUB", "TCOP", "COMM", "ISFT", "ICMT", "IENG", "ITCH", "ORIGINATOR", "DESCRIPTION", "ENCODER", "COMMENT", "VENDOR"}
+
 KNOWN_AUDIO_ENCODERS = ["lame", "lavf", "ffmpeg", "coreaudio", "audacity", "pro tools", "elevenlabs"]
 
 
@@ -27,6 +30,16 @@ class AudioProvenanceValidator:
     def scan_c2pa(self, file_path: str | Path) -> Dict[str, Any]:
         """Content Credentials marker scan (presence only; see core.c2pa)."""
         return scan_c2pa_file(file_path)
+
+    @staticmethod
+    def _declared_tags(path: Path) -> Dict[str, str]:
+        from audio_detector.dimension_checks import _common as C            # imported here: that package imports this one's siblings
+
+        try:
+            return {f"tag:{k}": v for k, v in C.collect_text_fields(path).items() if k.split(":")[-1].upper() in _SOFTWARE_TAGS}
+        except Exception as exc:
+            logger.debug("declared tags unreadable for %s: %s", path.name, exc)
+            return {}
 
     def analyze_provenance(self, file_path: str | Path) -> Dict[str, Any]:
         """Analyzes audio chunk headers, encoder footprints, and C2PA credentials."""
@@ -60,6 +73,9 @@ class AudioProvenanceValidator:
             status = "NO_ENCODER_METADATA"
             cues.append("No encoder software metadata found (neutral/stripped stream).")
 
+        # The tags the file declares about itself (ID3 comment/encoder frames, RIFF software and comment fields, FLAC/Ogg comments):
+        # the same fields the container check reads, so attribution and the container check cannot disagree about what the file says.
+        declared = self._declared_tags(path)
         view = build_provenance_view(
             build_c2pa_block(c2pa_res["c2pa_present"], c2pa_res.get("manifests_found", [])),
             build_exif_block(),
@@ -69,6 +85,6 @@ class AudioProvenanceValidator:
             "c2pa_present": c2pa_res["c2pa_present"],
             "provenance_status": status,
             "encoder": encoder_found,
-            "metadata": {"encoder": encoder_found},
+            "metadata": {"encoder": encoder_found, **declared},
             "cues": cues,
         }

@@ -111,7 +111,7 @@ def _audio_dimension_4(c: _AudioDossierContext) -> Dict[str, Any]:
         diagnosis=(
             f"Spectrum is extremely smooth (flatness {flatness:.5f}); typical of algorithmic generation, also of pure test tones."
             if is_flat
-            else f"Spectrum is almost flat (flatness {flatness:.5f}), like white noise; the detector counts this as a synthetic cue."
+            else f"Spectrum is almost flat (flatness {flatness:.5f}), like noise or hiss; this is not counted as a sign of synthesis."
             if flatness > SYNTHETIC_FLATNESS_HIGH_THRESHOLD
             else f"Spectral flatness {flatness:.5f} is between the synthetic extremes."
         ),

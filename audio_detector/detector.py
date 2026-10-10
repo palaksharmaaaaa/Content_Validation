@@ -42,6 +42,20 @@ from audio_detector.validator import AudioValidator
 logger = logging.getLogger("audio_detector")
 
 
+def _covered_seconds(segments: List[Dict[str, Any]], label: str) -> float:
+    """Seconds of the timeline covered by segments with ``label``. The analysis windows overlap by half, so their lengths are merged, not added."""
+    spans = sorted((float(s["start_seconds"]), float(s["end_seconds"])) for s in segments if s.get("label") == label)
+    total, current_end = 0.0, None
+    for start, end in spans:
+        if current_end is None or start > current_end:
+            total += end - start
+            current_end = end
+        elif end > current_end:
+            total += end - current_end
+            current_end = end
+    return total
+
+
 class AudioAIDetector:
     """
     Completely independent, self-contained Audio AI Detector with rule-based feedback calibration (see learner.py).
@@ -130,8 +144,8 @@ class AudioAIDetector:
     ) -> Dict[str, Any]:
         """The full result dict for an analysed track (typed result plus the legacy flat keys consumers read)."""
         ai_pct, real_pct, undecided_pct = percentages
-        ai_duration_sec = sum(seg["duration_seconds"] for seg in temporal_segments if seg.get("label") == "LIKELY AI-GENERATED")
-        ai_duration_pct = (ai_duration_sec / max(0.01, duration)) * 100.0 if duration > 0 else 0.0
+        ai_duration_sec = _covered_seconds(temporal_segments, "LIKELY AI-GENERATED")
+        ai_duration_pct = min(100.0, (ai_duration_sec / max(0.01, duration)) * 100.0) if duration > 0 else 0.0
         res = AudioForensicResult(
             valid=True,
             filename=path.name,

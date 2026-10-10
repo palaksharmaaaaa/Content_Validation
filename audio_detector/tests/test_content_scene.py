@@ -108,3 +108,37 @@ def test_audio_vendor_names_must_be_whole_words(tmp_path):
     for text in ("this take resembles my earlier one", "supersonic", "an audio interview"):
         assert eng.attribute_audio(p, provenance_data={"metadata": {"comment": text}})["model_key"] == "unknown", text
     assert eng.attribute_audio(p, provenance_data={"metadata": {"comment": "voice by Resemble AI"}})["model_key"] == "resemble_ai"
+
+
+def test_container_generator_tags_need_whole_names():
+    from audio_detector.dimension_checks.container import _generator_in
+
+    for text in ("resemble airplane noise", "Stable audio levels", "Coquitlam", "an audio interview", "supersonic"):
+        assert _generator_in({"t": text}) is None, text
+    assert _generator_in({"t": "Made with ElevenLabs"}) == "elevenlabs"
+    assert _generator_in({"t": "Stable Audio Open"}) == "stable-audio"
+
+
+def test_ai_duration_never_exceeds_the_recording_and_overlaps_are_merged():
+    from audio_detector.detector import _covered_seconds
+
+    segs = [{"start_seconds": 0.0, "end_seconds": 3.0, "label": "LIKELY AI-GENERATED"},
+            {"start_seconds": 1.5, "end_seconds": 4.5, "label": "LIKELY AI-GENERATED"},
+            {"start_seconds": 3.0, "end_seconds": 6.0, "label": "LIKELY REAL"}]
+    assert _covered_seconds(segs, "LIKELY AI-GENERATED") == 4.5
+
+
+def test_a_tag_that_names_a_generator_reaches_attribution(tmp_path):
+    from audio_detector.attribution import AudioModelAttributionEngine
+    from audio_detector.provenance import AudioProvenanceValidator
+    from audio_detector.tests.audio_fixtures import tone, write_wav
+
+    p = write_wav(tmp_path / "t.wav", tone(1.0, seed=2))
+    raw = bytearray(p.read_bytes())
+    info = b"INFO" + b"ISFT" + (14).to_bytes(4, "little") + b"Made by Suno\x00\x00"
+    raw += b"LIST" + len(info).to_bytes(4, "little") + info
+    raw[4:8] = (len(raw) - 8).to_bytes(4, "little")
+    p.write_bytes(bytes(raw))
+    prov = AudioProvenanceValidator().analyze_provenance(p)
+    out = AudioModelAttributionEngine().attribute_audio(p, provenance_data=prov)
+    assert out["model_key"] == "suno_ai"

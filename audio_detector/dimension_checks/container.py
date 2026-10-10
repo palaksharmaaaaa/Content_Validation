@@ -24,12 +24,14 @@ STAGE = "container"
 DIM = "Section20"
 EXPLICIT_GENERATOR_LLR = 0.40
 
+# Every name must stand alone as a word (or a deliberate compound): "resemble airplane noise", "stable audio levels" and "Coquitlam" are
+# ordinary text, not declarations.
 _GENERATORS = {
-    "elevenlabs": r"eleven\s?labs", "suno": r"\bsuno\b", "udio": r"\budio\b", "stable-audio": r"stable\s?audio",
-    "musicgen": r"musicgen|audiocraft", "riffusion": r"riffusion", "coqui-xtts": r"\bxtts\b|coqui", "lyria": r"\blyria\b",
-    "openai-voice": r"openai.{0,20}(tts|voice)", "playht": r"play\.?ht\b", "resemble": r"resemble\s?ai",
-    "cosyvoice": r"cosyvoice", "chattts": r"chattts", "fish-speech": r"fish[\s-]?speech", "cartesia": r"\bcartesia\b",
-    "murf": r"\bmurf\b", "wellsaid": r"wellsaid",
+    "elevenlabs": r"\beleven[\s_-]?labs\b", "suno": r"\bsuno\b", "udio": r"\budio\b", "stable-audio": r"\bstable[\s_-]audio[\s_-](?:open|2(?:\.\d)?)\b|\bstable-audio\b|\bstableaudio\b|\bstability[\s_]?ai\b",
+    "musicgen": r"\b(?:musicgen|audiocraft)\b", "riffusion": r"\briffusion\b", "coqui-xtts": r"\b(?:xtts|coqui)\b", "lyria": r"\blyria\b",
+    "openai-voice": r"\bopenai\b.{0,20}\b(?:tts|voice)\b", "playht": r"\bplay\.?ht\b", "resemble": r"\bresemble[\s._-]?ai\b",
+    "cosyvoice": r"\bcosyvoice\b", "chattts": r"\bchattts\b", "fish-speech": r"\bfish[\s-]?speech\b", "cartesia": r"\bcartesia\b",
+    "murf": r"\bmurf\b", "wellsaid": r"\bwellsaid\b",
 }
 _GEN_RX = {k: re.compile(v, re.I) for k, v in _GENERATORS.items()}
 
