@@ -172,6 +172,9 @@ def check_fake_hires(ctx: CheckContext) -> Finding:
         return _f("fake_hires", "L", "signal", title, FindingStatus.NOT_APPLICABLE, Severity.NONE,
                   "Native-rate audio could not be read (ffmpeg missing or unsupported encoding).")
     x, sr, bits = loaded
+    if not (8000 <= sr <= 768_000):                  # no real recording has such a rate; the band scan below would run for ever on a hostile header
+        return _f("fake_hires", "L", "signal", title, FindingStatus.NOT_APPLICABLE, Severity.NONE,
+                  f"The declared sample rate ({sr} Hz) is outside the range of real audio, so it was not analysed.")
     if len(x) < 16384:
         return _f("fake_hires", "L", "signal", title, FindingStatus.NOT_APPLICABLE, Severity.NONE, "Audio too short to analyze.")
     freqs, db = _welch_db(x, sr)

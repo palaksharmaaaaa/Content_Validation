@@ -101,6 +101,21 @@ def pair_faces_with_persons(faces: Sequence[Box], persons: Sequence[Box]) -> Lis
     return pairs
 
 
+def _as_bgr(image: Any) -> Optional[np.ndarray]:
+    """``image`` as a 3-channel uint8 BGR array: grey (2-D or 1-channel) is expanded and an alpha channel dropped. None if it is neither."""
+    if image is None or not isinstance(image, np.ndarray) or image.size == 0:
+        return None
+    if image.dtype != np.uint8:
+        image = np.clip(image, 0, 255).astype(np.uint8)
+    if image.ndim == 2:
+        return cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+    if image.ndim == 3 and image.shape[2] == 1:
+        return cv2.cvtColor(image[:, :, 0], cv2.COLOR_GRAY2BGR)
+    if image.ndim == 3 and image.shape[2] == 4:
+        return image[:, :, :3]
+    return image if image.ndim == 3 and image.shape[2] == 3 else None
+
+
 def classify_minor(age: Optional[float], minor_group_share: Optional[float], usable: bool) -> str:
     """The recall-first decision rule (see module doc). ``usable`` is False when no crop was big enough to judge."""
     if age is not None and not math.isfinite(age):
@@ -213,8 +228,10 @@ class AgeEstimator:
         from their own detector say so with ``persons_available=False`` when that detector could not run."""
         base: Dict[str, Any] = {"model": f"{MODEL_ID}@{MODEL_REVISION[:7]}", "subjects": [], "n_subjects": 0, "youngest_age": None,
                                 "contains_minor": False, "contains_possible_minor": False, "review_required": False}
-        if image_bgr is None or image_bgr.ndim != 3:
-            return {**base, "status": "NO_IMAGE"}
+        image_bgr = _as_bgr(image_bgr)
+        if image_bgr is None:
+            # Nothing to look at is not the same as nobody there: the picture was not checked, so a person must look.
+            return {**base, "status": "NO_IMAGE", "review_required": True, "reason": "the picture could not be read, so nobody in it was checked"}
         try:
             if faces is None:
                 from core.perception.face_scan import get_screening_finder

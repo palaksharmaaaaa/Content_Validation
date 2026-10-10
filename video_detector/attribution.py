@@ -156,11 +156,15 @@ def _score_vendor_signatures(provenance_data: Dict[str, Any], scores: Dict[str, 
                 cues.append(cue)
                 declared = True
                 break
+    return declared
+
+
+def _score_c2pa(provenance_data: Dict[str, Any], scores: Dict[str, float], cues: List[str]) -> None:
+    """A Content Credentials marker says a tool signed the file, not which one: it adds weight to the generators that sign, nothing more."""
     if provenance_data.get("c2pa_present"):
         scores["openai_sora"] += 0.45
         scores["google_veo"] += 0.35
         cues.append("C2PA Content Credentials markers present in video stream (unverified)")
-    return declared
 
 
 def _score_temporal_characteristics(temporal_data: Dict[str, Any], scores: Dict[str, float]) -> None:
@@ -201,11 +205,14 @@ class VideoModelAttributionEngine:
         cues: List[str] = []
 
         declared = _score_vendor_signatures(provenance_data, scores, cues) if provenance_data else False
+        declared_keys = {k for k, v in scores.items() if v > 0.05 + 1e-9}          # what the file itself claims, before any other cue is added
+        if provenance_data:
+            _score_c2pa(provenance_data, scores, cues)
         if temporal_data:
             _score_temporal_characteristics(temporal_data, scores)
 
         return finalize_attribution(
-            scores, KNOWN_VIDEO_GENERATORS, declared=declared, cues=cues,
+            scores, KNOWN_VIDEO_GENERATORS, declared=declared, declared_keys=declared_keys, cues=cues,
             unknown_name="Unknown / Generic Video Diffusion", no_cue_text="No generator is declared in the file's metadata.",
             region_of=_region_for,
         )

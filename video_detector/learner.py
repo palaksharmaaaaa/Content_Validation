@@ -34,6 +34,7 @@ from video_detector.config import (
 from video_detector.schemas import VideoFeedbackRecord
 from core.metrics_util import sanitize_metric_value
 from core.hashing import already_recorded
+from core.calibration_io import sanitize_calibration
 from core.atomic_io import atomic_read_json, atomic_write_json, serialized_on
 from core.media_library import MediaLibrary, library_for, register_feedback
 
@@ -83,7 +84,7 @@ class VideoSelfImprover:
             },
         }
         loaded = atomic_read_json(self.calibration_file, default=None)
-        return loaded if isinstance(loaded, dict) else default_calib
+        return sanitize_calibration(loaded, default_calib) if isinstance(loaded, dict) else default_calib
 
     def save_calibration(self, calib: Dict[str, Any]) -> None:
         """Saves updated calibration parameters atomically."""

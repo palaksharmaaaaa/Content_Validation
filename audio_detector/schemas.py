@@ -24,7 +24,7 @@ class AudioForensicResult:
     has_vocoder_cutoff: bool = False
     cutoff_freq_hz: float = 0.0
     spectral_flatness: float = 0.0
-    digital_silence_ratio: float = 0.0
+    digital_silence_ratio: Optional[float] = 0.0       # None: not measured (8-bit audio)
     high_freq_ratio: float = 0.0
     acoustic_features: Dict[str, Any] = field(default_factory=dict)
     temporal_segments: List[Dict[str, Any]] = field(default_factory=list)

@@ -56,6 +56,17 @@ def scan_signatures(buf: bytes, trailing_only: bool) -> List[str]:
     return found
 
 
+def scan_windows(windows: List[Tuple[bytes, bool]]) -> List[str]:
+    """Signatures across several byte windows of one file, as ``[(buffer, trailing_only), ...]``. A ZIP is recognised when its local-file
+    header is in one window and its end-of-directory record in another, which is what an archive larger than a window looks like."""
+    found: set = set()
+    for buf, trailing in windows:
+        found |= set(scan_signatures(buf, trailing))
+    if _ZIP_LOCAL in b"".join(w for w, _ in windows) and any(_ZIP_END in w for w, _ in windows):
+        found.add("ZIP")
+    return sorted(found)
+
+
 INJECTION_PATTERNS = [
     re.compile(r"ignore\s+(all\s+|any\s+|the\s+)?(previous|prior|above|earlier)\s+(instructions|rules|prompts?)", re.I),
     re.compile(r"disregard\s+.{0,40}(instructions|rules|guidelines)", re.I),

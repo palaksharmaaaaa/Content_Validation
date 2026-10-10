@@ -35,5 +35,12 @@ def render_sidebar(session_dir: Path) -> str:
 
         st.divider()
         if st.button("Clear uploaded files", help="Deletes this session's temporary copies of uploaded and downloaded media."):
-            st.success(f"Removed {purge_ephemeral_cache(session_dir)} temporary file(s).")
+            removed = purge_ephemeral_cache(session_dir)
+            # The uploaders still hold their files and the session still lists fetched links: reset both, or the next rerun would write
+            # the files straight back to disk.
+            for tab in ("img", "vid", "aud"):                      # the keys of the three MediaTabSpec tabs in app.py
+                st.session_state[f"{tab}_uploader_round"] = st.session_state.get(f"{tab}_uploader_round", 0) + 1
+                for suffix in ("_batch_sig", "_batch_results", "_url_items"):
+                    st.session_state.pop(f"{tab}{suffix}", None)
+            st.success(f"Removed {removed} temporary file(s) and cleared the file lists.")
     return SENSITIVITY_CHOICES[label]

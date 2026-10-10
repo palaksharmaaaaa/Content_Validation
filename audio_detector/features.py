@@ -29,12 +29,12 @@ def feature_vector(f: Dict[str, Any]) -> List[float]:
         float(f["has_vocoder_cutoff"]),
         f["cutoff_freq_hz"] / 10000.0,
         f["spectral_flatness"] * 100.0,
-        f["digital_silence_ratio"],
+        f["digital_silence_ratio"] or 0.0,
         f["high_freq_ratio"],
     ]
 
 
-def compute_spectral_features(samples: np.ndarray, sample_rate: int) -> Dict[str, Any]:
+def compute_spectral_features(samples: np.ndarray, sample_rate: int, exact_zero_is_informative: bool = True) -> Dict[str, Any]:
     """
     Computes acoustic features indicative of neural vocoders and synthetic speech:
     1. Vocoder high-frequency brick-wall cutoff (> 7.5kHz vs < 4kHz).
@@ -80,11 +80,13 @@ def compute_spectral_features(samples: np.ndarray, sample_rate: int) -> Dict[str
 
     # 1. High-frequency Cutoff Analysis
     # Neural vocoders (HiFi-GAN, MelGAN, WaveGlow) often terminate sharply at 7.5kHz or 16kHz
-    mean_power_by_freq = np.mean(spec_mat, axis=0)
-    total_power = np.sum(mean_power_by_freq) + 1e-10
+    # NOTE: ``spec_mat`` holds FFT magnitudes, not powers. The cut-off, the 98.5 % energy share and the flatness below are therefore
+    # computed on the magnitude spectrum (the thresholds were set that way); they are named "magnitude", not "power", to say so.
+    mean_mag_by_freq = np.mean(spec_mat, axis=0)
+    total_power = np.sum(mean_mag_by_freq) + 1e-10
 
     # Cumulative energy distribution
-    cum_energy = np.cumsum(mean_power_by_freq) / total_power
+    cum_energy = np.cumsum(mean_mag_by_freq) / total_power
     cutoff_idx = np.searchsorted(cum_energy, 0.985)
     cutoff_idx = min(cutoff_idx, len(freqs) - 1)
     cutoff_freq = freqs[cutoff_idx]
@@ -99,10 +101,10 @@ def compute_spectral_features(samples: np.ndarray, sample_rate: int) -> Dict[str
              or (VOCODER_CUTOFF_BAND_HIGH_MIN <= cutoff_freq <= VOCODER_CUTOFF_BAND_HIGH_MAX and sample_rate >= 44100))
     )
 
-    # 2. Wiener Spectral Flatness: Geometric Mean / Arithmetic Mean of Power
+    # 2. Spectral flatness: geometric mean / arithmetic mean of the MAGNITUDE spectrum
     # Natural human speech has rich formants and harmonic irregularity (lower flatness)
     # Neural synthesizers often have hyper-regular or unnaturally flat spectral noise
-    power_spectrum = mean_power_by_freq + 1e-12
+    power_spectrum = mean_mag_by_freq + 1e-12                 # (a magnitude spectrum despite the name used in the formula below)
     geom_mean = float(np.exp(np.mean(np.log(power_spectrum))))
     arith_mean = float(np.mean(power_spectrum))
     spectral_flatness = float(geom_mean / max(1e-12, arith_mean))
@@ -112,11 +114,12 @@ def compute_spectral_features(samples: np.ndarray, sample_rate: int) -> Dict[str
     # Microphones in physical rooms always record ambient baseline noise (entropy > 0)
     abs_samples = np.abs(samples)
     digital_zero_count = np.sum(abs_samples < 1e-5)
-    digital_silence_ratio = float(digital_zero_count / max(1, len(samples)))
+    # In 8-bit audio every quiet passage rounds to exactly zero, whatever made it, so exact zeros say nothing about the source: not measured.
+    digital_silence_ratio = float(digital_zero_count / max(1, len(samples))) if exact_zero_is_informative else None
 
     # High frequency energy ratio (> 5kHz)
     hf_mask = freqs >= 5000
-    high_freq_ratio = float(np.sum(mean_power_by_freq[hf_mask]) / total_power)
+    high_freq_ratio = float(np.sum(mean_mag_by_freq[hf_mask]) / total_power)
 
     # Heuristic combined indicator
     p_score = 0.10
@@ -124,7 +127,7 @@ def compute_spectral_features(samples: np.ndarray, sample_rate: int) -> Dict[str
         p_score += 0.50
     if spectral_flatness < 0.002:
         p_score += 0.25
-    if digital_silence_ratio > 0.12:
+    if digital_silence_ratio is not None and digital_silence_ratio > 0.12:
         p_score += 0.30
 
     p_score = float(np.clip(p_score, 0.05, 0.95))
@@ -133,7 +136,7 @@ def compute_spectral_features(samples: np.ndarray, sample_rate: int) -> Dict[str
         "has_vocoder_cutoff": has_vocoder_cutoff,
         "cutoff_freq_hz": round(float(cutoff_freq), 1),
         "spectral_flatness": round(spectral_flatness, 6),
-        "digital_silence_ratio": round(digital_silence_ratio, 4),
+        "digital_silence_ratio": None if digital_silence_ratio is None else round(digital_silence_ratio, 4),
         "high_freq_ratio": round(high_freq_ratio, 4),
         "p_audio_ai": round(p_score, 3),
         "measured": True,

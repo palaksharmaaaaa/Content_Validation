@@ -14,6 +14,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import cv2
+
+from core.ffmpeg import open_video
 import numpy as np
 
 from video_detector.config import DEFAULT_MAX_FRAMES
@@ -30,6 +32,9 @@ def _get_file_size_mb(path: Path) -> float:
         return 0.0
 
 
+ASSUMED_FPS = 25.0   # used only to put times on the timeline when a file records no frame rate; it is reported as an assumption
+
+
 class VideoFrameExtractor:
     """Safe, multi-threaded frame and track extraction engine for video forensics."""
 
@@ -43,10 +48,10 @@ class VideoFrameExtractor:
         if not path.is_file():
             return {"error": "File does not exist."}
 
-        cap = cv2.VideoCapture(str(path))
+        cap = open_video(path)
         try:
             if not cap.isOpened():
-                return {"error": "Could not open video file."}
+                return {"error": "Could not open video file (it must be an MP4/MOV, MKV/WebM or AVI container)."}
 
             fps = cap.get(cv2.CAP_PROP_FPS)
             total_frames = max(0, int(cap.get(cv2.CAP_PROP_FRAME_COUNT)))  # OpenCV returns -1 for some containers
@@ -56,8 +61,9 @@ class VideoFrameExtractor:
             fourcc_raw = "".join([chr((fourcc_int >> 8 * i) & 0xFF) for i in range(4)])
             fourcc = "".join(c for c in fourcc_raw if c.isprintable()) or "UNKNOWN"
 
-            if fps <= 0 or np.isnan(fps):
-                fps = 25.0
+            fps_assumed = bool(fps <= 0 or np.isnan(fps))
+            if fps_assumed:
+                fps = ASSUMED_FPS                      # the container records no frame rate: timeline times below are only an assumption
             duration_seconds = float(total_frames) / fps if fps > 0 else 0.0
 
             return {
@@ -65,6 +71,7 @@ class VideoFrameExtractor:
                 "file_size_mb": round(_get_file_size_mb(path), 3),
                 "duration_seconds": round(duration_seconds, 2),
                 "fps": round(fps, 2),
+                "fps_assumed": fps_assumed,
                 "total_frames": total_frames,
                 "width": width,
                 "height": height,
@@ -84,7 +91,7 @@ class VideoFrameExtractor:
             timestamps: List of timestamp seconds for each frame.
             temporal_step: The stride (in frames) between samples.
         """
-        cap = cv2.VideoCapture(str(video_path))
+        cap = open_video(video_path)
         limit = max_frames or self.max_frames
         try:
             if not cap.isOpened():
@@ -93,7 +100,7 @@ class VideoFrameExtractor:
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             fps = cap.get(cv2.CAP_PROP_FPS)
             if fps <= 0 or np.isnan(fps):
-                fps = 25.0
+                fps = ASSUMED_FPS
 
             if total_frames <= 0:
                 frames, timestamps = [], []

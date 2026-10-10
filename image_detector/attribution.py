@@ -254,12 +254,16 @@ def _score_software_header(provenance_data: Dict[str, Any], software: str, score
             cues.append(cue.format(sw=software))
             declared = True
             break
+    return declared
+
+
+def _score_c2pa(provenance_data: Dict[str, Any], scores: Dict[str, float], cues: List[str]) -> None:
+    """A Content Credentials marker says a tool signed the file, not which one: it adds weight to the generators that sign, nothing more."""
     if provenance_data.get("c2pa_present"):
         scores["openai_dalle3"] += 0.35
         scores["google_imagen"] += 0.30
         scores["adobe_firefly"] += 0.40
         cues.append("C2PA Content Credentials markers present (unverified)")
-    return declared
 
 
 def _score_canonical_resolution(path: Path, scores: Dict[str, float], cues: List[str]) -> None:
@@ -326,12 +330,15 @@ class ImageModelAttributionEngine:
         declared = any(v > 0.05 for v in scores.values())          # only the file's own claims have scored so far
         if provenance_data:
             declared = _score_software_header(provenance_data, str(meta.get("software", "")).lower(), scores, cues) or declared
+        declared_keys = {k for k, v in scores.items() if v > 0.05 + 1e-9}          # what the file itself claims, before any other cue is added
+        if provenance_data:
+            _score_c2pa(provenance_data, scores, cues)
         _score_canonical_resolution(path, scores, cues)
         if forensic_data:
             _score_spectral(forensic_data, scores, cues)
 
         return finalize_attribution(
-            scores, KNOWN_IMAGE_GENERATORS, declared=declared, cues=cues,
+            scores, KNOWN_IMAGE_GENERATORS, declared=declared, declared_keys=declared_keys, cues=cues,
             unknown_name="Unknown / Generic Diffusion", no_cue_text="No generator is declared in the file or its watermark.",
             region_of=lambda key: _REGION_BY_KEY.get(key, "Global / Open-Source"), watermark_detected=watermark_detected,
         )

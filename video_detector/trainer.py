@@ -127,6 +127,10 @@ class VideoDetectorTrainer:
         optimizer = optim.AdamW(self.model.parameters(), lr=lr)
 
         history: Dict[str, Any] = {"loss": [], "val_accuracy": []}
+        self.training_meta = {                                  # saved with the checkpoint: what the model was trained on
+            "train_samples": len(dataset), "val_samples": len(val_pairs or []),
+            "unit": "frame pairs", "epochs_run": epochs, "initial_weights": "torchvision ImageNet-1K",
+        }
         for epoch in range(epochs):
             self.model.train()
             total_loss = 0.0
@@ -186,6 +190,7 @@ class VideoDetectorTrainer:
         checkpoint = {
             "model_state_dict": self.model.state_dict(),
             "class_to_idx": {"ai_generated": 0, "real": 1},
+            "meta": dict(getattr(self, "training_meta", {})),
         }
         partial = save_path.with_name(save_path.name + ".partial")
         torch.save(checkpoint, partial)

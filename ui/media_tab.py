@@ -7,13 +7,15 @@ directory, results are cached by file content, several files get a comparison ta
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Set, Tuple
 
 import streamlit as st
 
 from core.hashing import file_sha256
+from core.limits import BYTES_PER_MB, limits_for
 from core.security import sanitize_filename
 from ui.adapters import run_batch_pipeline
 from ui.batch_views import render_batch_overview
@@ -44,10 +46,30 @@ def _save_upload(spec_key: str, session_dir: Path, up: Any, index: int) -> Path:
     return path
 
 
+def _within_limits(spec: MediaTabSpec, candidates: List[Tuple[str, int]], already_used: int = 0) -> Set[int]:
+    """Indexes of the (name, size) candidates that fit the per-file and per-batch limits of ``spec.modality`` (core/limits.py), taken in
+    order; every other file is reported to the user with the reason. ``already_used`` is the bytes the batch already holds."""
+    limits = limits_for(spec.modality)
+    kept: Set[int] = set()
+    total = already_used
+    for i, (name, size) in enumerate(candidates):
+        if size > limits.file_bytes:
+            st.error(f"`{name}` is {size / BYTES_PER_MB:.1f} MB, over the {limits.file_mb:g} MB limit for one {spec.modality} file. It was not analysed.")
+        elif total + size > limits.batch_bytes:
+            st.error(f"`{name}` was not analysed: it would take the batch past the {limits.batch_mb:g} MB limit for {spec.modality} files "
+                     f"({total / BYTES_PER_MB:.1f} MB already selected). Analyse it in a separate batch.")
+        else:
+            kept.add(i)
+            total += size
+    return kept
+
+
 def _ingest_uploads(spec: MediaTabSpec, session_dir: Path) -> List[Dict[str, Any]]:
     round_key = f"{spec.key}_uploader_round"
     uploaded = st.file_uploader(
         f"Drop {spec.noun.lower()} files here (one or several)", type=spec.file_types,
+        help=f"Up to {limits_for(spec.modality).file_mb:g} MB per file and {limits_for(spec.modality).batch_mb:g} MB per batch.",
+        max_upload_size=max(1, math.ceil(limits_for(spec.modality).file_mb)),         # the browser refuses a bigger file at once; _within_limits is exact
         accept_multiple_files=True, key=f"uploader_{spec.key}_{st.session_state.get(round_key, 0)}",
     )
     st.caption(spec.hint)
@@ -58,7 +80,10 @@ def _ingest_uploads(spec: MediaTabSpec, session_dir: Path) -> List[Dict[str, Any
                 st.session_state[round_key] = st.session_state.get(round_key, 0) + 1
                 st.rerun()
     items: List[Dict[str, Any]] = []
+    kept = _within_limits(spec, [(up.name, up.size) for up in uploaded or []])
     for idx, up in enumerate(uploaded or []):
+        if idx not in kept:
+            continue
         item = {"path": str(_save_upload(spec.key, session_dir, up, idx)), "filename": up.name, "size": up.size}
         if spec.tag_upload_source:
             item["source"] = "Local Device Upload"
@@ -123,7 +148,10 @@ def _analyse(spec: MediaTabSpec, items: List[Dict[str, Any]], detectors: Dict[st
 
 def render_media_tab(spec: MediaTabSpec, detectors: Dict[str, Any], sensitivity_key: str, session_dir: Path) -> None:
     """Draw one tab: uploader and optional links, analyse (cached by file content), then show the result or a comparison table."""
-    items = _ingest_uploads(spec, session_dir) + _ingest_urls(spec, session_dir)
+    uploads = _ingest_uploads(spec, session_dir)
+    links = _ingest_urls(spec, session_dir)
+    kept = _within_limits(spec, [(it["filename"], it["size"]) for it in links], already_used=sum(it["size"] for it in uploads))
+    items = uploads + [it for i, it in enumerate(links) if i in kept]          # fetched links share the batch limit with the uploads
     results = _analyse(spec, items, detectors, sensitivity_key, session_dir)
     if not results:
         return

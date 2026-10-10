@@ -40,4 +40,4 @@ def test_large_model_rows_check_the_pinned_revision_not_any_cached_copy(monkeypa
     monkeypatch.setattr(fetch_models, "present", lambda repo, revision=None: asked.setdefault(repo, revision) or True)
     rows = {r.component: r for r in system_status.collect_status()}
     assert set(asked.values()) == {DETECTOR_REV, RECOGNIZER_REV}
-    assert rows["Object detector"].state == "Ready" and rows["Scene and species recognizer"].state == "Ready"
+    assert rows["Object detector"].state == "Downloaded" and rows["Scene and species recognizer"].state == "Downloaded"

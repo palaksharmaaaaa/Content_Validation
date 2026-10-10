@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from core.limits import limits_for
+
 # Paths
 MODULE_DIR = Path(__file__).resolve().parent
 DATA_DIR = MODULE_DIR / "data"
@@ -22,7 +24,7 @@ CALIBRATION_FILE = DATA_DIR / "image_calibration.json"
 # Image Resolution & Format Settings
 IMAGE_SIZE = 224
 MIN_RESOLUTION = 64
-MAX_FILE_SIZE_MB = 100.0
+MAX_FILE_SIZE_MB = limits_for("image").file_mb      # core/limits.py: default, limits.toml or environment variable
 SUPPORTED_EXTENSIONS = {".jpg", ".jpeg", ".jfif", ".png", ".webp", ".bmp", ".tif", ".tiff"}
 
 # Physical Forensic Baselines
@@ -143,6 +145,10 @@ KNOWN_AI_SOFTWARE_SIGNATURES = [
 
 # Relative weight of each pixel signal in the pooled score; user feedback nudges these (image_detector.learner) and the detector
 # renormalises them, so only the ratios matter.
+# Only noise_residual, surface_smoothness and fft_decay weight a term in the pooled score. facial_shading is not used anywhere, and
+# ela_discrepancy only takes a share in the weights' normalisation (error-level analysis feeds the inpainting / composite checks, not
+# the pooled probability). They are kept so existing calibration files stay valid; the Learning tab marks them as unused.
+SCORE_UNUSED_WEIGHTS = ("facial_shading", "ela_discrepancy")
 DEFAULT_FEATURE_WEIGHTS = {
     "noise_residual": 0.35,
     "surface_smoothness": 0.30,

@@ -22,7 +22,7 @@ import os
 import random
 import time
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from PIL import Image
@@ -41,11 +41,58 @@ def list_files(folder: Path) -> List[Path]:
     return sorted(p for p in Path(folder).rglob("*") if p.suffix.lower() in _EXT)
 
 
+NEAR_DUPLICATE_BITS = 2          # two pictures whose 64-bit difference hashes differ in at most this many bits are treated as the same picture
+
+
+def difference_hash(path: Path) -> Optional[int]:
+    """64-bit difference hash (dHash) of a picture: the same picture re-saved, resized or lightly edited gets the same or a very close value.
+    None if the file cannot be read."""
+    try:
+        with Image.open(path) as im:
+            small = np.asarray(im.convert("L").resize((9, 8), Image.BILINEAR), dtype=np.int16)
+    except Exception:
+        return None
+    bits = (small[:, 1:] > small[:, :-1]).reshape(-1)
+    return int("".join("1" if b else "0" for b in bits), 2)
+
+
+def near_duplicate_groups(hashes: List[Optional[int]], max_bits: int = NEAR_DUPLICATE_BITS) -> List[int]:
+    """Group index for every picture (a picture without a hash is its own group): pictures closer than ``max_bits`` end up in one group,
+    directly or through a chain of close neighbours."""
+    n = len(hashes)
+    parent = list(range(n))
+
+    def find(i: int) -> int:
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    known = [i for i, h in enumerate(hashes) if h is not None]
+    if known:
+        values = np.array([hashes[i] for i in known], dtype=np.uint64)
+        table = np.array([bin(b).count("1") for b in range(256)], dtype=np.uint8)
+        for pos, i in enumerate(known):
+            distance = table[(values[pos + 1:] ^ values[pos]).view(np.uint8).reshape(-1, 8)].sum(axis=1)
+            for offset in np.nonzero(distance <= max_bits)[0]:
+                a, b = find(i), find(known[pos + 1 + int(offset)])
+                if a != b:
+                    parent[b] = a
+    return [find(i) for i in range(n)]
+
+
 def split(files: List[Path]) -> Tuple[List[Path], List[Path]]:
-    """(train, validation) by content hash."""
+    """(train, validation). Near-duplicate pictures (re-saves, resizes, small edits) always land on the same side, so a validation picture
+    never has a twin in training; the side is decided by the smallest content hash in the group, so it never reshuffles."""
+    hashes = [difference_hash(p) for p in files]
+    groups = near_duplicate_groups(hashes)
+    key: Dict[int, str] = {}
+    for p, g in zip(files, groups):
+        digest = file_sha256(p, cached=False)
+        key[g] = min(key.get(g, digest), digest)                 # the group's smallest content hash: the same whatever order the files come in
     train, val = [], []
-    for p in files:
-        (val if partition(file_sha256(p, cached=False)) == "val" else train).append(p)
+    for p, g in zip(files, groups):
+        (val if partition(key[g]) == "val" else train).append(p)
     return train, val
 
 
@@ -166,7 +213,8 @@ def evaluate_inference(checkpoint: Path, items: List[Tuple[str, int]], boxes: Di
             "real_specificity": float((~pred[ys == 0]).mean()), "n": int(len(ys))}
 
 
-def train(real_dirs: List[Path], ai_dirs: List[Path], epochs: int, out: Path, batch: int = 64, workers: int = 4, limit: int = 0) -> Dict:
+def train(real_dirs: List[Path], ai_dirs: List[Path], epochs: int, out: Path, batch: int = 64, workers: int = 4, limit: int = 0,
+          dataset_name: str = "") -> Dict:
     """Train, keep the best checkpoint by stress accuracy, and return the per-epoch history."""
     import torch
     from torch.utils.data import DataLoader
@@ -220,7 +268,9 @@ def train(real_dirs: List[Path], ai_dirs: List[Path], epochs: int, out: Path, ba
             best = stress["accuracy"]
             out.parent.mkdir(parents=True, exist_ok=True)
             meta = {"epochs_run": epoch + 1, "val_stress": stress, "val_clean": clean, "train_samples": len(tr), "val_samples": len(va),
-                    "input_size": INPUT_SIZE, "label_1": "ai_generated"}
+                    "unit": "faces (one crop per detected face)", "images_found": len(r_files) + len(a_files), "dataset": dataset_name or None,
+                    "split": f"by content hash of the near-duplicate group (dHash distance <= {NEAR_DUPLICATE_BITS} bits)",
+                    "initial_weights": "torchvision ImageNet-1K", "input_size": INPUT_SIZE, "label_1": "ai_generated"}
             partial = out.with_name(out.name + ".partial")
             torch.save({"model_state_dict": model.state_dict(), "meta": meta}, partial)
             os.replace(partial, out)                      # a crash mid-write never leaves a half-written checkpoint
@@ -238,9 +288,10 @@ def main(argv=None) -> Dict:
     ap.add_argument("--out", type=Path, default=CHECKPOINT)
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--limit", type=int, default=0, help="debug: cap files per class")
+    ap.add_argument("--dataset-name", default="", help="name of the dataset, recorded in the checkpoint so the app can show what it was trained on")
     a = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
-    report = train(a.real, a.ai, a.epochs, a.out, workers=a.workers, limit=a.limit)
+    report = train(a.real, a.ai, a.epochs, a.out, workers=a.workers, limit=a.limit, dataset_name=a.dataset_name)
     print(json.dumps({"best_stress_accuracy": report["best_stress_accuracy"]}))
     return report
 

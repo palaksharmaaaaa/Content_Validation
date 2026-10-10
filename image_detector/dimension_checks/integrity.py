@@ -6,7 +6,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from core.forensics.bytescan import WINDOW, find_injection, scan_signatures
+from core.forensics.bytescan import WINDOW, find_injection, scan_windows
 from core.forensics.registry import CheckContext, registry
 from core.forensics.schemas import EvidenceClass, Finding, FindingStatus, Severity
 from image_detector.dimension_checks import _common as C
@@ -92,11 +92,10 @@ def check_trailing_data(ctx: CheckContext) -> Finding:
 def check_polyglot_signatures(ctx: CheckContext) -> Finding:
     head, tail, size = C.read_windows(ctx.path)
     fmt, end = _end_offset(ctx.path, head, size)
-    found = set(scan_signatures(head, False)) | set(scan_signatures(tail, False))
+    windows = [(head, False), (tail, False)]
     if end is not None and size - end > 0 and size <= C.FULL_READ_LIMIT:
-        trailing = ctx.path.read_bytes()[end : end + WINDOW]
-        found |= set(scan_signatures(trailing, True))
-    sigs = sorted(found)
+        windows.append((ctx.path.read_bytes()[end : end + WINDOW], True))
+    sigs = scan_windows(windows)
     if sigs:
         return _f("polyglot_signatures", "Embedded executable / archive / script signatures", FindingStatus.FAIL,
                   Severity.HIGH, f"Image carries signatures of other file types: {', '.join(sigs)}. Treat as a potential polyglot; "

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import numpy as np
 
@@ -58,6 +58,12 @@ def binary_entropy(prob_ai: float) -> float:
 NAMING_THRESHOLD = 0.25
 
 
+def _share(value: float) -> float:
+    """A share rounded to two decimals. A share that is exactly halfway (0.125) can come out a hair either side of it depending on the
+    library versions that produced it, so the last bits are absorbed first: the same file always reports the same number."""
+    return round(float(value) + 1e-9, 2)
+
+
 def finalize_attribution(
     scores: Dict[str, float],
     catalog: Dict[str, Dict[str, Any]],
@@ -68,28 +74,31 @@ def finalize_attribution(
     no_cue_text: str,
     region_of: Any,
     watermark_detected: bool = False,
+    declared_keys: Optional[Set[str]] = None,
 ) -> Dict[str, Any]:
     """The shared last step of every attribution engine.
 
     A generator is named only when the file itself declares one (a visible watermark, a metadata or software claim). Signal statistics
     (spectral slope, motion variance, a cutoff frequency, a canvas size) are shared by many generators and by ordinary cameras and
     codecs, so they can rank candidates but never put a product name on a file by themselves; without a declaration the answer is
-    "unknown" and the candidate list is withheld rather than offered as a guess.
+    "unknown" and the candidate list is withheld rather than offered as a guess. ``declared_keys`` are the catalogue keys the file
+    itself declared: only one of those can be named, even when signal statistics put another generator's score higher.
     """
     total = sum(scores.values())
     ranked = sorted(((k, v / total if total > 0 else v) for k, v in scores.items()), key=lambda kv: kv[1], reverse=True)
-    top3 = [{"model": catalog[k]["name"], "confidence": round(s, 2)} for k, s in ranked[:3]]
-    best_key, best_score = ranked[0]
+    top3 = [{"model": catalog[k]["name"], "confidence": _share(s)} for k, s in ranked[:3]]
+    pool = [kv for kv in ranked if declared_keys is None or kv[0] in declared_keys] or ranked
+    best_key, best_score = pool[0]
     if not declared or best_score < NAMING_THRESHOLD:
         return {
             "attributed_model": unknown_name,
             "model_key": "unknown",
-            "confidence": round(best_score, 2) if declared else 0.0,
+            "confidence": _share(best_score) if declared else 0.0,
             "cues": cues or [no_cue_text],
             "top_candidates": top3 if declared else [],
         }
     info = catalog[best_key]
-    conf = round(best_score, 2)
+    conf = _share(best_score)
     return {
         "attributed_model": info["name"],
         "model_key": best_key,

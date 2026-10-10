@@ -227,7 +227,7 @@ def fetch_media_from_url(
     """Downloads remote media via anti-SSRF SecureUrlFetcher, enforcing the size limit of the media type (or ``max_mb``).
 
     Pass the session's scratch directory as ``dest_dir`` so the sidebar wipe removes the download."""
-    limit = int(max_mb if max_mb is not None else MAX_FILE_SIZE_MB_BY_TYPE.get(expected_type, image_cfg.MAX_FILE_SIZE_MB))
+    limit = float(max_mb if max_mb is not None else MAX_FILE_SIZE_MB_BY_TYPE.get(expected_type, image_cfg.MAX_FILE_SIZE_MB))
     fetcher = SecureUrlFetcher(max_mb=limit, timeout_seconds=120)
     fetch_res = fetcher.fetch(url, dest_dir=dest_dir, expected_type=expected_type)
     if not fetch_res.get("success"):

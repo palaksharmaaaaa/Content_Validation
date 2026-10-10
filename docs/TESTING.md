@@ -42,4 +42,9 @@ Goldens that depend on learned state (calibration files, a checkpoint) are recor
 
 ## Continuous integration
 
-`.github/workflows/tests.yml` runs on every push and pull request: Ubuntu, Python 3.10, Git LFS checkout, CPU PyTorch plus `requirements.lock.txt`, `ffmpeg`, the two pinned pretrained models (cached), then `pytest`. It sets `GOLDEN_DUMP=1`, so a golden mismatch prints the differing values. Windows is tested locally; macOS is not tested.
+`.github/workflows/tests.yml` runs on every push and pull request: Ubuntu, Python 3.14, Git LFS objects (restored from a cache so runs do not spend the LFS bandwidth quota), CPU PyTorch plus `requirements.lock.txt`, `ffmpeg`, the two pinned pretrained models (cached), then `pytest`. It sets `GOLDEN_DUMP=1`, so a golden mismatch prints the differing values. Windows is tested locally; macOS is not tested.
+
+
+## Coverage
+
+Measured on 2026-10-11 on Python 3.14 with `coverage run --source=core,image_detector,audio_detector,video_detector,services,ui -m pytest`: **86 % of statements** (14,348 statements, 1,962 not run; line coverage, not branch coverage; test files excluded). The weakest parts are the command-line and training tools, which the suite only touches lightly: `services/blind_test.py`, `services/calibration_cli.py` and `services/build_vocab_embeddings.py` (0 %), `services/age_eval.py` (34 %), the three `fit_ood.py` scripts (37-52 %) and `image_detector/face_training.py` (48 %). Coverage says which lines ran, not that their results are right: the golden tests pin outputs, and real accuracy on real AI media is unmeasured (see [LIMITATIONS.md](LIMITATIONS.md)).

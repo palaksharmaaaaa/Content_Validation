@@ -188,13 +188,15 @@ class AudioModelAttributionEngine:
                     cues.append("Metadata declares OpenAI Realtime API / Advanced Voice Mode generation")
                     declared = True
 
+        declared_keys = {k for k, v in scores.items() if v > 0.05 + 1e-9}          # what the file itself claims, before any signal cue is added
+
         # 2. Spectral & Vocoder Cutoff signatures
         if acoustic_data:
             spec = acoustic_data.get("spectral_features", acoustic_data)
             has_cutoff = spec.get("has_vocoder_cutoff", False)
             cutoff_freq = float(spec.get("cutoff_freq_hz", 0.0))
             flatness = float(spec.get("spectral_flatness", 0.05))
-            silence = float(spec.get("digital_silence_ratio", 0.0))
+            silence = float(spec.get("digital_silence_ratio") or 0.0)
 
             if has_cutoff:
                 if 7200 <= cutoff_freq <= 8200:
@@ -216,7 +218,7 @@ class AudioModelAttributionEngine:
                 cues.append("Stretches of digital silence (exact zeros) between sounds")
 
         return finalize_attribution(
-            scores, KNOWN_AUDIO_GENERATORS, declared=declared, cues=cues,
+            scores, KNOWN_AUDIO_GENERATORS, declared=declared, declared_keys=declared_keys, cues=cues,
             unknown_name="Unknown / Generic Neural Vocoder", no_cue_text="No generator is declared in the file's metadata.",
             region_of=_region_of,
         )

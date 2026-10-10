@@ -59,6 +59,7 @@ class ZeroShotRecognizer:
                 except Exception as exc:
                     logger.warning("Zero-shot recognizer %s unavailable: %s", self._id, exc)
                     self._failed = True
+                    self._model = self._proc = None            # a half-loaded model must not be reported as available
             return self._model
 
     def _shipped_embeddings(self):

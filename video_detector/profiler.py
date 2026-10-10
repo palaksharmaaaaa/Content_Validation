@@ -12,6 +12,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, Tuple
 
+from core.ffmpeg import open_video
 from core.hashing import file_digests
 import cv2
 
@@ -38,7 +39,7 @@ class VideoProfiler:
         sha256, md5, size_bytes = compute_file_hashes(path)
         size_mb = size_bytes / (1024.0 * 1024.0)
 
-        cap = cv2.VideoCapture(str(path))
+        cap = open_video(path)
         if not cap.isOpened():
             return {
                 "valid": False,

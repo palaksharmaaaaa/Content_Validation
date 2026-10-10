@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional, Tuple
 
-from core.forensics.bytescan import WINDOW, find_injection, scan_signatures
+from core.forensics.bytescan import WINDOW, find_injection, scan_windows
 from core.forensics.registry import CheckContext, registry
 from core.forensics.schemas import EvidenceClass, Finding, FindingStatus, Severity
 from video_detector.dimension_checks import _common as C
@@ -88,12 +88,12 @@ def check_trailing_data(ctx: CheckContext) -> Finding:
 def check_polyglot_signatures(ctx: CheckContext) -> Finding:
     head, tail, size = C.read_windows(ctx.path)
     fmt, end, extras = _declared_end(ctx.path, head, size)
-    found = set(scan_signatures(head, False)) | set(scan_signatures(tail, False))
+    windows = [(head, False), (tail, False)]
     if end is not None and 1 < size - end:
         with open(ctx.path, "rb") as f:
             f.seek(end)
-            found |= set(scan_signatures(f.read(WINDOW), True))
-    sigs = sorted(found)
+            windows.append((f.read(WINDOW), True))
+    sigs = scan_windows(windows)
     title = "Embedded executable / archive / script signatures"
     if sigs:
         return _f("polyglot_signatures", title, FindingStatus.FAIL, Severity.HIGH,

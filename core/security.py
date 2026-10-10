@@ -255,7 +255,7 @@ class SecureUrlFetcher:
         "Accept": "*/*",
     }
 
-    def __init__(self, max_mb: int = 100, timeout_seconds: int = 60, deadline_seconds: Optional[float] = None):
+    def __init__(self, max_mb: float = 100, timeout_seconds: int = 60, deadline_seconds: Optional[float] = None):
         self.max_bytes = max_mb * 1024 * 1024
         self.timeout = timeout_seconds
         # requests' timeout is per socket read, so a server that dribbles a byte at a time never trips it; the whole fetch gets a deadline.
@@ -303,7 +303,7 @@ class SecureUrlFetcher:
         cl = resp.headers.get("content-length")
         if cl and cl.isdigit() and int(cl) > self.max_bytes:
             return (f"File size ({int(cl) / (1024*1024):.1f} MB) exceeds maximum permitted limit "
-                    f"({self.max_bytes / (1024*1024):.0f} MB).")
+                    f"({self.max_bytes / (1024*1024):g} MB).")
         ctype = resp.headers.get("content-type", "").lower()
         if "text/html" in ctype:
             return f"URL returned HTML webpage content-type ('{ctype}') instead of binary media."
@@ -399,7 +399,7 @@ class SecureUrlFetcher:
 
                 if not self._stream_to_file(resp, temp_path):
                     temp_path.unlink(missing_ok=True)
-                    return self._failure(f"Download aborted: media size exceeded {self.max_bytes / (1024*1024):.0f} MB ceiling.")
+                    return self._failure(f"Download aborted: media size exceeded {self.max_bytes / (1024*1024):g} MB ceiling.")
 
                 return {
                     "success": True,

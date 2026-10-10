@@ -42,6 +42,11 @@ COCO_ITEMS = {
     "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush",
 }
 
+def _scaled_box(box, factor: float):
+    """An (x, y, width, height) box with every number multiplied by ``factor`` and rounded to whole pixels."""
+    return tuple(int(round(v * factor)) for v in box)
+
+
 class ImageContentAnalyzer:
     """Scene, object inventory, faces, lighting and environmental intelligence analyzer for images.
 
@@ -73,11 +78,13 @@ class ImageContentAnalyzer:
 
         h, w = img_bgr.shape[:2]
         max_dim = max(h, w)
+        scale = 1.0
         if max_dim > 1280:
             scale = 1280.0 / max_dim
             sample_bgr = cv2.resize(img_bgr, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
         else:
             sample_bgr = img_bgr
+        up = 1.0 / scale                      # factor that maps a box found in ``sample_bgr`` back onto the original picture
 
         # 1. Neural object detection (RF-DETR Small, core.perception.detector)
         (
@@ -101,7 +108,9 @@ class ImageContentAnalyzer:
         human_count, faces_detected, single_character_detected = self._count_humans(sample_bgr, person_boxes, faces_detected)
 
         # 2b. Age and minor screening for everyone found (recall-first; see core.perception.age)
-        age_info = get_age_estimator().assess(sample_bgr, persons=person_boxes, persons_available=get_object_detector().available)
+        # The age screen looks at the ORIGINAL pixels: a small face that survives in the full picture can be lost when it is shrunk to 1280 px.
+        age_info = get_age_estimator().assess(
+            img_bgr, persons=[_scaled_box(b, up) for b in person_boxes], persons_available=get_object_detector().available)
 
         # 3. Lighting & Daytime Analysis
         scene = describe_scene(sample_bgr)
@@ -130,6 +139,11 @@ class ImageContentAnalyzer:
             if genre != "document or screenshot":
                 purpose["document_layout"] = "None (Standard Visual Content)"
 
+        # Boxes are reported in the coordinates of the picture the user supplied, not of the shrunken copy the models looked at.
+        person_boxes = [_scaled_box(b, up) for b in person_boxes]
+        face_info = {**face_info, "face_boxes": [
+            {"x": int(round(b["x"] * up)), "y": int(round(b["y"] * up)), "width": int(round(b["width"] * up)), "height": int(round(b["height"] * up))}
+            for b in face_info.get("face_boxes", [])]}
         result = self._assemble_result(
             human_count, faces_detected, single_character_detected, person_boxes, face_info,
             (detected_animals, animal_details), (detected_vehicles, vehicle_details), (detected_items, item_details),

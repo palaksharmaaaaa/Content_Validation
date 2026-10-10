@@ -279,6 +279,8 @@ class VideoAIDetector:
 
         cues = self._forensic_cues(neural_transition_ai, temporal_res, flicker_res, mean_frame_ai)
         cues.extend(extra_cues)
+        if metadata.get("fps_assumed"):
+            cues.append(f"The file records no frame rate, so times on the timeline assume {metadata.get('fps')} frames per second")
 
         res = VideoForensicResult(
             valid=True,

@@ -1,7 +1,14 @@
+import sys
 from pathlib import Path
 
-from PIL import Image, ImageFile
 import streamlit as st
+
+if sys.version_info < (3, 14):                       # .python-version / requirements.txt: the project is developed and tested on 3.14
+    st.error(f"OmniForensics is built and tested for Python 3.14 or newer; this server runs Python {sys.version.split()[0]}. "
+             "Install Python 3.14 and the packages in requirements.txt.")
+    st.stop()
+
+from PIL import Image, ImageFile
 
 from core.logging_filters import install_benign_reset_filter
 

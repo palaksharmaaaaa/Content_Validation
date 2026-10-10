@@ -139,6 +139,11 @@ class ImageDetectorTrainer:
         optimizer = optim.AdamW(self.model.parameters(), lr=lr, weight_decay=1e-4)
 
         history = {"train_loss": [], "val_acc": []}
+        self.training_meta = {                                  # saved with the checkpoint: what the model was trained on
+            "train_samples": len(train_loader.dataset) if train_loader is not None else 0,
+            "val_samples": len(val_loader.dataset) if val_loader is not None else 0,
+            "unit": "images", "epochs_run": epochs, "initial_weights": "torchvision ImageNet-1K",
+        }
 
         for epoch in range(epochs):
             self.model.train()
@@ -176,6 +181,7 @@ class ImageDetectorTrainer:
 
             logger.info("Epoch [%d/%d] - Train Loss: %.4f | Val Acc: %.2f%%", epoch + 1, epochs, avg_train_loss, val_acc * 100.0)
 
+        self.training_meta["final_val_accuracy"] = history["val_acc"][-1] if history["val_acc"] else None
         self.save_checkpoint()
         return history
 
@@ -203,6 +209,7 @@ class ImageDetectorTrainer:
             "model_state_dict": self.model.state_dict(),
             "architecture": self.architecture,
             "class_to_idx": {"ai_generated": 0, "real": 1},
+            "meta": dict(getattr(self, "training_meta", {})),
         }
         partial = save_path.with_name(save_path.name + ".partial")
         torch.save(checkpoint, partial)
@@ -254,6 +261,10 @@ class ImageDetectorTrainer:
         """
         from image_detector.feature_store import FeatureBankDataset, FeatureClassifierHead
 
+        if combine_forensics:
+            # The 524-feature head (512 embedding + 12 forensic measures) has no place in the checkpoint format the detector loads, so
+            # training it would produce a model that is thrown away. Refuse instead of reporting a result nobody can use.
+            raise ValueError("combine_forensics=True trains a head the detector cannot load; use combine_forensics=False")
         dataset = FeatureBankDataset(feature_npz_path, combine_forensics=combine_forensics)
         total_samples = len(dataset)
         if total_samples < 2:
@@ -326,6 +337,9 @@ class ImageDetectorTrainer:
                 state = torch.load(self.checkpoint_path, map_location=self.device, weights_only=True)
                 self.model.load_state_dict(state["model_state_dict"])
             self.model.fc.load_state_dict(head.head.state_dict())
+            self.training_meta = {"train_samples": len(train_indices), "val_samples": len(val_indices), "unit": "images (cached embeddings)",
+                                  "epochs_run": epochs, "initial_weights": "torchvision ImageNet-1K",
+                                  "final_val_accuracy": history["val_acc"][-1] if history["val_acc"] else None}
             self.save_checkpoint()
 
         return history

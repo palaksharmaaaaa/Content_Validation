@@ -27,7 +27,7 @@ _VERDICTS = (
     ("FULLY_AI_GENERATED", ("LIKELY_SYNTHETIC", "LIKELY AI-GENERATED"), "error", "Likely AI-generated",
      "Signals typical of generative models: over-smooth surfaces or spectra, missing sensor noise, generator metadata."),
     ("AUTHENTIC_REAL_PHOTOGRAPH", ("LIKELY_AUTHENTIC", "LIKELY REAL"), "success", "Likely a real capture",
-     "Camera-like noise and physics, and no sign of generative processing. An estimate, not proof."),
+     "The measured signals (noise, spectrum, motion, metadata) look like a recording from the physical world, with no sign of generative processing. An estimate, not proof."),
 )
 _NO_CONTENT = ("info", "No usable content", "The file has no variation to analyse (a single flat colour, silence or blank frames), so no verdict is given.")
 _UNDETERMINED = ("info", "Inconclusive", "The evidence is balanced or the file is heavily compressed. The engine does not guess.")

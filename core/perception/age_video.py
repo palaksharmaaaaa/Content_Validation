@@ -72,11 +72,9 @@ def screen_video_file(path, estimator: Optional[AgeEstimator] = None, max_frames
     try:
         probes = vs.probe_video(path)
         times, info = vs.choose_times(probes, max_frames)
-        frames = vs.read_frames(path, times)
+        frames = vs.iter_frames(path, times)             # one frame at a time: up to 60 full-resolution frames never sit in memory together
     except Exception as exc:  # noqa: BLE001 - an unreadable video is reported, never passed as clear
         return _unreadable(f"the video could not be read ({type(exc).__name__}), so nothing was checked")
-    if not frames:
-        return _unreadable("the video could not be read, so nothing was checked")
 
     flagged: List[Dict[str, Any]] = []
     ages: List[float] = []
@@ -84,7 +82,9 @@ def screen_video_file(path, estimator: Optional[AgeEstimator] = None, max_frames
     model: Optional[str] = None
     last_thumb, last = None, None
     assessed = reused = 0
+    examined_times: List[float] = []
     for t, frame in frames:
+        examined_times.append(t)
         thumb = vs.thumbnail(frame)
         if last is not None and vs.thumb_diff(thumb, last_thumb) < vs.REUSE_DIFF:
             r, reused = last, reused + 1
@@ -97,11 +97,13 @@ def screen_video_file(path, estimator: Optional[AgeEstimator] = None, max_frames
             ages.append(r["youngest_age"])
         if r["review_required"]:
             flagged.append(_flag_entry(r, None, round(t, 2)))
-    result = _summarise(flagged, ages, statuses, model, len(frames), "video_adaptive_frames")
-    result["frames_available"] = len(frames)
-    result["sampling"] = {"duration_seconds": round(probes.duration, 1), "frames_examined": len(frames), "frames_assessed": assessed,
+    if not examined_times:
+        return _unreadable("the video could not be read, so nothing was checked")
+    result = _summarise(flagged, ages, statuses, model, len(examined_times), "video_adaptive_frames")
+    result["frames_available"] = len(examined_times)
+    result["sampling"] = {"duration_seconds": round(probes.duration, 1), "frames_examined": len(examined_times), "frames_assessed": assessed,
                           "frames_reused": reused, "content_changes": info["changes"], "grid_seconds": info["grid_seconds"],
-                          "longest_unexamined_seconds": vs.longest_gap([t for t, _ in frames], probes.duration)}
+                          "longest_unexamined_seconds": vs.longest_gap(examined_times, probes.duration)}
     return result
 
 

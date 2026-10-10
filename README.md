@@ -24,9 +24,9 @@ A local tool that checks whether an **image, video or audio file** is likely AI-
 
 | You give it | You get |
 |---|---|
-| An image (`.jpg .jpeg .jfif .png .webp .bmp .tif .tiff`, up to 100 MB) | A verdict card, evidence from 16 checks, a scene description, face and age analysis, a nine-dimension breakdown, a plain-English explanation and a JSON report |
-| A video (`.mp4 .mov .avi .mkv .webm`, up to 500 MB or 1 hour) | The same, from container checks, per-frame signals, motion and flicker analysis, adaptive minor screening and the audio track |
-| Audio (`.wav .mp3 .aac .flac .ogg .m4a`, up to 200 MB or 1 hour) | The same, from container checks, spectral signals, a per-window timeline and generator attribution |
+| An image (`.jpg .jpeg .jfif .png .webp .bmp .tif .tiff`, up to 10 MB) | A verdict card, evidence from 16 checks, a scene description, face and age analysis, a nine-dimension breakdown, a plain-English explanation and a JSON report |
+| A video (`.mp4 .mov .avi .mkv .webm`, up to 100 MB or 1 hour) | The same, from container checks, per-frame signals, motion and flicker analysis, adaptive minor screening and the audio track |
+| Audio (`.wav .mp3 .aac .flac .ogg .m4a`, up to 10 MB or 1 hour) | The same, from container checks, spectral signals, a per-window timeline and generator attribution |
 | Several files, or direct links | A comparison table (CSV or JSON download) and a picker; links go through a hardened downloader |
 
 Also: a feedback loop (tell it when it was wrong and, after enough corrections, fine-tune on your own media), a face check (a trained real-versus-generated classifier ships with the repository), and tools to measure accuracy on media you label yourself.
@@ -51,15 +51,20 @@ Only physical, learned and weak-metadata findings can move the probability, each
 
 ## Models
 
-| Model | Job | Size | Where it lives | How you get it |
-|---|---|---|---|---|
-| MiVOLO v2 (network code vendored) | apparent age of every person (face + body) | 110 MB | `core/models/mivolo_v2/model.safetensors` | in the repository (Git LFS), pinned to revision `5339352` |
-| Face-authenticity ResNet-18 | real versus generated face | 43 MB | `image_detector/models/face_authenticity.pt` | in the repository (Git LFS); retrain with `image_detector.face_training` |
-| YuNet | face detection | 0.2 MB | `core/models/` | in the repository |
-| OpenCV zoo MobileFaceNet | facial expression | 4.6 MB | `core/models/` | in the repository |
-| OpenCV zoo SFace | same-person matching | 37 MB | `core/models/` | in the repository |
-| RF-DETR Small | people, animals, vehicles, objects | about 130 MB | Hugging Face cache | `python -m services.fetch_models`, pinned to revision `3bdc465` |
-| SigLIP 2 Base (zero-shot) | place, species, vehicle type, genre, time of day, age-group opinion | about 1.4 GB on disk, about 0.7 GB in memory | Hugging Face cache; its 182 prompt embeddings ship in `core/perception/vocab_embeddings.npz` | `python -m services.fetch_models`, pinned to revision `75de2d5` |
+Every result page has a **Models, algorithms and training data** panel that lists, for the file just analysed, each step with the model and variant behind it, whether it is pretrained, fine-tuned by this project or hand-written, what it was trained on, how many files that was, and its licence. The same table is in the downloadable JSON report. It is built by `core/model_registry.py` from the files on the machine, so the training counts are read from the checkpoints rather than typed in. The full licence list is in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+
+| Model | Job | Origin | Training data (as far as the publisher or the checkpoint says) | Licence | Size | Where it lives |
+|---|---|---|---|---|---|---|
+| Statistical signal checks | the AI-versus-real verdict for image, video and audio | hand-written, no learned model | none: thresholds set by hand on synthetic files | project (Apache-2.0) | n/a | `*_detector/` |
+| Face-authenticity ResNet-18 | real versus generated face | torchvision ImageNet-1K weights, fine-tuned here | the Kaggle "Human Faces Dataset" (5,000 real and 4,630 AI-generated images): 9,630 faces, 7,753 to train and 1,877 held out; near-duplicate pictures are kept on the same side of the split | code Apache-2.0; weights inherit ImageNet terms and an unconfirmed dataset licence (see THIRD_PARTY_LICENSES.md) | 43 MB | `image_detector/models/face_authenticity.pt` (Git LFS) |
+| MiVOLO v2 (network code vendored) | apparent age of every person (face + body) | pretrained, unchanged | "proprietary and open-source datasets", not named | Apache-2.0 | 110 MB | `core/models/mivolo_v2/model.safetensors` (Git LFS), revision `5339352` |
+| YuNet | face detection | pretrained, unchanged | not stated | MIT | 0.2 MB | `core/models/` |
+| OpenCV zoo MobileFaceNet | facial expression | pretrained, unchanged | not stated | Apache-2.0 | 4.6 MB | `core/models/` |
+| OpenCV zoo SFace | same-person matching | pretrained, unchanged | not stated | Apache-2.0 | 37 MB | `core/models/` |
+| RF-DETR Small | people, animals, vehicles, objects | pretrained, unchanged | COCO 2017 | Apache-2.0 | about 130 MB | Hugging Face cache (`python -m services.fetch_models`), revision `3bdc465` |
+| SigLIP 2 Base (zero-shot) | place, species, vehicle type, genre, time of day, age-group opinion | pretrained, unchanged | WebLI | Apache-2.0 | about 1.4 GB on disk, 0.7 GB in memory | Hugging Face cache; its 182 prompt embeddings ship in `core/perception/vocab_embeddings.npz`; revision `75d` |
+
+Total training data used by this project: **image analysis 9,630 faces** (the face model; the count is read from the checkpoint), **video 0 files**, **audio 0 files**; no image, video or audio AI-versus-real classifier is shipped, and the optional ones you train yourself record their own counts in their checkpoints.
 
 Pinned revisions mean every machine loads identical weights. **Not included:** a trained AI-versus-real backbone for any modality, calibration history, feedback and labelled datasets; until you supply and train on them, the AI-versus-real score comes from the statistical signals alone and every probability is labelled `UNCALIBRATED_HEURISTIC`. An optional image/audio/video backbone checkpoint (`<modality>_detector/models/*.pt`) is picked up automatically if you train one.
 
@@ -71,7 +76,7 @@ Public datasets used only to *evaluate* the age screening (UTKFace, LAGENDA, Fai
 
 ## Install
 
-**Requirements:** Python 3.10 (the version CI and development use), [Git](https://git-scm.com) with [Git LFS](https://git-lfs.com), about 2 GB of free disk (1.6 GB of pretrained models plus about 200 MB of checkpoints and models), and [`ffmpeg`](https://ffmpeg.org/download.html) on your `PATH` for compressed audio and for the audio track of videos. Without `ffmpeg`, WAV and video frames still work. A GPU is optional and untested; everything runs on CPU.
+**Requirements:** Python 3.14 (the version CI and development use; `.python-version` records it), [Git](https://git-scm.com) with [Git LFS](https://git-lfs.com), about 2 GB of free disk (1.6 GB of pretrained models plus about 200 MB of checkpoints and models), and [`ffmpeg`](https://ffmpeg.org/download.html) on your `PATH` for compressed audio and for the audio track of videos. Without `ffmpeg`, WAV and video frames still work. A GPU is optional and untested; everything runs on CPU.
 
 **1. Clone with Git LFS.** The checkpoints are Git LFS objects; a clone made without LFS contains small text stubs instead and the age screening and face check will report themselves unavailable.
 
@@ -131,7 +136,7 @@ report = ForensicService.get_instance().image_pipeline.analyze("photo.jpg")   # 
 
 ## Performance
 
-Measured on a Windows laptop CPU with 14 threads, no GPU, Python 3.10 (your numbers will differ; the ratios are what matter):
+Measured on a Windows laptop CPU with 14 threads, no GPU, Python 3.10 (measured before the move to Python 3.14 and not re-measured; your numbers will differ, and the ratios are what matter):
 
 | What | Time |
 |---|---|
@@ -178,8 +183,10 @@ Nothing needs configuring to start. Optional operator files and variables (all g
 | Out-of-distribution statistics | `<modality>_detector/data/ood_stats.npz` | written by `fit_ood` |
 | Load the models in the background at start (default on; `0` turns it off) | none | `OMNI_WARMUP` |
 | Files analysed at once in a batch (default: up to half the cores; `1` turns it off) | none | `OMNI_BATCH_WORKERS` |
+| Upload limits: one file and one batch, per type, in MB (image 10 / 500, video 100 / 500, audio 10 / 500) | `limits.toml` (tracked) | `OMNIFORENSICS_MAX_<IMAGE\|VIDEO\|AUDIO>_<FILE\|BATCH>_MB`, file named by `OMNIFORENSICS_LIMITS_FILE` |
+| Server settings (address, port, upload ceiling, XSRF, telemetry off) | `.streamlit/config.toml` (tracked) | any `STREAMLIT_*` variable |
 
-Sensitivity (Balanced, High, Aggressive) is set in the sidebar. Limits and thresholds live in each package's `config.py`.
+Sensitivity (Balanced, High, Aggressive) is set in the sidebar. Thresholds live in each package's `config.py`. The server listens on `127.0.0.1` only; to serve other computers, change `server.address` in `.streamlit/config.toml` and put the app behind HTTPS. Each uploader passes its per-file limit from `limits.toml` to Streamlit (`max_upload_size`), so the browser refuses a bigger file at once; `server.maxUploadSize` (100 MB) is only the default for an uploader that sets none. Restart the app after changing a limit.
 
 ## Project tree
 
@@ -187,13 +194,19 @@ Sensitivity (Balanced, High, Aggressive) is set in the sidebar. Limits and thres
 .
 ├── app.py                     Streamlit entry point (sidebar + Image / Video / Audio / Link check / Learning tabs)
 ├── requirements.txt           minimum versions          requirements.lock.txt   exact tested versions
+├── limits.toml                upload size limits (per file, per batch, per type)
+├── .streamlit/config.toml     server settings
+├── LICENSE  NOTICE  THIRD_PARTY_LICENSES.md   Apache-2.0 and every model's licence
 ├── pytest.ini  conftest.py    test discovery and the isolation guard
 ├── manual_pipeline_smoke.py   manual smoke script
-├── .github/workflows/         tests.yml: CI (Linux, Python 3.10, Git LFS, pinned models)
+├── .github/workflows/         tests.yml: CI (Linux, Python 3.14, Git LFS, pinned models)
 ├── core/                      shared, detector-independent code
 │   ├── security.py            SSRF-hardened fetching, filename sanitising
 │   ├── decision.py            fusion of image / video / audio evidence into one verdict
-│   ├── atomic_io.py           crash-safe JSON, per-session scratch folders
+│   ├── atomic_io.py           crash-safe JSON, cross-process lock, per-session scratch folders
+│   ├── limits.py              upload limits (defaults, limits.toml, environment)
+│   ├── model_registry.py      which model / algorithm runs at each step, its licence and training-data size
+│   ├── calibration_io.py      checks a calibration file before the detectors trust it
 │   ├── media_library.py  retrain_engine.py  checkpoint_log.py   labelled media by reference, fine-tuning
 │   ├── bands.py  calibration_report.py   probability bands, accuracy measurement
 │   ├── forensics/             Finding schema, check registry, gates, OOD gate, byte scans
@@ -219,6 +232,7 @@ About 300 tracked files and 34,000 lines of Python, including tests.
 | Uploaded and downloaded files | per-session folder under the OS temp directory (`omni_forensics_ephemeral_cache`), removed by **Clear uploaded files** | no |
 | Media library | `<modality>_detector/data/library.json` | no |
 | Feedback memory and calibration | `<modality>_detector/data/*_memory.json`, `*_calibration.json` | no |
+| Copies of files you reviewed (so retraining can use them) | `<modality>_detector/data/feedback_media/<sha256><ext>` | no |
 | OOD statistics, reuse indexes | `<modality>_detector/data/` | no |
 | Candidate checkpoints during retraining | `<modality>_detector/models/*.candidate.pt` | no |
 | Evaluation output, logs | `reports/` | no |
@@ -229,13 +243,13 @@ The project starts with none of the "no" entries; they appear as you use it.
 ## Development
 
 ```bash
-pytest                      # whole suite, about three minutes on a laptop CPU
+pytest                      # whole suite (795 tests), about five minutes on a laptop CPU
 pytest tests/test_x.py -q   # one file
 ```
 
 - **Golden files** (`tests/data/*.digests.json`) pin outputs; regenerate deliberately with `UPDATE_GOLDEN=1 pytest <file>` and review the diff. They are written to hold on every OS.
 - **Guards:** `conftest.py` fails the run if a test changes a model, data or calibration file; `tests/test_repo_hygiene.py` blocks committed media and machine-specific paths.
-- **CI:** `.github/workflows/tests.yml` runs the suite on every push and pull request on Ubuntu with Python 3.10. Windows is tested locally; macOS has never been run.
+- **CI:** `.github/workflows/tests.yml` runs the suite on every push and pull request on Ubuntu with Python 3.14. Windows is tested locally; macOS has never been run.
 - **Adding a check:** implement it as an isolated function in the modality's `dimension_checks/` package and register it; see [docs/TESTING.md](docs/TESTING.md).
 - **Never commit media or trained data.** `.gitignore` blocks image, video and audio extensions and the `data/` folders; checkpoints are the only binaries tracked, through Git LFS.
 
@@ -243,8 +257,10 @@ pytest tests/test_x.py -q   # one file
 
 - Link downloads go through an SSRF-hardened fetcher: ports 80/443 only, DNS pinned to validated addresses, redirects re-validated, size and content-type limits.
 - Uploads live in a per-session temporary folder and are removed by **Clear uploaded files**.
-- There is **no authentication**. The app is meant for personal, local use; do not expose it to the internet as is.
-- No licence file is included in the repository; ask the owner before reusing the code.
+- There is **no authentication, by design**: the app is a self-contained tool. It listens on `127.0.0.1` by default. Everyone who can reach it shares one set of learned corrections and one Learning tab, so put it behind your own access control if you serve it to other people.
+- Text taken from files (EXIF, tags, file names, error messages) is escaped before it is shown, spreadsheet formulas are neutralised in CSV exports, and ffmpeg may only open the container formats the app supports (a playlist named like media is refused).
+- Shared JSON files are updated under a thread lock and a cross-process file lock; corrupt files are set aside, never overwritten.
+- The code is licensed under Apache-2.0 (`LICENSE`, `NOTICE`); every model's licence, with caveats, is in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
 ## Documentation
 

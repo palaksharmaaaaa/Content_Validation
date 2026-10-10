@@ -10,8 +10,8 @@ from core.security import SecureUrlFetcher, normalise_host, validate_secure_url
 
 
 @pytest.mark.parametrize("url", [
-    "http://127.0.0.1:8089\@example.com/x.png",        # urlparse sees example.com, requests connects to 127.0.0.1
-    "http://127.0.0.1\.example.com/x",
+    r"http://127.0.0.1:8089\@example.com/x.png",        # urlparse sees example.com, requests connects to 127.0.0.1
+    r"http://127.0.0.1\.example.com/x",
     "http://user:pw@example.com/x.png",
     "http://exa mple.com/x",
     "http://example.com/x\r\nHost: evil",

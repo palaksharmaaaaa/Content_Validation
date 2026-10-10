@@ -5,6 +5,7 @@ instead of raising on malformed input.
 """
 from __future__ import annotations
 
+from core.ffmpeg import open_video
 from core.filecache import stat_cached
 
 import re
@@ -371,7 +372,7 @@ def read_consecutive_gray(path: Path, n: int = 90, max_width: int = 480) -> List
     """First ``n`` consecutive frames as grayscale uint8 arrays no wider than ``max_width`` (empty list on failure)."""
     import cv2
 
-    cap = cv2.VideoCapture(str(path))
+    cap = open_video(path)
     frames: List[np.ndarray] = []
     try:
         if not cap.isOpened():
@@ -394,7 +395,7 @@ def read_spread_gray(path: Path, n: int = 16, max_width: int = 320) -> List[np.n
     """Up to ``n`` evenly spaced grayscale frames across the whole clip (empty list on failure)."""
     import cv2
 
-    cap = cv2.VideoCapture(str(path))
+    cap = open_video(path)
     out: List[np.ndarray] = []
     try:
         if not cap.isOpened():
@@ -433,7 +434,7 @@ def stream_info(path: Path) -> Dict[str, Any]:
     """fps, frame count, width, height, duration via OpenCV (zeros on failure)."""
     import cv2
 
-    cap = cv2.VideoCapture(str(path))
+    cap = open_video(path)
     try:
         fps = float(cap.get(cv2.CAP_PROP_FPS) or 0.0)
         frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)

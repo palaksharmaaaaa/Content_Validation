@@ -129,6 +129,10 @@ def _audio_dimension_5(c: _AudioDossierContext) -> Dict[str, Any]:
     if not _measured(c):
         d5.update(silence_ratio=None, has_digital_dead_silence=None, diagnosis="Not measured: the recording is too short to analyse.")
         return d5
+    if c.acoustics.get("digital_silence_ratio") is None:
+        d5.update(silence_ratio=None, has_digital_dead_silence=None,
+                  diagnosis="Not measured: in 8-bit audio quiet passages become exact zeros whatever recorded them, so they say nothing about the source.")
+        return d5
     ratio = float(c.acoustics.get("digital_silence_ratio", 0.0))
     dead = ratio > DIGITAL_SILENCE_RATIO_THRESHOLD
     d5.update(

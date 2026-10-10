@@ -142,3 +142,60 @@ def test_a_tag_that_names_a_generator_reaches_attribution(tmp_path):
     prov = AudioProvenanceValidator().analyze_provenance(p)
     out = AudioModelAttributionEngine().attribute_audio(p, provenance_data=prov)
     assert out["model_key"] == "suno_ai"
+
+
+def test_exact_zeros_in_8_bit_audio_are_not_a_synthetic_cue(tmp_path):
+    """Quiet passages in 8-bit PCM round to exact zero whatever recorded them, so they must not read as 'digital silence'."""
+    import numpy as np
+
+    from audio_detector.detector import AudioAIDetector
+    from audio_detector.tests.audio_fixtures import tone, write_wav
+
+    quiet = np.concatenate([tone(1.0, amp=0.3), np.full(16000 * 2, 0.0004, np.float32), tone(1.0, amp=0.3, freq=300)])
+    eight = write_wav(tmp_path / "e8.wav", quiet, bits=8)
+    sixteen = write_wav(tmp_path / "e16.wav", quiet, bits=16)
+    det = AudioAIDetector()
+    r8 = det.analyze_audio_file(eight)
+    r16 = det.analyze_audio_file(sixteen)
+    assert r8["digital_silence_ratio"] is None
+    assert r16["digital_silence_ratio"] is not None
+    assert not any("Digital zero" in c for c in r8["forensic_cues"])
+
+
+def test_opposite_phase_stereo_is_not_mistaken_for_silence(tmp_path):
+    """Channels in opposite phase cancel when averaged to mono; the file must still be analysed from one channel."""
+    import wave
+
+    import numpy as np
+
+    from audio_detector.tests.audio_fixtures import tone
+    from audio_detector.validator import AudioValidator
+
+    x = (tone(1.0, amp=0.4) * 32767).astype("<i2")
+    stereo = np.stack([x, -x], axis=1).reshape(-1)
+    p = tmp_path / "antiphase.wav"
+    with wave.open(str(p), "wb") as w:
+        w.setnchannels(2)
+        w.setsampwidth(2)
+        w.setframerate(16000)
+        w.writeframes(stereo.tobytes())
+    result = AudioValidator().validate(p)
+    assert result.valid and result.is_silent is False
+
+
+def test_a_hostile_sample_rate_does_not_hang_the_hires_check(tmp_path):
+    import struct
+    import time
+
+    import numpy as np
+
+    from audio_detector.dimension_checks.signal import check_fake_hires
+    from core.forensics.registry import CheckContext
+
+    data = (np.random.default_rng(0).normal(0, 3000, 40000)).astype("<i2").tobytes()
+    header = b"RIFF" + struct.pack("<I", 36 + len(data)) + b"WAVEfmt " + struct.pack("<IHHIIHH", 16, 1, 1, 2_000_000_000, 4_000_000_000 % 2**32, 2, 16) + b"data" + struct.pack("<I", len(data))
+    p = tmp_path / "hostile.wav"
+    p.write_bytes(header + data)
+    t0 = time.perf_counter()
+    check_fake_hires(CheckContext(path=p, modality="audio"))
+    assert time.perf_counter() - t0 < 5.0

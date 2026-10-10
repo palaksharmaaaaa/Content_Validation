@@ -25,6 +25,12 @@ Each finding has an evidence class. Only three classes may add evidence, as smal
 
 The absence of a signal (no metadata, no ENF hum, no marker) is never scored.
 
+Three things move the score by more than those capped dimension terms, and are stated here so the cap above is not read as the whole story:
+
+* **The detector's own pooled measurements** (image: sensor-noise residual, surface smoothness, Fourier decay; audio and video: their weighted averages). These are the main signal and are hand-set, not calibrated.
+* **A declaration inside the file** (image only). A generator named in EXIF/XMP adds 3.2 and a visible AI watermark adds 3.5 in base-10 log-odds (odds of about 1,600 to 1 and 3,200 to 1) because the file says so itself. The declaration is unauthenticated: anyone can write it, and equally anyone can strip it, so its absence is never scored. When a declared AI file also reads strongly like a real camera capture, the final verdict becomes `UNDETERMINED` instead of picking a side.
+* **A dominant face** (image only). If one face covers at least 15 % of the picture and the face classifier scores it 95 % AI-like or higher, the AI score becomes a blend of 35 % pixel detector and 65 % face score, and a score of 65 % or more turns a "real" category into "fully AI generated". A real-looking face never raises confidence.
+
 A finding's status is one of `PASS`, `WARN`, `FAIL`, `INFO`, `NOT_APPLICABLE`, `NOT_CALIBRATED`, `RECOGNIZED_OOS` or `ERROR`.
 
 ## Image
@@ -54,7 +60,7 @@ A finding's status is one of `PASS`, `WARN`, `FAIL`, `INFO`, `NOT_APPLICABLE`, `
 
 ## Audio
 
-**Detector signals** (`audio_detector/features.py`): a high-frequency cutoff typical of neural vocoders, spectral flatness, the share of digital silence, and the high-frequency energy ratio, combined as a weighted average. Per-window labels give a timeline.
+**Detector signals** (`audio_detector/features.py`): a high-frequency cutoff typical of neural vocoders, spectral flatness (cut-off and flatness are computed on the FFT magnitude spectrum, not on power, and the audio is decoded to 16 kHz first, so the 15-16.5 kHz vocoder band can only be tested on input analysed at 44.1 kHz or more, which the detector never does), the share of digital silence, and the high-frequency energy ratio, combined as a weighted average. Per-window labels give a timeline.
 
 **Dimension checks**
 

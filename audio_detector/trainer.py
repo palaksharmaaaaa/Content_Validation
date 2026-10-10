@@ -139,6 +139,10 @@ class AudioDetectorTrainer:
         optimizer = optim.Adam(self.model.parameters(), lr=lr)
 
         history: Dict[str, List[float]] = {"loss": [], "val_accuracy": []}
+        self.training_meta = {                                  # saved with the checkpoint: what the model was trained on
+            "train_samples": len(X_train), "val_samples": int(val_size),
+            "unit": "audio files (one acoustic feature vector each)", "epochs_run": epochs, "initial_weights": "random (trained from scratch)",
+        }
 
         for epoch in range(epochs):
             self.model.train()
@@ -203,6 +207,7 @@ class AudioDetectorTrainer:
             "model_state_dict": self.model.state_dict(),
             "in_features": 5,
             "class_to_idx": {"ai_generated": 0, "real": 1},
+            "meta": dict(getattr(self, "training_meta", {})),
         }
         partial = save_path.with_name(save_path.name + ".partial")
         torch.save(checkpoint, partial)

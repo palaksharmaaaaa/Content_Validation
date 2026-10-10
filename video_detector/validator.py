@@ -15,6 +15,7 @@ from pathlib import Path
 
 import cv2
 
+from core.ffmpeg import open_video
 from core.hashing import file_sha256
 from video_detector.config import MAX_DURATION_SECONDS, MAX_FILE_SIZE_MB, MIN_RESOLUTION, SUPPORTED_EXTENSIONS
 from video_detector.extractor import VideoFrameExtractor
@@ -107,7 +108,7 @@ class VideoValidator:
             )
 
         # Check stream readability by reading first and middle frames
-        cap = cv2.VideoCapture(str(path))
+        cap = open_video(path)
         try:
             ret1, _ = cap.read()
             total_f = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))

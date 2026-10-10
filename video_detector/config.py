@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from core.limits import limits_for
+
 # Paths
 MODULE_DIR = Path(__file__).resolve().parent
 DATA_DIR = MODULE_DIR / "data"
@@ -22,7 +24,7 @@ CALIBRATION_FILE = DATA_DIR / "video_calibration.json"
 # Sampling & Limits
 DEFAULT_MAX_FRAMES = 30
 MIN_RESOLUTION = 64          # shorter side, px: below this the noise and texture statistics the detector reads are not meaningful
-MAX_FILE_SIZE_MB = 500.0
+MAX_FILE_SIZE_MB = limits_for("video").file_mb      # core/limits.py: default, limits.toml or environment variable
 MAX_DURATION_SECONDS = 3600.0
 SUPPORTED_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
 

@@ -6,7 +6,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from audio_detector.dimension_checks import _common as C
-from core.forensics.bytescan import WINDOW, find_injection, scan_signatures
+from core.forensics.bytescan import WINDOW, find_injection, scan_windows
 from core.forensics.registry import CheckContext, registry
 from core.forensics.schemas import EvidenceClass, Finding, FindingStatus, Severity
 
@@ -80,12 +80,12 @@ def check_trailing_data(ctx: CheckContext) -> Finding:
 def check_polyglot_signatures(ctx: CheckContext) -> Finding:
     head, tail, size = C.read_windows(ctx.path)
     fmt, end = _declared_end(ctx.path, head, size)
-    found = set(scan_signatures(head, False)) | set(scan_signatures(tail, False))
+    windows = [(head, False), (tail, False)]
     if end is not None and 1 < size - end <= C.FULL_READ_LIMIT:
         with open(ctx.path, "rb") as f:
             f.seek(end)
-            found |= set(scan_signatures(f.read(WINDOW), True))
-    sigs = sorted(found)
+            windows.append((f.read(WINDOW), True))
+    sigs = scan_windows(windows)
     if sigs:
         return _f("polyglot_signatures", "Embedded executable / archive / script signatures", FindingStatus.FAIL,
                   Severity.HIGH, f"Audio file carries signatures of other file types: {', '.join(sigs)}. Treat as a potential "

@@ -82,6 +82,9 @@ def evaluate_folder(
             logger.warning("benchmark: %s failed (%s: %s)", path.name, type(exc).__name__, exc)
             failed += 1
             continue
+        if res.get("error") or res.get("success") is False or res.get("content_valid") is False:
+            failed += 1                                           # an unreadable file is a failure, not an abstention from deciding
+            continue
         latencies.append(time.perf_counter() - started)
         label = res.get("label")
         pct = res.get("ai_percentage")

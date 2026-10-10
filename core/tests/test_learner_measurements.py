@@ -143,3 +143,18 @@ def test_an_answer_that_is_not_ai_or_real_records_nothing(tmp_path, label):
     learner = _image(tmp_path)
     learner.record_feedback("x.jpg", label, {"noise_residual_mean": 1.0})
     assert learner.load_memory() == []
+
+
+def test_a_tampered_calibration_file_cannot_feed_nan_or_huge_numbers_to_the_scoring(tmp_path):
+    import json
+
+    cal = tmp_path / "c.json"
+    cal.write_text(json.dumps({"samples_processed": -4, "feature_weights": {"noise_residual": 1e9, "surface_smoothness": "big", "fft_decay": 0.25},
+                               "sensitivity_offsets": {"noise_center_offset": 7.0}, "note": "kept"}).replace("1000000000.0", "1e9"))
+    learner = ImageSelfImprover(memory_file=tmp_path / "m.json", calibration_file=cal)
+    got = learner.load_calibration()
+    assert got["feature_weights"]["noise_residual"] == 0.35 and got["feature_weights"]["surface_smoothness"] == 0.30
+    assert got["feature_weights"]["fft_decay"] == 0.25 and got["sensitivity_offsets"]["noise_center_offset"] == 0.0
+    assert got["samples_processed"] == 0 and got["note"] == "kept"
+    cal.write_text('{"feature_weights": {"noise_residual": NaN}}')
+    assert learner.load_calibration()["feature_weights"]["noise_residual"] == 0.35

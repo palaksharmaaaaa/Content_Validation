@@ -25,6 +25,9 @@ def write_wav(path: Path, samples: np.ndarray, sr=16000, bits=16) -> Path:
         if bits == 16:
             wf.setsampwidth(2)
             wf.writeframes((np.clip(samples, -1, 1) * 32767).astype("<i2").tobytes())
+        elif bits == 8:
+            wf.setsampwidth(1)
+            wf.writeframes((np.clip(samples, -1, 1) * 127 + 128).round().astype(np.uint8).tobytes())
         elif bits == 24:
             wf.setsampwidth(3)
             v = (np.clip(samples, -1, 1) * 8388607).astype(np.int32)

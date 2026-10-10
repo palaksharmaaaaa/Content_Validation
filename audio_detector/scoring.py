@@ -81,14 +81,18 @@ def pool_acoustic_evidence(
     flatness = float(features.get("spectral_flatness", 0.05))
     if flatness < flatness_low_limit:
         flatness_score = 0.85
-    elif flatness > SYNTHETIC_FLATNESS_HIGH_THRESHOLD:
-        flatness_score = 0.15          # a noise-like spectrum is what any hissy recording has; it is no evidence of synthesis
     else:
-        flatness_score = 0.15
+        flatness_score = 0.15          # an ordinary or noise-like spectrum (any hissy recording) is no evidence of synthesis
 
-    # 3. Digital silence score
-    silence_ratio = float(features.get("digital_silence_ratio", 0.0))
+    # 3. Digital silence score (not measured for 8-bit audio: the cue drops out and the other weights are renormalised)
+    silence_measured = features.get("digital_silence_ratio", 0.0) is not None
+    silence_ratio = float(features.get("digital_silence_ratio") or 0.0)
     silence_score = 0.85 if silence_ratio > silence_min_limit else 0.15
+    if not silence_measured:
+        remaining = 1.0 - w_silence
+        if remaining > 0:
+            w_vocoder, w_flatness, w_hf = (w / remaining for w in (w_vocoder, w_flatness, w_hf))
+        w_silence = 0.0
 
     # 4. High-frequency roll score
     hf_ratio = float(features.get("high_freq_ratio", 0.05))

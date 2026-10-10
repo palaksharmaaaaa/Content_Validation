@@ -11,9 +11,11 @@ from audio_detector import AudioSelfImprover
 from image_detector import ImageSelfImprover
 from video_detector import VideoSelfImprover
 
+from image_detector.config import SCORE_UNUSED_WEIGHTS
 from ui.layout import render_table
 
 _MODALITIES = (("Image", "image", ImageSelfImprover), ("Video", "video", VideoSelfImprover), ("Audio", "audio", AudioSelfImprover))
+_UNUSED_WEIGHTS = {"image": SCORE_UNUSED_WEIGHTS}
 _WEIGHT_KEYS = {"image": "feature_weights", "video": "temporal_weights", "audio": "acoustic_weights"}
 
 
@@ -84,7 +86,9 @@ def render_learning_dashboard() -> None:
             with tab:
                 calib = learners[label].load_calibration()
                 weights = calib.get(_WEIGHT_KEYS[mod], {})
-                render_table([{"Signal": k.replace("_", " "), "Weight": round(v, 3)} for k, v in weights.items()])
+                unused = _UNUSED_WEIGHTS.get(mod, ())
+                render_table([{"Signal": k.replace("_", " ") + (" (not used in the score)" if k in unused else ""), "Weight": round(v, 3)}
+                              for k, v in weights.items()])
                 offsets = calib.get("sensitivity_offsets", {})
                 if offsets:
                     st.caption("Offsets: " + ", ".join(f"{k.replace('_', ' ')} {v:+.2f}" for k, v in offsets.items()))

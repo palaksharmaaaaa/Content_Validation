@@ -7,23 +7,34 @@ heuristics; this module is how that claim is replaced by measured numbers (see s
 from __future__ import annotations
 
 from collections import Counter
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from core.bands import classify_band_from_percent
 
 MIN_RELIABLE_SAMPLES = 30
 
 
-def _is_ai(label: str) -> bool:
-    return str(label).strip().lower() in ("ai", "ai_generated", "synthetic")
+_AI_LABELS = {"ai", "ai_generated", "ai-generated", "synthetic", "fake", "generated"}
+_REAL_LABELS = {"real", "authentic", "genuine", "human"}
+
+
+def _label_class(label: str) -> Optional[int]:
+    """1 for an AI label, 0 for a real label, None for anything else: an unrecognised label is never counted as real."""
+    name = str(label).strip().lower()
+    return 1 if name in _AI_LABELS else 0 if name in _REAL_LABELS else None
 
 
 def evaluate(pairs: Iterable[Tuple[str, float]], threshold: float = 50.0, bins: int = 10) -> Dict[str, Any]:
     """``pairs``: (ground-truth label, predicted P(AI) in percent). Returns accuracy, ECE, Brier, band occupancy."""
-    data = [(1 if _is_ai(lab) else 0, max(0.0, min(100.0, float(p))) / 100.0) for lab, p in pairs]
+    pairs = list(pairs)
+    classes = [(_label_class(lab), p) for lab, p in pairs]
+    unlabeled = sum(1 for c, _ in classes if c is None)
+    data = [(c, max(0.0, min(100.0, float(p))) / 100.0) for c, p in classes if c is not None and p is not None and float(p) == float(p)]
     n = len(data)
     n_ai = sum(y for y, _ in data)
     warnings: List[str] = []
+    if len(pairs) - n:
+        warnings.append(f"{len(pairs) - n} sample(s) were left out: an unrecognised label ({unlabeled}) or a missing score.")
     if n == 0:
         return {"n": 0, "warnings": ["No labeled samples: nothing can be measured."]}
     if n < MIN_RELIABLE_SAMPLES:

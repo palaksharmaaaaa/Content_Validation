@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from core.limits import limits_for
+
 # Paths
 MODULE_DIR = Path(__file__).resolve().parent
 DATA_DIR = MODULE_DIR / "data"
@@ -21,7 +23,7 @@ CALIBRATION_FILE = DATA_DIR / "audio_calibration.json"
 
 # Audio Processing & Limits
 TARGET_SAMPLE_RATE = 16000
-MAX_FILE_SIZE_MB = 200.0
+MAX_FILE_SIZE_MB = limits_for("audio").file_mb      # core/limits.py: default, limits.toml or environment variable
 MAX_DURATION_SECONDS = 3600.0
 SUPPORTED_EXTENSIONS = {".wav", ".mp3", ".aac", ".flac", ".ogg", ".m4a"}
 

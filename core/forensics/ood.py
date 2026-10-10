@@ -25,6 +25,7 @@ class OODGate:
         self.mean: Optional[np.ndarray] = None
         self.inv_cov: Optional[np.ndarray] = None
         self.threshold: Optional[float] = None
+        self.n_samples: Optional[int] = None          # how many reference files the gate was fitted on
 
     @property
     def calibrated(self) -> bool:
@@ -39,8 +40,9 @@ class OODGate:
         # With fewer samples than dimensions the covariance is singular and every training point sits unnaturally close to the mean,
         # so the percentile threshold would be far too tight and ordinary files would read as out of distribution.
         if x.ndim != 2 or x.shape[0] < max(MIN_FIT_SAMPLES, x.shape[1]):
-            self.mean = self.inv_cov = self.threshold = None
+            self.mean = self.inv_cov = self.threshold = self.n_samples = None
             return self
+        self.n_samples = int(x.shape[0])
         mean = x.mean(axis=0)
         centered = x - mean
         cov = (centered.T @ centered) / max(1, x.shape[0] - 1)
@@ -73,7 +75,8 @@ class OODGate:
         p.parent.mkdir(parents=True, exist_ok=True)
         partial = p.with_name(p.name + ".partial")
         with open(partial, "wb") as handle:                       # written aside, then swapped in: a crash never leaves half a file
-            np.savez_compressed(handle, mean=self.mean, inv_cov=self.inv_cov, threshold=np.array([self.threshold]))
+            np.savez_compressed(handle, mean=self.mean, inv_cov=self.inv_cov, threshold=np.array([self.threshold]),
+                                n_samples=np.array([self.n_samples or 0]))
         os.replace(partial, p)
 
     @classmethod
@@ -88,6 +91,7 @@ class OODGate:
                 gate.mean = data["mean"]
                 gate.inv_cov = data["inv_cov"]
                 gate.threshold = float(data["threshold"][0])
+                gate.n_samples = int(data["n_samples"][0]) if "n_samples" in data.files else None
         except Exception:  # corrupt stats file -> treat as uncalibrated
             return cls()
         return gate

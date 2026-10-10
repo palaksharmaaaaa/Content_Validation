@@ -79,9 +79,10 @@ def append_row(
     cumulative_samples: int,
 ) -> None:
     """Append one promoted-checkpoint row (version, date, losses, sample counts) to the log."""
+    from core.atomic_io import atomic_write_text, process_lock
+
     log_path = Path(log_path)
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    if not log_path.is_file():
-        log_path.write_text(_HEADER, encoding="utf-8")
-    with open(log_path, "a", encoding="utf-8") as f:
-        f.write(f"| {version} | {date} | {train_loss:.4f} | {val_acc:.4f} | {new_samples} | {cumulative_samples} |\n")
+    with process_lock(log_path):                                   # read, append and swap as one step, also against another process
+        existing = log_path.read_text(encoding="utf-8") if log_path.is_file() else _HEADER
+        atomic_write_text(log_path, existing + f"| {version} | {date} | {train_loss:.4f} | {val_acc:.4f} | {new_samples} | {cumulative_samples} |\n")

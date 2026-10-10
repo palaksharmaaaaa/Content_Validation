@@ -17,14 +17,14 @@ logger = logging.getLogger("image_detector.explain")
 
 IPTC_SOURCE_TYPE_MAPPING = {
     "AUTHENTIC_REAL_PHOTOGRAPH": "digitalsourcetype:digitalCapture (Original Physical Capture)",
-    "AUTHENTIC_EDITED": "digitalsourcetype:minorHumanEdits / compositeSynthetic (Conventional Graphic Edit)",
+    "AUTHENTIC_EDITED": "digitalsourcetype:humanEdits (Conventional Graphic Edit)",
     "AUTHENTIC_SCREENSHOT": "digitalsourcetype:screenCapture (Operating System Framebuffer)",
     "AUTHENTIC_RECAPTURED_SCREEN": "digitalsourcetype:screenCapture (Physical Re-Photography / Moiré)",
     "AI_ENHANCED_COMPOSITE": "digitalsourcetype:compositeWithTrainedAlgorithmicMedia (Generative Inpainting / Splicing)",
     "AI_ENHANCED_SCREENSHOT": "digitalsourcetype:screenCapture / compositeWithTrainedAlgorithmicMedia",
     "AI_GENERATED_SCREENSHOT": "digitalsourcetype:screenCapture / trainedAlgorithmicMedia",
     "FULLY_AI_GENERATED": "digitalsourcetype:trainedAlgorithmicMedia (Synthesized via Foundation Model)",
-    "PROCEDURAL_CGI_SYNTHETIC": "digitalsourcetype:softwareImage / virtualRecording (3D CGI / Engine Render)",
+    "PROCEDURAL_CGI_SYNTHETIC": "digitalsourcetype:digitalCreation / virtualRecording (3D CGI / Engine Render)",
 }
 
 

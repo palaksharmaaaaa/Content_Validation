@@ -42,6 +42,19 @@ from audio_detector.validator import AudioValidator
 logger = logging.getLogger("audio_detector")
 
 
+def _is_8bit_pcm(path: Path) -> bool:
+    """True for a WAV stored with 8 bits per sample, where quiet passages quantise to exact zeros whatever recorded them."""
+    import wave
+
+    if path.suffix.lower() != ".wav":
+        return False
+    try:
+        with wave.open(str(path), "rb") as w:
+            return w.getsampwidth() == 1
+    except (wave.Error, EOFError, OSError):
+        return False
+
+
 def _covered_seconds(segments: List[Dict[str, Any]], label: str) -> float:
     """Seconds of the timeline covered by segments with ``label``. The analysis windows overlap by half, so their lengths are merged, not added."""
     spans = sorted((float(s["start_seconds"]), float(s["end_seconds"])) for s in segments if s.get("label") == label)
@@ -118,7 +131,7 @@ class AudioAIDetector:
             )
         if spectral_feats.get("spectral_flatness", 1.0) < thresh.get("flatness_synthetic_max", 0.002):
             cues.append("Unnaturally smooth Wiener spectral flatness (synthetic voice harmonic profile)")
-        if spectral_feats.get("digital_silence_ratio", 0.0) > thresh.get("silence_synthetic_min", 0.12):
+        if (spectral_feats.get("digital_silence_ratio") or 0.0) > thresh.get("silence_synthetic_min", 0.12):
             cues.append("Digital zero inter-phoneme silence gaps (absence of natural room tone)")
         return cues
 
@@ -160,7 +173,7 @@ class AudioAIDetector:
             has_vocoder_cutoff=spectral_feats.get("has_vocoder_cutoff", False),
             cutoff_freq_hz=spectral_feats.get("cutoff_freq_hz", 0.0),
             spectral_flatness=spectral_feats.get("spectral_flatness", 0.0),
-            digital_silence_ratio=spectral_feats.get("digital_silence_ratio", 0.0),
+            digital_silence_ratio=spectral_feats.get("digital_silence_ratio"),
             high_freq_ratio=spectral_feats.get("high_freq_ratio", 0.0),
             acoustic_features=spectral_feats,
             temporal_segments=temporal_segments,
@@ -213,7 +226,7 @@ class AudioAIDetector:
             offsets = calib.get("sensitivity_offsets", {})
 
             # 2. Spectral Feature Extraction
-            spectral_feats = compute_spectral_features(samples, sr)
+            spectral_feats = compute_spectral_features(samples, sr, exact_zero_is_informative=not _is_8bit_pcm(path))
             temporal_segments = segment_audio_temporal(samples, sr)
 
             # 3. Neural Classifier Inference (if model available)

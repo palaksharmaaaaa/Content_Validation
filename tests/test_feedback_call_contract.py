@@ -60,6 +60,7 @@ def test_submit_feedback_routes_to_owning_learner(monkeypatch, tmp_path):
     monkeypatch.setattr(fu.st, "success", lambda *a, **k: None)
     monkeypatch.setattr(fu.st, "info", lambda *a, **k: None)
     for media, modality, tag in (("a.JPG", "auto", "image"), ("b.mp4", "auto", "video"), ("c.wav", "auto", "audio"), ("d.bin", "image", "image")):
+        (tmp_path / media).write_bytes(b"reviewed file " + media.encode())          # it must exist: a copy is kept for retraining
         fu._submit_feedback(tmp_path / media, modality, {"x": 1}, "AI-generated", "note")
     assert [c[0] for c in calls] == ["image", "video", "audio", "image"]
     for bad, modality in (("x.xyz", "auto"), ("x.jpg", "Pictures"), ("x.jpg", "")):

@@ -44,6 +44,7 @@ class ObjectDetector:
                 except Exception as exc:
                     logger.warning("Object detector %s unavailable: %s", self._id, exc)
                     self._failed = True
+                    self._model = self._proc = None            # a half-loaded model must not be reported as available
             return self._model
 
     @property

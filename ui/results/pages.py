@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, Sequence, Tuple
 
 import streamlit as st
+from ui.results.models_panel import render_models_panel
 from ui.text import code_safe, md_escape, neutralise_links
 
 from ui.results.checks import AUDIO_CHECKS, IMAGE_CHECKS, VIDEO_CHECKS, CheckGroup, render_evidence
@@ -124,6 +125,7 @@ def _render_page(item: Dict[str, Any], page: _Page) -> None:
         return
     p = _parts(item, page)
     render_summary(item, p.filename)
+    render_models_panel(page.modality)
     if page.modality in ("image", "video"):
         render_minor_screening(p.content)
 

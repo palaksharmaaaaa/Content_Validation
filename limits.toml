@@ -1,0 +1,20 @@
+# Upload size limits, in megabytes (1 MB = 1,048,576 bytes). Delete a line to use the built-in default.
+# An environment variable of the form OMNIFORENSICS_MAX_<IMAGE|VIDEO|AUDIO>_<FILE|BATCH>_MB overrides this file.
+#
+# file_mb  : largest single file accepted
+# batch_mb : largest total size of the files analysed together in one tab
+#
+# Each uploader in the app passes its file_mb (rounded up to whole megabytes) to Streamlit, so the browser refuses a larger file at once;
+# the app then checks the exact size and the batch total itself. Restart the app after editing this file.
+
+[image]
+file_mb = 10
+batch_mb = 500
+
+[video]
+file_mb = 100
+batch_mb = 500
+
+[audio]
+file_mb = 10
+batch_mb = 500

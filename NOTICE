@@ -1,0 +1,15 @@
+OmniForensics (Content Validation)
+Copyright 2026 the OmniForensics authors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+It includes or depends on third-party software and models, each under its own licence. The full list, with the licence of every model
+and its caveats, is in THIRD_PARTY_LICENSES.md. In particular this repository redistributes:
+
+  * MiVOLO v2 network code (core/perception/mivolo_vendor/), Apache-2.0,
+    Copyright 2023 Irina Tolstykh and Maxim Kuprashevich, adapted from timm (Apache-2.0, Ross Wightman).
+  * MiVOLO v2 weights (core/models/mivolo_v2/model.safetensors), Apache-2.0, from https://huggingface.co/iitolstykh/mivolo_v2.
+  * YuNet face detector (core/models/face_detection_yunet_2023mar.onnx), MIT, Copyright (c) 2020 Shiqi Yu.
+  * SFace face recogniser and the MobileFaceNet expression model (core/models/*.onnx), Apache-2.0, from the OpenCV Zoo.
+  * A ResNet-18 face-authenticity checkpoint trained by this project (image_detector/models/face_authenticity.pt); see
+    THIRD_PARTY_LICENSES.md for the licences that affect it.

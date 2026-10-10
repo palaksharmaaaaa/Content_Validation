@@ -23,6 +23,8 @@ from typing import List, Optional, Sequence, Tuple
 import cv2
 import numpy as np
 
+from core.ffmpeg import open_video
+
 logger = logging.getLogger("core.perception.video_sampling")
 
 PROBES = 240
@@ -61,7 +63,7 @@ class Probes:
 
 def probe_video(path, n_probes: int = PROBES) -> Probes:
     """Open the video and take up to ``n_probes`` thumbnails. An unreadable video gives an empty result."""
-    cap = cv2.VideoCapture(str(path))
+    cap = open_video(path)
     out = Probes()
     try:
         if not cap.isOpened():
@@ -121,19 +123,23 @@ def choose_times(probes: Probes, max_frames: int = 60) -> Tuple[List[float], dic
     return sorted(chosen), {"changes": len(changes), "grid_seconds": round(spacing, 2)}
 
 
-def read_frames(path, times: Sequence[float]) -> List[Tuple[float, np.ndarray]]:
-    """The frames at the given moments, as (time, BGR frame); moments that cannot be read are skipped."""
-    cap = cv2.VideoCapture(str(path))
-    frames: List[Tuple[float, np.ndarray]] = []
+def iter_frames(path, times: Sequence[float]):
+    """Yield (time, BGR frame) for the given moments one at a time, so only one full-resolution frame is held; moments that cannot be
+    read are skipped."""
+    cap = open_video(path)
     try:
         for t in times:
             cap.set(cv2.CAP_PROP_POS_MSEC, t * 1000.0)
             ok, frame = cap.read()
             if ok and frame is not None:
-                frames.append((float(t), frame))
+                yield float(t), frame
     finally:
         cap.release()
-    return frames
+
+
+def read_frames(path, times: Sequence[float]) -> List[Tuple[float, np.ndarray]]:
+    """The frames at the given moments, as (time, BGR frame); moments that cannot be read are skipped. Holds them all: prefer ``iter_frames``."""
+    return list(iter_frames(path, times))
 
 
 def longest_gap(times: Sequence[float], duration: float) -> Optional[float]:

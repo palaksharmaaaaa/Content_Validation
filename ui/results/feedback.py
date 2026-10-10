@@ -37,12 +37,34 @@ def _resolve_feedback_modality(modality: str, media_path: str | Path) -> str:
     raise ValueError(f"unknown modality {modality!r}; expected image, video, audio or auto")
 
 
+def persist_feedback_media(modality: str, media_path: str | Path) -> Path:
+    """Keep a copy of a reviewed file under ``<modality>_detector/data/feedback_media/<sha256><ext>`` and return its path.
+
+    The path an upload arrives with is a scratch file that disappears when the session is cleared or swept, so a correction that only
+    pointed at it would turn into a missing file at the next retrain. The copy is named by content (the same bytes are stored once),
+    stays on this machine, and lives in the git-ignored ``data`` folder. Files above the size limit are never offered for review."""
+    import shutil
+
+    from core.hashing import file_sha256
+
+    src = Path(str(media_path))
+    folder = Path(__file__).resolve().parents[2] / f"{modality}_detector" / "data" / "feedback_media"
+    folder.mkdir(parents=True, exist_ok=True)
+    dest = folder / f"{file_sha256(src)}{src.suffix.lower()[:10]}"
+    if not dest.is_file():
+        partial = dest.with_name(dest.name + ".partial")
+        shutil.copyfile(src, partial)
+        partial.replace(dest)
+    return dest
+
+
 def _submit_feedback(media_path: str | Path, modality: str, forensic_data: Any, truth: str, note: str) -> None:
-    """Record the user's answer with the owning modality's learner (queued by reference; the file is never copied)."""
+    """Record the user's answer with the owning modality's learner (the reviewed file is kept in the app's data folder)."""
     metrics = forensic_data if isinstance(forensic_data, dict) else (forensic_data.to_dict() if hasattr(forensic_data, "to_dict") else {})
     resolved = _resolve_feedback_modality(modality, media_path)
     notes = f"[{truth}] {note}".strip()
-    calib = _LEARNERS[resolved]().record_feedback(str(media_path), TRUTH_CHOICES[truth], metrics, notes=notes)
+    kept = persist_feedback_media(resolved, media_path)
+    calib = _LEARNERS[resolved]().record_feedback(str(kept), TRUTH_CHOICES[truth], metrics, notes=notes)
     st.success(f"Saved. The {resolved} engine has now learned from {calib.get('samples_processed', 1)} correction(s).")
 
 
@@ -50,8 +72,8 @@ def render_feedback(media_path: str | Path, modality: str, forensic_data: Any, u
     """Draw the 'Was this result right?' form and record the answer with the owning learner."""
     st.markdown("**Was this result right?**")
     st.caption(
-        "Tell the app what the file really is. It remembers the file by reference (nothing is copied or uploaded) and nudges its "
-        "thresholds; after enough corrections you can retrain on the Learning tab."
+        "Tell the app what the file really is. A copy of the file is kept in this app's data folder on this machine (it is never uploaded "
+        "anywhere) so retraining can use it, and the thresholds are nudged. Corrections are shared by everyone who uses this installation."
     )
     truth = st.radio("This file is", list(TRUTH_CHOICES), index=None, horizontal=True, key=f"{unique_key}_truth")
     note = st.text_input("Note (optional)", key=f"{unique_key}_note", placeholder="What gave it away, or which tool made it")
@@ -63,8 +85,10 @@ def render_feedback(media_path: str | Path, modality: str, forensic_data: Any, u
 def render_export(media_path: str | Path, modality: str, decision: Dict[str, Any], profile_data: Dict[str, Any],
                   forensic_data: Dict[str, Any], unique_key: str) -> None:
     """Draw the button that downloads the full JSON report."""
+    from ui.results.models_panel import cached_manifest
+
     payload = {"media_file": Path(str(media_path)).name, "modality": modality, "decision": decision,
-               "file_profile": profile_data, "detector_output": forensic_data}
+               "models_and_training_data": cached_manifest(modality), "file_profile": profile_data, "detector_output": forensic_data}
     st.download_button(
         "Download full report (JSON)",
         data=json.dumps(payload, indent=2, default=str),

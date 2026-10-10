@@ -19,6 +19,7 @@ from typing import Any, Optional
 import time
 import weakref
 import functools
+import hashlib
 import contextlib
 
 logger = logging.getLogger("core.atomic_io")
@@ -40,6 +41,79 @@ def _get_path_lock(target_path: Path) -> threading.RLock:
         return lock
 
 
+_PROCESS_LOCK_TIMEOUT = 30.0
+_held = threading.local()                  # per thread: {lock file: nesting depth}, so a thread that already holds a lock may take it again
+
+
+def _try_lock(fd: int) -> bool:
+    """One non-blocking attempt at an exclusive advisory lock on ``fd``; True if this process now holds it."""
+    try:
+        if os.name == "nt":
+            import msvcrt
+
+            os.lseek(fd, 0, os.SEEK_SET)
+            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return True
+    except OSError:
+        return False
+
+
+def _unlock(fd: int) -> None:
+    try:
+        if os.name == "nt":
+            import msvcrt
+
+            os.lseek(fd, 0, os.SEEK_SET)
+            msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(fd, fcntl.LOCK_UN)
+    except OSError:
+        pass
+
+
+@contextlib.contextmanager
+def process_lock(target_path: Path, timeout: float = _PROCESS_LOCK_TIMEOUT):
+    """Exclusive lock on ``target_path`` across PROCESSES (two Streamlit servers, a CLI retrain and the app), held through a
+    small lock file in the scratch directory (named by a hash of the target path, so nothing extra appears next to the data). The per-path thread lock only protects threads of one process; without this, two processes doing a
+    read-modify-write on the same JSON file lose one of the updates. Re-entrant for the thread that holds it. Raises ``TimeoutError``
+    rather than waiting for ever."""
+    canonical = os.path.normcase(str(Path(target_path).resolve()))
+    lock_file = get_ephemeral_cache_dir() / "locks" / (hashlib.sha1(canonical.encode("utf-8")).hexdigest()[:24] + ".lock")      # not beside the data
+    key = str(lock_file)
+    depths = getattr(_held, "depths", None)
+    if depths is None:
+        depths = _held.depths = {}
+    if depths.get(key, 0):
+        depths[key] += 1
+        try:
+            yield
+        finally:
+            depths[key] -= 1
+        return
+    lock_file.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(str(lock_file), os.O_RDWR | os.O_CREAT, 0o600)
+    try:
+        deadline = time.monotonic() + timeout
+        while not _try_lock(fd):
+            if time.monotonic() > deadline:
+                raise TimeoutError(f"could not lock {lock_file.name} within {timeout:g} s: another process is using {Path(target_path).name}")
+            time.sleep(0.02)
+        depths[key] = 1
+        try:
+            yield
+        finally:
+            depths[key] = 0
+            _unlock(fd)
+    finally:
+        os.close(fd)
+
+
 def serialized_on(*path_attrs: str):
     """Method decorator: hold the per-path lock of each named instance attribute for the whole call.
 
@@ -53,8 +127,9 @@ def serialized_on(*path_attrs: str):
             paths = sorted({Path(getattr(self, a)).resolve() for a in path_attrs}, key=str)
             locks = [_get_path_lock(p) for p in paths]
             with contextlib.ExitStack() as stack:
-                for lock in locks:
+                for path, lock in zip(paths, locks):
                     stack.enter_context(lock)
+                    stack.enter_context(process_lock(path))
                 return fn(self, *args, **kwargs)
 
         return wrapper
@@ -100,6 +175,31 @@ def atomic_write_json(file_path: str | Path, data: Any, indent: int = 2) -> None
             except OSError as cleanup_exc:
                 logger.debug("atomic_write_json: could not remove %s: %s", tmp_path, cleanup_exc)
             logger.error("Failed atomic JSON write to %s: %s", target, exc)
+            raise
+
+
+def atomic_write_text(file_path: str | Path, text: str) -> None:
+    """Atomically replace a text file: the content is written to a temporary file next to it, flushed to disk, then swapped in, so a
+    crash leaves either the old file or the new one, never half of each."""
+    target = Path(file_path).resolve()
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with _get_path_lock(target):
+        tmp_fd, tmp_name = tempfile.mkstemp(dir=str(target.parent), prefix=f".{target.name}.tmp_")
+        try:
+            with os.fdopen(tmp_fd, "w", encoding="utf-8", newline="") as f:
+                f.write(text)
+                f.flush()
+                os.fsync(f.fileno())
+            for attempt in range(12):
+                try:
+                    os.replace(tmp_name, target)
+                    break
+                except PermissionError:
+                    if attempt == 11:
+                        raise
+                    time.sleep(0.015 * (attempt + 1))
+        except Exception:
+            Path(tmp_name).unlink(missing_ok=True)
             raise
 
 
@@ -150,7 +250,7 @@ def atomic_update_json(
     target = Path(file_path).resolve()
     target.parent.mkdir(parents=True, exist_ok=True)
     lock = _get_path_lock(target)
-    with lock:
+    with lock, process_lock(target):
         current = atomic_read_json(target, default=default)
         updated = updater(current)
         atomic_write_json(target, updated)

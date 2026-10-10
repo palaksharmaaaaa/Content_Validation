@@ -1,33 +1,32 @@
+# Python 3.14 (see .python-version). Lower bounds are the versions this project was tested with; requirements.lock.txt pins them exactly.
+#
 # SYSTEM DEPENDENCY (not pip-installable): ffmpeg must be installed separately and on PATH.
 # audio_detector (validator.py) and video_detector (extractor.py) both shell out to the
 # ffmpeg CLI for format transcoding / audio-track extraction and will silently skip that
 # functionality (with a logged warning) if it is missing. Install from
 # https://ffmpeg.org/download.html -- there is no pip package that provides it.
 
-# Lower bounds were raised in the independent audit to releases newer than the ones with advisories it found (older torch could execute
-# code from a crafted checkpoint, older pillow/requests/streamlit had published fixes); requirements.lock.txt holds the tested versions.
-
 # Core Web & UI Framework
-streamlit>=1.54.0
+streamlit>=1.65.0
 
 # Scientific & Array Computing
-numpy>=1.24.0
-pandas>=2.0.0
+numpy>=2.5.3
+pandas>=3.0.6
 
 # Deep Learning Vision Backbones
-torch>=2.6.0
-torchvision>=0.21.0
+torch>=2.14.1
+torchvision>=0.29.1
 
 # Computer Vision & Image Processing
 # Note: For headless cloud/Docker deployments, use opencv-python-headless instead
-opencv-python>=4.8.1
-pillow>=11.3.0
+opencv-python>=5.0.0.93
+pillow>=12.3.0
 
 # HTTP Networking & Anti-SSRF Ingestion
-requests>=2.32.4
+requests>=2.34.2
 # Pretrained perception models (RF-DETR detector, SigLIP 2 recogniser) load through transformers
-transformers>=5.0.0
+transformers>=5.19.0
 # Age / minor screening (core.perception.age): MiVOLO v2 network is vendored; it needs timm's VOLO and safetensors to load weights
-timm>=1.0.0
-safetensors>=0.4.0
-huggingface-hub>=1.0.0
+timm>=1.0.30
+safetensors>=0.8.0
+huggingface-hub>=2.2.0

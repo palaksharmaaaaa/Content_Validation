@@ -257,11 +257,18 @@ def run_batch_pipeline(
         return results
 
     results: List[Optional[Dict[str, Any]]] = [None] * total
-    with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="batch") as pool:
+    pool = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="batch")
+    try:
         futures = {pool.submit(_analyse_item, item, modality, detectors, sensitivity, cache_dir): i for i, item in enumerate(items)}
         for done, future in enumerate(as_completed(futures), start=1):
             index = futures[future]
             results[index] = future.result()                  # _analyse_item never raises
             if progress_callback:
                 progress_callback(done, total, items[index]["filename"])
+    except BaseException:
+        # Streamlit stops a script run (a widget changed, the tab closed) by raising inside the progress callback. Leaving through a plain
+        # ``with`` block would wait for every queued file; drop the ones that have not started instead.
+        pool.shutdown(wait=False, cancel_futures=True)
+        raise
+    pool.shutdown(wait=True)
     return results  # type: ignore[return-value]

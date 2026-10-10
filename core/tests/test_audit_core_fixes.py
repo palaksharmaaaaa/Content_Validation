@@ -134,3 +134,97 @@ def test_ood_gate_needs_at_least_as_many_samples_as_features():
     rng = np.random.default_rng(0)
     assert not OODGate().fit(rng.normal(size=(40, 64))).calibrated            # 40 samples cannot describe 64 dimensions
     assert OODGate().fit(rng.normal(size=(80, 16))).calibrated
+
+
+def test_only_a_generator_the_file_declares_can_be_named():
+    from core.shared_results import finalize_attribution
+
+    catalog = {"a": {"name": "Alpha", "provider": "P"}, "b": {"name": "Beta", "provider": "Q"}}
+    scores = {"a": 0.9, "b": 1.6}                       # signal statistics gave Beta the higher score
+    out = finalize_attribution(scores, catalog, declared=True, declared_keys={"a"}, cues=["declares Alpha"],
+                               unknown_name="Unknown", no_cue_text="none", region_of=lambda k: "X")
+    assert out["attributed_model"] == "Alpha"
+    undeclared = finalize_attribution(scores, catalog, declared=False, declared_keys=set(), cues=[], unknown_name="Unknown",
+                                      no_cue_text="none", region_of=lambda k: "X")
+    assert undeclared["attributed_model"] == "Unknown" and undeclared["top_candidates"] == []
+
+
+def test_age_screen_accepts_grey_and_refuses_to_pass_an_unreadable_picture():
+    import numpy as np
+
+    from core.perception.age import AgeEstimator, _as_bgr
+
+    assert _as_bgr(np.zeros((8, 8), np.uint8)).shape == (8, 8, 3)
+    assert _as_bgr(np.zeros((8, 8, 4), np.uint8)).shape == (8, 8, 3)
+    assert _as_bgr(np.zeros((0, 0, 3), np.uint8)) is None and _as_bgr(None) is None and _as_bgr(np.zeros((8, 8, 2), np.uint8)) is None
+    out = AgeEstimator().assess(None)
+    assert out["status"] == "NO_IMAGE" and out["review_required"] is True
+
+
+def test_boxes_are_reported_on_the_original_picture():
+    from image_detector.content import _scaled_box
+
+    assert _scaled_box((10, 20, 30, 40), 2.5) == (25, 50, 75, 100)
+
+
+def test_benchmark_counts_an_error_result_as_failed_not_abstained(tmp_path):
+    from core.benchmark import evaluate_folder
+
+    for sub in ("ai_generated", "real"):
+        (tmp_path / sub).mkdir()
+        (tmp_path / sub / "a.png").write_bytes(b"x")
+    report = evaluate_folder(tmp_path, [".png"], lambda p: {"error": "cannot decode"})
+    assert report["failed"] == 2 and report["abstained"] == 0 and report["scored"] == 0
+
+
+def test_a_zip_larger_than_the_scan_window_is_still_found(tmp_path):
+    import io
+    import os
+    import zipfile
+
+    from PIL import Image
+
+    from core.forensics.bytescan import WINDOW, read_windows, scan_windows
+
+    png = io.BytesIO()
+    Image.new("RGB", (8, 8)).save(png, "PNG")
+    archive = io.BytesIO()
+    with zipfile.ZipFile(archive, "w", zipfile.ZIP_STORED) as z:
+        z.writestr("big.bin", os.urandom(WINDOW + 1024 * 1024))
+    path = tmp_path / "poly.png"
+    path.write_bytes(png.getvalue() + archive.getvalue())
+    head, tail, size = read_windows(path)
+    assert scan_windows([(head, False), (tail, False)]) == ["ZIP"]
+
+
+def test_two_processes_updating_one_json_file_lose_no_update(tmp_path):
+    """The per-path thread lock cannot stop a second process; the process lock must."""
+    import json
+    import subprocess
+    import sys
+    import textwrap
+    from pathlib import Path
+
+    target = tmp_path / "counter.json"
+    target.write_text(json.dumps({"n": 0}))
+    repo = Path(__file__).resolve().parents[2]
+    script = textwrap.dedent(f"""
+        import sys
+        sys.path.insert(0, {str(repo)!r})
+        from core.atomic_io import atomic_update_json
+        for _ in range(25):
+            atomic_update_json({str(target)!r}, lambda d: {{"n": d["n"] + 1}}, default={{"n": 0}})
+    """)
+    procs = [subprocess.Popen([sys.executable, "-c", script]) for _ in range(4)]
+    assert [p.wait(timeout=120) for p in procs] == [0, 0, 0, 0]
+    assert json.loads(target.read_text())["n"] == 100
+
+
+def test_the_checkpoint_log_is_appended_atomically(tmp_path):
+    from core.checkpoint_log import append_row, read_last_accuracy
+
+    log = tmp_path / "CHECKPOINT_LOG.md"
+    for v in range(1, 4):
+        append_row(log, v, "2026-10-10", 0.1, 0.5 + v / 10, 3, 3 * v)
+    assert read_last_accuracy(log) == 0.8 and log.read_text(encoding="utf-8").count("| 2026-10-10 |") == 3
+    assert not list(tmp_path.glob(".*tmp_*"))                       # no temporary file left behind

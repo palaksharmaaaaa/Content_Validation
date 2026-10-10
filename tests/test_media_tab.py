@@ -121,22 +121,22 @@ def test_profile_blocks_survive_a_none_container_and_auto_detect_covers_every_su
 
 
 def test_the_app_accepts_what_each_package_supports_up_to_its_own_size_limit(tmp_path):
-    """A 150 MB video is within the documented 500 MB limit; the app used to reject it at a blanket 100 MB."""
+    """Each type has its own limit (core/limits.py): a 95 MB video is accepted although an image or audio file that size is not."""
     import cv2
 
     from ui import validators
     from video_detector.config import MAX_FILE_SIZE_MB as VIDEO_LIMIT
 
-    assert validators.MAX_FILE_SIZE_MB_BY_TYPE == {"image": 100.0, "video": 500.0, "audio": 200.0}
+    assert validators.MAX_FILE_SIZE_MB_BY_TYPE == {"image": 10.0, "video": 100.0, "audio": 10.0}
     p = tmp_path / "big.mp4"
     vw = cv2.VideoWriter(str(p), cv2.VideoWriter_fourcc(*"mp4v"), 10, (96, 72))
     for i in range(30):
         vw.write(np.full((72, 96, 3), 100 + i, np.uint8))
     vw.release()
     with open(p, "ab") as f:
-        f.write(b"\x00" * (150 * 1024 * 1024))
+        f.write(b"\x00" * (95 * 1024 * 1024))
     res = validators.validate_file(p)
-    assert res["readable"] is True and res["size_valid"] is True and VIDEO_LIMIT >= 150
+    assert res["readable"] is True and res["size_valid"] is True and VIDEO_LIMIT >= 95
     assert validators.SUPPORTED_AUDIO_EXTENSIONS == {".wav", ".mp3", ".aac", ".flac", ".ogg", ".m4a"}        # .wma was never supported
 
 
@@ -153,7 +153,7 @@ def test_a_download_is_capped_at_the_limit_of_its_media_type(monkeypatch):
             return {"success": False, "error": "stop here"}
 
     monkeypatch.setattr(validators, "SecureUrlFetcher", Fake)
-    for kind, mb in (("image", 100), ("audio", 200), ("video", 500)):
+    for kind, mb in (("image", 10), ("audio", 10), ("video", 100)):
         validators.fetch_media_from_url("https://example.com/x", expected_type=kind)
         assert seen["mb"] == mb
     validators.fetch_media_from_url("https://example.com/x", expected_type="video", max_mb=7)
@@ -170,3 +170,49 @@ def test_a_big_image_is_shrunk_for_the_preview_and_a_small_one_is_not(tmp_path):
     assert max(shrunk.size) == media.PREVIEW_MAX_SIDE
     assert media._preview_source(small) == str(small)
     assert media._preview_source(tmp_path / "not_an_image.bin") == str(tmp_path / "not_an_image.bin")
+
+
+def test_an_abandoned_batch_does_not_keep_running(monkeypatch):
+    """When the script run is interrupted from the progress callback, files that have not started are cancelled, not waited for."""
+    import time
+
+    from ui import adapters
+
+    started = []
+
+    def slow(item, *a, **k):
+        started.append(item["filename"])
+        time.sleep(0.3)
+        return {"filename": item["filename"], "success": True}
+
+    monkeypatch.setattr(adapters, "_analyse_item", slow)
+    monkeypatch.setattr(adapters, "batch_workers", lambda modality, total: 2)
+    items = [{"filename": f"{i}.png", "path": "x"} for i in range(20)]
+
+    def stop(done, total, name):
+        raise RuntimeError("script run stopped")
+
+    t0 = time.perf_counter()
+    try:
+        adapters.run_batch_pipeline(items=items, modality="image", detectors={}, sensitivity="balanced", cache_dir=None, progress_callback=stop)
+    except RuntimeError:
+        pass
+    assert time.perf_counter() - t0 < 1.5 and len(started) < len(items)
+
+
+def test_files_over_the_file_or_batch_limit_are_left_out_with_a_reason(monkeypatch):
+    from types import SimpleNamespace
+
+    from ui import media_tab
+
+    errors = []
+    monkeypatch.setattr(media_tab.st, "error", lambda msg, *a, **k: errors.append(msg))
+    monkeypatch.setenv("OMNIFORENSICS_MAX_IMAGE_FILE_MB", "10")
+    monkeypatch.setenv("OMNIFORENSICS_MAX_IMAGE_BATCH_MB", "25")
+    mb = 1024 * 1024
+    spec = SimpleNamespace(modality="image")
+    kept = media_tab._within_limits(spec, [("a.png", 9 * mb), ("huge.png", 11 * mb), ("b.png", 9 * mb), ("c.png", 9 * mb)])
+    assert kept == {0, 2}                                          # 9 + 9 = 18 MB fits; the third 9 MB file would make 27 > 25
+    assert len(errors) == 2 and "10 MB limit" in errors[0] and "25 MB" in errors[1]
+    errors.clear()
+    assert media_tab._within_limits(spec, [("d.png", 9 * mb)], already_used=17 * mb) == set()          # links share the batch with uploads

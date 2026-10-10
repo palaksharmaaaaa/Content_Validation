@@ -96,8 +96,8 @@ def collect_status() -> List[StatusRow]:
             ("Object detector", DETECTOR_ID, DETECTOR_REV, "RF-DETR Small: people, animals, vehicles, objects"),
             ("Scene and species recognizer", RECOGNIZER_ID, RECOGNIZER_REV, "SigLIP 2 Base: place, animal species, vehicle type, kind of photo")):
         have = present(repo, revision)
-        rows.append(StatusRow(label, OK if have else WARN, "Ready" if have else "Not downloaded",
-                              what if have else "Run: python -m services.fetch_models"))
+        rows.append(StatusRow(label, OK if have else WARN, "Downloaded" if have else "Not downloaded",
+                              f"{what}. Loaded on first use." if have else "Run: python -m services.fetch_models"))
     attrs = get_face_attributes()
     rows.append(StatusRow("Expression and same-person models", OK if attrs.expression_available and attrs.identity_available else WARN,
                           "Ready" if attrs.expression_available and attrs.identity_available else "Missing", "Bundled ONNX files in core/models."))
@@ -105,9 +105,14 @@ def collect_status() -> List[StatusRow]:
 
     fa = get_face_authenticity()
     if fa.available:
-        acc = (fa.meta.get("val_stress") or {}).get("accuracy")
-        rows.append(StatusRow("Face authenticity model", OK, "Trained" + (f" ({acc * 100:.1f}% on its own held-out set)" if acc else ""),
-                              "Judges whether each face is real or AI-generated. Trained on one public dataset."))
+        meta = fa.meta
+        clean = (meta.get("val_clean") or {}).get("accuracy")
+        trained_on = (meta.get("train_samples") or 0) + (meta.get("val_samples") or 0)
+        rows.append(StatusRow("Face authenticity model", OK,
+                              "Trained" + (f" on {trained_on:,} images" if trained_on else ""),
+                              "Judges whether each face is real or AI-generated. "
+                              + (f"{clean * 100:.1f}% on held-out images from the same dataset, which says little about other generators. " if clean else "")
+                              + "Trained on one public dataset."))
     else:
         rows.append(StatusRow("Face authenticity model", INFO, "Not trained",
                               "python -m image_detector.face_training --real <folder> --ai <folder>"))

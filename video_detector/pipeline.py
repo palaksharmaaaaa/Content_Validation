@@ -14,6 +14,7 @@ Completely self-contained with zero outside dependencies.
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 from dataclasses import dataclass
 from pathlib import Path
@@ -192,8 +193,17 @@ class VideoForensicPipeline:
             return None
         folder = Path(cache_dir)
         folder.mkdir(parents=True, exist_ok=True)
-        target = folder / f"kf_{Path(filename).stem}.jpg"
-        return str(target) if cv2.imwrite(str(target), keyframe) else None          # a failed write is "no preview", not a path to nothing
+        ok, encoded = cv2.imencode(".jpg", keyframe)                  # encoded in memory: imwrite cannot write non-ASCII paths on Windows
+        if not ok:
+            return None                                                # a failed write is "no preview", not a path to nothing
+        data = encoded.tobytes()
+        # Named by the picture's own content: two uploads called "clip.mp4" (or "clip.mp4" and "clip.mov") never share one preview file.
+        target = folder / f"kf_{hashlib.sha256(data).hexdigest()[:16]}.jpg"
+        try:
+            target.write_bytes(data)
+        except OSError:
+            return None
+        return str(target)
 
     def analyze(
         self,

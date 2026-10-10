@@ -121,3 +121,7 @@ reports/
 
 # Local editor/agent run configuration (machine-specific interpreter path)
 .claude/
+
+# Streamlit secrets (none are needed by this app)
+.streamlit/secrets.toml
+

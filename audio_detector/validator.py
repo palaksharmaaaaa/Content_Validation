@@ -58,6 +58,14 @@ def resample_antialiased(samples: np.ndarray, src_sr: int, dst_sr: int, taps: in
     return np.interp(np.linspace(0, len(s) - 1, new_len), np.arange(len(s)), s).astype(np.float32)
 
 
+MAX_NATIVE_SAMPLE_RATE = 768_000          # above the highest rate any real audio format uses (DXD is 352.8 kHz)
+
+
+def _is_near_silent(samples: np.ndarray) -> bool:
+    """True when the RMS level is below the threshold the validator calls silent."""
+    return len(samples) == 0 or float(np.sqrt(np.mean(np.square(samples, dtype=np.float64)))) < 1e-4
+
+
 class AudioValidator:
     """Independent validator and decoder for audio recordings."""
 
@@ -136,6 +144,16 @@ class AudioValidator:
         )
 
 
+    def _ffmpeg_decode(self, path: Path, tmp_wav_path: str, downmix: list) -> Optional[Tuple[np.ndarray, int]]:
+        """Decode ``path`` to 16 kHz mono PCM with the given channel option; None if ffmpeg fails or writes nothing."""
+        cmd = ffmpeg_input(path, max_seconds=self.max_duration_sec + 1.0) + ["-y", *downmix, "-ar", str(self.target_sr), "-vn", "-f", "wav", tmp_wav_path]
+        res = subprocess.run(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=120)
+        if res.returncode != 0 or not Path(tmp_wav_path).is_file() or Path(tmp_wav_path).stat().st_size <= 44:
+            return None
+        with wave.open(tmp_wav_path, "rb") as wf:
+            sw, fr = wf.getsampwidth(), wf.getframerate()
+            return pcm_to_float(wf.readframes(wf.getnframes()), sw), fr
+
     def extract_pcm_samples(
         self, audio_path: str | Path
     ) -> Tuple[Optional[np.ndarray], int, float]:
@@ -153,19 +171,16 @@ class AudioValidator:
                 tmp_wav_path = tmp_f.name
 
             # Decode at most one second past the limit: a file longer than that is rejected anyway, so the rest is never decoded.
-            cmd = ffmpeg_input(path, max_seconds=self.max_duration_sec + 1.0) + ["-y", "-ac", "1", "-ar", str(self.target_sr), "-vn", "-f", "wav", tmp_wav_path]
-            res = subprocess.run(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=120)
-
-            if res.returncode == 0 and Path(tmp_wav_path).is_file() and Path(tmp_wav_path).stat().st_size > 44:
-                with wave.open(tmp_wav_path, "rb") as wf:
-                    sw = wf.getsampwidth()
-                    fr = wf.getframerate()
-                    raw = wf.readframes(wf.getnframes())
-
-                    samples = pcm_to_float(raw, sw)
-
-                    dur = float(len(samples)) / max(1, fr)
-                    return samples, fr, dur
+            decoded = self._ffmpeg_decode(path, tmp_wav_path, downmix=["-ac", "1"])
+            if decoded is not None and _is_near_silent(decoded[0]):
+                # Averaging the channels cancels a stereo file whose channels are opposite in phase, and a hollow-sounding mix would then be
+                # read as "no audio". Take the first channel alone before concluding the file is silent.
+                first = self._ffmpeg_decode(path, tmp_wav_path, downmix=["-af", "pan=mono|c0=c0"])
+                if first is not None and not _is_near_silent(first[0]):
+                    decoded = first
+            if decoded is not None:
+                samples, fr = decoded
+                return samples, fr, float(len(samples)) / max(1, fr)
         except FileNotFoundError:
             global _FFMPEG_MISSING_WARNED
             if not _FFMPEG_MISSING_WARNED:
@@ -192,10 +207,16 @@ class AudioValidator:
                     n_ch = wf.getnchannels()
                     sw = wf.getsampwidth()
                     fr = wf.getframerate()
-                    raw = wf.readframes(wf.getnframes())
+                    if not (1 <= fr <= MAX_NATIVE_SAMPLE_RATE):
+                        return None, self.target_sr, 0.0              # a header sample rate no real recording has
+                    # Read no more than the duration limit allows (plus the one second that proves the file is too long).
+                    raw = wf.readframes(min(wf.getnframes(), int((self.max_duration_sec + 1.0) * fr)))
                     s = pcm_to_float(raw, sw)
                     if n_ch > 1:
-                        s = s[: len(s) // n_ch * n_ch].reshape(-1, n_ch).mean(axis=1)
+                        frames = s[: len(s) // n_ch * n_ch].reshape(-1, n_ch)
+                        s = frames.mean(axis=1)
+                        if _is_near_silent(s) and not _is_near_silent(frames[:, 0]):
+                            s = frames[:, 0]                          # channels in opposite phase cancel in the mean; use one on its own
                     if fr > 0 and fr != self.target_sr and len(s) > 1:
                         s = resample_antialiased(s, fr, self.target_sr)
                         fr = self.target_sr

@@ -38,6 +38,7 @@ upload / link
 
 ## Verdict semantics
 
+- **Class labels differ by model, on purpose, and each is fixed where the model is defined.** The trained backbones for image, video and audio use class 0 = AI-generated, 1 = real (`class_to_idx` in each checkpoint). The face-authenticity model uses 0 = real, 1 = AI-generated (`label_1` in its checkpoint). Callers never pass an index: every API takes `"AI"` or `"REAL"` (anything else records nothing).
 - **Probabilities are heuristic and uncalibrated.** Every dossier carries `calibration_status: "UNCALIBRATED_HEURISTIC"` and the UI says so. Thresholds were tuned on synthetic fixtures; real error rates are measured only if you run `services.calibration_cli` on your own labelled media.
 - **Evidence is capped.** Only physical, learned and weak-metadata findings may move the probability, each by a small capped amount (see [CHECKS.md](CHECKS.md#what-may-change-the-probability)). Security, legal, context and reliability findings, the bands, the out-of-distribution status and `UNKNOWN_SOURCE` are advisory.
 - **C2PA is presence-only.** Byte markers are looked for; no certificate chain or hash binding is validated, so it is never scored as protective and never called "verified".
@@ -99,12 +100,15 @@ Package-specific points:
 |---|---|
 | `security.py` | `validate_secure_url` rejects non-http(s) schemes, local hostnames and any host resolving to a private, loopback, link-local, metadata, multicast or reserved address; `_PinnedResolver` pins DNS to the validated addresses for one request (closing the rebinding gap); `SecureUrlFetcher` streams with a size ceiling, rejects HTML, and re-validates every redirect (at most three). `sanitize_filename` treats `/` and `\` as separators on every OS. Importing it sets Pillow's decompression-bomb limit for the whole process. |
 | `decision.py` | `normalize_percentages` (the one implementation all three scoring modules use) and `generate_final_decision` (the fusion described above). |
-| `atomic_io.py` | write-to-temp-then-replace JSON persistence with per-path locks and Windows retry on `PermissionError`; per-session scratch folders in the OS temp directory. |
-| `media_library.py`, `retrain_engine.py` | labelled media by reference (hash and path hint, never a copy); fine-tuning with a hash-based validation split, promoting a new checkpoint only if its validation accuracy does not drop. |
-| `checkpoint_log.py` | a plain-text, Git-tracked provenance log for trained checkpoints. |
+| `atomic_io.py` | write-to-temp-then-replace JSON persistence with per-path thread locks plus a cross-process file lock (`process_lock`, a lock file in the temp scratch directory with `msvcrt`/`fcntl`) for read-modify-write updates, and Windows retry on `PermissionError`; the checkpoint log is appended atomically; per-session scratch folders in the OS temp directory. |
+| `media_library.py`, `retrain_engine.py` | labelled media by reference (hash and path hint; files you register are never copied, while a file reviewed in the app is kept as a content-named copy under `<modality>_detector/data/feedback_media/` because its upload path disappears); fine-tuning with a hash-based validation split, promoting a new checkpoint only if its validation accuracy does not drop. |
+| `checkpoint_log.py` | a plain-text, Git-tracked provenance log for trained checkpoints; rows are appended atomically under the process lock. |
+| `limits.py` | the one definition of upload size limits (per file and per batch, per type): built-in defaults, `limits.toml`, then `OMNIFORENSICS_MAX_*` variables; each package's `MAX_FILE_SIZE_MB` and the UI read it. |
+| `model_registry.py` | the manifest behind the "Models, algorithms and training data" panel and the JSON report: step, model, variant, origin, training data, training size, licence. Training counts come from the checkpoints' saved metadata, never from constants. |
+| `calibration_io.py` | validates a calibration file (finite, in-range numbers; defaults for the rest) before a learner hands it to the scoring. |
 | `bands.py`, `calibration_report.py` | the five probability bands; accuracy, false-positive rate, Brier score and ECE from labelled pairs. |
 | `forensics/` | `schemas.py` (Finding, DimensionReport), `registry.py` (isolated checks), `gates.py`, `ood.py`, `bytescan.py`, `jsonl_index.py` (re-use indexes read once per change), `reporting.py`, `config.py`. |
-| `hashing.py`, `imageio.py` | one streaming file-digest implementation; image reading that works for every file name and bit depth. |
+| `hashing.py`, `imageio.py` | one streaming file-digest implementation; image reading that works for every file name and bit depth and refuses a picture whose header declares more pixels than the safe ceiling before OpenCV allocates it. |
 | `frame_scorer.py`, `ffmpeg.py`, `c2pa.py` | the one per-frame scorer; the one hardened way to call ffmpeg/ffprobe (file and pipe protocols only, no stdin, bounded decode) and the one PCM decoder; the one C2PA presence scan used by all three packages. |
 | `batch.py`, `benchmark.py` | the sequential headless batch runner (one failing file never stops the run; results bucketed by exact status) and the labelled-folder scorer (rank-based ROC-AUC, abstentions and failures reported). |
 | `shared_results.py`, `provenance_view.py`, `metrics_util.py` | result shapes and label rules shared by the three packages; the single nested provenance shape used by the decision layer and the UI; conversion of metric values to JSON-safe scalars. |

@@ -1,0 +1,51 @@
+# OmniForensics - Streamlit configuration.
+# Checked against `streamlit config show` of Streamlit 1.65 on Python 3.14. Run the app from the repository root:
+#     python -m streamlit run app.py
+# Any option can still be overridden on the command line or with STREAMLIT_* environment variables.
+
+[server]
+# Local use by default: only this computer can open the app. To serve other computers on your network, change to "0.0.0.0" and put the app
+# behind HTTPS (a reverse proxy); the app itself has no sign-in by design.
+address = "127.0.0.1"
+port = 8501
+headless = true
+
+# Default ceiling (MB) for one uploaded file. The app's uploaders set their own ceiling from limits.toml (image 10 MB, video 100 MB,
+# audio 10 MB per file; 500 MB per batch), which overrides this value; it only applies to an uploader that sets none.
+maxUploadSize = 100
+# Largest message between browser and server (MB): analysis results and tables, not uploads.
+maxMessageSize = 200
+
+# Both protections stay on: XSRF protection guards the upload endpoint, CORS is limited to the app's own origin.
+enableXsrfProtection = true
+enableCORS = true
+enableWebsocketCompression = false
+
+# A closed tab's session is released after this many seconds, which frees its scratch files sooner.
+disconnectedSessionTTL = 120
+
+# Nothing is hot-reloaded in normal use. Switch to "auto" while developing.
+runOnSave = false
+fileWatcherType = "none"
+
+[browser]
+# No telemetry is sent from this app.
+gatherUsageStats = false
+serverAddress = "localhost"
+
+[client]
+# Reviewers see a clean toolbar and no stack traces in the page; full errors go to the server log.
+toolbarMode = "minimal"
+showErrorDetails = "type"
+
+[runner]
+# The app does not use Streamlit "magic" (bare expressions are not written to the page); turning it off avoids accidental output.
+magicEnabled = false
+fastReruns = true
+
+[logger]
+level = "info"
+
+[theme]
+# The app's custom CSS (ui/layout.py) uses translucent greys and a red accent, which read correctly on both themes.
+primaryColor = "#ff4b4b"
