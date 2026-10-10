@@ -139,25 +139,6 @@ def test_a_real_analysis_carries_the_share_of_the_timeline_flagged(tmp_path):
     assert r["ai_duration_pct"] is not None and 0.0 <= r["ai_duration_pct"] <= 100.0
 
 
-def test_a_vendor_name_must_stand_alone_in_the_file(tmp_path):
-
-    from video_detector.provenance import VideoProvenanceValidator
-
-    rng = np.random.default_rng(11)
-    noise = bytearray(rng.integers(0, 256, 200_000, dtype=np.uint8).tobytes())
-    noise[5000:5003] = b"VEO"                      # three letters inside compressed data
-    noise[7000:7003] = b"dji"
-    noise[9000:9004] = b"kling"[:4]                # a fragment glued to other bytes
-    p = tmp_path / "noise.mp4"
-    p.write_bytes(bytes(noise))
-    out = VideoProvenanceValidator().analyze_provenance(p)
-    assert out["vendor_signatures_found"] == [] and out["camera_make"] is None
-    named = tmp_path / "named.mp4"
-    named.write_bytes(b"\x00\x00\x00\x18ftypmp42" + b"\x00" * 8 + b" encoder=Made with Google Veo \x00" + b"\x00" * 50)
-    out2 = VideoProvenanceValidator().analyze_provenance(named)
-    assert "google veo" in out2["vendor_signatures_found"]
-
-
 def test_too_few_frames_is_no_reading_and_takes_no_part_in_the_score():
     from video_detector.scoring import pool_video_temporal_score
     from video_detector.temporal import compute_interframe_motion_variance, detect_diffusion_flickering
@@ -192,3 +173,37 @@ def test_one_frame_scorer_serves_video_and_image_and_unscorable_frames_are_not_c
     det = VideoAIDetector(frame_detector=Broken())
     analyzed, scores = det._analyze_frames([frame, frame], [0.0, 1.0], "balanced", None)
     assert scores == [] and all(f["ai_prob"] is None for f in analyzed)
+
+
+def test_vendor_names_are_read_from_metadata_not_from_picture_data(tmp_path):
+    import struct
+
+    from video_detector.provenance import VideoProvenanceValidator
+
+    ftyp = struct.pack(">I4s", 28, b"ftyp") + b"isom\x00\x00\x02\x00isomiso2mp41"
+    mdat = struct.pack(">I4s", 8 + 520, b"mdat") + b"\xaa" * 100 + b"\x00vidu\x00" + b"\xbb" * 413      # the audit's own counter-example
+    p = tmp_path / "chance.mp4"
+    p.write_bytes(ftyp + mdat)
+    assert VideoProvenanceValidator().analyze_provenance(p)["vendor_signatures_found"] == []
+    item = struct.pack(">I4s", 8 + 4 + len(b"Made with Vidu"), b"\xa9too") + struct.pack(">HH", len(b"Made with Vidu"), 0) + b"Made with Vidu"
+    udta = struct.pack(">I4s", 8 + len(item), b"udta") + item
+    moov = struct.pack(">I4s", 8 + len(udta), b"moov") + udta
+    q = tmp_path / "declared.mp4"
+    q.write_bytes(ftyp + moov + mdat)
+    assert "vidu" in VideoProvenanceValidator().analyze_provenance(q)["vendor_signatures_found"]
+
+
+def test_sparse_samples_cannot_prove_a_freeze_and_one_frame_cannot_make_a_verdict():
+    import cv2
+
+    from core.frame_scorer import score_frame
+    from video_detector.temporal import compute_interframe_motion_variance
+
+    rng = np.random.default_rng(9)
+    base = rng.integers(0, 256, (48, 64, 3), dtype=np.uint8)
+    frames = [np.clip(base.astype(int) + rng.integers(0, 2, base.shape), 0, 255).astype(np.uint8) for _ in range(8)]
+    assert compute_interframe_motion_variance(frames, temporal_step=1)["temporal_warping_risk"] == "UNNATURAL_FREEZE"
+    assert compute_interframe_motion_variance(frames, temporal_step=60)["temporal_warping_risk"] != "UNNATURAL_FREEZE"
+    flat = cv2.cvtColor(np.tile(np.linspace(100, 200, 720).reshape(720, 1), (1, 1280)).astype(np.uint8), cv2.COLOR_GRAY2BGR)
+    res = score_frame(flat)
+    assert 0.3 <= res["ai_prob"] <= 0.7 and res["label"] != "LIKELY REAL"

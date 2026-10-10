@@ -89,7 +89,7 @@ def compute_interframe_motion_variance(
     elif var_delta > suspicious_flicker_var or mean_delta > MEAN_DELTA_SUSPICIOUS_THRESHOLD:
         warping_risk = "SUSPICIOUS_FLICKER"
         is_anomalous = True
-    elif var_delta < unnatural_freeze_var and mean_delta < 1.2:
+    elif temporal_step <= 2 and var_delta < unnatural_freeze_var and mean_delta < 1.2:      # "frozen" needs neighbouring frames; samples seconds apart say nothing about stillness
         warping_risk = "UNNATURAL_FREEZE"
         is_anomalous = True
     else:

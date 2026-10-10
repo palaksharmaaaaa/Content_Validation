@@ -52,6 +52,27 @@ class VideoProvenanceValidator:
                 return brand
         return None
 
+    @staticmethod
+    def _declared_texts(path: Path, head: bytes, tail: bytes) -> list:
+        """The text a file *declares* about itself: MP4/MOV metadata items, track handler names, XMP, Matroska writer strings. The
+        compressed picture data is never searched; a short vendor name turns up there by chance."""
+        from video_detector.dimension_checks import _common as C            # imported here: that package imports this module
+
+        texts: list = []
+        kind = C.sniff_video_format(head)
+        if kind in ("mp4", "mov"):
+            moov = C.load_moov(path, C.walk_top_level(path))
+            if moov:
+                texts += [v for v in moov["text_items"].values()]
+                texts += [t["handler_name"] for t in moov["tracks"] if t.get("handler_name")]
+        elif kind == "mkv":
+            info = C.ebml_info(head[:65536])
+            texts += [v for v in (info.get("muxing_app"), info.get("writing_app")) if v]
+        xmp = C.extract_xmp(head) or C.extract_xmp(tail)
+        if xmp:
+            texts.append(xmp)
+        return texts
+
     def scan_c2pa(self, file_path: str | Path) -> Dict[str, Any]:
         """Content Credentials marker scan (presence only; see core.c2pa)."""
         return scan_c2pa_file(file_path)
@@ -81,7 +102,7 @@ class VideoProvenanceValidator:
                     if atom in head or atom in tail:
                         atoms_found.append(atom.decode("ascii", errors="ignore"))
 
-            text_blob = (head + tail).decode("latin-1").lower()
+            text_blob = "\n".join(self._declared_texts(path, head, tail)).lower()
             for sig in KNOWN_VIDEO_GENERATOR_SIGNATURES:
                 if _whole_word(sig, text_blob):
                     vendor_signatures_found.append(sig)
