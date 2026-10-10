@@ -91,7 +91,8 @@ def test_detector_load_is_serialised(monkeypatch):
 # ---- H-7: concurrent feedback must not lose entries
 def test_concurrent_feedback_loses_nothing(tmp_path):
     imp = AudioSelfImprover(memory_file=tmp_path / "mem.json", calibration_file=tmp_path / "cal.json")
-    wavs = [write_wav(tmp_path / f"{i}.wav", tone(0.5, seed=i)) for i in range(8)]
+    # distinct bytes: the same file submitted twice is counted once
+    wavs = [write_wav(tmp_path / f"{i}.wav", tone(0.5, seed=i, noise=0.05)) for i in range(8)]
     threads = [threading.Thread(target=imp.record_feedback, args=(str(w), "REAL", {"x": 1.0})) for w in wavs]
     [t.start() for t in threads]
     [t.join() for t in threads]

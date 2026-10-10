@@ -127,7 +127,7 @@ class TestVideoLearnerAtomic(unittest.TestCase):
             learner = VideoSelfImprover(memory_file=memory_file, calibration_file=Path(tmp_dir) / "video_calibration.json")
             res = learner.record_feedback(
                 video_path="test_clip.mp4",
-                user_label="ai_generated",
+                user_label="AI",
                 metrics={"temporal_score": 0.85, "face_score": 0.75},
             )
             self.assertIsInstance(res, dict)
@@ -135,7 +135,7 @@ class TestVideoLearnerAtomic(unittest.TestCase):
             loaded = learner.load_memory()
             self.assertGreaterEqual(len(loaded), 1)
             self.assertEqual(loaded[-1]["video_path"], "test_clip.mp4")
-            self.assertEqual(loaded[-1]["user_label"], "AI_GENERATED")
+            self.assertEqual(loaded[-1]["user_label"], "AI")
 
 
 from audio_detector.validator import AudioValidator
