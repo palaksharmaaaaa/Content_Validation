@@ -138,6 +138,16 @@ class _Evidence:
     aud_real: float = 0.0
     aud_dur_pct: float = 0.0
     c2pa: Dict[str, Any] = field(default_factory=dict)
+    declared_ai: bool = False      # the file's own metadata or manifest says it is AI-generated (unauthenticated, but scored)
+
+
+def _evidence_weight(result: Dict[str, Any], base: float) -> float:
+    """A modality that is mostly undecided (say 99 % of its mass) must count for correspondingly little in the fusion."""
+    try:
+        undecided = float(result.get("undecided_percentage", 0.0) or 0.0)
+    except (TypeError, ValueError):
+        undecided = 0.0
+    return base * max(0.0, min(1.0, 1.0 - undecided / 100.0))
 
 
 def _read_pair(result: Dict[str, Any]) -> Tuple[float, float]:
@@ -151,7 +161,7 @@ def _collect_image(ev: _Evidence, ai_result: Optional[Dict[str, Any]]) -> None:
     ev.img_ai, img_real = _read_pair(ai_result)
     ev.img_spatial_area = float(ai_result.get("ai_spatial_area_pct", 0.0))
     if ev.img_ai > 0.0 or img_real > 0.0 or ai_result.get("is_available"):
-        ev.probs.append((ev.img_ai, img_real, 1.0))
+        ev.probs.append((ev.img_ai, img_real, _evidence_weight(ai_result, 1.0)))
     ev.trail.extend(f"[Image Forensic] {cue}" for cue in ai_result.get("forensic_cues", []))
 
 
@@ -163,21 +173,21 @@ def _collect_video(ev: _Evidence, video_result: Optional[Dict[str, Any]]) -> Non
     ev.vid_ai = float(vid.get("ai_percentage", 0.0))
     vid_real = float(vid.get("real_percentage", 0.0))
     ev.vid_dur_pct = float(vid.get("ai_duration_pct") or 0.0)
-    ev.probs.append((ev.vid_ai, vid_real, 1.2))  # slightly higher weight for temporal video
+    ev.probs.append((ev.vid_ai, vid_real, _evidence_weight(vid, 1.2)))  # slightly higher weight for temporal video
     ev.trail.extend(f"[Video Forensic] {cue}" for cue in vid.get("forensic_cues", []))
     temp = vid.get("temporal_consistency") or {}
-    risk = temp.get("temporal_warping_risk", "LOW")
+    risk = temp.get("temporal_warping_risk") or "LOW"
     if risk in ("HIGH", "CRITICAL", "HIGH_WARPING_DETECTED", "SUSPICIOUS_FLICKER"):
-        ev.trail.append(f"[Video Temporal] High inter-frame warping risk ({risk}, motion delta: {temp.get('mean_motion_delta', 0.0):.2f})")
+        ev.trail.append(f"[Video Temporal] High inter-frame warping risk ({risk}, motion delta: {float(temp.get('mean_motion_delta') or 0.0):.2f})")
 
 
 def _collect_audio(ev: _Evidence, audio_result: Optional[Dict[str, Any]]) -> None:
     if not (audio_result and (audio_result.get("has_audio_track") or "ai_percentage" in audio_result)):
         return
     ev.aud_ai, ev.aud_real = _read_pair(audio_result)
-    ev.aud_dur_pct = float(audio_result.get("ai_duration_pct", 0.0))
+    ev.aud_dur_pct = float(audio_result.get("ai_duration_pct") or 0.0)
     if ev.aud_ai > 0.0 or ev.aud_real > 0.0 or audio_result.get("has_audio_track"):
-        ev.probs.append((ev.aud_ai, ev.aud_real, 1.0))
+        ev.probs.append((ev.aud_ai, ev.aud_real, _evidence_weight(audio_result, 1.0)))
     ev.trail.extend(f"[Audio Forensic] {cue}" for cue in audio_result.get("forensic_cues", []))
 
 
@@ -186,17 +196,20 @@ def _collect_provenance(ev: _Evidence, prov: Dict[str, Any]) -> None:
     c2pa = prov.get("c2pa") or prov  # nested (UI validator) or flat (package provenance) shape
     ev.c2pa = c2pa
     exif = prov.get("exif", {})
-    if c2pa.get("c2pa_present"):
-        if c2pa.get("ai_declaration"):
-            ev.trail.append("[C2PA Provenance] Manifest explicitly asserts generative AI creation.")
-            ev.probs.append((98.0, 1.0, 2.0))
-        elif c2pa.get("is_signed"):
-            ev.trail.append("[C2PA Provenance] Content Credentials signature markers present (not cryptographically verified; no score credit).")
-    elif exif.get("ai_signature_found") or prov.get("ai_signature_found"):
+    declared_by_manifest = bool(c2pa.get("c2pa_present") and c2pa.get("ai_declaration"))
+    declared_by_metadata = bool(exif.get("ai_signature_found") or prov.get("ai_signature_found"))
+    if c2pa.get("c2pa_present") and not declared_by_manifest and c2pa.get("is_signed"):
+        ev.trail.append("[C2PA Provenance] Content Credentials signature markers present (not cryptographically verified; no score credit).")
+    if declared_by_manifest:
+        ev.trail.append("[C2PA Provenance] Manifest explicitly asserts generative AI creation (unauthenticated).")
+        ev.probs.append((98.0, 1.0, 2.0))
+        ev.declared_ai = True
+    elif declared_by_metadata:                      # a manifest marker elsewhere in the file no longer hides a metadata declaration
         details = exif.get("signature_details") or prov.get("signature_details") or "AI signature detected"
         ev.trail.append(f"[Metadata Provenance] {details}")
         ev.probs.append((95.0, 5.0, 1.5))
-    elif exif.get("camera_make") or prov.get("camera_make"):
+        ev.declared_ai = True
+    if not (declared_by_manifest or declared_by_metadata) and (exif.get("camera_make") or prov.get("camera_make")):
         make = exif.get("camera_make") or prov.get("camera_make")
         model = exif.get("camera_model") or prov.get("camera_model", "")
         ev.trail.append(f"[Hardware Provenance] Camera hardware EXIF tags present (unauthenticated, not scored): {make} {model}".strip())
@@ -206,11 +219,11 @@ def _collect_cross_modal(ev: _Evidence, cross_modal: Optional[Dict[str, Any]]) -
     if not (cross_modal and cross_modal.get("is_multimodal")):
         return
     ev.trail.extend(f"[Cross-Modal] {cue}" for cue in cross_modal.get("cues", []))
-    risk = cross_modal.get("tampering_risk", "LOW")
-    if risk in ("HIGH", "CRITICAL"):
-        ev.probs.append((88.0, 10.0, 1.5))
-    elif risk == "MODERATE":
-        ev.probs.append((70.0, 25.0, 1.0))
+    # Audio and video disagreeing is a reason to look closer, not extra evidence of AI (both results are already in the fusion, and a
+    # real video with a synthetic voice-over looks exactly like this), so it is reported in the trail and moves no probability.
+    risk = cross_modal.get("tampering_risk") or "LOW"
+    if risk in ("HIGH", "CRITICAL", "MEDIUM", "MODERATE"):
+        ev.trail.append(f"[Cross-Modal] Audio and video disagree (risk {risk}); not scored.")
 
 
 def _collect_attribution(ev: _Evidence, attribution: Optional[Dict[str, Any]]) -> None:
@@ -242,6 +255,26 @@ def _authentic_attribution() -> Dict[str, Any]:
         "cues": ["Camera-like sensor noise and optical properties observed (heuristic; metadata is unauthenticated)."],
         "top_candidates": [],
     }
+
+
+_REAL_LEANING_STATUSES = frozenset({"LIKELY_AUTHENTIC", "LIKELY REAL", "AUTHENTIC (CONVENTIONALLY EDITED)", "AUTHENTIC_EDITED"})
+_AI_STATUSES = frozenset({"LIKELY_SYNTHETIC", "PARTIALLY_SYNTHETIC_OR_EDITED", "LIKELY AI-GENERATED", "AI-ENHANCED / COMPOSITE", "PROCEDURAL CGI SYNTHETIC"})
+
+
+def _status_means_ai(final_status: str, p_ai: float) -> bool:
+    """True when the final verdict, not just the raw score, calls the file AI-made or AI-altered; an undetermined verdict is never 'AI detected'."""
+    if final_status in _AI_STATUSES:
+        return True
+    return final_status not in (_STATUS_UNDETERMINED, "UNDECIDED", "BLANK_OR_DEGRADED") and final_status not in _REAL_LEANING_STATUSES and p_ai >= 50.0
+
+
+def _worst_face_p(ai_result: Dict[str, Any]) -> float:
+    """The face classifier's worst P(AI) for the main face, 1.0 (no disagreement) when it was not measured."""
+    value = (ai_result.get("face_check") or {}).get("worst_p_ai")
+    try:
+        return float(value) if value is not None else 1.0
+    except (TypeError, ValueError):
+        return 1.0
 
 
 def _fuse(probs: List[Tuple[float, float, float]]) -> Tuple[float, float, float]:
@@ -406,8 +439,6 @@ def generate_final_decision(
 
     p_ai, p_real, p_undecided = _fuse(ev.probs)
     final_status, reason = _status_from_probabilities(p_ai, p_real)
-    ai_detected = final_status in (_STATUS_LIKELY_SYNTHETIC, _STATUS_PARTIAL) or p_ai >= 50.0
-
     decision_mode = _decision_mode(ai_result, audio_result, ev)
     tax_reasons: List[str] = []
     if decision_mode == "image_authoritative":
@@ -422,9 +453,9 @@ def generate_final_decision(
                 tax_state, tax_label, tax_desc = _taxonomy_from_fused(_STATUS_UNDETERMINED, 0.0, 0.0)
                 tax_reasons = tax_reasons + [f"A face in the image looks AI-generated ({float(face_ai.get('worst_p_ai') or 0) * 100:.0f}%), so the image is not called real."]
                 final_status, reason = _STATUS_UNDETERMINED, "A face looks AI-generated while the rest of the evidence does not agree; explicit uncertainty maintained."
-            elif (tax_state in _AI_CLAIMING and (ai_result.get("face_check") or {}).get("worst_p_ai", 1.0) < _FACE_DISAGREES_BELOW):
+            elif (tax_state in _AI_CLAIMING and _worst_face_p(ai_result) < _FACE_DISAGREES_BELOW):
                 # Two independent detectors disagree on a portrait-style image: say so instead of picking one.
-                worst = float(ai_result["face_check"]["worst_p_ai"])
+                worst = _worst_face_p(ai_result)
                 tax_state, tax_label, tax_desc = _taxonomy_from_fused(_STATUS_UNDETERMINED, 0.0, 0.0)
                 tax_reasons = tax_reasons + [f"The face classifier disagrees ({worst * 100:.0f}% AI for the main face) with the pixel analysis ({p_ai:.0f}% AI), so no verdict is given."]
                 final_status, reason = _STATUS_UNDETERMINED, "Independent detectors disagree; explicit uncertainty maintained."
@@ -435,6 +466,13 @@ def generate_final_decision(
                 final_status, reason = _STATUS_UNDETERMINED, "Forensic evidence is balanced; explicit uncertainty maintained."
     else:
         tax_state, tax_label, tax_desc = _taxonomy_from_fused(final_status, p_ai, p_real)
+
+    # What the file itself declares must not vanish behind a "real" pixel verdict: say the evidence conflicts instead.
+    if ev.declared_ai and final_status in _REAL_LEANING_STATUSES:
+        tax_state, tax_label, tax_desc = _taxonomy_from_fused(_STATUS_UNDETERMINED, p_ai, p_real)
+        tax_reasons = tax_reasons + ["The file's own metadata or manifest declares AI generation, but the pixel analysis does not agree; no verdict is given."]
+        final_status, reason = _STATUS_UNDETERMINED, "Declared AI generation conflicts with the pixel evidence; explicit uncertainty maintained."
+    ai_detected = _status_means_ai(final_status, p_ai)
 
     localization = {
         "suspicious_image_area_pct": ev.img_spatial_area,
