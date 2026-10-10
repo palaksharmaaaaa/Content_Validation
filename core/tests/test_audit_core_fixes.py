@@ -119,3 +119,18 @@ def test_ood_non_finite_vectors():
     gate = OODGate().fit(data)
     assert gate.calibrated
     assert gate.score(np.array([np.nan, 0, 0, 0]))["status"] == "NOT_CALIBRATED"
+
+
+def test_nan_age_is_not_adult():
+    from core.perception.age import classify_minor
+    assert classify_minor(float("nan"), None, usable=True) == "ADULT"          # nothing else flags a minor: only the age was lost
+    assert classify_minor(float("nan"), None, usable=False) == "UNDETERMINED"
+    assert classify_minor(float("nan"), 0.9, usable=True) == "POSSIBLE_MINOR"
+
+
+def test_ood_gate_needs_at_least_as_many_samples_as_features():
+    import numpy as np
+    from core.forensics.ood import OODGate
+    rng = np.random.default_rng(0)
+    assert not OODGate().fit(rng.normal(size=(40, 64))).calibrated            # 40 samples cannot describe 64 dimensions
+    assert OODGate().fit(rng.normal(size=(80, 16))).calibrated

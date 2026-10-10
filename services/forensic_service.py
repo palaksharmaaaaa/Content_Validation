@@ -278,6 +278,35 @@ class ForensicService:
         "audio_detector", "face_detector", "content_analyzer", "attribution_engine",
     )
 
+    @staticmethod
+    def _security_probes() -> Dict[str, str]:
+        """Each guard is exercised, not assumed: a loopback URL must be refused, the pixel ceiling must be set, and an atomic write
+        followed by a read must give the data back."""
+        import tempfile
+        from pathlib import Path
+
+        from PIL import Image
+
+        from core.atomic_io import atomic_read_json, atomic_write_json
+        from core.security import validate_secure_url
+
+        try:
+            ssrf = "ACTIVE" if validate_secure_url("http://127.0.0.1/x.png")[0] is False else "INACTIVE"
+        except Exception:
+            ssrf = "INACTIVE"
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                target = Path(tmp) / "probe.json"
+                atomic_write_json(target, {"ok": 1})
+                atomic = "ACTIVE" if atomic_read_json(target, default=None) == {"ok": 1} else "INACTIVE"
+        except Exception:
+            atomic = "INACTIVE"
+        return {
+            "anti_ssrf": ssrf,
+            "decompression_bomb_protection": "ACTIVE" if Image.MAX_IMAGE_PIXELS else "INACTIVE",
+            "atomic_storage": atomic,
+        }
+
     def health_check(self) -> Dict[str, Any]:
         """Builds every component (loading models on first use) and reports which ones are usable.
 
@@ -291,12 +320,6 @@ class ForensicService:
             except Exception as exc:  # report, never raise: this is a diagnostic
                 logger.warning("health_check: %s failed to initialise: %s", name, exc)
                 components[name] = f"ERROR: {type(exc).__name__}"
-        from PIL import Image
-        from core.security import SecureUrlFetcher  # noqa: F401  (import proves the SSRF guard is available)
-        security = {
-            "anti_ssrf": "ACTIVE",
-            "decompression_bomb_protection": "ACTIVE" if Image.MAX_IMAGE_PIXELS else "INACTIVE",
-            "atomic_storage": "ACTIVE",
-        }
+        security = self._security_probes()
         healthy = all(v == "READY" for v in components.values()) and all(v == "ACTIVE" for v in security.values())
         return {"status": "HEALTHY" if healthy else "DEGRADED", "components": components, "security": security}

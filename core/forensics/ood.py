@@ -36,7 +36,9 @@ class OODGate:
         x = np.asarray(embeddings, dtype=np.float64)
         if x.ndim == 2:
             x = x[np.all(np.isfinite(x), axis=1)]         # rows with NaN or infinity cannot describe a distribution
-        if x.ndim != 2 or x.shape[0] < MIN_FIT_SAMPLES:
+        # With fewer samples than dimensions the covariance is singular and every training point sits unnaturally close to the mean,
+        # so the percentile threshold would be far too tight and ordinary files would read as out of distribution.
+        if x.ndim != 2 or x.shape[0] < max(MIN_FIT_SAMPLES, x.shape[1]):
             self.mean = self.inv_cov = self.threshold = None
             return self
         mean = x.mean(axis=0)
@@ -112,6 +114,7 @@ def fit_gate_from_files(
         return {"fitted": False, "samples": len(vectors), "message": f"Need at least {MIN_FIT_SAMPLES} {noun}; got {len(vectors)}."}
     gate = OODGate().fit(np.vstack(vectors))
     if not gate.calibrated:
-        return {"fitted": False, "samples": len(vectors), "message": "Fit failed."}
+        dim = len(vectors[0])
+        return {"fitted": False, "samples": len(vectors), "message": f"Fit failed: need at least {max(MIN_FIT_SAMPLES, dim)} usable {noun} for {dim} features (and finite values); got {len(vectors)}."}
     gate.save(out_path)
     return {"fitted": True, "samples": len(vectors), "threshold": gate.threshold, "path": str(out_path)}

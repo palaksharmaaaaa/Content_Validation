@@ -33,6 +33,7 @@ from video_detector.config import (
 )
 from video_detector.schemas import VideoFeedbackRecord
 from core.metrics_util import sanitize_metric_value
+from core.hashing import already_recorded
 from core.atomic_io import atomic_read_json, atomic_write_json, serialized_on
 from core.media_library import MediaLibrary, library_for, register_feedback
 
@@ -115,6 +116,13 @@ class VideoSelfImprover:
         raw_metrics = video_metrics or temporal_metrics or metrics or {}
         memory = self.load_memory()
         calib = self.load_calibration()
+        verdict = str(user_label).strip().upper()
+        if verdict not in ("AI", "REAL"):
+            return calib                                # "Not sure" or anything else is not ground truth: nothing is recorded
+        duplicate, digest = already_recorded(memory, video_path, verdict)
+        if duplicate:
+            logger.info("Feedback for this file and label is already recorded; calibration is not stepped again")
+            return calib
         register_feedback(self.library, video_path, user_label)
 
         sanitized_metrics = {}
@@ -132,7 +140,7 @@ class VideoSelfImprover:
             metrics=sanitized_metrics,
             notes=notes,
         )
-        memory.append(record.to_dict())
+        memory.append({**record.to_dict(), "sha256": digest})
 
         try:
             atomic_write_json(self.feedback_file, memory, indent=2)

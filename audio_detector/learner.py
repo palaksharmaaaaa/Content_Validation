@@ -34,6 +34,7 @@ from audio_detector.config import (
 )
 from audio_detector.schemas import AudioFeedbackRecord
 from core.metrics_util import sanitize_metric_value
+from core.hashing import already_recorded
 from core.atomic_io import atomic_read_json, atomic_write_json, serialized_on
 from core.media_library import MediaLibrary, library_for, register_feedback
 
@@ -114,6 +115,13 @@ class AudioSelfImprover:
         acoustic_metrics = acoustic_metrics or metrics or {}
         memory = self.load_memory()
         calib = self.load_calibration()
+        verdict = str(user_label).strip().upper()
+        if verdict not in ("AI", "REAL"):
+            return calib                                # "Not sure" or anything else is not ground truth: nothing is recorded
+        duplicate, digest = already_recorded(memory, audio_path, verdict)
+        if duplicate:
+            logger.info("Feedback for this file and label is already recorded; calibration is not stepped again")
+            return calib
         register_feedback(self.library, audio_path, user_label)
 
         sanitized_metrics = {}
@@ -131,7 +139,7 @@ class AudioSelfImprover:
             features=sanitized_metrics,
             notes=notes if not voice_generator_tag else f"tag: {voice_generator_tag}; {notes}",
         ).to_dict()
-        memory.append(record)
+        memory.append({**record, "sha256": digest})
 
         try:
             atomic_write_json(self.memory_file, memory, indent=2)

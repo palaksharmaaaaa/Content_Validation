@@ -22,14 +22,12 @@ from typing import Any, Dict, List, Optional, Tuple
 import cv2
 from core.imageio import imread
 import numpy as np
-from PIL import Image, ImageChops, ImageEnhance, ImageFile
+from PIL import Image, ImageChops, ImageEnhance
 from PIL.ExifTags import TAGS
 
 from image_detector.config import AMBIGUOUS_SCREEN_RESOLUTIONS, CANONICAL_SCREEN_RESOLUTIONS, KNOWN_AI_SOFTWARE_SIGNATURES
 
 logger = logging.getLogger(__name__)
-
-ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 KNOWN_SCREENSHOT_SOFTWARE_SIGNATURES = [
     "snipping tool",

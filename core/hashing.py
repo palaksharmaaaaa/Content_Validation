@@ -52,6 +52,17 @@ def file_digests(path: str | Path, cached: bool = True) -> Tuple[str, str, int]:
     return value
 
 
+def already_recorded(memory: list, path: str | Path, label: str) -> Tuple[bool, str | None]:
+    """(True, digest) when ``memory`` already holds this file's content with this label. Calibration steps once per distinct file and
+    label, so one reviewer repeating the same submission cannot push the thresholds to their limits. The digest is None if unreadable."""
+    try:
+        digest = file_sha256(path)
+    except OSError:
+        return False, None
+    label = str(label).upper()
+    return any(isinstance(r, dict) and r.get("sha256") == digest and str(r.get("user_label", "")).upper() == label for r in memory), digest
+
+
 def file_sha256(path: str | Path, cached: bool = True) -> str:
     """Hex SHA-256 of a file. With ``cached=True`` the digest is reused while the file's size and mtime are unchanged."""
     return file_digests(path, cached=cached)[0]

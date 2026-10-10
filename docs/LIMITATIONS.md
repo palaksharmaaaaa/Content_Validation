@@ -17,7 +17,12 @@ What this project does not do, or has not been shown to do. Numbers below were m
 - **A cue that could not be measured is not a calm reading.** Fewer than three frame differences, fewer than three frames for flicker, an unreadable EXIF field or an unmeasurable spectrum are reported as "not measured" (`None`) and take no part in the score.
 - **A file name is not evidence.** Nothing in the verdict, the screenshot decision or the attribution reads it.
 - **Blank or degenerate media get "no usable content", not a verdict**: a single flat colour, silence, all-blank video frames. Pictures and videos whose shorter side is under 64 px are rejected with the reason.
-- **Learning is shallow.** Feedback nudges a few scalar weights, and only from values that were actually measured for that file; real model training is a separate, manual step. Near-duplicate files (re-saves, resizes) are not recognised as the same sample.
+- **Learning is shallow.** Feedback nudges a few scalar weights, and only from values that were actually measured for that file; real model training is a separate, manual step. The same file (identical bytes) with the same answer is counted once, so repeating a submission cannot push the thresholds further; near-duplicates (re-saves, resizes) are still treated as different samples, and anyone who can submit feedback can still skew the thresholds with many distinct files.
+- **No confidence band above "leaning".** `core/bands.py` keeps `HIGH_CONFIDENCE_ENABLED = False`: until the scores are calibrated on labelled media, no result is labelled "high confidence", however extreme the number.
+- **Hard JPEG compression hides grain.** A JPEG saved below libjpeg quality 95 (or with unrecognised tables) has lost fine grain whatever made it, so noise, smoothness and spectral-slope readings are not counted towards AI for it; they may still count towards real. Images under 512 px on the short side are not scored on spectral slope. Both rules were set from synthetic re-save experiments, not a labelled corpus.
+- **A block list that cannot be used switches the gate off visibly.** A missing, empty, unreadable or unparseable hash list leaves the gate `INACTIVE` with a note; it never reports `CLEAR`.
+- **The out-of-distribution gate needs at least as many reference files as features** (and at least 20); with fewer it stays uncalibrated rather than flagging ordinary files.
+- **Text taken from a file is escaped before display** (`ui/text.py`) and spreadsheet formulas are neutralised in CSV exports, but this is checked only by unit tests and AppTest, not by a browser-level review.
 - **What is not covered at all** is listed in [CHECKS.md](CHECKS.md#not-covered).
 
 ## Operations

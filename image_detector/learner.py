@@ -26,6 +26,7 @@ from typing import Any, Dict, List, Optional
 from image_detector.config import DATA_DIR, DEFAULT_FEATURE_WEIGHTS
 from image_detector.schemas import ImageFeedbackRecord
 from core.metrics_util import sanitize_metric_value
+from core.hashing import already_recorded
 from core.atomic_io import atomic_read_json, atomic_write_json, serialized_on
 from core.media_library import MediaLibrary, library_for, register_feedback
 
@@ -105,6 +106,13 @@ class ImageSelfImprover:
         forensic_metrics = forensic_metrics or metrics or {}
         memory = self.load_memory()
         calib = self.load_calibration()
+        verdict = str(user_label).strip().upper()
+        if verdict not in ("AI", "REAL"):
+            return calib                                # "Not sure" or anything else is not ground truth: nothing is recorded
+        duplicate, digest = already_recorded(memory, image_path, verdict)
+        if duplicate:
+            logger.info("Feedback for this file and label is already recorded; calibration is not stepped again")
+            return calib
         register_feedback(self.library, image_path, user_label)
 
         sanitized_metrics = {}
@@ -122,7 +130,7 @@ class ImageSelfImprover:
             metrics=sanitized_metrics,
             notes=notes,
         )
-        memory.append(record.to_dict())
+        memory.append({**record.to_dict(), "sha256": digest})
 
         try:
             atomic_write_json(self.feedback_file, memory, indent=2)

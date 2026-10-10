@@ -123,3 +123,23 @@ def test_feature_store_never_invents_an_embedding(tmp_path, monkeypatch):
     Image.fromarray(img).save(p)
     assert store.build_feature_bank([(p, 0)], tmp_path / "bank.npz")["success"] is False
     assert not (tmp_path / "bank.npz").exists()
+
+
+def test_resubmitting_the_same_file_does_not_step_calibration_again(tmp_path):
+    f = tmp_path / "a.jpg"
+    f.write_bytes(b"not really a jpeg, but the same bytes")
+    learner = _image(tmp_path)
+    once = learner.record_feedback(str(f), "AI", {"noise_residual_mean": 1.0})
+    for _ in range(20):
+        again = learner.record_feedback(str(f), "AI", {"noise_residual_mean": 1.0})
+    assert again == once and len(learner.load_memory()) == 1
+    other = tmp_path / "b.jpg"
+    other.write_bytes(b"different bytes")
+    assert learner.record_feedback(str(other), "AI", {"noise_residual_mean": 1.0})["feature_weights"]["noise_residual"] > once["feature_weights"]["noise_residual"]
+
+
+@pytest.mark.parametrize("label", ["Not sure", "", "maybe"])
+def test_an_answer_that_is_not_ai_or_real_records_nothing(tmp_path, label):
+    learner = _image(tmp_path)
+    learner.record_feedback("x.jpg", label, {"noise_residual_mean": 1.0})
+    assert learner.load_memory() == []

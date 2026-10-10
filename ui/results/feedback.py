@@ -63,7 +63,7 @@ def render_feedback(media_path: str | Path, modality: str, forensic_data: Any, u
 def render_export(media_path: str | Path, modality: str, decision: Dict[str, Any], profile_data: Dict[str, Any],
                   forensic_data: Dict[str, Any], unique_key: str) -> None:
     """Draw the button that downloads the full JSON report."""
-    payload = {"media_file": str(media_path), "modality": modality, "decision": decision,
+    payload = {"media_file": Path(str(media_path)).name, "modality": modality, "decision": decision,
                "file_profile": profile_data, "detector_output": forensic_data}
     st.download_button(
         "Download full report (JSON)",

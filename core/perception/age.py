@@ -23,6 +23,7 @@ result says ``status: UNAVAILABLE`` and ``review_required: True``; it never repo
 from __future__ import annotations
 
 import logging
+import math
 import threading
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
@@ -102,6 +103,8 @@ def pair_faces_with_persons(faces: Sequence[Box], persons: Sequence[Box]) -> Lis
 
 def classify_minor(age: Optional[float], minor_group_share: Optional[float], usable: bool) -> str:
     """The recall-first decision rule (see module doc). ``usable`` is False when no crop was big enough to judge."""
+    if age is not None and not math.isfinite(age):
+        age = None                        # a failed estimate is no estimate: it must not count as adult
     if age is not None and age < MINOR_AGE:
         return "LIKELY_MINOR"
     if age is not None and age < POSSIBLE_MINOR_AGE:
