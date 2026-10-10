@@ -80,6 +80,18 @@ def is_ip_restricted(ip_obj: ipaddress.IPv4Address | ipaddress.IPv6Address) -> b
     return False
 
 
+def normalise_host(hostname: str) -> Optional[str]:
+    """The host exactly as the HTTP client will look it up: lower case, no trailing dot, internationalised names as punycode.
+    None when it cannot be encoded."""
+    host = (hostname or "").strip().lower().rstrip(".")
+    if not host:
+        return None
+    try:
+        return host.encode("idna").decode("ascii")
+    except UnicodeError:
+        return None
+
+
 def validate_secure_url(url: str) -> Tuple[bool, str, List[str]]:
     """
     Exhaustively audits URL to eliminate Server-Side Request Forgery (SSRF) and DNS rebinding.
@@ -89,6 +101,10 @@ def validate_secure_url(url: str) -> Tuple[bool, str, List[str]]:
         return False, "URL is empty or invalid.", []
 
     url = url.strip()
+    # Python's URL parser and the HTTP client disagree about a backslash ("http://127.0.0.1:80\\@example.com/" is host
+    # example.com to urlparse but 127.0.0.1 to requests), so anything the two could read differently is refused outright.
+    if "\\" in url or any(ord(c) < 0x21 or ord(c) == 0x7F for c in url):
+        return False, "URL contains a backslash, whitespace or control character.", []
     try:
         parsed = urlparse(url)
     except Exception as exc:
@@ -98,12 +114,16 @@ def validate_secure_url(url: str) -> Tuple[bool, str, List[str]]:
     if parsed.scheme.lower() not in ("http", "https"):
         return False, f"Unsupported protocol '{parsed.scheme}'. Only HTTP and HTTPS are permitted.", []
 
+    if parsed.username is not None or parsed.password is not None:
+        return False, "Credentials in the URL are not permitted.", []
     hostname = parsed.hostname
     if not hostname:
         return False, "Missing hostname in URL.", []
 
-    hostname_clean = hostname.strip().lower()
-    if hostname_clean in ("localhost", "127.0.0.1", "::1", "metadata.google.internal"):
+    hostname_clean = normalise_host(hostname)
+    if hostname_clean is None:
+        return False, "Hostname cannot be encoded as a valid DNS name.", []
+    if hostname_clean in ("localhost", "127.0.0.1", "::1", "metadata.google.internal") or hostname_clean.endswith((".localhost", ".internal")):
         return False, "Access to localhost and internal hostnames is prohibited.", []
 
     try:
@@ -158,53 +178,62 @@ def sanitize_filename(filename: str, max_len: int = 90) -> str:
     return cleaned
 
 
+_pin_state = threading.local()
+_install_lock = threading.Lock()
+_installed = False
+_real_getaddrinfo = socket.getaddrinfo
+
+
+def _pinned_getaddrinfo(host, *args, **kwargs):
+    result = _real_getaddrinfo(host, *args, **kwargs)
+    pins = getattr(_pin_state, "pins", None)
+    if pins and host:
+        allowed = pins.get(str(host).lower().rstrip("."))
+        if allowed is not None:
+            filtered = [r for r in result if r[4][0] in allowed]
+            if not filtered:
+                raise socket.gaierror(
+                    f"DNS rebinding blocked: '{host}' no longer resolves to a previously-validated address (possible rebinding attack)."
+                )
+            return filtered
+    return result
+
+
+def _install_pinning() -> None:
+    """Put the pinning resolver in place once. It only acts on threads that hold a pin, so a slow request on one thread never blocks
+    another thread's request."""
+    global _installed
+    with _install_lock:
+        if not _installed:
+            socket.getaddrinfo = _pinned_getaddrinfo
+            _installed = True
+
+
 class _PinnedResolver:
     """
-    Closes the DNS-rebinding TOCTOU gap: `validate_secure_url` resolves a hostname and
-    checks every IP it currently returns, but the HTTP client re-resolves DNS independently
-    at connect time. A short-TTL record can legitimately answer "public IP" at validation
-    and "internal IP" a few hundred milliseconds later at connection, bypassing the check
-    entirely. This pins `socket.getaddrinfo` to only the already-validated IP set for the
-    exact hostname being fetched, for the lifetime of a single request, so the socket that
-    actually opens is guaranteed to be one of the addresses that was checked.
+    Closes the DNS-rebinding TOCTOU gap: `validate_secure_url` resolves a hostname and checks every IP it currently returns, but the
+    HTTP client re-resolves DNS at connect time, and a short-TTL record can answer "public IP" then "internal IP". While this context
+    is open, lookups of the exact host *on this thread* may only return the already-validated addresses.
 
-    Hostname/Host header/TLS SNI are untouched (the URL still carries the hostname) --
-    only the acceptable resolution set is constrained, so certificate validation behaves
-    normally.
+    The pin is thread-local, so no lock is held for the duration of a request (a stalled download used to freeze every other fetch).
+    Host header and TLS SNI are untouched, so certificate validation behaves normally.
     """
 
-    _lock = threading.Lock()
-
     def __init__(self, hostname: str, allowed_ips: List[str]):
-        self._hostname = hostname.lower()
+        self._hostname = (normalise_host(hostname) or hostname or "").lower().rstrip(".")
         self._allowed_ips = set(allowed_ips)
-        self._orig_getaddrinfo = None
+        self._previous: Optional[Dict[str, set]] = None
 
     def __enter__(self) -> "_PinnedResolver":
-        self._lock.acquire()
-        self._orig_getaddrinfo = socket.getaddrinfo
-        orig = self._orig_getaddrinfo
-        hostname = self._hostname
-        allowed_ips = self._allowed_ips
-
-        def _pinned_getaddrinfo(host, *args, **kwargs):
-            result = orig(host, *args, **kwargs)
-            if host and str(host).lower() == hostname:
-                filtered = [r for r in result if r[4][0] in allowed_ips]
-                if not filtered:
-                    raise socket.gaierror(
-                        f"DNS rebinding blocked: '{host}' no longer resolves to a "
-                        f"previously-validated address (possible rebinding attack)."
-                    )
-                return filtered
-            return result
-
-        socket.getaddrinfo = _pinned_getaddrinfo
+        _install_pinning()
+        self._previous = getattr(_pin_state, "pins", None)
+        pins = dict(self._previous or {})
+        pins[self._hostname] = self._allowed_ips
+        _pin_state.pins = pins
         return self
 
     def __exit__(self, *exc_info) -> None:
-        socket.getaddrinfo = self._orig_getaddrinfo
-        self._lock.release()
+        _pin_state.pins = self._previous
 
 
 class SecureUrlFetcher:
@@ -226,9 +255,11 @@ class SecureUrlFetcher:
         "Accept": "*/*",
     }
 
-    def __init__(self, max_mb: int = 100, timeout_seconds: int = 60):
+    def __init__(self, max_mb: int = 100, timeout_seconds: int = 60, deadline_seconds: Optional[float] = None):
         self.max_bytes = max_mb * 1024 * 1024
         self.timeout = timeout_seconds
+        # requests' timeout is per socket read, so a server that dribbles a byte at a time never trips it; the whole fetch gets a deadline.
+        self.deadline = float(deadline_seconds) if deadline_seconds else float(timeout_seconds) * 2.0
 
     @staticmethod
     def _failure(message: str) -> Dict[str, Any]:
@@ -255,11 +286,14 @@ class SecureUrlFetcher:
                     return None, "Redirect response without a Location header."
                 if hop >= self._MAX_REDIRECTS:
                     return None, f"Too many redirects (more than {self._MAX_REDIRECTS})."
+                close_hop = getattr(resp, "close", None)
+                if callable(close_hop):
+                    close_hop()
                 target = urljoin(url, target)  # Location may be relative
                 valid, msg, ips = validate_secure_url(target)
                 if not valid:
                     return None, f"SSRF blocked malicious redirect: {msg}"
-                url, hostname, resolved_ips = target, (urlparse(target).hostname or "").strip().lower(), ips
+                url, hostname, resolved_ips = target, normalise_host(urlparse(target).hostname or "") or "", ips
         if resp is None:
             return None, "No response received from remote server."
         return resp, None
@@ -278,8 +312,11 @@ class SecureUrlFetcher:
     def _stream_to_file(self, resp: requests.Response, path: Path) -> bool:
         """Streams the body to ``path`` under the hard byte ceiling. Returns False if the ceiling was exceeded."""
         downloaded = 0
+        cancelled = getattr(self, "_cancel", None)
         with open(path, "wb") as f:
             for chunk in resp.iter_content(chunk_size=65536):
+                if cancelled is not None and cancelled.is_set():
+                    raise TimeoutError("download deadline exceeded")
                 if not chunk:
                     continue
                 f.write(chunk)
@@ -294,14 +331,45 @@ class SecureUrlFetcher:
         dest_dir: Optional[Path] = None,
         expected_type: str = "image",
     ) -> Dict[str, Any]:
-        """Safely downloads remote media, verifying payload integrity. A file is created only for an accepted download."""
+        """Safely downloads remote media under a wall-clock deadline. A file is created only for an accepted download.
+
+        The work runs on a helper thread: when the deadline passes the caller gets a failure at once and the helper is told to stop
+        and delete anything it wrote (it may linger until its server stops talking, but it holds no lock and no result is used).
+        """
+        outcome: Dict[str, Any] = {}
+        cancel = threading.Event()
+        worker_fetcher = SecureUrlFetcher.__new__(SecureUrlFetcher)
+        worker_fetcher.__dict__.update(self.__dict__)
+        worker_fetcher._cancel = cancel
+
+        def work() -> None:
+            outcome["result"] = worker_fetcher._fetch_impl(url, dest_dir, expected_type)
+            if cancel.is_set() and outcome["result"].get("success"):
+                Path(outcome["result"]["file_path"]).unlink(missing_ok=True)
+
+        thread = threading.Thread(target=work, name="secure-fetch", daemon=True)
+        thread.start()
+        thread.join(self.deadline)
+        if thread.is_alive():
+            cancel.set()
+            return self._failure(f"Secure media download failed: the server did not finish within {self.deadline:.0f} seconds.")
+        return outcome.get("result") or self._failure("Secure media download failed.")
+
+    def _fetch_impl(
+        self,
+        url: str,
+        dest_dir: Optional[Path] = None,
+        expected_type: str = "image",
+    ) -> Dict[str, Any]:
         url = (url or "").strip()                # the same text is validated, parsed and requested: no pin can be skipped by padding
         valid, msg, resolved_ips = validate_secure_url(url)
         if not valid:
             return self._failure(f"Security validation rejected URL: {msg}")
 
         parsed = urlparse(url)
-        suffix = Path(parsed.path).suffix.lower() or self._DEFAULT_SUFFIXES.get(expected_type, ".bin")
+        suffix = Path(parsed.path).suffix.lower()
+        if not re.fullmatch(r"\.[a-z0-9]{1,6}", suffix):
+            suffix = self._DEFAULT_SUFFIXES.get(expected_type, ".bin")          # only a plain extension is ever put in a file name
         safe_name = sanitize_filename(Path(parsed.path).name)
         if not Path(safe_name).suffix:
             safe_name += suffix                  # a link like https://host/download still yields a typed file name
@@ -309,13 +377,16 @@ class SecureUrlFetcher:
         temp_path: Optional[Path] = None
         resp = None
         with requests.Session() as session:
+            session.trust_env = False                      # proxies and .netrc from the environment would route around the address checks
             session.mount("http://", HTTPAdapter(max_retries=1))
             session.mount("https://", HTTPAdapter(max_retries=1))
             try:
-                resp, error = self._get_following_redirects(session, url, (parsed.hostname or "").strip().lower(), resolved_ips)
+                resp, error = self._get_following_redirects(session, url, normalise_host(parsed.hostname or "") or "", resolved_ips)
                 if error or resp is None:
                     return self._failure(error or "No response received from remote server.")
                 resp.raise_for_status()
+                if 300 <= resp.status_code < 400:
+                    return self._failure(f"Unexpected redirect status {resp.status_code} without a followable target.")
                 rejection = self._response_rejection(resp)
                 if rejection:
                     return self._failure(rejection)
