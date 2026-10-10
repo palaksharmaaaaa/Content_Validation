@@ -151,6 +151,14 @@ DEFAULT_FEATURE_WEIGHTS = {
     "ela_discrepancy": 0.15,
 }
 
+# JPEG written below this libjpeg-equivalent quality (or with unrecognised tables) has lost much of its fine grain whatever made it, so
+# noise, smoothness and spectral-slope statistics are not read as evidence of AI (they may still argue for a real photo).
+LOSSY_JPEG_BELOW_QUALITY = 95
+# The Fourier slope drifts with resolution (a 1/f^2 image fits 1.98 at 1024 px and 1.55 at 128 px), so it is not scored below this size.
+MIN_FFT_SCORING_SIDE = 512
+# 16:9 / 16:10 sizes that ordinary camera and video frames also have: the size alone does not make a screenshot.
+AMBIGUOUS_SCREEN_RESOLUTIONS = {(1920, 1080), (3840, 2160), (1280, 720), (2560, 1440), (1600, 900), (1366, 768), (1920, 1200), (2560, 1600)}
+
 # Sensitivity Mode Prior Log-Odds
 SENSITIVITY_PRIORS = {
     "aggressive": 0.40,  # Prior P(AI) ~ 71%

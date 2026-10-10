@@ -28,6 +28,8 @@ from torchvision import transforms
 
 from core.frame_scorer import score_frame
 from image_detector.config import (
+    LOSSY_JPEG_BELOW_QUALITY,
+    MIN_FFT_SCORING_SIDE,
     AI_NOISE_MU,
     AI_NOISE_SIGMA,
     AI_SMOOTH_MU,
@@ -66,6 +68,7 @@ from image_detector.features import (
 )
 from image_detector.learner import ImageSelfImprover
 from image_detector.models.backbone import build_image_classifier
+from image_detector.jpeg import jpeg_compression
 from image_detector.schemas import ImageForensicResult, ImageTaxonomyState
 from image_detector.scoring import (
     calculate_image_epistemic_uncertainty,
@@ -89,6 +92,15 @@ _PREDICTION_BY_TAXONOMY = {
 }
 
 
+def _is_lossy_jpeg(path: Path) -> bool:
+    """True for a JPEG saved below LOSSY_JPEG_BELOW_QUALITY or with tables that cannot be matched to a libjpeg quality."""
+    try:
+        is_jpeg, quality = jpeg_compression(path)
+    except Exception:
+        return False
+    return bool(is_jpeg and (quality is None or quality < LOSSY_JPEG_BELOW_QUALITY))
+
+
 @dataclass
 class _Signals:
     """Raw outputs of every feature extractor for one image."""
@@ -108,6 +120,7 @@ class _Signals:
     screen_recapture: Dict[str, Any]
     spectral: Dict[str, Any]
     heatmap: Dict[str, Any]
+    lossy_jpeg: bool = False         # a JPEG compressed hard enough that fine grain is gone whatever made it
 
 
 @dataclass
@@ -225,6 +238,7 @@ class ImageAIDetector:
             screen_recapture=detect_screen_rephotography_moire(path, img_bgr, meta),
             spectral=detect_spectral_modality(path, img_bgr),
             heatmap=generate_spatial_manipulation_heatmap(img_bgr),
+            lossy_jpeg=_is_lossy_jpeg(path),
         )
 
     # ------------------------------------------------------------------ evidence terms
@@ -317,6 +331,10 @@ class ImageAIDetector:
         if max(h_px, w_px) <= SMALL_IMAGE_MAX_SIDE and (lr_noise > 0.0 or lr_smooth > 0.0):
             lr_noise, lr_smooth = min(lr_noise, 0.0), min(lr_smooth, 0.0)
             ev.cues.append(f"Image is only {w_px}x{h_px}px: noise and smoothness are not reliable at this size and are not counted towards AI")
+        elif sig.lossy_jpeg and (lr_noise > 0.0 or lr_smooth > 0.0):
+            # JPEG quantisation removes fine grain in proportion to its strength: a photo re-saved at quality 90 reads as "denoised".
+            lr_noise, lr_smooth = min(lr_noise, 0.0), min(lr_smooth, 0.0)
+            ev.cues.append("The JPEG is compressed too hard for fine grain to be read: low noise and high smoothness are expected and are not counted towards AI")
 
         exif_untrusted = bool(has_camera and not scanned and (max(lr_noise, 0.0) + max(lr_smooth, 0.0)) >= EXIF_CONTRADICTION_LR)
         if has_camera and "exif_hardware" in ev.lrs:
@@ -336,7 +354,7 @@ class ImageAIDetector:
             lr_noise = max(0.15, lr_noise)
         ev.lrs["sensor_noise"] = lr_noise * w_noise
         if lr_noise > 0.3:
-            ev.cues.append(f"Very little fine grain (noise residual: {sig.noise_mean:.2f}), as in denoised or generated pictures")
+            ev.cues.append(f"Very little fine grain (noise residual: {effective_noise:.2f}), as in denoised or generated pictures")
         elif lr_noise < -0.3 and not art:
             ev.cues.append(f"Camera-like fine grain present ({sig.noise_mean:.2f})")
 
@@ -358,6 +376,8 @@ class ImageAIDetector:
         if alpha is None:
             return None, False
         alpha = float(alpha)
+        if sig.lossy_jpeg or min(sig.img_bgr.shape[:2]) < MIN_FFT_SCORING_SIDE:
+            return alpha, False                      # reported, not scored: the slope depends on resolution and on JPEG strength
         is_jpeg = str(sig.path).lower().endswith((".jpg", ".jpeg"))
         if has_camera or is_jpeg or sig.scanned.get("is_scanned"):
             z_fft = (alpha - FFT_DECAY_ALPHA_JPEG) / 0.35

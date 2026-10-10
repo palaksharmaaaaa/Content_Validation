@@ -143,7 +143,7 @@ def _face_led_verdict(ai_result: Dict[str, Any], face_p_ai: float) -> None:
     ai_result["taxonomy_reasons"] = [reason] + list(ai_result.get("taxonomy_reasons", []))
     if blended >= 65.0 and ai_result.get("taxonomy_state") in (None, S.AUTHENTIC_REAL_PHOTOGRAPH, S.AUTHENTIC_EDITED, S.AUTHENTIC_RECAPTURED_SCREEN):
         ai_result.update(taxonomy_state=S.FULLY_AI_GENERATED, taxonomy_label=S.get_label(S.FULLY_AI_GENERATED),
-                         taxonomy_description=S.get_description(S.FULLY_AI_GENERATED), label="LIKELY AI-GENERATED")
+                         taxonomy_description=S.get_description(S.FULLY_AI_GENERATED), label="LIKELY AI-GENERATED", prediction="LIKELY AI-GENERATED")
 
 
 class ImageForensicPipeline:

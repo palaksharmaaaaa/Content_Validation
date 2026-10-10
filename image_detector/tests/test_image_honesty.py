@@ -147,3 +147,59 @@ def test_software_needles_match_whole_words_only(tmp_path):
     assert other["model_key"] == "unknown"
     named = eng.attribute_image(tmp_path / "a.png", provenance_data={"metadata": {"software": "xAI Grok Imagine"}})
     assert named["model_key"] == "grok_imagine"
+
+
+def _photo(rng, h=768, w=1024, noise=3.0):
+    import cv2
+
+    base = cv2.GaussianBlur(rng.integers(40, 220, (h // 8, w // 8, 3), dtype=np.uint8), (5, 5), 0)
+    base = cv2.resize(base, (w, h), interpolation=cv2.INTER_CUBIC).astype(float)
+    return np.clip(base + rng.normal(0, noise, (h, w, 3)), 0, 255).astype(np.uint8)
+
+
+def test_a_photo_resaved_as_a_jpeg_is_not_called_ai_because_the_compression_removed_its_grain(tmp_path):
+    import cv2
+
+    from image_detector.detector import ImageAIDetector
+
+    img = _photo(np.random.default_rng(1))
+    det = ImageAIDetector()
+    det.load()
+    verdicts = {}
+    for q in (100, 90, 75, 60):
+        p = tmp_path / f"q{q}.jpg"
+        cv2.imwrite(str(p), img, [cv2.IMWRITE_JPEG_QUALITY, q])
+        verdicts[q] = det.predict(p)
+    for q in (90, 75, 60):
+        assert verdicts[q]["taxonomy_state"] != "FULLY_AI_GENERATED" and verdicts[q]["ai_percentage"] < 55.0, (q, verdicts[q]["ai_percentage"])
+    assert any("compressed too hard" in c for c in verdicts[75]["forensic_cues"])
+
+
+def test_ordinary_1080p_photos_are_not_screenshots_on_their_size_alone():
+    from image_detector.features import detect_screenshot
+
+    rng = np.random.default_rng(3)
+    photo = _photo(rng, 1080, 1920, noise=6.0)
+    assert detect_screenshot("p.jpg", photo, {})["is_screenshot"] is False
+    phone = np.full((2400, 1080, 3), 120, np.uint8)
+    assert detect_screenshot("p.png", phone, {})["is_screenshot"] is True            # an unambiguous phone size still counts
+
+
+def test_a_noisy_sky_and_grass_photo_is_not_digital_art():
+    from image_detector.features import detect_digital_art_and_painting
+
+    rng = np.random.default_rng(4)
+    h, w = 600, 800
+    scene = np.zeros((h, w, 3), np.uint8)
+    scene[: h // 2] = (230, 140, 30)          # saturated sky (BGR)
+    scene[h // 2:] = (40, 170, 40)            # saturated grass
+    photo = np.clip(scene.astype(float) + rng.normal(0, 4, scene.shape), 0, 255).astype(np.uint8)
+    assert detect_digital_art_and_painting("x.png", photo)["is_digital_art"] is False
+
+
+def test_dossier_smoothness_cutoff_sits_between_real_and_generated():
+    from image_detector.explain import build_nine_dimensions_dossier
+
+    real = build_nine_dimensions_dossier({"raw_physical_signals": {"surface_smoothness_index": 1.95}}, {}, {}, {}, {})
+    fake = build_nine_dimensions_dossier({"raw_physical_signals": {"surface_smoothness_index": 0.75}}, {}, {}, {}, {})
+    assert real["dimension_4"]["is_diffusion_smoothed"] is False and fake["dimension_4"]["is_diffusion_smoothed"] is True

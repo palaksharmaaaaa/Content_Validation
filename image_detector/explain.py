@@ -10,6 +10,8 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
+from image_detector.config import AI_SMOOTH_MU, REAL_SMOOTH_MU
+
 logger = logging.getLogger("image_detector.explain")
 
 
@@ -24,6 +26,10 @@ IPTC_SOURCE_TYPE_MAPPING = {
     "FULLY_AI_GENERATED": "digitalsourcetype:trainedAlgorithmicMedia (Synthesized via Foundation Model)",
     "PROCEDURAL_CGI_SYNTHETIC": "digitalsourcetype:softwareImage / virtualRecording (3D CGI / Engine Render)",
 }
+
+
+# Halfway between the project's typical real-photo (1.95) and generated (0.75) smoothness: the cut-off for 'very smooth' (it was 3.2, above every photo).
+_SMOOTH_MIDPOINT = (REAL_SMOOTH_MU + AI_SMOOTH_MU) / 2.0
 
 
 @dataclass
@@ -178,12 +184,12 @@ def _dimension_4(c: _DossierContext) -> Dict[str, Any]:
         "title": "Dimension 4: Bilateral Surface Smoothness & Spatial Texture Variance",
         "description": "Measures micro-texture continuity against bilateral filter smoothing to expose plastic diffusion skin and synthetic surfaces.",
         "smoothness_index": smooth_val,
-        "is_diffusion_smoothed": None if smooth_val is None else smooth_val < 3.2,
+        "is_diffusion_smoothed": None if smooth_val is None else smooth_val < _SMOOTH_MIDPOINT,
         "diagnosis": (
             "Not measured"
             if smooth_val is None
             else f"Surfaces are very smooth (index: {smooth_val:.2f}), as in generated or heavily retouched pictures"
-            if smooth_val < 3.2
+            if smooth_val < _SMOOTH_MIDPOINT
             else f"Surface texture is not unusually smooth (index: {smooth_val:.2f})"
         ),
     }
@@ -467,7 +473,7 @@ def generate_newbie_explanation(
 
     is_synthetic = "AI" in verdict or "SYNTHETIC" in verdict or p_ai >= 55.0
     is_edited = "EDITED" in verdict or "GRAPHIC" in verdict
-    is_screenshot = "SCREENSHOT" in verdict or "SCREEN" in verdict
+    is_screenshot = "SCREENSHOT" in verdict and "RECAPTURE" not in verdict         # a photo of a screen is a photograph
     if verdict == "BLANK_OR_DEGRADED":
         body = "**The Simple Takeaway:** The picture has no variation to analyse (a single flat colour or nearly so), so no verdict is given."
     elif is_screenshot:

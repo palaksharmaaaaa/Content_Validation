@@ -25,7 +25,7 @@ import numpy as np
 from PIL import Image, ImageChops, ImageEnhance, ImageFile
 from PIL.ExifTags import TAGS
 
-from image_detector.config import CANONICAL_SCREEN_RESOLUTIONS, KNOWN_AI_SOFTWARE_SIGNATURES
+from image_detector.config import AMBIGUOUS_SCREEN_RESOLUTIONS, CANONICAL_SCREEN_RESOLUTIONS, KNOWN_AI_SOFTWARE_SIGNATURES
 
 logger = logging.getLogger(__name__)
 
@@ -429,6 +429,7 @@ def _art_confidence_and_details(
 
 _NATURAL_HUE_CONCENTRATION = 0.85   # share of saturated pixels inside the best 70-degree hue window
 _HUE_WINDOW = 35                    # OpenCV hue units (0..179, i.e. 2 degrees each): open water spans blue to teal
+_ART_MAX_FLAT_NOISE = 0.6          # flat-region noise above this is photographic grain, not a rendered fill
 _MIN_NATURAL_FLAT_NOISE = 0.05      # below this a region is a synthetic flat fill, not a photographed surface
 
 
@@ -503,7 +504,8 @@ def detect_digital_art_and_painting(
     natural_single_hue_scene = bool(hue_conc >= _NATURAL_HUE_CONCENTRATION and flat_noise >= _MIN_NATURAL_FLAT_NOISE)
 
     # Digital art, anime, CGI renders and AI paintings are typically mean_sat >= 115 and high_sat_pct >= 45%.
-    is_art = bool((mean_sat >= 115.0 and high_sat_pct >= 45.0 and not natural_single_hue_scene) or is_ink_art)
+    # Saturation alone also describes sky-and-grass photographs; rendered or painted fills additionally carry almost no grain.
+    is_art = bool((mean_sat >= 115.0 and high_sat_pct >= 45.0 and not natural_single_hue_scene and flat_noise < _ART_MAX_FLAT_NOISE) or is_ink_art)
 
     visual_medium = _art_visual_medium(is_art, is_ink_art, flat_noise)
     confidence, details = 0.0, None
@@ -899,7 +901,9 @@ def detect_screenshot(
         # Optical sensor noise present or verified camera hardware -> Authentic photograph, not screenshot
         is_screenshot = False
     else:
-        is_screenshot = bool(confidence >= 0.50 and (matched_device or len(ui_elements) >= 2 or flat_noise < 0.60))
+        size_is_ambiguous = (w, h) in AMBIGUOUS_SCREEN_RESOLUTIONS or (h, w) in AMBIGUOUS_SCREEN_RESOLUTIONS
+        size_alone = bool(matched_device) and not size_is_ambiguous           # 1920x1080 is also an ordinary photo or video frame
+        is_screenshot = bool(confidence >= 0.50 and (size_alone or len(ui_elements) >= 2 or flat_noise < 0.60))
 
     details = None
     if is_screenshot:

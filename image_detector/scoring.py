@@ -380,7 +380,7 @@ def _stage_graphic_edit(c: _TaxonomyInputs, S: Any) -> _Outcome:
         reasons.append(f"The noise evidence does not point to AI (noise residual {c.noise_mean:.2f}, {c.ai_pct:.0f}% AI score)")
         return S.AUTHENTIC_EDITED, reasons
     if c.ai_pct >= 50.0 or c.noise_mean < 1.10:
-        reasons.append(c.cutout.get("details", "Isolated synthetic character / object on solid background canvas"))
+        reasons.append(c.cutout.get("details") or "Isolated synthetic character / object on solid background canvas")
         reasons.append("Absence of camera-like fine grain across subject boundaries")
         return S.FULLY_AI_GENERATED, reasons
     return None
