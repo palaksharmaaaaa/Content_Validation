@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Sequence, Tuple
 
 import streamlit as st
+from ui.text import code_safe, md_escape, neutralise_links
 
 from ui.stages import collect_findings, render_findings_stage
 
@@ -61,12 +62,12 @@ def _render_attribution(decision: Dict[str, Any]) -> None:
         st.write("No generator footprint detected; consistent with a camera capture.")
         return
     c1, c2, c3 = st.columns(3)
-    c1.metric("Best match", attr.get("attributed_model", "Unattributable"))
+    c1.metric("Best match", md_escape(attr.get("attributed_model", "Unattributable")))
     c2.metric("Origin", attr.get("region_of_origin", "Unknown"))
     c3.metric("Match strength", f"{int(float(attr.get('attribution_confidence', attr.get('confidence', 0.0))) * 100)}%")
     candidates = attr.get("top_candidates", [])
     if candidates:
-        st.caption("Other candidates: " + ", ".join(f"{c.get('model')} ({float(c.get('confidence', 0)) * 100:.0f}%)" for c in candidates[:3]))
+        st.caption("Other candidates: " + ", ".join(f"{md_escape(c.get('model'))} ({float(c.get('confidence', 0)) * 100:.0f}%)" for c in candidates[:3]))
     st.caption("Attribution only explains a suspicious result. It is not scored as evidence.")
 
 
@@ -99,4 +100,4 @@ def render_evidence(item: Dict[str, Any], groups: Sequence[CheckGroup]) -> None:
     if trail:
         with st.expander("Full evidence trail"):
             for line in trail:
-                st.markdown(f"- {line}")
+                st.markdown(f"- {neutralise_links(line)}")

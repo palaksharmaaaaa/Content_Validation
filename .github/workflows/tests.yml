@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read          # the job only reads the repository and its LFS objects
+
 jobs:
   pytest:
     runs-on: ubuntu-latest
@@ -22,7 +25,10 @@ jobs:
       - name: Install (CPU-only torch keeps the job small)
         run: |
           python -m pip install --upgrade pip
-          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          # the same torch / torchvision versions as the lock file, from the CPU wheel index
+          TORCH=$(grep -iE '^torch==' requirements.lock.txt | cut -d= -f3)
+          TV=$(grep -iE '^torchvision==' requirements.lock.txt | cut -d= -f3)
+          pip install "torch==${TORCH}" "torchvision==${TV}" --index-url https://download.pytorch.org/whl/cpu
           grep -viE '^(torch|torchvision)==' requirements.lock.txt > ci-requirements.txt
           pip install -r ci-requirements.txt
       - name: Cache pretrained models

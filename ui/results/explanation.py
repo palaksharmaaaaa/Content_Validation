@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 
 import streamlit as st
+from ui.text import code_safe, md_escape, neutralise_links
 
 from image_detector.explain import generate_newbie_explanation
 
@@ -23,6 +24,6 @@ def image_explanation(item: Dict[str, Any], profile_data: Dict[str, Any], ai_res
 def render_explanation(text: Optional[str]) -> None:
     """Draw the plain-English explanation text."""
     if text:
-        st.markdown(text)
+        st.markdown(neutralise_links(text))
     else:
         st.caption("No explanation available for this file.")

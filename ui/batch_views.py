@@ -15,6 +15,8 @@ def _row(result: Dict[str, Any], modality: str) -> Dict[str, Any]:
     name = result.get("filename", "unknown")
     if not result.get("success"):
         return {"File": name, "Verdict": "Could not process", "AI likelihood": None, "Note": result.get("error", "")}
+    if result.get("gate_blocked"):
+        return {"File": name, "Verdict": "Blocked by a safety gate: not analysed", "AI likelihood": None, "Note": "see the file's own page"}
     decision = result.get("decision", {})
     probs = decision.get("authenticity_probabilities", {})
     band = (result.get("confidence_band") or {}).get("label", "")
@@ -27,10 +29,20 @@ def _row(result: Dict[str, Any], modality: str) -> Dict[str, Any]:
     }
 
 
+_FORMULA_START = ("=", "+", "-", "@", "\t", "\r")
+
+
+def csv_safe(table: pd.DataFrame) -> pd.DataFrame:
+    """Copy of ``table`` in which no text cell can run as a spreadsheet formula (file names and notes come from uploaded files)."""
+    def cell(v: Any) -> Any:
+        return "'" + v if isinstance(v, str) and v.startswith(_FORMULA_START) else v
+    return table.map(cell) if hasattr(table, "map") else table.applymap(cell)
+
+
 def render_batch_overview(results: List[Dict[str, Any]], modality: str) -> Optional[Dict[str, Any]]:
     """Counts, a comparison table with downloads, and a picker. Returns the chosen result."""
     ok = [r for r in results if r.get("success")]
-    flagged = [r for r in ok if verdict_style(r.get("decision", {}))[0] in ("error", "warning")]
+    flagged = [r for r in ok if not r.get("gate_blocked") and verdict_style(r.get("decision", {}))[0] in ("error", "warning")]
     a, b, c = st.columns(3)
     a.metric("Files", len(results))
     b.metric("Flagged as AI or edited", len(flagged))
@@ -39,7 +51,7 @@ def render_batch_overview(results: List[Dict[str, Any]], modality: str) -> Optio
     table = pd.DataFrame([_row(r, modality) for r in results])
     render_table(table.fillna("").to_dict("records"), percent_bars=["AI likelihood"])
     left, right, _ = st.columns([1, 1, 2])
-    left.download_button("Download table (CSV)", table.to_csv(index=False).encode("utf-8"),
+    left.download_button("Download table (CSV)", csv_safe(table).to_csv(index=False).encode("utf-8"),
                          file_name=f"{modality}_summary.csv", mime="text/csv", key=f"csv_{modality}")
     right.download_button(
         "Download reports (JSON)",

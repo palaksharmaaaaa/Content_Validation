@@ -18,6 +18,7 @@
 
 # Binary formats — preserve exact bytes, never alter line endings
 *.npz binary
+*.onnx binary
 *.png binary
 *.jpg binary
 *.jpeg binary

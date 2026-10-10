@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, Sequence, Tuple
 
 import streamlit as st
+from ui.text import code_safe, md_escape, neutralise_links
 
 from ui.results.checks import AUDIO_CHECKS, IMAGE_CHECKS, VIDEO_CHECKS, CheckGroup, render_evidence
 from ui.results.content import render_image_type_and_category, render_minor_screening, render_quantified_detections_and_inventory, render_scene_and_content_intelligence
@@ -117,7 +118,7 @@ AUDIO_PAGE = _Page(
 
 def _render_page(item: Dict[str, Any], page: _Page) -> None:
     if not item or not item.get("success"):
-        st.error(f"Could not process `{(item or {}).get('filename', 'this file')}`: {(item or {}).get('error', 'unknown error')}")
+        st.error(f"Could not process `{code_safe((item or {}).get('filename', 'this file'))}`: {md_escape((item or {}).get('error', 'unknown error'))}")
         return
     if render_gate_banner(item.get("gate")) and item.get("gate_blocked"):
         return

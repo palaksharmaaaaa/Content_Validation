@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 
 import streamlit as st
+from ui.text import code_safe, md_escape, neutralise_links
 
 from image_detector.explain import build_nine_dimensions_dossier
 
@@ -44,7 +45,7 @@ def _fmt(value: Any) -> str:
     if isinstance(value, (list, tuple)):
         shown = ", ".join(_fmt(v) for v in value[:8])
         return shown + (f" (+{len(value) - 8} more)" if len(value) > 8 else "") if value else "none"
-    return str(value)
+    return code_safe(value)
 
 
 def _assessment(d: Dict[str, Any]) -> Optional[str]:
@@ -66,7 +67,7 @@ def _assessment(d: Dict[str, Any]) -> Optional[str]:
 def _render_dimension(d: Dict[str, Any], number: int) -> None:
     st.markdown(f"#### {d.get('title') or f'Dimension {number}'}")
     if d.get("description"):
-        st.caption(d["description"])
+        st.caption(neutralise_links(d["description"]))
     for key, value in d.items():
         if key not in _SKIP and key not in _HIDDEN:
             st.write(f"• **{_label(key)}:** `{_fmt(value)}`")
@@ -75,11 +76,11 @@ def _render_dimension(d: Dict[str, Any], number: int) -> None:
         return
     state = _assessment(d)
     if state == "warn":
-        st.warning(f"⚠ {diagnosis}")
+        st.warning(f"⚠ {neutralise_links(diagnosis)}")
     elif state == "ok":
-        st.success(f"✅ {diagnosis}")
+        st.success(f"✅ {neutralise_links(diagnosis)}")
     else:
-        st.info(diagnosis)
+        st.info(neutralise_links(diagnosis))
 
 
 def _tab_label(d: Dict[str, Any], number: int) -> str:

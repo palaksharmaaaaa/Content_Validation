@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Tuple
 
 import streamlit as st
+from ui.text import code_safe, md_escape, neutralise_links
 
 from ui.stages import band_badge, collect_findings, ood_text
 
@@ -89,4 +90,4 @@ def render_summary(item: Dict[str, Any], title: str) -> None:
     if reasons:
         st.markdown("**Why**")
         for reason in reasons:
-            st.markdown(f"- {reason}")
+            st.markdown(f"- {neutralise_links(reason)}")

@@ -2,6 +2,7 @@
 from __future__ import annotations
 from typing import Any, Dict, NamedTuple
 import streamlit as st
+from ui.text import code_safe, md_escape, neutralise_links
 
 
 class _ProfileView(NamedTuple):
@@ -79,7 +80,7 @@ def _render_profile_section_3(v: _ProfileView) -> None:
     date_str = v.exif.get("date_time") or "not recorded"
 
     if has_cam:
-        st.success(f"Camera hardware EXIF tags present (unauthenticated): **{cam_make} {cam_model}** | Lens: `{lens}`")
+        st.success(f"Camera hardware EXIF tags present (unauthenticated): **{md_escape(cam_make)} {md_escape(cam_model)}** | Lens: `{code_safe(lens)}`")
     else:
         st.info("ℹ No camera make or model is recorded in this file. Many platforms strip it, so its absence says nothing either way.")
 
@@ -90,7 +91,7 @@ def _render_profile_section_3(v: _ProfileView) -> None:
     e4.metric("Focal Length", focal)
     e5.metric("Flash / White Balance", f"{flash} • {wb}")
 
-    st.caption(f"• **Capture Date:** `{date_str}` | **Software Tag:** `{software}` | **GPS Coordinates:** `{gps_str}`")
+    st.caption(f"• **Capture Date:** `{code_safe(date_str)}` | **Software Tag:** `{code_safe(software)}` | **GPS Coordinates:** `{code_safe(gps_str)}`")
 
     st.markdown("---")
 
