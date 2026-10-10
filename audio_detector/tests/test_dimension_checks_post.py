@@ -152,7 +152,7 @@ def test_run_pre_terms_clamped_and_post_report(tmp_path, monkeypatch):
     report = a.run_post(content={}, ai_result={"ai_percentage": 99.7, "acoustic_features": {
         "has_vocoder_cutoff": True, "cutoff_freq_hz": 7000.0, "spectral_flatness": 0.001, "digital_silence_ratio": 0.2, "high_freq_ratio": 0.0}},
         attribution={"model_key": "unknown"})
-    assert report["confidence_band"]["band"] == "HIGH_CONFIDENCE_SYNTHETIC"
+    assert report["confidence_band"]["band"] == "LEANING_SYNTHETIC"      # high-confidence bands stay off until calibrated
     assert report["ood"]["status"] == "NOT_CALIBRATED"
     assert report["attribution_open_set"]["unknown_source"] is True
     assert {"file_integrity", "container", "signal", "legal", "lifecycle", "reliability", "context"} <= set(report["findings_by_stage"])

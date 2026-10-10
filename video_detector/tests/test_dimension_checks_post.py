@@ -176,7 +176,7 @@ def test_run_pre_terms_and_post_report(tmp_path, monkeypatch):
     report = b.run_post(content={"faces_count": 0}, ai_result={"ai_percentage": 99.7, "temporal_consistency": {
         "mean_motion_delta": 1.0, "motion_variance": 5.0}, "diffusion_flicker": {"flicker_score": 0.1, "flicker_ratio": 0.1,
                                                                                   "mean_lum_jump": 1.0}}, attribution={"model_key": "unknown"})
-    assert report["confidence_band"]["band"] == "HIGH_CONFIDENCE_SYNTHETIC"
+    assert report["confidence_band"]["band"] == "LEANING_SYNTHETIC"      # high-confidence bands stay off until calibrated
     assert report["ood"]["status"] == "NOT_CALIBRATED"
     assert report["attribution_open_set"]["unknown_source"] is True
     assert {"file_integrity", "container", "signal", "legal", "lifecycle", "reliability", "context"} <= set(report["findings_by_stage"])

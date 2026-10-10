@@ -183,7 +183,7 @@ def test_run_post_builds_full_report(tmp_path, monkeypatch):
         ai_result={"ai_percentage": 99.7, "real_percentage": 0.3, "undecided_percentage": 0.0},
         attribution={"model_key": "unknown"},
     )
-    assert report["confidence_band"]["band"] == "HIGH_CONFIDENCE_SYNTHETIC"
+    assert report["confidence_band"]["band"] == "LEANING_SYNTHETIC"      # high-confidence bands stay off until calibrated
     assert report["ood"]["status"] == "NOT_CALIBRATED"
     assert report["attribution_open_set"]["unknown_source"] is True
     assert "file_integrity" in report["findings_by_stage"]
