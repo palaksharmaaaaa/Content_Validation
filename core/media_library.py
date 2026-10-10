@@ -257,13 +257,16 @@ class MediaLibrary:
 
 def register_feedback(library: Optional[MediaLibrary], path: str | Path, user_label: str) -> bool:
     """
-    Queues a user-verified file for the next retrain, by reference (no copy). 'AI' -> ai_generated,
-    anything else -> real. Returns False (and never raises) if there is no library or the file
+    Queues a user-verified file for the next retrain, by reference (no copy). 'AI' -> ai_generated, 'REAL' -> real;
+    any other answer is not a label and is not queued. Returns False (and never raises) if there is no library or the file
     is no longer readable, so feedback recording itself can't be broken by training bookkeeping.
     """
     if library is None:
         return False
-    label = "ai_generated" if str(user_label).strip().upper() == "AI" else "real"
+    verdict = str(user_label).strip().upper()
+    if verdict not in ("AI", "REAL"):
+        return False                      # "Not sure" and anything else is not ground truth: it is never queued as a label
+    label = "ai_generated" if verdict == "AI" else "real"
     try:
         return library.add(path, label)
     except OSError as exc:

@@ -38,7 +38,8 @@ def shift_probability_by_log_odds(p_ai: float, extra_log_lrs: Optional[Dict[str,
     logit instead and the result is re-clipped to [0.01, 0.99]. Empty/zero input returns the inputs unchanged.
     Returns (p_ai, p_real, explanatory cues).
     """
-    extra_total = sum(float(v) for v in (extra_log_lrs or {}).values() if v)
+    extra_total = sum(float(v) for v in (extra_log_lrs or {}).values() if v and math.isfinite(float(v)))
+    extra_total = max(-1.0, min(1.0, extra_total))          # the dimension checks are capped upstream; this keeps the maths safe regardless
     if not extra_total:
         return p_ai, 1.0 - p_ai, []
     p_clip = float(np.clip(p_ai, 0.01, 0.99))

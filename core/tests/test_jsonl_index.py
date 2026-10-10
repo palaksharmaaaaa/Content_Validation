@@ -38,6 +38,6 @@ def test_hard_block_list_is_parsed_once_and_reread_when_it_changes(tmp_path):
     assert gate.check(bad).status == "HARD_BLOCK_ESCALATE" and gate.check(good).status == "CLEAR"
     first = G._load_blocklist(lst)
     assert G._load_blocklist(lst) is first
-    lst.write_text("")
+    lst.write_text(hashlib.sha256(b"something else").hexdigest() + "\n")
     os.utime(lst, ns=(1, 3_000_000_000))
     assert gate.check(bad).status == "CLEAR"

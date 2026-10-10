@@ -103,6 +103,16 @@ def atomic_write_json(file_path: str | Path, data: Any, indent: int = 2) -> None
             raise
 
 
+def _quarantine(target: Path) -> None:
+    """Move an unparseable file aside so the next write cannot overwrite the only copy of what it held."""
+    aside = target.with_name(f"{target.name}.corrupt-{int(time.time())}")
+    try:
+        os.replace(target, aside)
+        logger.warning("Moved unreadable %s to %s", target.name, aside.name)
+    except OSError as exc:
+        logger.warning("Could not set aside unreadable %s: %s", target, exc)
+
+
 def atomic_read_json(file_path: str | Path, default: Any = None) -> Any:
     """
     Thread-safely reads and parses a JSON file, returning `default` if the file
@@ -118,9 +128,11 @@ def atomic_read_json(file_path: str | Path, default: Any = None) -> Any:
             try:
                 with open(target, "r", encoding="utf-8") as f:
                     return json.load(f)
-            except (PermissionError, json.JSONDecodeError) as exc:
+            except (PermissionError, json.JSONDecodeError, UnicodeDecodeError) as exc:
                 if attempt == 5:
                     logger.warning("Could not read JSON from %s (%s). Returning default.", target, exc)
+                    if not isinstance(exc, PermissionError):
+                        _quarantine(target)
                     return default
                 time.sleep(0.01 * (attempt + 1))
         return default

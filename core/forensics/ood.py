@@ -34,6 +34,8 @@ class OODGate:
     def fit(self, embeddings: np.ndarray) -> "OODGate":
         """Fit on an (n, d) embedding matrix; too few samples leaves the gate uncalibrated."""
         x = np.asarray(embeddings, dtype=np.float64)
+        if x.ndim == 2:
+            x = x[np.all(np.isfinite(x), axis=1)]         # rows with NaN or infinity cannot describe a distribution
         if x.ndim != 2 or x.shape[0] < MIN_FIT_SAMPLES:
             self.mean = self.inv_cov = self.threshold = None
             return self
@@ -52,6 +54,8 @@ class OODGate:
         if not self.calibrated:
             return {"status": "NOT_CALIBRATED", "distance": None, "threshold": None}
         v = np.asarray(vector, dtype=np.float64).reshape(-1)
+        if not np.all(np.isfinite(v)):
+            return {"status": "NOT_CALIBRATED", "distance": None, "threshold": self.threshold, "note": "The feature vector holds a non-finite value."}
         if v.shape[0] != self.mean.shape[0]:
             return {"status": "NOT_CALIBRATED", "distance": None, "threshold": self.threshold}
         diff = v - self.mean

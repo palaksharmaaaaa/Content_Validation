@@ -9,6 +9,8 @@ core.forensics.gates: pre-analysis gates that short-circuit the pipeline.
 """
 from __future__ import annotations
 
+import logging
+import re
 import struct
 import threading
 from dataclasses import dataclass
@@ -18,6 +20,7 @@ from typing import Any, Dict, Optional, Set, Tuple, Union
 from core.forensics.config import hardblock_file
 from core.hashing import file_sha256
 
+logger = logging.getLogger("core.forensics.gates")
 _HEX = set("0123456789abcdef")
 
 
@@ -27,10 +30,14 @@ class GateResult:
     status: str  # INACTIVE | CLEAR | HARD_BLOCK_ESCALATE
     sha256: str
     triggered: bool
+    note: str = ""      # why the gate is inactive, when it is (a list that cannot be read must never look like "clear")
 
     def to_dict(self) -> Dict[str, Any]:
         """Plain-dict form for reports."""
-        return {"status": self.status, "sha256": self.sha256, "triggered": self.triggered}
+        out = {"status": self.status, "sha256": self.sha256, "triggered": self.triggered}
+        if self.note:
+            out["note"] = self.note
+        return out
 
 
 _blocklist_cache: Dict[Tuple[str, int, int], Set[str]] = {}
@@ -49,11 +56,24 @@ def _load_blocklist(path: Path) -> Optional[Set[str]]:
     if cached is not None:
         return cached
     out: Set[str] = set()
-    for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+    try:
+        raw = path.read_bytes()
+    except OSError as exc:                   # a directory, a locked or unreadable file
+        logger.warning("Hard-block list %s cannot be read: %s", path, exc)
+        return None
+    if raw[:2] in (b"\xff\xfe", b"\xfe\xff"):        # UTF-16 (what a PowerShell redirect writes)
+        text = raw.decode("utf-16", errors="ignore")
+    else:
+        text = raw.decode("utf-8-sig", errors="ignore")
+    for line in text.splitlines():
         line = line.strip()
-        token = line.split()[0].lower() if line and not line.startswith("#") else ""
-        if len(token) == 64 and set(token) <= _HEX:
-            out.add(token)
+        if not line or line.startswith("#"):
+            continue
+        for token in re.split(r"[\s,;]+", line):
+            token = token.lower().removeprefix("sha256:").removeprefix("sha-256:")
+            if len(token) == 64 and set(token) <= _HEX:
+                out.add(token)
+                break
     with _blocklist_lock:
         _blocklist_cache.clear()
         _blocklist_cache[key] = out
@@ -72,9 +92,14 @@ class HardBlockGate:
             digest = file_sha256(path) if path.is_file() else ""
         except OSError:
             digest = ""
-        blocklist = _load_blocklist(self._explicit or hardblock_file())
-        if blocklist is None or not digest:
-            return GateResult("INACTIVE", digest, False)
+        list_path = self._explicit or hardblock_file()
+        blocklist = _load_blocklist(list_path)
+        if blocklist is None:
+            return GateResult("INACTIVE", digest, False, "no readable hard-block list is configured")
+        if not blocklist:
+            return GateResult("INACTIVE", digest, False, f"the hard-block list {list_path.name} holds no valid SHA-256 entries, so nothing was checked")
+        if not digest:
+            return GateResult("INACTIVE", digest, False, "the file could not be hashed, so it was not checked against the hard-block list")
         if digest in blocklist:
             return GateResult("HARD_BLOCK_ESCALATE", digest, True)
         return GateResult("CLEAR", digest, False)
@@ -109,6 +134,9 @@ def recognize_scientific_format(file_path: Union[str, Path]) -> Optional[Dict[st
             head = f.read(64 * 1024)
     except OSError:
         return None
+    if head[:3] == b"\xff\xd8\xff" or head[:8] == b"\x89PNG\r\n\x1a\n" or head[:4] in (b"GIF8", b"RIFF", b"OggS", b"fLaC", b"\x1aE\xdf\xa3") \
+            or head[:3] == b"ID3" or head[4:8] == b"ftyp" or head[:2] == b"BM":
+        return None          # an ordinary decodable image/video/audio container: a stray "DICM" or tag inside it must not exempt it from analysis
     if head.startswith(b"SIMPLE  ="):
         return {"type": "FITS", "description": "FITS astronomical image/data file"}
     if len(head) >= 132 and head[128:132] == b"DICM":

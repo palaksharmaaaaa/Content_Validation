@@ -47,7 +47,7 @@ def test_the_pin_applies_to_the_punycode_name_of_an_idn_host(monkeypatch):
 
 def test_a_pin_is_per_thread_and_holds_no_lock(monkeypatch):
     monkeypatch.setattr(security, "_real_getaddrinfo", lambda host, *a, **k: [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("10.0.0.5", 80))])
-    inside, other = threading.Event(), {}
+    other = {}
 
     def second():
         other["answer"] = security._pinned_getaddrinfo("example.org", 80)             # not pinned on this thread: untouched

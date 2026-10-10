@@ -9,6 +9,7 @@ either promoting the candidate or discarding it. core/ stays torch-free.
 from __future__ import annotations
 
 import logging
+import math
 from datetime import date
 from pathlib import Path
 from typing import Callable, List, Tuple
@@ -60,6 +61,11 @@ def run_retrain(
     except Exception:
         candidate.unlink(missing_ok=True)
         raise
+
+    if not (isinstance(val_acc, (int, float)) and math.isfinite(val_acc) and 0.0 <= val_acc <= 1.0):
+        candidate.unlink(missing_ok=True)
+        return RetrainResult(False, 0.0, 0, cumulative,
+                             f"Rolled back: the candidate's validation accuracy ({val_acc!r}) is not a number between 0 and 1. Labels stay queued.", old_acc)
 
     if old_acc is not None and val_acc < old_acc:
         candidate.unlink(missing_ok=True)

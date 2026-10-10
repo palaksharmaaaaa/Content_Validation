@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import functools
 import logging
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -106,6 +107,9 @@ def build_report(findings: List[Finding], gates: Optional[Dict[str, Any]] = None
             f.llr = None
             continue
         if f.llr is None or f.llr == 0.0:
+            continue
+        if not math.isfinite(float(f.llr)):
+            f.llr = None                      # NaN or infinity carries no evidence (it used to clamp to the maximum AI term)
             continue
         cap = abs(float(f.llr_cap))
         f.llr = max(-cap, min(cap, float(f.llr)))
