@@ -14,7 +14,6 @@ REQUIRED_MODELS = [
     "core/models/facial_expression_recognition_mobilefacenet_2022july.onnx",
     "core/models/mivolo_v2/model.safetensors",
     "core/perception/vocab_embeddings.npz",
-    "image_detector/models/face_authenticity.pt",
 ]
 
 
@@ -29,6 +28,20 @@ def _tracked():
 def test_no_media_file_is_tracked():
     media = [f for f in _tracked() if Path(f).suffix.lower() in MEDIA]
     assert not media, f"media files must never be committed: {media}"
+
+
+def test_the_project_ships_blank_nothing_trained_and_nothing_learned():
+    """Only pretrained models are tracked: no checkpoint trained here, no calibration, feedback, library, fitted statistics or log."""
+    learned = []
+    for f in _tracked():
+        if "tests/" in f or f.startswith("tests"):
+            continue                                   # test files may have such words in their names; they hold no learned state
+        name = Path(f).name.lower()
+        if name.endswith((".pt", ".pth", ".ckpt")) or name in {"checkpoint_log.md", "library.json", "ood_stats.npz"}:
+            learned.append(f)
+        elif Path(f).suffix.lower() == ".jsonl" or any(k in name for k in ("_calibration", "_feedback", "_memory", "feedback_media")):
+            learned.append(f)
+    assert not learned, f"these look trained or learned and must not be tracked: {learned}"
 
 
 @pytest.mark.parametrize("path", REQUIRED_MODELS)

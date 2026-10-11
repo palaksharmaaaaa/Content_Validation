@@ -1,8 +1,8 @@
 """
 Repository-wide pytest guard: the test suite must never modify live models or live learner data.
 
-Before the session starts, every trained checkpoint (``*/models/*.pt``) and every live data file
-(``*/data/*.json``, ``*/data/*.npz``) is fingerprinted. If any of them changed, was created, or was deleted by
+Before the session starts, every trained checkpoint (``*/models/*.pt``) and every file under a ``data`` folder
+(calibration, feedback, library, fitted statistics, reviewed-file copies) is fingerprinted. If any of them changed, was created, or was deleted by
 the time the session ends, the whole run fails with the list of offenders. This turns "a test silently overwrote
 the production model" into an immediate, visible failure.
 """
@@ -15,16 +15,11 @@ import pytest
 
 ROOT = Path(__file__).resolve().parent
 PROTECTED_GLOBS = (
-    "image_detector/models/*.pt",
-    "audio_detector/models/*.pt",
-    "video_detector/models/*.pt",
-    "image_detector/data/*.json",
-    "audio_detector/data/*.json",
-    "video_detector/data/*.json",
-    "image_detector/data/*.npz",
-    "audio_detector/data/*.npz",
-    "video_detector/data/*.npz",
-    "core/data/*",
+    "*_detector/models/*.pt",
+    "*_detector/models/*.pth",
+    "*_detector/models/*.md",
+    "*_detector/data/**/*",
+    "core/data/**/*",
 )
 
 _before: dict[str, str] = {}

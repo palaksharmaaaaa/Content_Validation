@@ -23,7 +23,6 @@ from typing import Any
 
 from audio_detector.config import (
     CALIBRATION_FILE,
-    DATA_DIR,
     DEFAULT_WEIGHT_FLATNESS,
     DEFAULT_WEIGHT_HF_RATIO,
     DEFAULT_WEIGHT_SILENCE,
@@ -55,7 +54,6 @@ class AudioSelfImprover:
         calibration_file: Path | None = None,
         library: MediaLibrary | None = None,
     ):
-        DATA_DIR.mkdir(parents=True, exist_ok=True)
         self.memory_file = memory_file or MEMORY_FILE
         self.calibration_file = calibration_file or CALIBRATION_FILE
         # Verified files are queued for retraining by reference (no copy). When a test isolates

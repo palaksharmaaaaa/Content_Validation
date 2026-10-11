@@ -81,6 +81,7 @@ def test_a_correction_against_a_very_confident_detector_waits_for_confirmation(t
             recorded.append((label, notes))
             return {"samples_processed": 1}
 
+    monkeypatch.setattr(fu, "persist_feedback_media", lambda modality, media_path: media_path)      # never write into the project's data folder
     monkeypatch.setattr(fu, "_LEARNERS", {m: (lambda: Fake()) for m in ("image", "video", "audio")})
     shown = []
     monkeypatch.setattr(fu.st, "warning", lambda msg, *a, **k: shown.append(("warning", msg)))

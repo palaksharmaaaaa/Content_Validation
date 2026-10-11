@@ -85,9 +85,6 @@ def _upstream() -> list[ModelInfo]:
     ]
 
 
-_FACE_DATASET = "Kaggle 'Human Faces Dataset' (kaustubhdhote): real photographs and AI-generated faces"
-_FACE_DATASET_LICENCE = ("The Kaggle page could not be read when this was checked and public mirrors disagree (CC BY-SA 4.0 versus 'Other'). "
-                         "Confirm it on Kaggle before any commercial use of the trained weights.")
 
 
 # --------------------------------------------------------------------------------------------- run-time facts
@@ -125,15 +122,16 @@ def _face_model() -> ModelInfo:
     from image_detector.face_authenticity import CHECKPOINT
 
     meta = _read_checkpoint_meta(CHECKPOINT)
-    base = dict(step="Judge whether each face is a real photograph or AI-generated", name="ResNet-18 two-class head",
+    base = dict(step="Judge whether each face is a real photograph or AI-generated (optional)", name="ResNet-18 two-class head",
                 variant="torchvision ResNet-18, 112 px face crops, dropout 0.3 + linear(2)", used_by=("image",),
-                licence="Code: Apache-2.0 (this project). Starting weights: torchvision ResNet-18 trained on ImageNet-1K, whose terms limit use to "
-                        "non-commercial research and education; the face dataset's licence is unconfirmed (" + _FACE_DATASET_LICENCE + ")",
+                licence="Code: Apache-2.0 (this project). Starting weights when you train it: torchvision ResNet-18 trained on ImageNet-1K "
+                        "(ImageNet terms: non-commercial research and education). The licence of the faces you train on also applies.",
                 source="image_detector/face_training.py")
     if meta is None:
-        return ModelInfo(**base, origin=FINE_TUNED, training_data=_FACE_DATASET, training_size="no trained checkpoint on this machine", active=False)
+        return ModelInfo(**base, origin=FINE_TUNED, training_data="none: no trained checkpoint is shipped", training_size="0 files", active=False,
+                         note="Not installed. Until you train one (python -m image_detector.face_training), the Faces check reports that it is not calibrated.")
     text, size, files = _trained_text(meta)
-    dataset = meta.get("dataset") or _FACE_DATASET
+    dataset = meta.get("dataset") or "dataset name not recorded in the checkpoint"
     note = ""
     acc = meta.get("val_clean", {})
     if isinstance(acc, dict) and "accuracy" in acc:

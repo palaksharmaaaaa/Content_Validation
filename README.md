@@ -2,7 +2,7 @@
 
 A local tool that checks whether an **image, video or audio file** is likely AI-generated or edited, and shows the evidence behind every verdict. It also describes what is in an image (people, animals, vehicles, place, light) and screens for minors. Built with Streamlit; it runs on your machine, and your files are never copied into the repository.
 
-> **Read this first.** The AI-versus-real decision is a hand-tuned statistical scoring engine, not a trained classifier, and its overall accuracy has **not been measured**: no labelled dataset ships with the project. Treat a verdict as a lead to investigate, never as proof. [Why, and how to measure it yourself](docs/USER_GUIDE.md#how-much-to-trust-a-verdict). The parts that *were* measured (age screening, false alarms on real photographs) are reported in [Limitations](docs/LIMITATIONS.md).
+> **Read this first.** The AI-versus-real decision is a hand-tuned statistical scoring engine, not a trained classifier, and its overall accuracy has **not been measured**: no labelled dataset ships with the project. Treat a verdict as a lead to investigate, never as proof. [Why, and how to measure it yourself](docs/USER_GUIDE.md#how-much-to-trust-a-verdict). What each part can and cannot do is in [Limitations](docs/LIMITATIONS.md); nothing has been trained or evaluated on data that ships here.
 
 ## Contents
 
@@ -29,7 +29,7 @@ A local tool that checks whether an **image, video or audio file** is likely AI-
 | Audio (`.wav .mp3 .aac .flac .ogg .m4a`, up to 10 MB or 1 hour) | The same, from container checks, spectral signals, a per-window timeline and generator attribution |
 | Several files, or direct links | A comparison table (CSV or JSON download) and a picker; links go through a hardened downloader |
 
-Also: a feedback loop (tell it when it was wrong and, after enough corrections, fine-tune on your own media), a face check (a trained real-versus-generated classifier ships with the repository), and tools to measure accuracy on media you label yourself.
+Also: a feedback loop (tell it when it was wrong and, after enough corrections, fine-tune on your own media), an optional face check (a real-versus-generated classifier that you train yourself; none ships), and tools to measure accuracy on media you label yourself.
 
 What is checked, exactly: [docs/CHECKS.md](docs/CHECKS.md).
 
@@ -56,7 +56,7 @@ Every result page has a **Models, algorithms and training data** panel that list
 | Model | Job | Origin | Training data (as far as the publisher or the checkpoint says) | Licence | Size | Where it lives |
 |---|---|---|---|---|---|---|
 | Statistical signal checks | the AI-versus-real verdict for image, video and audio | hand-written, no learned model | none: thresholds set by hand on synthetic files | project (Apache-2.0) | n/a | `*_detector/` |
-| Face-authenticity ResNet-18 | real versus generated face | torchvision ImageNet-1K weights, fine-tuned here | the Kaggle "Human Faces Dataset" (5,000 real and 4,630 AI-generated images): 9,630 faces, 7,753 to train and 1,877 held out; near-duplicate pictures are kept on the same side of the split | code Apache-2.0; weights inherit ImageNet terms and an unconfirmed dataset licence (see THIRD_PARTY_LICENSES.md) | 43 MB | `image_detector/models/face_authenticity.pt` (Git LFS) |
+| Face-authenticity ResNet-18 (optional, **not shipped**) | real versus generated face | torchvision ImageNet-1K starting weights, fine-tuned by you | none: no checkpoint exists until you train one | code Apache-2.0; ImageNet terms and your dataset's licence apply to the weights you produce | about 43 MB | `image_detector/models/face_authenticity.pt` after `python -m image_detector.face_training` |
 | MiVOLO v2 (network code vendored) | apparent age of every person (face + body) | pretrained, unchanged | "proprietary and open-source datasets", not named | Apache-2.0 | 110 MB | `core/models/mivolo_v2/model.safetensors` (Git LFS), revision `5339352` |
 | YuNet | face detection | pretrained, unchanged | not stated | MIT | 0.2 MB | `core/models/` |
 | OpenCV zoo MobileFaceNet | facial expression | pretrained, unchanged | not stated | Apache-2.0 | 4.6 MB | `core/models/` |
@@ -64,7 +64,7 @@ Every result page has a **Models, algorithms and training data** panel that list
 | RF-DETR Small | people, animals, vehicles, objects | pretrained, unchanged | COCO 2017 | Apache-2.0 | about 130 MB | Hugging Face cache (`python -m services.fetch_models`), revision `3bdc465` |
 | SigLIP 2 Base (zero-shot) | place, species, vehicle type, genre, time of day, age-group opinion | pretrained, unchanged | WebLI | Apache-2.0 | about 1.4 GB on disk, 0.7 GB in memory | Hugging Face cache; its 182 prompt embeddings ship in `core/perception/vocab_embeddings.npz`; revision `75d` |
 
-Total training data used by this project: **image analysis 9,630 faces** (the face model; the count is read from the checkpoint), **video 0 files**, **audio 0 files**; no image, video or audio AI-versus-real classifier is shipped, and the optional ones you train yourself record their own counts in their checkpoints.
+Total training data used by this project: **0 files for image, video and audio analysis.** Nothing was trained here and no checkpoint ships: every learned component is a pretrained model listed above, used unchanged. The optional classifiers you train yourself record their own sample counts in their checkpoints, and the panel reads them from there.
 
 Pinned revisions mean every machine loads identical weights. **Not included:** a trained AI-versus-real backbone for any modality, calibration history, feedback and labelled datasets; until you supply and train on them, the AI-versus-real score comes from the statistical signals alone and every probability is labelled `UNCALIBRATED_HEURISTIC`. An optional image/audio/video backbone checkpoint (`<modality>_detector/models/*.pt`) is picked up automatically if you train one.
 
@@ -72,7 +72,7 @@ Pinned revisions mean every machine loads identical weights. **Not included:** a
 
 **The repository contains no photograph, audio or video.** A test (`tests/test_repo_hygiene.py`) fails if any media file is tracked, if a required model file is missing, or if any tracked file contains a machine-specific path. Training and evaluation data stay where you keep them: the media library stores each file's SHA-256, label and a path hint, never a copy.
 
-Public datasets used only to *evaluate* the age screening (UTKFace, LAGENDA, FairFace) are described in [docs/AGE_DATASETS.md](docs/AGE_DATASETS.md); what to collect to train an AI-versus-real detector is in [docs/DATASET_SPEC.md](docs/DATASET_SPEC.md). The test suite uses only synthetic inputs (tones, noise, drawn shapes, generated clips).
+Public datasets that suit *evaluating* the age screening (UTKFace, LAGENDA, FairFace) are described in [docs/AGE_DATASETS.md](docs/AGE_DATASETS.md); none is included or was used to produce anything stored here. What to collect to train an AI-versus-real detector is in [docs/DATASET_SPEC.md](docs/DATASET_SPEC.md). The test suite uses only synthetic inputs (tones, noise, drawn shapes, generated clips).
 
 ## Install
 
@@ -213,7 +213,7 @@ Sensitivity (Balanced, High, Aggressive) is set in the sidebar. Thresholds live 
 │   ├── perception/            age (MiVOLO), small-face finder, video sampling, object + scene recognition
 │   └── models/                YuNet, SFace, expression ONNX files; mivolo_v2/ weights
 ├── image_detector/            image pipeline (detector, features, scoring, attribution, explain, face authenticity)
-│   ├── dimension_checks/      16 image checks     models/   face_authenticity.pt
+│   ├── dimension_checks/      16 image checks     models/   (empty: checkpoints you train go here)
 ├── audio_detector/            audio pipeline      └── dimension_checks/
 ├── video_detector/            video pipeline      └── dimension_checks/
 ├── services/                  ForensicService, system_status, fetch_models, calibration_cli, age_eval, blind_test
@@ -244,7 +244,7 @@ The project starts with none of the "no" entries; they appear as you use it.
 
 ```bash
 pip install -r requirements.txt   # includes ruff, bandit, hypothesis, evidently, cleanlab, coverage (tests skip what is missing)
-ruff check . && pytest      # lint, then the whole suite (820 tests), about five minutes on a laptop CPU
+ruff check . && pytest      # lint, then the whole suite (821 tests), about five minutes on a laptop CPU
 pytest tests/test_x.py -q   # one file
 ```
 

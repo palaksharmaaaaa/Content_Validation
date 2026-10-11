@@ -39,7 +39,7 @@ upload / link
 ## Verdict semantics
 
 - **Class labels differ by model, on purpose, and each is fixed where the model is defined.** The trained backbones for image, video and audio use class 0 = AI-generated, 1 = real (`class_to_idx` in each checkpoint). The face-authenticity model uses 0 = real, 1 = AI-generated (`label_1` in its checkpoint). Callers never pass an index: every API takes `"AI"` or `"REAL"` (anything else records nothing).
-- **Probabilities are heuristic and uncalibrated.** Every dossier carries `calibration_status: "UNCALIBRATED_HEURISTIC"` and the UI says so. Thresholds were tuned on synthetic fixtures; real error rates are measured only if you run `services.calibration_cli` on your own labelled media.
+- **Probabilities are heuristic and uncalibrated.** Every dossier carries `calibration_status: "UNCALIBRATED_HEURISTIC"` and the UI says so. Thresholds were set by hand and exercised on synthetic fixtures; real error rates are measured only if you run `services.calibration_cli` on your own labelled media.
 - **Evidence is capped.** Only physical, learned and weak-metadata findings may move the probability, each by a small capped amount (see [CHECKS.md](CHECKS.md#what-may-change-the-probability)). Security, legal, context and reliability findings, the bands, the out-of-distribution status and `UNKNOWN_SOURCE` are advisory.
 - **C2PA is presence-only.** Byte markers are looked for; no certificate chain or hash binding is validated, so it is never scored as protective and never called "verified".
 - **Camera EXIF is unauthenticated.** In `ImageAIDetector.predict`, EXIF earns hardware credit, but the credit shrinks and the physical-signal discount is withheld when the raw noise and smoothness evidence leans synthetic by at least `EXIF_CONTRADICTION_LR`.
@@ -65,7 +65,7 @@ The text side of SigLIP 2 is only needed to embed the fixed prompts in `vocab.py
 
 ## Face authenticity
 
-`core/face_detection.py` finds faces. `image_detector/face_authenticity.py` crops each one the same way for training and inference and classifies it with a small ResNet-18 trained by `image_detector/face_training.py`; the checkpoint `image_detector/models/face_authenticity.pt` ships with the repository (Git LFS). `image_detector/dimension_checks/faces.py` turns the result into one `LEARNED_SIGNAL` finding: positive-only, capped at +0.40 log-odds, and it blocks a "likely real" verdict via `core.decision`.
+`core/face_detection.py` finds faces. `image_detector/face_authenticity.py` crops each one the same way for training and inference and classifies it with a small ResNet-18 trained by `image_detector/face_training.py`; the checkpoint `image_detector/models/face_authenticity.pt` does not ship: you create it with `face_training.py`, and without it the check reports `NOT_CALIBRATED`. `image_detector/dimension_checks/faces.py` turns the result into one `LEARNED_SIGNAL` finding: positive-only, capped at +0.40 log-odds, and it blocks a "likely real" verdict via `core.decision`.
 
 ## The three pipelines
 

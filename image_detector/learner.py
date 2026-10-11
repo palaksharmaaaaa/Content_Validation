@@ -53,8 +53,7 @@ class ImageSelfImprover:
         calibration_file: Path | None = None,
         library: MediaLibrary | None = None,
     ):
-        self.memory_dir = memory_dir or DATA_DIR
-        self.memory_dir.mkdir(parents=True, exist_ok=True)
+        self.memory_dir = memory_dir or (Path(memory_file).parent if memory_file else DATA_DIR)
         self.feedback_file = Path(memory_file) if memory_file else (self.memory_dir / "image_feedback.json")
         self.calibration_file = Path(calibration_file) if calibration_file else (self.memory_dir / "image_calibration.json")
         # Verified files are queued for retraining by reference (no copy). When a test isolates

@@ -54,7 +54,7 @@ The screening is deliberately cautious: it sends many adults to review as well (
 - **Camera metadata (EXIF)** can be forged and earns no trust on its own.
 - **Generator attribution** names a generator only when the file itself declares one (a watermark, or a metadata or software tag). Without that it says "Unknown". It is an explanation aid and never changes the verdict.
 - Heavily compressed reposts, screenshots and low-resolution files weaken every signal.
-- Faces are counted with a trained detector (YuNet), but the facial deepfake-risk score is a texture heuristic. The separate face-authenticity check is a trained classifier whose generality is limited (see [Limitations](LIMITATIONS.md)).
+- Faces are counted with a trained detector (YuNet), but the facial deepfake-risk score is a texture heuristic. The separate face-authenticity check is optional: no classifier ships, so it stays inactive until you train one (see [Limitations](LIMITATIONS.md)).
 - A field the tool could not measure is shown as "not measured" or "not recorded", never as a normal reading.
 - A file with nothing to analyse (one flat colour, silence, blank frames) gets "No usable content" instead of a verdict.
 
@@ -116,13 +116,13 @@ Rules the trainer follows:
 
 ## Train the face model
 
-The Evidence tab's **Faces** check uses a classifier that judges whether each face is a real photograph or AI-generated. A trained checkpoint ships with the repository; retrain it only if you have face images of your own to add. Training takes two folders of face images:
+The Evidence tab's **Faces** check uses a classifier that judges whether each face is a real photograph or AI-generated. No trained checkpoint ships, so this check is inactive (it says "not calibrated" and adds nothing) until you train one. Training takes two folders of face images:
 
 ```bash
 python -m image_detector.face_training --real "<dir of real face photos>" --ai "<dir of AI-generated face images>" --epochs 6
 ```
 
-It reads the files in place, holds out about 20 % by file hash, and writes `image_detector/models/face_authenticity.pt` (about 43 MB, stored with Git LFS). Training takes roughly 25 minutes on a laptop CPU. The report prints accuracy on held-out images, on held-out images degraded the same way for both classes, and through the exact inference path.
+It reads the files in place, holds out about 20 % by file hash, and writes `image_detector/models/face_authenticity.pt` (about 43 MB, stored with Git LFS if you commit it). Training is slow on a CPU (tens of minutes for a few thousand faces). The report prints accuracy on held-out images, on held-out images degraded the same way for both classes, and through the exact inference path.
 
 How it affects results: a face scored 90 % or more AI-like adds a small, capped amount of evidence toward AI and stops the verdict from saying "likely real"; when a single face is the main subject (at least 15 % of the picture) and is scored 95 % or more AI-like, the face classifier leads the AI score (65 % face, 35 % pixel detector). A face that looks real adds nothing, because a generator the model has never seen would also look real to it.
 

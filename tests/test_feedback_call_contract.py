@@ -59,6 +59,7 @@ def test_submit_feedback_routes_to_owning_learner(monkeypatch, tmp_path):
     monkeypatch.setattr(fu, "_LEARNERS", {m: (lambda m=m: Fake(m)) for m in ("image", "video", "audio")})
     monkeypatch.setattr(fu.st, "success", lambda *a, **k: None)
     monkeypatch.setattr(fu.st, "info", lambda *a, **k: None)
+    monkeypatch.setattr(fu, "persist_feedback_media", lambda modality, media_path: Path(media_path))
     for media, modality, tag in (("a.JPG", "auto", "image"), ("b.mp4", "auto", "video"), ("c.wav", "auto", "audio"), ("d.bin", "image", "image")):
         (tmp_path / media).write_bytes(b"reviewed file " + media.encode())          # it must exist: a copy is kept for retraining
         fu._submit_feedback(tmp_path / media, modality, {"x": 1}, "AI-generated", "note")
@@ -69,6 +70,21 @@ def test_submit_feedback_routes_to_owning_learner(monkeypatch, tmp_path):
     assert fu._resolve_feedback_modality("Image", "x.mp4") == "image"
     assert all(c[2] == "AI" for c in calls)
     assert "note" in calls[0][3] and "[AI-generated]" in calls[0][3]
+
+
+def test_persist_feedback_media_isolates_storage(monkeypatch, tmp_path):
+    import ui.results.feedback as fu
+    fake_feedback_file = tmp_path / "ui" / "results" / "feedback.py"
+    fake_feedback_file.parent.mkdir(parents=True, exist_ok=True)
+    fake_feedback_file.write_text("# dummy", encoding="utf-8")
+    monkeypatch.setattr(fu, "__file__", str(fake_feedback_file))
+
+    src = tmp_path / "sample.jpg"
+    src.write_bytes(b"test image bytes")
+    dest = fu.persist_feedback_media("image", src)
+    assert dest.is_file()
+    assert dest.read_bytes() == b"test image bytes"
+    assert "image_detector" in str(dest)
 
 
 def test_truth_choices_map_to_binary_labels():

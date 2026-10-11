@@ -11,5 +11,5 @@ and its caveats, is in THIRD_PARTY_LICENSES.md. In particular this repository re
   * MiVOLO v2 weights (core/models/mivolo_v2/model.safetensors), Apache-2.0, from https://huggingface.co/iitolstykh/mivolo_v2.
   * YuNet face detector (core/models/face_detection_yunet_2023mar.onnx), MIT, Copyright (c) 2020 Shiqi Yu.
   * SFace face recogniser and the MobileFaceNet expression model (core/models/*.onnx), Apache-2.0, from the OpenCV Zoo.
-  * A ResNet-18 face-authenticity checkpoint trained by this project (image_detector/models/face_authenticity.pt); see
-    THIRD_PARTY_LICENSES.md for the licences that affect it.
+
+No model was trained by this project and no trained checkpoint is included.

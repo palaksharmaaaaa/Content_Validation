@@ -14,10 +14,10 @@ The screening is recall-first, because missing a child is far worse than flaggin
   * ADULT           everything else
 
 No model reaches 100 % recall on minors, and the margin is a trade-off: a 17-year-old and a 19-year-old look alike, so catching
-nearly every minor means flagging many young adults. Measured on 2,250 UTKFace faces (services/age_eval.py): estimating
-"age < 18" alone finds only 85.6 % of minors (46.7 % of 16-17 year-olds); "age < 27" finds 99.2 % (97.7 % of 16-17) and also
-flags about 87 % of 18-20, 75 % of 21-25, 26 % of 26-35 and 1 % of over-35s. Those are pre-cropped, well-lit faces, so real photographs will
-do worse (see docs/LIMITATIONS.md). Any image with ``review_required`` should go to a person. If the age model cannot load, the
+nearly every minor means flagging many young adults, and a plain "age < 18" rule misses the minors the model takes for adults. The
+margin below is a deliberate recall-first choice; its false-flag rate has not been measured on any data kept in this repository (run
+services/age_eval.py on your own labelled faces). Real photographs, with small and turned faces, will do worse than clean crops (see
+docs/LIMITATIONS.md). Any image with ``review_required`` should go to a person. If the age model cannot load, the
 result says ``status: UNAVAILABLE`` and ``review_required: True``; it never reports "no minors" without having checked.
 """
 from __future__ import annotations
@@ -46,7 +46,7 @@ STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
 MIN_AGE, MAX_AGE, AVG_AGE = 0.0, 122.0, 61.0           # from the model's config.json: age = raw * (max - min) + avg
 
 MINOR_AGE = 18.0
-POSSIBLE_MINOR_AGE = 27.0       # chosen on UTKFace: 99.2 % of under-18s fall below it (25 gave 97.8 %, 30 gave 99.8 %)
+POSSIBLE_MINOR_AGE = 27.0       # a recall-first safety margin above 18, not a fitted value: re-check it with services/age_eval.py on your own data
 MINOR_GROUP_POSSIBLE = 0.50     # age-group opinion: share of baby..teenager above which a person is at least a possible minor
 MIN_FACE_SIDE = 28              # a face crop smaller than this (px) is too coarse to age on its own
 MIN_BODY_SIDE = 48

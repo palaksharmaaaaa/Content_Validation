@@ -75,11 +75,9 @@ def _ingest_uploads(spec: MediaTabSpec, session_dir: Path) -> list[dict[str, Any
     )
     st.caption(spec.hint)
     if uploaded:
-        with st.expander(f"{len(uploaded)} file(s) selected", expanded=len(uploaded) <= 5):
-            st.markdown(chr(10).join(f"- `{up.name}` ({up.size / 1_000_000:.2f} MB)" for up in uploaded))
-            if st.button("Remove all", key=f"{spec.key}_remove_all"):
-                st.session_state[round_key] = st.session_state.get(round_key, 0) + 1
-                st.rerun()
+        if st.button("Remove all", key=f"{spec.key}_remove_all"):
+            st.session_state[round_key] = st.session_state.get(round_key, 0) + 1
+            st.rerun()
     items: list[dict[str, Any]] = []
     kept = _within_limits(spec, [(up.name, up.size) for up in uploaded or []])
     for idx, up in enumerate(uploaded or []):

@@ -27,9 +27,13 @@ _CSS = """
   white-space: normal !important; overflow: visible !important; text-overflow: clip !important; overflow-wrap: anywhere !important;
 }
 button[role="tab"] p, button[role="tab"] { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; }
-[data-testid="stFileUploaderFileName"], [data-testid="stFileUploaderFile"] *, [data-testid="stFileUploaderFileData"] * {
-  white-space: normal !important; overflow: visible !important; text-overflow: clip !important; overflow-wrap: anywhere !important; max-width: none !important;
+[data-testid="stFileChipName"], [data-testid="stFileUploaderFileName"],
+[data-testid="stFileUploaderFile"] *, [data-testid="stFileUploaderFileData"] *,
+[data-testid="stFileChips"] * {
+  white-space: normal !important; overflow: visible !important; text-overflow: clip !important;
+  overflow-wrap: anywhere !important; max-width: none !important; word-break: break-word !important;
 }
+[data-testid="stFileChips"] { width: 100% !important; }
 [data-baseweb="select"] *, [data-baseweb="popover"] li, [data-baseweb="popover"] [role="option"], [data-baseweb="menu"] * {
   white-space: normal !important; overflow: visible !important; text-overflow: clip !important; overflow-wrap: anywhere !important;
 }
@@ -39,9 +43,6 @@ button[role="tab"] p, button[role="tab"] { white-space: normal !important; overf
   overflow-wrap: anywhere; white-space: normal !important; text-overflow: clip !important;
 }
 [data-testid="stCode"] pre, .stCodeBlock pre { white-space: pre-wrap !important; overflow-wrap: anywhere; }
-
-/* Streamlit shortens upload-chip names itself ("IMG-201...0008.jpg"), so the chips are hidden and the full names are listed below */
-[data-testid="stFileChips"], [data-testid="stFileUploaderPagination"] { display: none !important; }
 
 /* Wrapping table */
 .of-table-wrap { overflow-x: auto; margin: .25rem 0 1rem; }
