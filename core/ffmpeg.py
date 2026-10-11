@@ -23,7 +23,23 @@ def find_binary(name: str) -> str | None:
     """Absolute path of ``name`` (ffmpeg, ffprobe) found on PATH, or None. On Windows a bare command is looked up in the current folder
     first, so a stray ``ffmpeg.exe`` next to wherever the app was started would run instead of the real one; an explicit PATH search never
     looks there."""
-    return shutil.which(name, path=os.environ.get("PATH", os.defpath))
+    path = os.environ.get("PATH", os.defpath)
+    cwd = Path.cwd().resolve()
+    for directory in path.split(os.pathsep):
+        dir_clean = directory.strip('"')
+        if not dir_clean or dir_clean == ".":
+            continue
+        try:
+            if Path(dir_clean).resolve() == cwd:
+                continue
+        except Exception:
+            continue
+        candidate = shutil.which(name, path=dir_clean)
+        if candidate:
+            resolved = Path(candidate).resolve()
+            if resolved.parent != cwd:
+                return str(resolved)
+    return None
 
 
 def ffmpeg_input(path: str | Path, max_seconds: float | None = None) -> list[str]:

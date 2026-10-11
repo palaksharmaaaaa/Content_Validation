@@ -42,7 +42,7 @@ def generate_drift_report(
     """Produces an Evidently AI dataset drift report comparing reference vs. current samples.
 
     The only feature compared is file size: it flags a batch of very differently sized files, not a change in what the pictures show.
-    Evidently is an optional dependency (requirements-dev.txt); without it the report is skipped with a message, never an error.
+    Evidently is an optional dependency (requirements.txt); without it the report is skipped with a message, never an error.
 
     Saves an interactive HTML report if report_output_path is provided.
     """

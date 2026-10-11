@@ -57,7 +57,7 @@ class ZeroShotRecognizer:
                     self._model = AutoModel.from_pretrained(self._id, **load_kwargs(self._id, MODEL_REVISION if self._id == MODEL_ID else None)).eval()
                     self._embed_vocabularies_and_free_text_tower()
                 except Exception as exc:
-                    logger.warning("Zero-shot recognizer %s unavailable: %s", self._id, exc)
+                    logger.warning("Zero-shot recognizer %s unavailable: %s: %s", self._id, type(exc).__name__, exc)
                     self._failed = True
                     self._model = self._proc = None            # a half-loaded model must not be reported as available
             return self._model

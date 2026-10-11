@@ -136,19 +136,19 @@ report = ForensicService.get_instance().image_pipeline.analyze("photo.jpg")   # 
 
 ## Performance
 
-Measured on 2026-10-11 on a Windows laptop CPU (no GPU), Python 3.14, Streamlit 1.65, torch 2.14.1 (CPU wheel); your numbers will differ. Rows marked "3.10" were measured earlier on Python 3.10 and have not been re-measured; the 3.14 setup was clearly slower than the 3.10 one on every row that was repeated, and the cause was not investigated (a cold file cache and antivirus scanning of a fresh environment are possible, not shown).
+Measured on 2026-10-12 on a Windows laptop CPU (14 threads, no GPU), Python 3.14, Streamlit 1.65, torch 2.14.1 (CPU wheel), with nothing else running; two runs, the slower value is shown. Your numbers will differ. An earlier run on the same machine while it was busy was about twice as slow on every row, so measure on an idle machine. Rows marked "3.10" were measured on Python 3.10 and not repeated.
 
 | What | Time |
 |---|---|
-| Importing the service layer (torch dominates) | 16-19 s (3.10: about 6 s) |
-| First image analysis in a fresh process, models loading on demand | 14-16 s (3.10: 7.5 s) |
-| Image analysis once warm (1200 x 1600 photograph, full chain) | 2.4-2.8 s (3.10: about 1.2-1.7 s) |
-| Audio analysis (20 s clip) | 0.6 s (3.10: about 0.3 s) |
-| Video analysis (10 s clip, 250 frames, minor screening included) | 8-9 s (3.10: about 4 s) |
-| First image analysis when the background warm-up has finished | 3.10: 1.9 s, not re-measured |
-| Batch of 12 images, 1 worker versus 4 workers | 3.10: 16.6 s versus 8.2 s, not re-measured |
-| Process memory after an image analysis (all image models loaded) | 3.10: 1.2 GB (it was 2.4 GB before SigLIP 2's text tower was released), not re-measured |
-| Memory growth over 40 further analyses | 3.10: none measurable, not re-measured |
+| Importing the service layer (torch dominates) | 7-9 s (3.10: about 6 s) |
+| First image analysis in a fresh process, models loading on demand | 9.6 s (3.10: 7.5 s) |
+| Image analysis once warm (1200 x 1600 photograph, full chain) | 1.5-1.7 s (3.10: about 1.2-1.7 s) |
+| Audio analysis (20 s clip) | 0.45 s (3.10: about 0.3 s) |
+| Video analysis (10 s clip, 250 frames, minor screening included) | 5.5 s (3.10: about 4 s) |
+| First image analysis when the background warm-up has finished | 3.10: 1.9 s, not repeated |
+| Batch of 12 images, 1 worker versus 4 workers | 3.10: 16.6 s versus 8.2 s, not repeated |
+| Process memory after an image analysis (all image models loaded) | 3.10: 1.2 GB (it was 2.4 GB before SigLIP 2's text tower was released), not repeated |
+| Memory growth over 40 further analyses | 3.10: none measurable, not repeated |
 
 Hostile input is cheap: truncated, empty, mislabelled and decompression-bomb files are rejected in well under a second with a clear error.
 
@@ -243,8 +243,8 @@ The project starts with none of the "no" entries; they appear as you use it.
 ## Development
 
 ```bash
-pip install -r requirements-dev.txt   # ruff, bandit, hypothesis, evidently, cleanlab, coverage (tests skip what is missing)
-ruff check . && pytest      # lint, then the whole suite (810 tests), about five minutes on a laptop CPU
+pip install -r requirements.txt   # includes ruff, bandit, hypothesis, evidently, cleanlab, coverage (tests skip what is missing)
+ruff check . && pytest      # lint, then the whole suite (820 tests), about five minutes on a laptop CPU
 pytest tests/test_x.py -q   # one file
 ```
 

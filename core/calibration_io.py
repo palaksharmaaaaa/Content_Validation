@@ -7,6 +7,9 @@ from __future__ import annotations
 
 import logging
 import math
+import os
+import time
+from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -63,3 +66,19 @@ def damped(step: float, corrections_so_far: int) -> float:
     second, hard stop.
     """
     return step / (1.0 + max(0, corrections_so_far) / DAMPING_SAMPLES) ** 2
+
+
+def set_aside_calibration(path: str | Path) -> Path | None:
+    """Undo everything the feedback has taught a detector: the calibration file is renamed to ``<name>.reset-<time>`` (kept, not deleted, so
+    the old values can be restored by hand) and the learner falls back to its defaults. Returns the new name, or None if there was no file.
+    The recorded corrections themselves and the files kept for retraining are untouched."""
+    from core.atomic_io import process_lock
+
+    target = Path(path)
+    with process_lock(target):
+        if not target.is_file():
+            return None
+        aside = target.with_name(f"{target.name}.reset-{int(time.time())}")
+        os.replace(target, aside)
+        logger.info("Calibration %s set aside as %s; defaults apply again", target.name, aside.name)
+        return aside

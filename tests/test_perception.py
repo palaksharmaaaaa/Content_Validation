@@ -93,6 +93,9 @@ def test_shipped_embeddings_equal_a_fresh_computation_and_the_text_tower_is_rele
 
     rec = get_recognizer()
     assert rec._model.text_model is None                      # about 1 GB freed after the vocabularies were embedded
+    import gc
+
+    gc.collect()
     fresh = ZeroShotRecognizer()
     fresh._embed_vocabularies_and_free_text_tower = lambda *a, **k: None
     assert fresh._ensure() is not None
@@ -100,6 +103,8 @@ def test_shipped_embeddings_equal_a_fresh_computation_and_the_text_tower_is_rele
         for name in VOCABS:
             computed = fresh._text_features(name).numpy()
             assert np.allclose(data[name], computed, atol=1e-5), name
+    del fresh
+    gc.collect()
     img = np.full((224, 224, 3), (200, 160, 80), np.uint8)
     assert rec.classify([img], "scene", top_k=1)[0]                 # image classification still works without the tower
 

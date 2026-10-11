@@ -8,6 +8,7 @@ from typing import Any
 import streamlit as st
 
 from audio_detector import AudioSelfImprover
+from core.calibration_io import set_aside_calibration
 from image_detector import ImageSelfImprover
 from image_detector.config import SCORE_UNUSED_WEIGHTS
 from ui.layout import render_table
@@ -91,6 +92,11 @@ def render_learning_dashboard() -> None:
                 offsets = calib.get("sensitivity_offsets", {})
                 if offsets:
                     st.caption("Offsets: " + ", ".join(f"{k.replace('_', ' ')} {v:+.2f}" for k, v in offsets.items()))
+                sure = st.checkbox(f"I want to undo what the {label.lower()} corrections taught", key=f"reset_sure_{mod}")
+                if st.button(f"Reset {label.lower()} thresholds to defaults", key=f"reset_{mod}", disabled=not sure,
+                             help="Sets the learned file aside (it is renamed, not deleted). The corrections and the files kept for retraining stay."):
+                    aside = set_aside_calibration(learners[label].calibration_file)
+                    st.success(f"Back to the defaults. The old values are in {aside.name}." if aside else "Nothing had been learned yet.")
 
     st.markdown("**Recent corrections**")
     rows = _recent_table(records)

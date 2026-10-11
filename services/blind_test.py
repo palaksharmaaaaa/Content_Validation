@@ -103,23 +103,27 @@ def run(folders: list[Path], out: Path, limit: int = 0) -> int:
 def summary(out: Path, truth: dict[str, str], split: str = "all") -> dict[str, Any]:
     """Score recorded verdicts against ``truth`` ({path fragment: 'ai'|'real'}); unlabelled groups get a verdict histogram."""
     rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines() if line.strip()]
-    if split != "all":   # "val": only files the face model never trained on (same content-hash split as face_training)
-        from core.hashing import file_sha256
-        from core.media_library import partition
+    def label_of(r: dict[str, Any]) -> str | None:
+        return next((v for k, v in truth.items() if k.replace("\\", "/") in r["path"].replace("\\", "/")), None)
 
-        def in_split(r: dict[str, Any]) -> bool:
-            if r["verdict"] == "ERROR":
-                return True
-            try:
-                return partition(file_sha256(r["path"], cached=False)) == split
-            except OSError:                        # the file moved or was deleted since the run: it cannot be assigned to a split
-                return False
+    if split != "all":
+        # "val" / "train": the same split the face model was trained with (image_detector.face_training.split): near-identical pictures
+        # stay on one side, decided per class. A recorded file that has since moved cannot be placed and is left out.
+        from image_detector.face_training import split as face_split
 
-        rows = [r for r in rows if in_split(r)]
+        side: dict[str, str] = {}
+        by_class: dict[str | None, list[Path]] = defaultdict(list)
+        for r in rows:
+            if r["verdict"] != "ERROR" and Path(r["path"]).is_file():
+                by_class[label_of(r)].append(Path(r["path"]))
+        for paths in by_class.values():
+            train_files, val_files = face_split(paths)
+            side.update({str(p): "train" for p in train_files})
+            side.update({str(p): "val" for p in val_files})
+        rows = [r for r in rows if r["verdict"] == "ERROR" or side.get(r["path"]) == split]
     groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for r in rows:
-        label = next((v for k, v in truth.items() if k.replace("\\", "/") in r["path"].replace("\\", "/")), None)
-        groups[label or "unlabelled"].append(r)
+        groups[label_of(r) or "unlabelled"].append(r)
     report: dict[str, Any] = {"total": len(rows), "errors": sum(r["verdict"] == "ERROR" for r in rows), "groups": {}}
     for label, rs in groups.items():
         hist = Counter(r["verdict"] for r in rs)

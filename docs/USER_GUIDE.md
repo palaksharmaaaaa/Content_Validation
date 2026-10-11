@@ -74,6 +74,8 @@ Set in the sidebar.
 
 On the **Feedback** tab choose what the file really is (*AI-generated*, *Real / authentic*, *Edited or partly AI*) and save. The app keeps a copy of the file in its own data folder on your machine (`<type>_detector/data/feedback_media/`, named by the file's content; nothing is uploaded anywhere) so a later retrain can still read it, records its hash, and nudges its scoring constants slightly. Saving the same file with the same answer again changes nothing, an answer other than AI or real records nothing, and an answer that contradicts a detector result that was very sure the other way waits until you tick "I am sure". This is not model training; training is a separate step.
 
+To undo what the corrections taught, open the **Learning** tab, expand *Current adjustable weights*, tick the confirmation box and press **Reset ... thresholds to defaults**. The learned file is renamed (it keeps the old values), the recorded corrections and the files kept for retraining stay.
+
 ## See which models were used
 
 Every result has a line under the verdict naming what decided it and how many files this project trained models on, and a **Models, algorithms and training data** panel listing every step with its model, variant, whether it is pretrained, fine-tuned here or hand-written, the data it was trained on, the number of training files, and its licence. The same table is in the downloaded JSON report.

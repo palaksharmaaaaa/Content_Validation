@@ -6,7 +6,7 @@ with arbitrary, corrupted, truncated, or hostile byte sequences.
 """
 import pytest
 
-pytest.importorskip("hypothesis", reason="optional dependency: pip install -r requirements-dev.txt")
+pytest.importorskip("hypothesis", reason="optional dependency: pip install -r requirements.txt")
 
 from hypothesis import given, settings  # noqa: E402
 from hypothesis import strategies as st  # noqa: E402

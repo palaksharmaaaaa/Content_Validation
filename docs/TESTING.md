@@ -47,11 +47,11 @@ Goldens that depend on learned state (calibration files, a checkpoint) are recor
 
 ## Coverage
 
-Measured on 2026-10-11 on Python 3.14 with `coverage run --source=core,image_detector,audio_detector,video_detector,services,ui -m pytest`: **86 % of statements** (14,348 statements, 1,962 not run; line coverage, not branch coverage; test files excluded). The weakest parts are the command-line and training tools, which the suite only touches lightly: `services/blind_test.py`, `services/calibration_cli.py` and `services/build_vocab_embeddings.py` (0 %), `services/age_eval.py` (34 %), the three `fit_ood.py` scripts (37-52 %) and `image_detector/face_training.py` (48 %). Coverage says which lines ran, not that their results are right: the golden tests pin outputs, and real accuracy on real AI media is unmeasured (see [LIMITATIONS.md](LIMITATIONS.md)).
+Measured on 2026-10-12 on Python 3.14 with `coverage run --source=core,image_detector,audio_detector,video_detector,services,ui -m pytest` (820 tests): **87 % of statements** (14,459 statements, 1,834 not run; line coverage, not branch coverage; test files excluded). The command-line tools `services/blind_test.py`, `services/calibration_cli.py` and `services/build_vocab_embeddings.py` are now covered. The weakest parts are the tools that need real data or a long training run: `services/age_eval.py` (34 %), the three `fit_ood.py` scripts (37-52 %), `services/fetch_models.py` (46 %), `image_detector/face.py` (47 %) and `image_detector/face_training.py` (47 %). Coverage says which lines ran, not that their results are right: the golden tests pin outputs, and real accuracy on real AI media is unmeasured (see [LIMITATIONS.md](LIMITATIONS.md)).
 
 ## Lint, fuzzing and optional quality tools
 
-`pip install -r requirements-dev.txt` adds the tools below; CI installs them from `requirements.lock.txt`.
+`pip install -r requirements.txt` includes the tools below; CI installs them from `requirements.lock.txt`.
 
 - **`ruff check .`** (rules in `pyproject.toml`: pycodestyle, pyflakes, isort, pyupgrade for Python 3.14, bugbear, simplify) and **bandit** (security lint, same file) run before the tests in CI and are clean today.
 - **`tests/test_property_fuzzing.py`** feeds random bytes to the C2PA scanner, the RIFF and signature parsers and the image profiler with Hypothesis, and asserts they never crash. It skips when Hypothesis is not installed.

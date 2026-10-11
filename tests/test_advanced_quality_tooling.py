@@ -12,7 +12,7 @@ from ui.results.feedback import evaluate_feedback_label_quality
 
 def test_evidently_drift_report_generation(tmp_path):
     """Verifies Evidently AI data drift report execution and interactive HTML report emission."""
-    pytest.importorskip("evidently", reason="optional dependency: pip install -r requirements-dev.txt")
+    pytest.importorskip("evidently", reason="optional dependency: pip install -r requirements.txt")
     ref_samples, curr_samples = [], []
     for i in range(12):
         ref = tmp_path / f"ref{i}.png"

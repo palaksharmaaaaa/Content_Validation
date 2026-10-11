@@ -60,3 +60,19 @@ def test_many_wrong_submissions_cannot_pin_a_threshold_quickly(tmp_path):
         cal = learner.record_feedback(str(f), "AI", {"noise_residual_mean": 1.0})
     # undamped, 13 corrections already reach the 0.60 clamp; damped, even 300 stay below it (the steps sum to at most 0.02 * 10)
     assert 0.35 < cal["feature_weights"]["noise_residual"] < 0.56
+
+
+def test_a_reset_sets_the_learned_file_aside_and_the_defaults_return(tmp_path):
+    from core.calibration_io import set_aside_calibration
+    from image_detector.learner import ImageSelfImprover
+
+    f = tmp_path / "x.jpg"
+    f.write_bytes(b"abc")
+    learner = ImageSelfImprover(memory_file=tmp_path / "m.json", calibration_file=tmp_path / "c.json")
+    learned = learner.record_feedback(str(f), "AI", {"noise_residual_mean": 1.0})
+    assert learned["feature_weights"]["noise_residual"] > 0.35
+    aside = set_aside_calibration(learner.calibration_file)
+    assert aside is not None and aside.is_file() and not learner.calibration_file.exists()      # kept, not deleted
+    assert learner.load_calibration()["feature_weights"]["noise_residual"] == 0.35
+    assert len(learner.load_memory()) == 1                                                       # the recorded correction stays
+    assert set_aside_calibration(learner.calibration_file) is None                              # nothing left to set aside
