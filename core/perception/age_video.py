@@ -74,7 +74,8 @@ def screen_video_file(path, estimator: AgeEstimator | None = None, max_frames: i
         probes = vs.probe_video(path)
         times, info = vs.choose_times(probes, max_frames)
         frames = vs.iter_frames(path, times)             # one frame at a time: up to 60 full-resolution frames never sit in memory together
-    except Exception as exc:  # noqa: BLE001 - an unreadable video is reported, never passed as clear
+    # an unreadable video is reported, never passed as clear
+    except Exception as exc:  # noqa: BLE001
         return _unreadable(f"the video could not be read ({type(exc).__name__}), so nothing was checked")
 
     flagged: list[dict[str, Any]] = []

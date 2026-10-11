@@ -307,7 +307,7 @@ def total_samples_from_stsc(stsc: np.ndarray, n_chunks: int) -> int | None:
 # ---- bitstream strings -------------------------------------------------------------------------------
 _X264 = re.compile(rb"x264 - core \d+[ -~]{0,400}")
 _X265 = re.compile(rb"x265 \(build \d+\)[ -~]{0,400}")
-_LAVC = re.compile(rb"Lavc[0-9]+\.[0-9]+\.[0-9]+")
+_LAVC = re.compile(rb"Lavc\d+\.\d+\.\d+")
 
 
 def find_encoder_strings(data: bytes) -> dict[str, str]:

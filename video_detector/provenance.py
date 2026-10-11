@@ -63,7 +63,7 @@ class VideoProvenanceValidator:
         if kind in ("mp4", "mov"):
             moov = C.load_moov(path, C.walk_top_level(path))
             if moov:
-                texts += [v for v in moov["text_items"].values()]
+                texts += moov["text_items"].values()
                 texts += [t["handler_name"] for t in moov["tracks"] if t.get("handler_name")]
         elif kind == "mkv":
             info = C.ebml_info(head[:65536])

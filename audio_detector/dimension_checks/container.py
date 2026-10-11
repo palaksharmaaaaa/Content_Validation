@@ -87,7 +87,7 @@ def check_id3_tags(ctx: CheckContext) -> Finding:
 # ---------------------------------------------------------------------------------------------
 @registry.register("audio", "riff_structure")
 def check_riff_structure(ctx: CheckContext) -> Finding:
-    head, _tail, size = C.read_windows(ctx.path)
+    head, _tail, _size = C.read_windows(ctx.path)
     title = "RIFF / WAV structure"
     if C.sniff_audio_format(head) != "wav":
         return _na("riff_structure", title, "Not a RIFF/WAVE file.")

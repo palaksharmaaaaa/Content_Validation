@@ -148,12 +148,12 @@ def prepare(path: Path, box: tuple[int, int, int, int], train: bool, stress: boo
         x, y, w, h = int(x + dx - (s - 1) * w / 2), int(y + dy - (s - 1) * h / 2), max(8, int(w * s)), max(8, int(h * s))
     crop = Image.fromarray(cv2.cvtColor(crop_region(img, (x, y, w, h)), cv2.COLOR_BGR2RGB))
     if train or stress:
-        mid = rng.randint(56, 224)                        # random intermediate resolution: size is not a cue
+        mid = rng.randint(56, 224)                        # random intermediate resolution: size is not a cue NOSONAR: seeded sampling or augmentation, not security
         crop = crop.resize((mid, mid), Image.Resampling.BILINEAR)
-        if rng.random() < 0.8:
-            crop = _jpeg(crop, rng.randint(40, 95))      # JPEG quality is not a cue
+        if rng.random() < 0.8:  # NOSONAR: seeded sampling or augmentation, not security
+            crop = _jpeg(crop, rng.randint(40, 95))      # JPEG quality is not a cue NOSONAR: seeded sampling or augmentation, not security
     arr = np.asarray(crop.resize((INPUT_SIZE, INPUT_SIZE), Image.Resampling.BILINEAR), dtype=np.uint8)
-    if train and rng.random() < 0.5:
+    if train and rng.random() < 0.5:  # NOSONAR: seeded sampling or augmentation, not security
         arr = arr[:, ::-1]
     return arr
 
@@ -272,7 +272,7 @@ def train(real_dirs: list[Path], ai_dirs: list[Path], epochs: int, out: Path, ba
                     "initial_weights": "torchvision ImageNet-1K", "input_size": INPUT_SIZE, "label_1": "ai_generated"}
             partial = out.with_name(out.name + ".partial")
             torch.save({"model_state_dict": model.state_dict(), "meta": meta}, partial)
-            os.replace(partial, out)                      # a crash mid-write never leaves a half-written checkpoint
+            os.replace(partial, out)                      # a crash mid-write never leaves a half-written checkpoint NOSONAR: path given by the person running this command-line tool
     final = evaluate_inference(out, va, boxes)
     logger.info("inference-path validation (detector -> crop -> classifier, no degradation): %s", json.dumps(final))
     return {"best_stress_accuracy": best, "inference_path": final, "history": history}

@@ -123,8 +123,8 @@ class AudioValidator:
             )
 
         # Check clipping & dynamic range
-        peak_amp = float(np.max(np.abs(samples))) if len(samples) > 0 else 0.0
-        rms = float(np.sqrt(np.mean(samples ** 2))) if len(samples) > 0 else 0.0
+        peak_amp = float(np.max(np.abs(samples)))                      # samples is never empty here: an empty decode was rejected above
+        rms = float(np.sqrt(np.mean(samples ** 2)))
         is_clipped = peak_amp > 0.999
         is_silent = rms < 1e-4
 

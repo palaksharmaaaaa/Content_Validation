@@ -44,7 +44,7 @@ class SequentialBatch:
     ) -> dict[str, Any]:
         started = time.perf_counter()
         total = len(file_paths)
-        counts = {k: 0 for k in ("ai_generated", "composite", "real", "undecided", "no_content", "errors")}
+        counts = dict.fromkeys(("ai_generated", "composite", "real", "undecided", "no_content", "errors"), 0)
         results: list[dict[str, Any]] = []
         for index, path in enumerate(file_paths, 1):
             try:

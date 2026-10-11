@@ -287,7 +287,7 @@ def parse_ogg_pages(data: bytes, max_pages: int = 50000) -> list[dict[str, Any]]
 # ---- native-rate loading ----------------------------------------------------------------------
 def container_info(path: Path) -> dict[str, Any] | None:
     """Native {sample_rate, bits, channels, format} from the container header (None if unknown)."""
-    head, _tail, size = read_windows(path, window=WINDOW)
+    head, _tail, _size = read_windows(path, window=WINDOW)
     fmt = sniff_audio_format(head)
     if fmt == "wav":
         riff = walk_riff(path)

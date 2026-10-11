@@ -20,7 +20,7 @@ MARKERS = (
     b"c2cs",
     b"application/c2pa",
     b"image/jumd",
-    b"http://c2pa.org",
+    b"http://c2pa.org",  # NOSONAR: a byte marker searched for inside files, not a URL that is fetched
     b"c2pa.claim",
     b"c2pa.assertion",
 )

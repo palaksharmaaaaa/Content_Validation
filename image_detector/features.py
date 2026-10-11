@@ -324,7 +324,7 @@ def detect_background_cutout(image_path: str | Path, img_bgr: np.ndarray | None 
         return {"is_cutout": False, "cutout_type": None, "is_transparent_png": False, "details": None}
 
     # 2. Check perimeter borders for solid uniform studio fill
-    h, w = img_bgr.shape[:2]
+    _h, w = img_bgr.shape[:2]
     border_thick_w = max(2, int(w * 0.04))
 
     left = img_bgr[:, :border_thick_w]

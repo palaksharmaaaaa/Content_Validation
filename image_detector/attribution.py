@@ -196,13 +196,13 @@ _SOFTWARE_SIGNATURES = (
 )
 
 _REGION_BY_KEY = {
-    **{k: "United States" for k in ("openai_dalle3", "midjourney", "google_imagen", "topaz_photo_ai",
-                                    "leonardo_ai", "grok_imagine", "google_nano_banana", "openai_gpt_image")},
+    **dict.fromkeys(("openai_dalle3", "midjourney", "google_imagen", "topaz_photo_ai",
+                                    "leonardo_ai", "grok_imagine", "google_nano_banana", "openai_gpt_image"), "United States"),
     "canva": "Australia",
     "flux1": "Germany / EU",
     "stable_diffusion": "United Kingdom",
     "remini": "Italy / EU",
-    **{k: "China" for k in ("bytedance_seedream", "tencent_hunyuan_image", "alibaba_qwen_image", "kuaishou_kolors")},
+    **dict.fromkeys(("bytedance_seedream", "tencent_hunyuan_image", "alibaba_qwen_image", "kuaishou_kolors"), "China"),
 }
 
 
@@ -324,7 +324,7 @@ class ImageModelAttributionEngine:
         if tax_state in _AUTHENTIC_PROVIDERS:
             return _authentic_attribution(tax_state)
 
-        scores: dict[str, float] = {k: 0.05 for k in KNOWN_IMAGE_GENERATORS}
+        scores: dict[str, float] = dict.fromkeys(KNOWN_IMAGE_GENERATORS, 0.05)
         cues: list[str] = []
         meta = provenance_data.get("metadata", {}) if provenance_data else {}
 

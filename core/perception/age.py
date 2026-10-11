@@ -255,7 +255,8 @@ class AgeEstimator:
                 return {**base, "status": "UNAVAILABLE", "n_subjects": len(pairs), "review_required": True,
                         "reason": "age model could not be loaded; people were found but not aged"}
             subjects = self._judge(image_bgr, faces, persons, pairs, scan_rotated)
-        except Exception as exc:  # noqa: BLE001 - a screening that cannot finish must say so, never pass the image
+        # a screening that cannot finish must say so, never pass the image
+        except Exception as exc:  # noqa: BLE001
             logger.warning("Age screening failed: %s: %s", type(exc).__name__, exc)
             return {**base, "status": "UNAVAILABLE", "review_required": True,
                     "reason": f"age screening failed ({type(exc).__name__}); the people in this image were not checked"}

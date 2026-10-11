@@ -136,7 +136,7 @@ class AudioModelAttributionEngine:
         if not path.is_file():
             return self._unknown_attribution("File not found")
 
-        scores: dict[str, float] = {k: 0.05 for k in KNOWN_AUDIO_GENERATORS}
+        scores: dict[str, float] = dict.fromkeys(KNOWN_AUDIO_GENERATORS, 0.05)
         cues: list[str] = []
         declared = False                                   # a generator is named only if the file's own metadata says so
 

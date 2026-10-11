@@ -106,18 +106,18 @@ class ImageDetectorTrainer:
         if (root / "train" / "ai_generated").is_dir():
             train_samples = _labelled(root / "train")
             val_samples = _labelled(root / "val") if (root / "val").is_dir() else []
-            rng.shuffle(train_samples)
-            rng.shuffle(val_samples)
+            rng.shuffle(train_samples)  # NOSONAR: seeded sampling or augmentation, not security
+            rng.shuffle(val_samples)  # NOSONAR: seeded sampling or augmentation, not security
         else:
             all_samples = _labelled(root)
             if not all_samples:
                 raise ValueError(f"No valid image files found in {root}/ai_generated or {root}/real")
-            rng.shuffle(all_samples)
+            rng.shuffle(all_samples)  # NOSONAR: seeded sampling or augmentation, not security
             split_idx = int(len(all_samples) * (1.0 - val_split))
             train_samples, val_samples = all_samples[:split_idx], all_samples[split_idx:]
 
-        train_loader = DataLoader(ImageDataset(train_samples, train_tf), batch_size=batch_size, shuffle=True)
-        val_loader = DataLoader(ImageDataset(val_samples, val_tf), batch_size=batch_size, shuffle=False) if val_samples else None
+        train_loader = DataLoader(ImageDataset(train_samples, train_tf), batch_size=batch_size, shuffle=True, num_workers=0)
+        val_loader = DataLoader(ImageDataset(val_samples, val_tf), batch_size=batch_size, shuffle=False, num_workers=0) if val_samples else None
         logger.info("Prepared image dataset: %d train, %d val samples.", len(train_samples), len(val_samples))
         return train_loader, val_loader
 
@@ -197,8 +197,8 @@ class ImageDetectorTrainer:
         train/val partition so validation images can never be trained on.
         """
         train_tf, val_tf = _transforms()
-        train_loader = DataLoader(ImageDataset(train_samples, train_tf), batch_size=batch_size, shuffle=True) if train_samples else None
-        val_loader = DataLoader(ImageDataset(val_samples, val_tf), batch_size=batch_size, shuffle=False) if val_samples else None
+        train_loader = DataLoader(ImageDataset(train_samples, train_tf), batch_size=batch_size, shuffle=True, num_workers=0) if train_samples else None
+        val_loader = DataLoader(ImageDataset(val_samples, val_tf), batch_size=batch_size, shuffle=False, num_workers=0) if val_samples else None
         return train_loader, val_loader
 
     def save_checkpoint(self, path: Path | None = None) -> None:
@@ -271,7 +271,7 @@ class ImageDetectorTrainer:
             raise ValueError(f"Feature bank in {feature_npz_path} must contain at least 2 samples.")
 
         indices = list(range(total_samples))
-        random.Random(42).shuffle(indices)
+        random.Random(42).shuffle(indices)  # NOSONAR: seeded sampling or augmentation, not security
 
         split = int(total_samples * (1.0 - val_split))
         train_indices = indices[:split]
@@ -280,8 +280,8 @@ class ImageDetectorTrainer:
         train_set = torch.utils.data.Subset(dataset, train_indices)
         val_set = torch.utils.data.Subset(dataset, val_indices) if val_indices else None
 
-        train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
-        val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False) if val_set else None
+        train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=0)
+        val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False, num_workers=0) if val_set else None
 
         in_dim = 524 if combine_forensics else 512
         hidden = self.model.fc[1].out_features if hasattr(self.model, "fc") else 64

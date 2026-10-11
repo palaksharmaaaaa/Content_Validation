@@ -53,7 +53,7 @@ def main(argv=None) -> dict:
     report = evaluate(collect_pairs(a.modality, a.split, a.limit, _scorer(a.modality)))
     text = json.dumps(report, indent=2)
     if a.out:
-        a.out.write_text(text, encoding="utf-8")
+        a.out.write_text(text, encoding="utf-8")  # NOSONAR: path given by the person running this command-line tool
     print(text)
     return report
 

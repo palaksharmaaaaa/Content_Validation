@@ -11,9 +11,12 @@ jobs:
   pytest:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}      # optional: the SonarCloud step below runs only when this secret exists
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          fetch-depth: 0     # SonarCloud needs the history to attribute issues
           lfs: false         # fetched below from a cache, so each run does not spend the repository's Git LFS bandwidth quota
       - name: List the Git LFS objects (the cache key)
         run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
@@ -51,7 +54,12 @@ jobs:
           key: hf-rfdetr-3bdc465-siglip2-75de2d5   # change when a pinned revision changes
       - name: Download pretrained models (RF-DETR Small, SigLIP 2 Base)
         run: python -m services.fetch_models
-      - name: Test
+      - name: Test (with coverage)
         env:
           GOLDEN_DUMP: "1"
-        run: python -m pytest -q -s
+        run: |
+          python -m coverage run --source=core,image_detector,audio_detector,video_detector,services,ui -m pytest -q -s
+          python -m coverage xml -o coverage.xml
+      - name: SonarCloud scan
+        if: ${{ env.SONAR_TOKEN != '' }}
+        uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9  # v8.3.0

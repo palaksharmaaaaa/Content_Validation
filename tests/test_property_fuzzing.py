@@ -106,14 +106,14 @@ def test_image_profiler_and_exif_fuzz_never_crashes(blob: bytes, tmp_path_factor
     p = tmp_dir / "test_corrupt.jpg"
     p.write_bytes(blob)
 
-    profiler = ImageProfiler()
     try:
-        prof = profiler.profile_image(p)
-        assert isinstance(prof, dict)
-        if prof.get("valid"):
-            assert "exif_device_details" in prof
-        else:
-            assert "error" in prof
+        prof = ImageProfiler().profile_image(p)
     except Exception as exc:
-        # Expected PIL/decoding errors: file cannot be opened as valid image
+        # Expected PIL/decoding errors: the bytes cannot be opened as an image
         assert "cannot identify image" in str(exc).lower() or "unidentifiedimageerror" in type(exc).__name__.lower()
+        return
+    assert isinstance(prof, dict)
+    if prof.get("valid"):
+        assert "exif_device_details" in prof
+    else:
+        assert "error" in prof

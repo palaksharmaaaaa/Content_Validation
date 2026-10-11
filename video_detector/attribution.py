@@ -203,7 +203,7 @@ class VideoModelAttributionEngine:
         if not path.is_file():
             return self._unknown_attribution("File not found")
 
-        scores: dict[str, float] = {k: 0.05 for k in KNOWN_VIDEO_GENERATORS}
+        scores: dict[str, float] = dict.fromkeys(KNOWN_VIDEO_GENERATORS, 0.05)
         cues: list[str] = []
 
         declared = _score_vendor_signatures(provenance_data, scores, cues) if provenance_data else False

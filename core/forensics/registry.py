@@ -107,7 +107,7 @@ def build_report(findings: list[Finding], gates: dict[str, Any] | None = None) -
         if f.evidence_class not in SCORE_ELIGIBLE_CLASSES:
             f.llr = None
             continue
-        if f.llr is None or f.llr == 0.0:
+        if not f.llr:                                       # None or zero: nothing to add
             continue
         if not math.isfinite(float(f.llr)):
             f.llr = None                      # NaN or infinity carries no evidence (it used to clamp to the maximum AI term)

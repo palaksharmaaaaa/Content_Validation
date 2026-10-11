@@ -50,7 +50,7 @@ def _samples(ctx: CheckContext) -> tuple[np.ndarray, int]:
 def _enf_track(xd: np.ndarray, fs: float, nominal: float):
     win = np.hanning(ENF_WINDOW)
     freqs = np.fft.rfftfreq(ENF_PAD, 1.0 / fs)
-    band = np.where((freqs >= nominal - 1.0) & (freqs <= nominal + 1.0))[0]
+    band = np.nonzero((freqs >= nominal - 1.0) & (freqs <= nominal + 1.0))[0]
     ref_mask = (freqs >= nominal - 8) & (freqs <= nominal + 8) & ~((freqs >= nominal - 1.5) & (freqs <= nominal + 1.5))
     f_est, snr = [], []
     for start in range(0, len(xd) - ENF_WINDOW + 1, ENF_HOP):
@@ -108,7 +108,7 @@ def check_enf_trace(ctx: CheckContext) -> Finding:
         return _f("enf_trace", "O", "signal", title, FindingStatus.INFO, Severity.NONE,
                   f"Energy near {best['nominal']} Hz is too erratic (std {std:.2f} Hz) to be a grid trace.", data)
     jumps = 0
-    idx = np.where(good)[0]
+    idx = np.nonzero(good)[0]
     for a, b in zip(idx, idx[1:]):
         if b == a + 1 and abs(best["f"][b] - best["f"][a]) > ENF_JUMP_HZ:
             jumps += 1

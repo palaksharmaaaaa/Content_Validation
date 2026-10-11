@@ -77,4 +77,4 @@ VOCABS["animal"] = [(a, f"a photo of a {a}.") for a in ANIMALS]
 VOCABS["vehicle"] = [(v, f"a photo of a {v}.") for v in VEHICLES]
 VOCABS["age_group"] = AGE_GROUPS
 
-INDOOR = {label: indoor for label, indoor in SCENES}
+INDOOR = dict(SCENES)

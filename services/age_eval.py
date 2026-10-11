@@ -52,12 +52,12 @@ def run(faces: Path, out: Path, per_minor_band: int, per_adult_band: int, seed: 
         except (ValueError, StopIteration):
             continue
     rng = random.Random(seed)
-    chosen = [f for b, files in by.items() for f in rng.sample(files, min(len(files), per_minor_band if int(b.split("-")[1]) < 18 else per_adult_band))]
-    rng.shuffle(chosen)
+    chosen = [f for b, files in by.items() for f in rng.sample(files, min(len(files), per_minor_band if int(b.split("-")[1]) < 18 else per_adult_band))]  # NOSONAR: seeded sampling or augmentation, not security
+    rng.shuffle(chosen)  # NOSONAR: seeded sampling or augmentation, not security
     est = get_age_estimator()
     out.parent.mkdir(parents=True, exist_ok=True)
     started = time.time()
-    with out.open("w", encoding="utf-8") as fh:
+    with out.open("w", encoding="utf-8") as fh:  # NOSONAR: path given by the person running this command-line tool
         for i, f in enumerate(chosen, 1):
             img = imread(str(f))
             if img is None:
@@ -73,7 +73,7 @@ def run(faces: Path, out: Path, per_minor_band: int, per_adult_band: int, seed: 
 
 def summary(out: Path) -> str:
     """Error per band, then recall on under-18s and false-flag rate on adults for the current rule."""
-    rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines() if line.strip()]
+    rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines() if line.strip()]  # NOSONAR: path given by the person running this command-line tool
     bands: dict[str, list[dict]] = collections.defaultdict(list)
     for r in rows:
         bands[band_of(r["true"])].append(r)
@@ -136,7 +136,7 @@ def wild(images: Path, annotations: Path, out: Path) -> int:
     from core.perception.age import get_age_estimator
 
     gt: dict[str, list[dict]] = collections.defaultdict(list)
-    for r in csv.DictReader(annotations.open(encoding="utf-8")):
+    for r in csv.DictReader(annotations.open(encoding="utf-8")):  # NOSONAR: path given by the person running this command-line tool
         name = Path(r["img_name"]).name
         if r["age"] != "-1" and r["face_x0"] != "-1" and (images / name).exists():
             gt[name].append({"age": int(r["age"]), "face": [int(r[k]) for k in ("face_x0", "face_y0", "face_x1", "face_y1")],
@@ -144,7 +144,7 @@ def wild(images: Path, annotations: Path, out: Path) -> int:
     est = get_age_estimator()
     out.parent.mkdir(parents=True, exist_ok=True)
     started, n = time.time(), 0
-    with out.open("w", encoding="utf-8") as fh:
+    with out.open("w", encoding="utf-8") as fh:  # NOSONAR: path given by the person running this command-line tool
         for i, (name, people) in enumerate(sorted(gt.items()), 1):
             result = est.assess(imread(str(images / name)))
             for p in people:
@@ -161,7 +161,7 @@ def wild(images: Path, annotations: Path, out: Path) -> int:
 
 def wild_summary(out: Path) -> str:
     """Per face size: how many annotated minors were found, and how many were sent to review; plus the adult review rate."""
-    rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines() if line.strip()]
+    rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines() if line.strip()]  # NOSONAR: path given by the person running this command-line tool
     size_bins = [(0, 24), (24, 40), (40, 80), (80, 10000)]
     lines = ["annotated minors (age < 18) by face width    n   found  sent to review  not found  found but called adult"]
     for lo, hi in size_bins:
@@ -196,11 +196,11 @@ def fairface(parquet: Path, out: Path, per_young_group: int = 400, per_other_gro
     rows = []
     for gid, _name in enumerate(FAIRFACE_GROUPS):
         idx = list(df.index[df["age"] == gid])
-        rows += rng.sample(idx, min(len(idx), per_young_group if gid < 3 else per_other_group))
-    rng.shuffle(rows)
+        rows += rng.sample(idx, min(len(idx), per_young_group if gid < 3 else per_other_group))  # NOSONAR: seeded sampling or augmentation, not security
+    rng.shuffle(rows)  # NOSONAR: seeded sampling or augmentation, not security
     est = get_age_estimator()
     out.parent.mkdir(parents=True, exist_ok=True)
-    with out.open("w", encoding="utf-8") as fh:
+    with out.open("w", encoding="utf-8") as fh:  # NOSONAR: path given by the person running this command-line tool
         for i, ix in enumerate(rows, 1):
             img = cv2.imdecode(np.frombuffer(df.loc[ix, "image"]["bytes"], np.uint8), cv2.IMREAD_COLOR)
             if img is None:
@@ -216,7 +216,7 @@ def fairface(parquet: Path, out: Path, per_young_group: int = 400, per_other_gro
 
 def fairface_summary(out: Path) -> str:
     """Share of each FairFace age group sent to review, with the median estimated age."""
-    rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines() if line.strip()]
+    rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines() if line.strip()]  # NOSONAR: path given by the person running this command-line tool
     lines = ["group           n   median est. age   sent to review"]
     for g in FAIRFACE_GROUPS:
         rs = [r for r in rows if r["group"] == g]

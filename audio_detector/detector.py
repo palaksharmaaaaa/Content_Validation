@@ -271,7 +271,7 @@ class AudioAIDetector:
             )
 
         except Exception as exc:
-            logger.error("Audio detection error on %s: %s", file_path, exc)
+            logger.exception("Audio detection error on %s: %s", file_path, exc)
             return self._failure_result(path, "ERROR", f"Audio processing error: {exc}", f"Error: {exc}", str(exc))
 
     predict = analyze_audio_file

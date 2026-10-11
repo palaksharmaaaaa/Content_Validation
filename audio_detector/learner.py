@@ -89,7 +89,7 @@ class AudioSelfImprover:
         try:
             atomic_write_json(self.calibration_file, calib, indent=2)
         except Exception as e:
-            logger.error("Failed to save audio calibration atomically: %s", e)
+            logger.exception("Failed to save audio calibration atomically: %s", e)
 
     def load_memory(self) -> list[dict[str, Any]]:
         """Loads verified audio memory bank."""
@@ -143,7 +143,7 @@ class AudioSelfImprover:
         try:
             atomic_write_json(self.memory_file, memory, indent=2)
         except Exception as e:
-            logger.error("Failed to save audio memory atomically: %s", e)
+            logger.exception("Failed to save audio memory atomically: %s", e)
 
         weights = calib.setdefault("acoustic_weights", {})
         thresh = calib.setdefault("thresholds", {})

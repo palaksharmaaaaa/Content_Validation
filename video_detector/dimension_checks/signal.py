@@ -100,8 +100,8 @@ def check_temporal_cadence(ctx: CheckContext) -> Finding:
     if med < 0.5:
         return _f("temporal_cadence", title, FindingStatus.NOT_APPLICABLE, Severity.NONE,
                   "Too little frame-to-frame change to analyze cadence (static content).")
-    repeats = np.where(d < REPEAT_FRACTION * med)[0]
-    cuts = np.where((d > CUT_FACTOR * med) & (d > CUT_MIN_DIFF))[0]
+    repeats = np.nonzero(d < REPEAT_FRACTION * med)[0]
+    cuts = np.nonzero((d > CUT_FACTOR * med) & (d > CUT_MIN_DIFF))[0]
     frac = len(repeats) / len(d)
     data = {"repeat_frames": int(len(repeats)), "repeat_fraction": round(frac, 3), "hard_cuts": int(len(cuts)),
             "pattern": "NONE", "period": None}

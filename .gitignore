@@ -106,6 +106,9 @@ data/
 *.tmp
 tmp*
 scratch/
+.scannerwork/
+.coverage
+coverage.xml
 
 # Local diagnostic & scratch evaluation scripts with personal paths
 scripts/
@@ -125,3 +128,7 @@ reports/
 # Streamlit secrets (none are needed by this app)
 .streamlit/secrets.toml
 
+
+# Coverage output
+coverage.xml
+.coverage

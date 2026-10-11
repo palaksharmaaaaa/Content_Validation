@@ -261,9 +261,11 @@ def _stage_screenshot(c: _TaxonomyInputs, S: Any) -> _Outcome:
         reasons.append(details)
         return S.AI_ENHANCED_SCREENSHOT, reasons
 
-    reasons.append(f"Authentic digital screen capture from {device} ({orient} orientation, {screen_res})")
-    reasons.append(details)
-    reasons.append("No sign of AI generation or editing was found in the captured content (an estimate, not proof)")
+    reasons.extend([
+        f"Authentic digital screen capture from {device} ({orient} orientation, {screen_res})",
+        details,
+        "No sign of AI generation or editing was found in the captured content (an estimate, not proof)",
+    ])
     return S.AUTHENTIC_SCREENSHOT, reasons
 
 

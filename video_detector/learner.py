@@ -91,7 +91,7 @@ class VideoSelfImprover:
         try:
             atomic_write_json(self.calibration_file, calib, indent=2)
         except Exception as e:
-            logger.error("Failed to save video calibration atomically: %s", e)
+            logger.exception("Failed to save video calibration atomically: %s", e)
 
     def load_memory(self) -> list[dict[str, Any]]:
         """Loads verified video memory bank."""
@@ -145,7 +145,7 @@ class VideoSelfImprover:
         try:
             atomic_write_json(self.feedback_file, memory, indent=2)
         except Exception as e:
-            logger.error("Failed to save video memory atomically: %s", e)
+            logger.exception("Failed to save video memory atomically: %s", e)
 
         m_thresh = calib.setdefault("motion_thresholds", {})
         calib.setdefault("temporal_weights", {})

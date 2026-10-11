@@ -173,7 +173,7 @@ def atomic_write_json(file_path: str | Path, data: Any, indent: int = 2) -> None
                 tmp_path.unlink(missing_ok=True)
             except OSError as cleanup_exc:
                 logger.debug("atomic_write_json: could not remove %s: %s", tmp_path, cleanup_exc)
-            logger.error("Failed atomic JSON write to %s: %s", target, exc)
+            logger.exception("Failed atomic JSON write to %s: %s", target, exc)
             raise
 
 

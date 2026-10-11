@@ -236,7 +236,7 @@ class MediaLibrary:
         new_train = self.samples(split="train", status="new")
         seen_train = self.samples(split="train", status="seen")
         k = min(len(seen_train), max(min_replay, replay_ratio * len(new_train)))
-        replay = random.Random(seed).sample(seen_train, k) if k else []
+        replay = random.Random(seed).sample(seen_train, k) if k else []  # NOSONAR: seeded sampling or augmentation, not security
         return new_train + replay, self.samples(split="val")
 
     def counts(self) -> dict[str, int]:

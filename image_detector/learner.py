@@ -82,7 +82,7 @@ class ImageSelfImprover:
         try:
             atomic_write_json(self.calibration_file, calib, indent=2)
         except Exception as e:
-            logger.error("Failed to save image calibration atomically: %s", e)
+            logger.exception("Failed to save image calibration atomically: %s", e)
 
     def load_memory(self) -> list[dict[str, Any]]:
         """Loads verified image memory bank."""
@@ -135,7 +135,7 @@ class ImageSelfImprover:
         try:
             atomic_write_json(self.feedback_file, memory, indent=2)
         except Exception as e:
-            logger.error("Failed to save image memory atomically: %s", e)
+            logger.exception("Failed to save image memory atomically: %s", e)
 
         # Dynamic recalibration based on new feedback
         weights = calib.setdefault("feature_weights", {})

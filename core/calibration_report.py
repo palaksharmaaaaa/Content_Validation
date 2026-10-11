@@ -56,7 +56,7 @@ def evaluate(pairs: Iterable[tuple[str, float]], threshold: float = 50.0, bins: 
     ece = 0.0
     for b in range(bins):
         lo, hi = b / bins, (b + 1) / bins
-        members = [(y, p) for y, p in data if lo <= p < hi or (b == bins - 1 and p == 1.0)]
+        members = [(y, p) for y, p in data if lo <= p < hi or (b == bins - 1 and p >= 1.0)]
         if not members:
             continue
         conf = sum(p for _, p in members) / len(members)

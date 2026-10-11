@@ -90,7 +90,7 @@ class VideoDetectorTrainer:
         """Consecutive frame pairs from a folder with ``ai_generated/`` and ``real/`` (at most ``max_videos_per_class`` of each), shuffled with a fixed seed."""
         samples = _labelled(Path(dataset_dir), max_videos_per_class)
         pairs = self.pairs_from_samples(samples)
-        random.Random(42).shuffle(pairs)
+        random.Random(42).shuffle(pairs)  # NOSONAR: seeded sampling or augmentation, not security
         logger.info("Extracted %d frame transition pairs from %d videos.", len(pairs), len(samples))
         return pairs
 
@@ -117,11 +117,11 @@ class VideoDetectorTrainer:
         ])
 
         dataset = FrameTransitionDataset(pairs, transform=transform)
-        loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+        loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0)
 
         val_loader = None
         if val_pairs:
-            val_loader = DataLoader(FrameTransitionDataset(val_pairs, transform=transform), batch_size=batch_size, shuffle=False)
+            val_loader = DataLoader(FrameTransitionDataset(val_pairs, transform=transform), batch_size=batch_size, shuffle=False, num_workers=0)
 
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.AdamW(self.model.parameters(), lr=lr)

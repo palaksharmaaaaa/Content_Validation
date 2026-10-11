@@ -217,7 +217,7 @@ class ForensicService:
         try:
             return run()
         except Exception as exc:
-            logger.error("%s analysis failed for %s: %s", kind, path, exc, exc_info=True)
+            logger.exception("%s analysis failed for %s: %s", kind, path, exc)
             return {
                 "content_valid": False,
                 "filename": Path(path).name,
