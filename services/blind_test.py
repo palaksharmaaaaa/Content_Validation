@@ -77,13 +77,15 @@ def run(folders: list[Path], out: Path, limit: int = 0) -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     done = set()
     if out.is_file():
-        done = {json.loads(line)["path"] for line in out.read_text(encoding="utf-8").splitlines() if line.strip()}
+        # path given by the person running this command-line tool
+        done = {json.loads(line)["path"] for line in out.read_text(encoding="utf-8").splitlines() if line.strip()}  # NOSONAR
     svc = ForensicService.get_instance()
     todo = [p for p in iter_images(folders) if str(p) not in done]
     if limit:
         todo = todo[:limit]
     started, count = time.time(), 0
-    with out.open("a", encoding="utf-8") as fh:
+    # path given by the person running this command-line tool
+    with out.open("a", encoding="utf-8") as fh:  # NOSONAR
         for path in todo:
             t0 = time.time()
             try:
@@ -102,7 +104,8 @@ def run(folders: list[Path], out: Path, limit: int = 0) -> int:
 
 def summary(out: Path, truth: dict[str, str], split: str = "all") -> dict[str, Any]:
     """Score recorded verdicts against ``truth`` ({path fragment: 'ai'|'real'}); unlabelled groups get a verdict histogram."""
-    rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines() if line.strip()]
+    # path given by the person running this command-line tool
+    rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines() if line.strip()]  # NOSONAR
     def label_of(r: dict[str, Any]) -> str | None:
         return next((v for k, v in truth.items() if k.replace("\\", "/") in r["path"].replace("\\", "/")), None)
 
@@ -114,7 +117,8 @@ def summary(out: Path, truth: dict[str, str], split: str = "all") -> dict[str, A
         side: dict[str, str] = {}
         by_class: dict[str | None, list[Path]] = defaultdict(list)
         for r in rows:
-            if r["verdict"] != "ERROR" and Path(r["path"]).is_file():
+            # path given by the person running this command-line tool
+            if r["verdict"] != "ERROR" and Path(r["path"]).is_file():  # NOSONAR
                 by_class[label_of(r)].append(Path(r["path"]))
         for paths in by_class.values():
             train_files, val_files = face_split(paths)

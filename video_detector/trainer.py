@@ -90,7 +90,7 @@ class VideoDetectorTrainer:
         """Consecutive frame pairs from a folder with ``ai_generated/`` and ``real/`` (at most ``max_videos_per_class`` of each), shuffled with a fixed seed."""
         samples = _labelled(Path(dataset_dir), max_videos_per_class)
         pairs = self.pairs_from_samples(samples)
-        random.Random(42).shuffle(pairs)  # NOSONAR: seeded sampling or augmentation, not security
+        random.Random(42).shuffle(pairs)  # NOSONAR
         logger.info("Extracted %d frame transition pairs from %d videos.", len(pairs), len(samples))
         return pairs
 

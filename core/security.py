@@ -33,20 +33,30 @@ Image.MAX_IMAGE_PIXELS = SAFE_MAX_IMAGE_PIXELS
 # Restricted CIDR blocks (Private, Loopback, Link-Local, Cloud Metadata, Carrier-Grade NAT)
 RESTRICTED_NETWORKS = [
     ipaddress.ip_network("0.0.0.0/8"),          # Current network
-    ipaddress.ip_network("10.0.0.0/8"),         # Private RFC 1918 NOSONAR: the blocklist of private and reserved ranges
-    ipaddress.ip_network("100.64.0.0/10"),      # Carrier-grade NAT NOSONAR: the blocklist of private and reserved ranges
+    # Private RFC 1918; the blocklist of private and reserved ranges
+    ipaddress.ip_network("10.0.0.0/8"),  # NOSONAR
+    # Carrier-grade NAT; the blocklist of private and reserved ranges
+    ipaddress.ip_network("100.64.0.0/10"),  # NOSONAR
     ipaddress.ip_network("127.0.0.0/8"),        # Loopback
-    ipaddress.ip_network("169.254.0.0/16"),     # Link-local / Cloud Metadata (AWS/GCP/Azure) NOSONAR: the blocklist of private and reserved ranges
-    ipaddress.ip_network("172.16.0.0/12"),      # Private RFC 1918 NOSONAR: the blocklist of private and reserved ranges
-    ipaddress.ip_network("192.0.0.0/24"),       # IETF Protocol NOSONAR: the blocklist of private and reserved ranges
+    # Link-local / Cloud Metadata (AWS/GCP/Azure); the blocklist of private and reserved ranges
+    ipaddress.ip_network("169.254.0.0/16"),  # NOSONAR
+    # Private RFC 1918; the blocklist of private and reserved ranges
+    ipaddress.ip_network("172.16.0.0/12"),  # NOSONAR
+    # IETF Protocol; the blocklist of private and reserved ranges
+    ipaddress.ip_network("192.0.0.0/24"),  # NOSONAR
     ipaddress.ip_network("192.0.2.0/24"),       # TEST-NET-1
-    ipaddress.ip_network("192.88.99.0/24"),     # 6to4 Relay NOSONAR: the blocklist of private and reserved ranges
-    ipaddress.ip_network("192.168.0.0/16"),     # Private RFC 1918 NOSONAR: the blocklist of private and reserved ranges
-    ipaddress.ip_network("198.18.0.0/15"),      # Network benchmark NOSONAR: the blocklist of private and reserved ranges
+    # 6to4 Relay; the blocklist of private and reserved ranges
+    ipaddress.ip_network("192.88.99.0/24"),  # NOSONAR
+    # Private RFC 1918; the blocklist of private and reserved ranges
+    ipaddress.ip_network("192.168.0.0/16"),  # NOSONAR
+    # Network benchmark; the blocklist of private and reserved ranges
+    ipaddress.ip_network("198.18.0.0/15"),  # NOSONAR
     ipaddress.ip_network("198.51.100.0/24"),    # TEST-NET-2
     ipaddress.ip_network("203.0.113.0/24"),     # TEST-NET-3
-    ipaddress.ip_network("224.0.0.0/4"),        # Multicast NOSONAR: the blocklist of private and reserved ranges
-    ipaddress.ip_network("240.0.0.0/4"),        # Reserved NOSONAR: the blocklist of private and reserved ranges
+    # Multicast; the blocklist of private and reserved ranges
+    ipaddress.ip_network("224.0.0.0/4"),  # NOSONAR
+    # Reserved; the blocklist of private and reserved ranges
+    ipaddress.ip_network("240.0.0.0/4"),  # NOSONAR
     ipaddress.ip_network("255.255.255.255/32"), # Broadcast
     # IPv6 blocks
     ipaddress.ip_network("::/128"),             # Unspecified
@@ -374,7 +384,8 @@ class SecureUrlFetcher:
         resp = None
         with requests.Session() as session:
             session.trust_env = False                      # proxies and .netrc from the environment would route around the address checks
-            session.mount("http://", HTTPAdapter(max_retries=1))  # NOSONAR: plain http is allowed on purpose: only validated public addresses on port 80 are fetched
+            # plain http is allowed on purpose: only validated public addresses on port 80 are fetched
+            session.mount("http://", HTTPAdapter(max_retries=1))  # NOSONAR
             session.mount("https://", HTTPAdapter(max_retries=1))
             try:
                 resp, error = self._get_following_redirects(session, url, normalise_host(parsed.hostname or "") or "", resolved_ips)

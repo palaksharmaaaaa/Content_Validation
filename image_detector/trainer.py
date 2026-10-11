@@ -106,13 +106,16 @@ class ImageDetectorTrainer:
         if (root / "train" / "ai_generated").is_dir():
             train_samples = _labelled(root / "train")
             val_samples = _labelled(root / "val") if (root / "val").is_dir() else []
-            rng.shuffle(train_samples)  # NOSONAR: seeded sampling or augmentation, not security
-            rng.shuffle(val_samples)  # NOSONAR: seeded sampling or augmentation, not security
+            # seeded sampling or augmentation, not security
+            rng.shuffle(train_samples)  # NOSONAR
+            # seeded sampling or augmentation, not security
+            rng.shuffle(val_samples)  # NOSONAR
         else:
             all_samples = _labelled(root)
             if not all_samples:
                 raise ValueError(f"No valid image files found in {root}/ai_generated or {root}/real")
-            rng.shuffle(all_samples)  # NOSONAR: seeded sampling or augmentation, not security
+            # seeded sampling or augmentation, not security
+            rng.shuffle(all_samples)  # NOSONAR
             split_idx = int(len(all_samples) * (1.0 - val_split))
             train_samples, val_samples = all_samples[:split_idx], all_samples[split_idx:]
 
@@ -271,7 +274,8 @@ class ImageDetectorTrainer:
             raise ValueError(f"Feature bank in {feature_npz_path} must contain at least 2 samples.")
 
         indices = list(range(total_samples))
-        random.Random(42).shuffle(indices)  # NOSONAR: seeded sampling or augmentation, not security
+        # seeded sampling or augmentation, not security
+        random.Random(42).shuffle(indices)  # NOSONAR
 
         split = int(total_samples * (1.0 - val_split))
         train_indices = indices[:split]
