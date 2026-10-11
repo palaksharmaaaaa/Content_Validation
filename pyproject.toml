@@ -1,0 +1,44 @@
+[tool.ruff]
+target-version = "py314"
+line-length = 140
+exclude = [
+    ".venv",
+    ".git",
+    ".pytest_cache",
+    "reports",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "SIM",   # flake8-simplify
+]
+ignore = [
+    "E501",  # line length handled by formatter
+    "B008",  # function call in default argument
+    "B905",  # zip() without explicit strict= parameter
+    "SIM102", # single if instead of nested if
+    "SIM105", # suppress instead of try-except-pass
+    "SIM108", # ternary operator instead of if-else
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/test_*.py" = ["B", "SIM", "E402", "E701", "E702", "E741", "F401", "F841", "UP031"]
+"tests/*" = ["B", "SIM", "E402", "E701", "E702", "E741", "F401", "F841", "UP031"]
+"app.py" = ["E402", "UP036"]
+
+[tool.bandit]
+exclude_dirs = [
+    "tests",
+    "core/tests",
+    "image_detector/tests",
+    "video_detector/tests",
+    "audio_detector/tests",
+    ".venv",
+]
+skips = ["B101", "B404", "B603", "B311", "B615", "B110", "B112", "B105"]

@@ -10,9 +10,9 @@ Provides:
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 import threading
-from typing import Any, Dict, Optional
+from pathlib import Path
+from typing import Any
 
 from audio_detector.attribution import AudioModelAttributionEngine
 from audio_detector.content import AudioContentAnalyzer
@@ -39,32 +39,32 @@ class ForensicService:
     Completely decoupled from Streamlit and presentation mechanics.
     """
 
-    _instance: Optional[ForensicService] = None
+    _instance: ForensicService | None = None
     _init_lock = threading.Lock()
 
-    def __init__(self, checkpoint_path: Optional[Path] = None):
+    def __init__(self, checkpoint_path: Path | None = None):
         self._lock = threading.RLock()
         self._locks: dict = {}
         self.checkpoint_path = checkpoint_path
 
         # Lazy components
-        self._image_pipeline: Optional[ImageForensicPipeline] = None
-        self._video_pipeline: Optional[VideoForensicPipeline] = None
-        self._audio_pipeline: Optional[AudioForensicPipeline] = None
-        self._image_detector: Optional[ImageAIDetector] = None
-        self._video_detector: Optional[VideoAIDetector] = None
-        self._audio_detector: Optional[AudioAIDetector] = None
-        self._face_detector: Optional[FaceDeepfakeDetector] = None
-        self._content_analyzer: Optional[ImageContentAnalyzer] = None
-        self._attribution_engine: Optional[ImageModelAttributionEngine] = None
-        self._audio_content_analyzer: Optional[AudioContentAnalyzer] = None
-        self._audio_attribution_engine: Optional[AudioModelAttributionEngine] = None
-        self._image_improver: Optional[ImageSelfImprover] = None
-        self._audio_improver: Optional[AudioSelfImprover] = None
-        self._video_improver: Optional[VideoSelfImprover] = None
+        self._image_pipeline: ImageForensicPipeline | None = None
+        self._video_pipeline: VideoForensicPipeline | None = None
+        self._audio_pipeline: AudioForensicPipeline | None = None
+        self._image_detector: ImageAIDetector | None = None
+        self._video_detector: VideoAIDetector | None = None
+        self._audio_detector: AudioAIDetector | None = None
+        self._face_detector: FaceDeepfakeDetector | None = None
+        self._content_analyzer: ImageContentAnalyzer | None = None
+        self._attribution_engine: ImageModelAttributionEngine | None = None
+        self._audio_content_analyzer: AudioContentAnalyzer | None = None
+        self._audio_attribution_engine: AudioModelAttributionEngine | None = None
+        self._image_improver: ImageSelfImprover | None = None
+        self._audio_improver: AudioSelfImprover | None = None
+        self._video_improver: VideoSelfImprover | None = None
 
     @classmethod
-    def get_instance(cls, checkpoint_path: Optional[Path] = None) -> ForensicService:
+    def get_instance(cls, checkpoint_path: Path | None = None) -> ForensicService:
         """Returns thread-safe singleton instance of ForensicService."""
         with cls._init_lock:
             if cls._instance is None:
@@ -211,7 +211,7 @@ class ForensicService:
     # Core Service Methods
     # -------------------------------------------------------------------------
     @staticmethod
-    def _guarded(kind: str, path: str | Path, run) -> Dict[str, Any]:
+    def _guarded(kind: str, path: str | Path, run) -> dict[str, Any]:
         """Run one analysis; any failure becomes a ``PROCESSING_ERROR`` report instead of an exception, so a batch or a UI
         callback never dies on one bad file."""
         try:
@@ -226,15 +226,15 @@ class ForensicService:
                 "final_status": "PROCESSING_ERROR",
             }
 
-    def analyze_image(self, image_path: str | Path, sensitivity: str = "balanced", source: str = "User Upload") -> Dict[str, Any]:
+    def analyze_image(self, image_path: str | Path, sensitivity: str = "balanced", source: str = "User Upload") -> dict[str, Any]:
         """Runs the linear 5-stage forensic evaluation on a single image."""
         return self._guarded("Image", image_path, lambda: self.image_pipeline.analyze(image_path=image_path, sensitivity=sensitivity, source=source))
 
-    def analyze_audio(self, audio_path: str | Path, sensitivity: str = "balanced") -> Dict[str, Any]:
+    def analyze_audio(self, audio_path: str | Path, sensitivity: str = "balanced") -> dict[str, Any]:
         """Runs the linear acoustic forensic evaluation pipeline on an audio track."""
         return self._guarded("Audio", audio_path, lambda: self.audio_pipeline.analyze(audio_path=audio_path, sensitivity=sensitivity))
 
-    def analyze_video(self, video_path: str | Path, sensitivity: str = "balanced", audio_forensics: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def analyze_video(self, video_path: str | Path, sensitivity: str = "balanced", audio_forensics: dict[str, Any] | None = None) -> dict[str, Any]:
         """Runs the multi-modal temporal forensic evaluation pipeline on a video file."""
         return self._guarded("Video", video_path, lambda: self.video_pipeline.analyze(
             video_path=video_path, sensitivity=sensitivity, audio_forensics=audio_forensics))
@@ -244,9 +244,9 @@ class ForensicService:
         media_path: str | Path,
         modality: str,
         user_label: str,
-        metrics: Optional[Dict[str, Any]] = None,
+        metrics: dict[str, Any] | None = None,
         notes: str = "",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Registers ground-truth calibration feedback atomically."""
         mod = modality.lower()
         if mod == "image":
@@ -279,7 +279,7 @@ class ForensicService:
     )
 
     @staticmethod
-    def _security_probes() -> Dict[str, str]:
+    def _security_probes() -> dict[str, str]:
         """Each guard is exercised, not assumed: a loopback URL must be refused, the pixel ceiling must be set, and an atomic write
         followed by a read must give the data back."""
         import tempfile
@@ -307,12 +307,12 @@ class ForensicService:
             "atomic_storage": atomic,
         }
 
-    def health_check(self) -> Dict[str, Any]:
+    def health_check(self) -> dict[str, Any]:
         """Builds every component (loading models on first use) and reports which ones are usable.
 
         ``status`` is ``HEALTHY`` only if all components initialise and the security guards are in place.
         """
-        components: Dict[str, str] = {}
+        components: dict[str, str] = {}
         for name in self._COMPONENTS:
             try:
                 getattr(self, name)

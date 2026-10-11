@@ -14,12 +14,12 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import cv2
-from core.imageio import imread
 import numpy as np
 
+from core.imageio import imread
 from core.perception.age import get_age_estimator
 from core.perception.colors import dominant_colors
 from core.perception.detector import ANIMALS, VEHICLES, get_object_detector
@@ -58,7 +58,7 @@ class ImageContentAnalyzer:
         self.face_detector = FaceDeepfakeDetector()
         self.detector = get_object_detector()
 
-    def analyze_image_content(self, image_path: str | Path | np.ndarray) -> Dict[str, Any]:
+    def analyze_image_content(self, image_path: str | Path | np.ndarray) -> dict[str, Any]:
         """Runs multi-dimensional content analysis on an image."""
         if isinstance(image_path, (str, Path)):
             path = Path(image_path)
@@ -158,7 +158,7 @@ class ImageContentAnalyzer:
     def _assemble_result(
         human_count, faces_detected, single_character_detected, person_boxes, face_info,
         animals, vehicles, items, text_regions_count, environment, lighting_info, tone_info, purpose,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Builds the nested content-inventory dict (with the flat/legacy aliases consumers read)."""
         detected_animals, animal_details = animals
         detected_vehicles, vehicle_details = vehicles
@@ -259,7 +259,7 @@ class ImageContentAnalyzer:
         }
 
     @staticmethod
-    def _count_humans(sample_bgr: np.ndarray, person_boxes: list, faces_detected: int) -> Tuple[int, int, bool]:
+    def _count_humans(sample_bgr: np.ndarray, person_boxes: list, faces_detected: int) -> tuple[int, int, bool]:
         """Returns (human_count, faces_detected, single_character_detected) reconciling person boxes with faces."""
         human_count = len(person_boxes)
         single_character_detected = False
@@ -316,23 +316,23 @@ class ImageContentAnalyzer:
 
     def _detect_objects(
         self, img_bgr: np.ndarray
-    ) -> Tuple[
-        List[Tuple[int, int, int, int]],
-        List[str],
-        List[Dict[str, Any]],
-        List[str],
-        List[Dict[str, Any]],
-        List[str],
-        List[Dict[str, Any]],
+    ) -> tuple[
+        list[tuple[int, int, int, int]],
+        list[str],
+        list[dict[str, Any]],
+        list[str],
+        list[dict[str, Any]],
+        list[str],
+        list[dict[str, Any]],
     ]:
         """Detects person boxes, animals, vehicles, and items with RF-DETR."""
-        person_boxes: List[Tuple[int, int, int, int]] = []
-        detected_animals: List[str] = []
-        animal_details: List[Dict[str, Any]] = []
-        detected_vehicles: List[str] = []
-        vehicle_details: List[Dict[str, Any]] = []
-        detected_items: List[str] = []
-        item_details: List[Dict[str, Any]] = []
+        person_boxes: list[tuple[int, int, int, int]] = []
+        detected_animals: list[str] = []
+        animal_details: list[dict[str, Any]] = []
+        detected_vehicles: list[str] = []
+        vehicle_details: list[dict[str, Any]] = []
+        detected_items: list[str] = []
+        item_details: list[dict[str, Any]] = []
         try:
             detections = self.detector.detect(img_bgr)
         except Exception as e:
@@ -356,7 +356,7 @@ class ImageContentAnalyzer:
                 item_details.append({"name": label, "score": round(score, 2), "bbox": bbox_dict})
         return person_boxes, detected_animals, animal_details, detected_vehicles, vehicle_details, detected_items, item_details
 
-    def _analyze_lighting(self, img_bgr: np.ndarray) -> Dict[str, Any]:
+    def _analyze_lighting(self, img_bgr: np.ndarray) -> dict[str, Any]:
         """Infers lighting conditions from luminance distribution."""
         gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
         mean_lum = float(np.mean(gray))
@@ -387,7 +387,7 @@ class ImageContentAnalyzer:
             "luminance_dynamic_range": round(std_lum, 1),
         }
 
-    def _analyze_tone_and_color(self, img_bgr: np.ndarray) -> Dict[str, Any]:
+    def _analyze_tone_and_color(self, img_bgr: np.ndarray) -> dict[str, Any]:
         """Evaluates color temperature, contrast, and atmospheric tone."""
         b, g, r = cv2.split(img_bgr)
         mean_b, mean_g, mean_r = float(np.mean(b)), float(np.mean(g)), float(np.mean(r))
@@ -413,8 +413,8 @@ class ImageContentAnalyzer:
         }
 
     def _infer_environment(
-        self, img_bgr: np.ndarray, items: List[str], vehicles: List[str], animals: List[str]
-    ) -> Dict[str, Any]:
+        self, img_bgr: np.ndarray, items: list[str], vehicles: list[str], animals: list[str]
+    ) -> dict[str, Any]:
         """Infers setting type (indoor, outdoor, nature, studio)."""
         hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
         green_mask = cv2.inRange(hsv, (35, 40, 40), (85, 255, 255))
@@ -439,11 +439,11 @@ class ImageContentAnalyzer:
         }
 
     def _infer_purpose(
-        self, human_count: int, h: int, w: int, items: List[str], text_regions_count: int = 0, is_character: bool = False
-    ) -> Dict[str, Any]:
+        self, human_count: int, h: int, w: int, items: list[str], text_regions_count: int = 0, is_character: bool = False
+    ) -> dict[str, Any]:
         """Infers photographic purpose and genre covering the photographic genres."""
         aspect = float(w) / max(1.0, float(h))
-        
+
         # Check for Document / Identity / Layout
         document_layout = "None (Standard Visual Content)"
         if text_regions_count >= 8:
@@ -476,7 +476,7 @@ class ImageContentAnalyzer:
             "aspect_ratio": round(aspect, 2),
         }
 
-    def _empty_result(self) -> Dict[str, Any]:
+    def _empty_result(self) -> dict[str, Any]:
         entities = {
             "humans": {"count": 0, "faces": 0, "persons_count": 0, "faces_count": 0, "bounding_boxes": []},
             "animals": {"detected": False, "count": 0, "types": [], "animal_types": []},

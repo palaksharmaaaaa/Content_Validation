@@ -14,8 +14,9 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
+from typing import Any
 
 from core.atomic_io import atomic_read_json, atomic_write_json, serialized_on
 from core.hashing import file_sha256
@@ -40,7 +41,7 @@ def partition(sha256: str) -> str:
     return "val" if int(sha256[:8], 16) % _VAL_DENOMINATOR == 0 else "train"
 
 
-def _stat_key(path: Path) -> Tuple[int, int]:
+def _stat_key(path: Path) -> tuple[int, int]:
     st = path.stat()
     return st.st_size, st.st_mtime_ns
 
@@ -56,8 +57,8 @@ class MediaLibrary:
         """Replace the in-memory registry with the manifest on disk (another session may have changed it since)."""
         data = atomic_read_json(self.path, default=None)
         entries = data.get("entries", {}) if isinstance(data, dict) else {}
-        self._entries: Dict[str, Dict[str, Any]] = entries if isinstance(entries, dict) else {}
-        self._by_path: Dict[str, str] = {
+        self._entries: dict[str, dict[str, Any]] = entries if isinstance(entries, dict) else {}
+        self._by_path: dict[str, str] = {
             e["path_hint"]: sha for sha, e in self._entries.items() if e.get("path_hint")
         }
 
@@ -66,7 +67,7 @@ class MediaLibrary:
         atomic_write_json(self.path, {"version": 1, "entries": self._entries}, indent=1)
 
     # ------------------------------------------------------------------ adding
-    def _hash_with_cache(self, p: Path) -> Tuple[str, int, int]:
+    def _hash_with_cache(self, p: Path) -> tuple[str, int, int]:
         size, mtime_ns = _stat_key(p)
         known = self._by_path.get(str(p))
         if known is not None:
@@ -126,7 +127,7 @@ class MediaLibrary:
         self._save()
         return changed
 
-    def add_tree(self, root: str | Path, label: str, extensions: Set[str]) -> int:
+    def add_tree(self, root: str | Path, label: str, extensions: set[str]) -> int:
         """Recursively registers every file under `root` whose extension is in `extensions`."""
         files = [
             Path(dirpath) / name
@@ -137,7 +138,7 @@ class MediaLibrary:
         return self.add_many(files, label)
 
     # ------------------------------------------------------------------ lookup
-    def resolve(self, sha256: str) -> Optional[Path]:
+    def resolve(self, sha256: str) -> Path | None:
         """Returns the current on-disk path for this content hash, or None if it can't be found."""
         e = self._entries.get(sha256)
         if not e or not e.get("path_hint"):
@@ -155,7 +156,7 @@ class MediaLibrary:
             return p
         return None
 
-    def missing(self) -> List[str]:
+    def missing(self) -> list[str]:
         """Content hashes whose files can no longer be found at their recorded path."""
         return [sha for sha in self._entries if self.resolve(sha) is None]
 
@@ -170,7 +171,7 @@ class MediaLibrary:
         missing = set(self.missing())
         if not missing:
             return 0
-        wanted_sizes: Dict[int, Set[str]] = {}
+        wanted_sizes: dict[int, set[str]] = {}
         for sha in missing:
             wanted_sizes.setdefault(self._entries[sha]["size"], set()).add(sha)
         relinked = 0
@@ -196,18 +197,18 @@ class MediaLibrary:
         return relinked
 
     # ------------------------------------------------------------------ queries
-    def entries(self) -> List[Dict[str, Any]]:
+    def entries(self) -> list[dict[str, Any]]:
         """Every registered entry, as a list of dicts (sha256, label, path hint)."""
         return [dict(e, sha256=sha) for sha, e in self._entries.items()]
 
     def samples(
         self,
-        label: Optional[str] = None,
-        split: Optional[str] = None,
-        status: Optional[str] = None,
-    ) -> List[Tuple[str, Path, str]]:
+        label: str | None = None,
+        split: str | None = None,
+        status: str | None = None,
+    ) -> list[tuple[str, Path, str]]:
         """Resolvable (sha256, path, label) triples, optionally filtered. Unresolvable files are skipped."""
-        out: List[Tuple[str, Path, str]] = []
+        out: list[tuple[str, Path, str]] = []
         for sha, e in self._entries.items():
             if label and e["label"] != label:
                 continue
@@ -222,7 +223,7 @@ class MediaLibrary:
 
     def select_for_retrain(
         self, replay_ratio: int = 4, min_replay: int = 50, seed: int = 42
-    ) -> Tuple[List[Tuple[str, Path, str]], List[Tuple[str, Path, str]]]:
+    ) -> tuple[list[tuple[str, Path, str]], list[tuple[str, Path, str]]]:
         """
         Picks (train, val) samples for one fine-tuning round without touching more media than needed.
         train = every 'new' file in the train partition + a seeded random replay sample of previously
@@ -238,7 +239,7 @@ class MediaLibrary:
         replay = random.Random(seed).sample(seen_train, k) if k else []
         return new_train + replay, self.samples(split="val")
 
-    def counts(self) -> Dict[str, int]:
+    def counts(self) -> dict[str, int]:
         """Number of registered files per label."""
         ai = sum(1 for e in self._entries.values() if e["label"] == "ai_generated")
         real = sum(1 for e in self._entries.values() if e["label"] == "real")
@@ -255,7 +256,7 @@ class MediaLibrary:
         self._save()
 
 
-def register_feedback(library: Optional[MediaLibrary], path: str | Path, user_label: str) -> bool:
+def register_feedback(library: MediaLibrary | None, path: str | Path, user_label: str) -> bool:
     """
     Queues a user-verified file for the next retrain, by reference (no copy). 'AI' -> ai_generated, 'REAL' -> real;
     any other answer is not a label and is not queued. Returns False (and never raises) if there is no library or the file
@@ -286,7 +287,7 @@ def library_for(modality: str) -> MediaLibrary:
     return MediaLibrary(repo_root / f"{modality}_detector" / "data" / "library.json")
 
 
-def _extensions_for(modality: str) -> Set[str]:
+def _extensions_for(modality: str) -> set[str]:
     import importlib
     return set(importlib.import_module(f"{modality}_detector.config").SUPPORTED_EXTENSIONS)
 

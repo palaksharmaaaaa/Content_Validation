@@ -4,8 +4,6 @@ RELIABILITY class: informational, never alters P(AI).
 """
 from __future__ import annotations
 
-from typing import List
-
 from audio_detector.dimension_checks import signal
 from audio_detector.dimension_checks.lifecycle import _duration, assess_transcoding
 from core.forensics.registry import CheckContext, registry
@@ -17,7 +15,7 @@ CLIPPING_RATIO = 0.01
 
 @registry.register("audio", "confidence_limiters", phase="post")
 def check_confidence_limiters(ctx: CheckContext) -> Finding:
-    limiters: List[str] = []
+    limiters: list[str] = []
     dur = _duration(ctx)
     if 0 < dur < SHORT_SECONDS:
         limiters.append(f"Very short recording ({dur:.1f} s): temporal and spectral statistics are unstable")

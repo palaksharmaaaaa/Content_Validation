@@ -11,31 +11,32 @@ Public API
 """
 from __future__ import annotations
 
-import logging
-
 import functools
-
+import logging
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any
 
 import numpy as np
 
-from core.forensics.reporting import UNKNOWN_SOURCE_MIN_AI_PERCENT as _UNKNOWN_MIN
-from core.forensics.reporting import add_band_and_open_set, summarize_for_evidence_trail
 from core.forensics.gates import HardBlockGate, recognize_scientific_format
 from core.forensics.ood import OODGate
 from core.forensics.registry import CheckContext, build_report, registry
+from core.forensics.reporting import UNKNOWN_SOURCE_MIN_AI_PERCENT as _UNKNOWN_MIN
+from core.forensics.reporting import add_band_and_open_set, summarize_for_evidence_trail
 from core.forensics.schemas import Finding
 
 # Importing the modules registers their checks. Order = execution order within a phase.
-from image_detector.dimension_checks import integrity  # noqa: F401
-from image_detector.dimension_checks import formats  # noqa: F401
-from image_detector.dimension_checks import metadata  # noqa: F401
-from image_detector.dimension_checks import context  # noqa: F401
-from image_detector.dimension_checks import legal  # noqa: F401
-from image_detector.dimension_checks import lifecycle  # noqa: F401
-from image_detector.dimension_checks import reliability  # noqa: F401
-from image_detector.dimension_checks import faces  # noqa: F401
+from image_detector.dimension_checks import (
+    context,  # noqa: F401
+    faces,  # noqa: F401
+    formats,  # noqa: F401
+    integrity,  # noqa: F401
+    legal,  # noqa: F401
+    lifecycle,  # noqa: F401
+    metadata,  # noqa: F401
+    reliability,  # noqa: F401
+)
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ __all__ = [
 ]
 
 
-def normalize_provenance(prov: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+def normalize_provenance(prov: dict[str, Any] | None) -> dict[str, Any]:
     """Flat {c2pa_present, has_camera_hardware} view of either provenance shape (pipeline or UI)."""
     prov = prov or {}
     c2pa = prov.get("c2pa") if isinstance(prov.get("c2pa"), dict) else {}
@@ -64,7 +65,7 @@ def normalize_provenance(prov: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     }
 
 
-def check_image_gates(path: Union[str, Path]) -> Dict[str, Any]:
+def check_image_gates(path: str | Path) -> dict[str, Any]:
     hb = HardBlockGate().check(path)
     recog = recognize_scientific_format(path)
     final_status = "HARD_BLOCK_ESCALATE" if hb.triggered else ("RECOGNIZED_OUT_OF_SCOPE" if recog else None)
@@ -76,7 +77,7 @@ def check_image_gates(path: Union[str, Path]) -> Dict[str, Any]:
     }
 
 
-def gate_short_circuit_result(path: Union[str, Path], gates: Dict[str, Any]) -> Dict[str, Any]:
+def gate_short_circuit_result(path: str | Path, gates: dict[str, Any]) -> dict[str, Any]:
     """Result dict returned instead of a verdict when a gate fires (no probabilities are computed)."""
     status = gates["final_status"]
     if status == "HARD_BLOCK_ESCALATE":
@@ -106,7 +107,7 @@ def _shared_feature_store():
     return FeatureStore()
 
 
-def _default_embedder() -> Optional[Callable[[Path], np.ndarray]]:
+def _default_embedder() -> Callable[[Path], np.ndarray] | None:
     try:
         store = _shared_feature_store()
 
@@ -125,35 +126,35 @@ def _default_embedder() -> Optional[Callable[[Path], np.ndarray]]:
 class ImageDimensionAnalysis:
     def __init__(
         self,
-        path: Union[str, Path],
-        profile: Optional[Dict[str, Any]] = None,
-        provenance: Optional[Dict[str, Any]] = None,
-        ood_gate: Optional[OODGate] = None,
-        ood_embedder: Optional[Callable[[Path], np.ndarray]] = None,
+        path: str | Path,
+        profile: dict[str, Any] | None = None,
+        provenance: dict[str, Any] | None = None,
+        ood_gate: OODGate | None = None,
+        ood_embedder: Callable[[Path], np.ndarray] | None = None,
     ):
         self.path = Path(path)
         self.profile = profile or {}
         self.provenance = normalize_provenance(provenance)
         self._ood_gate = ood_gate
         self._ood_embedder = ood_embedder
-        self._pre: List[Finding] = []
-        self._pre_terms: Dict[str, float] = {}
+        self._pre: list[Finding] = []
+        self._pre_terms: dict[str, float] = {}
 
     def _ctx(self, content=None, ai_result=None) -> CheckContext:
         return CheckContext(path=self.path, modality="image", profile=self.profile, provenance=self.provenance,
                             content=content or {}, ai_result=ai_result or {})
 
-    def run_pre(self) -> Dict[str, float]:
+    def run_pre(self) -> dict[str, float]:
         """Runs integrity/format/metadata checks; returns capped log-odds terms for the detector."""
         self._pre = registry.run("image", self._ctx(), phase="pre")
         self._pre_terms = build_report(self._pre).score_terms
         return dict(self._pre_terms)
 
-    def pre_finding(self, check_id: str) -> Optional[Finding]:
+    def pre_finding(self, check_id: str) -> Finding | None:
         """A finding produced by ``run_pre`` (or None)."""
         return next((f for f in self._pre if f.check_id == check_id), None)
 
-    def _ood(self) -> Dict[str, Any]:
+    def _ood(self) -> dict[str, Any]:
         gate = self._ood_gate or OODGate.load(DEFAULT_OOD_STATS)
         if not gate.calibrated:
             return {"status": "NOT_CALIBRATED", "distance": None, "threshold": None,
@@ -169,11 +170,11 @@ class ImageDimensionAnalysis:
 
     def run_post(
         self,
-        content: Optional[Dict[str, Any]] = None,
-        ai_result: Optional[Dict[str, Any]] = None,
-        attribution: Optional[Dict[str, Any]] = None,
-        gates: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        content: dict[str, Any] | None = None,
+        ai_result: dict[str, Any] | None = None,
+        attribution: dict[str, Any] | None = None,
+        gates: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         ctx = self._ctx(content, ai_result)
         post = registry.run("image", ctx, phase="post")
         report = build_report(self._pre + post, gates=gates)

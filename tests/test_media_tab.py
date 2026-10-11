@@ -111,7 +111,8 @@ def test_two_files_with_the_same_name_and_verdict_open_independently():
 def test_profile_blocks_survive_a_none_container_and_auto_detect_covers_every_supported_extension():
     from audio_detector.config import SUPPORTED_EXTENSIONS as A
     from image_detector.config import SUPPORTED_EXTENSIONS as I
-    from ui.profile_view import add_ui_profile_blocks, modality_of_extension as _modality_of
+    from ui.profile_view import add_ui_profile_blocks
+    from ui.profile_view import modality_of_extension as _modality_of
     from video_detector.config import SUPPORTED_EXTENSIONS as V
 
     assert all(_modality_of(e) == "image" for e in I) and all(_modality_of(e) == "video" for e in V) and all(_modality_of(e) == "audio" for e in A)

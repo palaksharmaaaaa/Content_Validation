@@ -23,12 +23,14 @@ Remini, Nano Banana) are currently metadata-signature-only -- no resolution tabl
 calibration yet. Add real calibration for them only once backed by actual sample analysis.
 """
 from __future__ import annotations
+
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from PIL import Image
+
 from core.shared_results import finalize_attribution, unknown_attribution
 
 logger = logging.getLogger("image_detector.attribution")
@@ -204,7 +206,7 @@ _REGION_BY_KEY = {
 }
 
 
-def _authentic_attribution(tax_state: str) -> Dict[str, Any]:
+def _authentic_attribution(tax_state: str) -> dict[str, Any]:
     return {
         "attributed_model": "None (Authentic Capture)",
         "model_key": "none_authentic",
@@ -219,7 +221,7 @@ def _authentic_attribution(tax_state: str) -> Dict[str, Any]:
 
 
 def _score_declarations(
-    path: Path, forensic_data: Optional[Dict[str, Any]], meta: Dict[str, Any], scores: Dict[str, float], cues: List[str]
+    path: Path, forensic_data: dict[str, Any] | None, meta: dict[str, Any], scores: dict[str, float], cues: list[str]
 ) -> bool:
     """Direct watermark / embedded-label / software declarations (a file name is never used: anyone can name a file anything). Returns whether a watermark was seen.
 
@@ -246,7 +248,7 @@ def _score_declarations(
     return watermark
 
 
-def _score_software_header(provenance_data: Dict[str, Any], software: str, scores: Dict[str, float], cues: List[str]) -> bool:
+def _score_software_header(provenance_data: dict[str, Any], software: str, scores: dict[str, float], cues: list[str]) -> bool:
     declared = False
     for needles, key, weight, cue in _SOFTWARE_SIGNATURES:
         if any(re.search(r"(?<![a-z0-9])" + re.escape(n) + r"(?![a-z0-9])", software) for n in needles):      # whole words: "xai" must not match inside another name
@@ -257,7 +259,7 @@ def _score_software_header(provenance_data: Dict[str, Any], software: str, score
     return declared
 
 
-def _score_c2pa(provenance_data: Dict[str, Any], scores: Dict[str, float], cues: List[str]) -> None:
+def _score_c2pa(provenance_data: dict[str, Any], scores: dict[str, float], cues: list[str]) -> None:
     """A Content Credentials marker says a tool signed the file, not which one: it adds weight to the generators that sign, nothing more."""
     if provenance_data.get("c2pa_present"):
         scores["openai_dalle3"] += 0.35
@@ -266,7 +268,7 @@ def _score_c2pa(provenance_data: Dict[str, Any], scores: Dict[str, float], cues:
         cues.append("C2PA Content Credentials markers present (unverified)")
 
 
-def _score_canonical_resolution(path: Path, scores: Dict[str, float], cues: List[str]) -> None:
+def _score_canonical_resolution(path: Path, scores: dict[str, float], cues: list[str]) -> None:
     try:
         with Image.open(path) as img:
             w, h = img.size
@@ -280,7 +282,7 @@ def _score_canonical_resolution(path: Path, scores: Dict[str, float], cues: List
         logger.debug("Canonical-resolution check skipped for %s: %s", path, exc)
 
 
-def _score_spectral(forensic_data: Dict[str, Any], scores: Dict[str, float], cues: List[str]) -> None:
+def _score_spectral(forensic_data: dict[str, Any], scores: dict[str, float], cues: list[str]) -> None:
     # The measurements live in the detector's ``forensic_metrics``; a value that is not there contributes nothing.
     metrics = forensic_data.get("forensic_metrics") or {}
     decay = metrics.get("spectral_decay_alpha")
@@ -309,10 +311,10 @@ class ImageModelAttributionEngine:
     def attribute_image(
         self,
         image_path: str | Path,
-        forensic_data: Optional[Dict[str, Any]] = None,
-        profile_data: Optional[Dict[str, Any]] = None,
-        provenance_data: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        forensic_data: dict[str, Any] | None = None,
+        profile_data: dict[str, Any] | None = None,
+        provenance_data: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Attributes image to likely generative source."""
         path = Path(image_path)
         if not path.is_file():
@@ -322,8 +324,8 @@ class ImageModelAttributionEngine:
         if tax_state in _AUTHENTIC_PROVIDERS:
             return _authentic_attribution(tax_state)
 
-        scores: Dict[str, float] = {k: 0.05 for k in KNOWN_IMAGE_GENERATORS}
-        cues: List[str] = []
+        scores: dict[str, float] = {k: 0.05 for k in KNOWN_IMAGE_GENERATORS}
+        cues: list[str] = []
         meta = provenance_data.get("metadata", {}) if provenance_data else {}
 
         watermark_detected = _score_declarations(path, forensic_data, meta, scores, cues)
@@ -343,17 +345,17 @@ class ImageModelAttributionEngine:
             region_of=lambda key: _REGION_BY_KEY.get(key, "Global / Open-Source"), watermark_detected=watermark_detected,
         )
 
-    def _unknown_attribution(self, reason: str) -> Dict[str, Any]:
+    def _unknown_attribution(self, reason: str) -> dict[str, Any]:
         return unknown_attribution(reason)
 
     def attribute_media(
         self,
         media_path: str | Path,
         modality: str = "image",
-        forensic_data: Optional[Dict[str, Any]] = None,
-        profile_data: Optional[Dict[str, Any]] = None,
-        provenance_data: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        forensic_data: dict[str, Any] | None = None,
+        profile_data: dict[str, Any] | None = None,
+        provenance_data: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Unified attribution interface for multi-modal workflows."""
         return self.attribute_image(
             image_path=media_path,

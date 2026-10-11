@@ -6,13 +6,13 @@ Completely self-contained with zero outside dependencies.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import cv2
 import numpy as np
 
-from video_detector.face import VideoFaceDeepfakeDetector
 from core.perception.age_video import screen_video_file, screen_video_frames
+from video_detector.face import VideoFaceDeepfakeDetector
 
 logger = logging.getLogger("video_detector.content")
 
@@ -20,7 +20,7 @@ logger = logging.getLogger("video_detector.content")
 class VideoContentAnalyzer:
     """Scene and content intelligence analyzer for video frames."""
 
-    def __init__(self, image_content_analyzer: Optional[Any] = None):
+    def __init__(self, image_content_analyzer: Any | None = None):
         """``image_content_analyzer``: any object with ``analyze_image_content(ndarray)``. When supplied (the services
         layer injects the image package's analyzer) the full scene inventory of a representative keyframe is used;
         otherwise a light built-in heuristic keeps this package self-contained."""
@@ -28,12 +28,12 @@ class VideoContentAnalyzer:
         self.image_content_analyzer = image_content_analyzer
 
     @staticmethod
-    def representative_frame(frames_bgr: List[np.ndarray]) -> np.ndarray:
+    def representative_frame(frames_bgr: list[np.ndarray]) -> np.ndarray:
         """The keyframe ~15% into the sampled timeline (past fade-ins, before late scene changes)."""
         return frames_bgr[min(len(frames_bgr) - 1, int(len(frames_bgr) * 0.15))]
 
     @staticmethod
-    def _screen_minors(frames_bgr: List[np.ndarray], video_path: Optional[Any]) -> Dict[str, Any]:
+    def _screen_minors(frames_bgr: list[np.ndarray], video_path: Any | None) -> dict[str, Any]:
         """Adaptive sampling straight from the file when the path is known (and readable), otherwise the frames the caller gave."""
         if video_path is not None:
             result = screen_video_file(video_path)
@@ -41,7 +41,7 @@ class VideoContentAnalyzer:
                 return result
         return screen_video_frames(frames_bgr)
 
-    def analyze_video_frames(self, frames_bgr: List[np.ndarray], video_path: Optional[Any] = None) -> Dict[str, Any]:
+    def analyze_video_frames(self, frames_bgr: list[np.ndarray], video_path: Any | None = None) -> dict[str, Any]:
         """Runs content, environmental, and scene analysis across sampled video keyframes."""
         if not frames_bgr:
             return {

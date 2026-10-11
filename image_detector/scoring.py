@@ -9,13 +9,12 @@ Contains:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
-from core.shared_results import binary_entropy
-
 from core.decision import normalize_percentages  # noqa: F401  (re-exported: tests and callers import it from here)
+from core.shared_results import binary_entropy
 from image_detector.config import SENSITIVITY_PRIORS
 
 
@@ -25,8 +24,8 @@ def calculate_image_epistemic_uncertainty(prob_ai: float) -> float:
 
 
 def pool_bayesian_log_odds(
-    sensitivity: str, log_lrs: Dict[str, float]
-) -> Tuple[float, float, float]:
+    sensitivity: str, log_lrs: dict[str, float]
+) -> tuple[float, float, float]:
     """
     Pools evidence using Bayesian log-likelihood ratio summation with cue correlation discounting:
     Posterior Log-Odds = Prior Log-Odds + sum(w_i * Log_LR_i)
@@ -86,31 +85,31 @@ _ART_ONLY_MIN_AI_PCT = 58.0
 def evaluate_taxonomy_classification(
     ai_pct: float = 0.0,
     real_pct: float = 0.0,
-    metadata: Optional[Dict[str, Any]] = None,
-    watermark_data: Optional[Dict[str, Any]] = None,
-    cutout_data: Optional[Dict[str, Any]] = None,
-    scanned_data: Optional[Dict[str, Any]] = None,
-    art_data: Optional[Dict[str, Any]] = None,
+    metadata: dict[str, Any] | None = None,
+    watermark_data: dict[str, Any] | None = None,
+    cutout_data: dict[str, Any] | None = None,
+    scanned_data: dict[str, Any] | None = None,
+    art_data: dict[str, Any] | None = None,
     noise_mean: float = 2.0,
     smoothness: float = 2.0,
     is_square_gen: bool = False,
     is_canonical_gen: bool = False,
-    prob_ai: Optional[float] = None,
-    prob_real: Optional[float] = None,
-    watermark_detected: Optional[bool] = None,
-    cutout_detected: Optional[bool] = None,
-    scanned_detected: Optional[bool] = None,
-    art_detected: Optional[bool] = None,
-    screenshot_data: Optional[Dict[str, Any]] = None,
-    screenshot_detected: Optional[bool] = None,
-    inpainting_data: Optional[Dict[str, Any]] = None,
-    inpainting_detected: Optional[bool] = None,
-    screen_recapture_data: Optional[Dict[str, Any]] = None,
+    prob_ai: float | None = None,
+    prob_real: float | None = None,
+    watermark_detected: bool | None = None,
+    cutout_detected: bool | None = None,
+    scanned_detected: bool | None = None,
+    art_detected: bool | None = None,
+    screenshot_data: dict[str, Any] | None = None,
+    screenshot_detected: bool | None = None,
+    inpainting_data: dict[str, Any] | None = None,
+    inpainting_detected: bool | None = None,
+    screen_recapture_data: dict[str, Any] | None = None,
     screen_recapture_detected: bool = False,
     metadata_absent: bool = False,
     synthetic_signal_count: int = 99,
     text_regions_count: int = 0,
-) -> Tuple[str, str, str, List[str]]:
+) -> tuple[str, str, str, list[str]]:
     """
     Evaluates converging forensic signals, provenance, device profiles, and physical indicators to assign
     each image strictly to one of the taxonomy states:
@@ -152,7 +151,7 @@ def evaluate_taxonomy_classification(
     raise AssertionError("the final taxonomy stage always returns a state")  # pragma: no cover
 
 
-def _with_flag(data: Optional[Dict[str, Any]], key: str, override: Optional[bool]) -> Dict[str, Any]:
+def _with_flag(data: dict[str, Any] | None, key: str, override: bool | None) -> dict[str, Any]:
     out = dict(data or {})
     if override is not None:
         out[key] = override
@@ -169,14 +168,14 @@ class _TaxonomyInputs:
     smoothness: float
     is_square_gen: bool
     is_canonical_gen: bool
-    metadata: Dict[str, Any]
-    watermark: Dict[str, Any]
-    cutout: Dict[str, Any]
-    scanned: Dict[str, Any]
-    art: Dict[str, Any]
-    screenshot: Dict[str, Any]
-    inpainting: Dict[str, Any]
-    screen_recapture: Dict[str, Any]
+    metadata: dict[str, Any]
+    watermark: dict[str, Any]
+    cutout: dict[str, Any]
+    scanned: dict[str, Any]
+    art: dict[str, Any]
+    screenshot: dict[str, Any]
+    inpainting: dict[str, Any]
+    screen_recapture: dict[str, Any]
     recapture_flag: bool
     metadata_absent: bool
     synthetic_signal_count: int
@@ -229,7 +228,7 @@ class _TaxonomyInputs:
         return self.has_watermark or self.has_ai_iptc or self.has_pure_ai_meta
 
 
-_Outcome = Optional[Tuple[Any, List[str]]]
+_Outcome = tuple[Any, list[str]] | None
 
 
 def _stage_screenshot(c: _TaxonomyInputs, S: Any) -> _Outcome:
@@ -240,7 +239,7 @@ def _stage_screenshot(c: _TaxonomyInputs, S: Any) -> _Outcome:
     orient = c.screenshot.get("orientation", "Portrait")
     screen_res = c.screenshot.get("screen_resolution", "")
     details = c.screenshot.get("details", f"{device} screen capture in {orient} orientation")
-    reasons: List[str] = []
+    reasons: list[str] = []
 
     if c.declares_ai or c.ai_pct >= 62.0 or (c.is_digital_art and c.ai_pct >= _ART_ONLY_MIN_AI_PCT):
         reasons.append(f"Screen capture from {device} ({orient} orientation) displaying fully AI-generated media")
@@ -272,7 +271,7 @@ def _stage_declared_or_art_synthesis(c: _TaxonomyInputs, S: Any) -> _Outcome:
     """2. Fully AI-generated: explicit declaration (watermark / label / metadata) or non-optical digital art."""
     if not (c.declares_ai or (c.is_digital_art and not c.has_camera and not c.is_scanned and c.ai_pct >= _ART_ONLY_MIN_AI_PCT)):
         return None
-    reasons: List[str] = []
+    reasons: list[str] = []
     if (c.is_digital_art and c.art.get("visual_medium") == "Digital 3D CGI / AI Neural Painting"
             and not c.has_watermark and not c.has_ai_iptc and not c.has_pure_ai_meta):
         reasons.append("Looks like a 3D or CGI-style rendering (flat colour and no camera grain); the tool cannot confirm how it was made")
@@ -305,7 +304,7 @@ def _stage_enhanced_composite(c: _TaxonomyInputs, S: Any) -> _Outcome:
     inpainting_counts = c.is_inpainted and c.ai_pct >= _COMPOSITE_MIN_AI_PCT
     if not (c.is_ai_enhancer or composite_label or inpainting_counts):
         return None
-    reasons: List[str] = []
+    reasons: list[str] = []
     if inpainting_counts:
         reasons.append(c.inpainting.get("details", "Localized generative inpainting / composite detected"))
     if c.is_ai_enhancer:
@@ -368,7 +367,7 @@ def _stage_graphic_edit(c: _TaxonomyInputs, S: Any) -> _Outcome:
     has_graphic_text = c.text_count >= 3
     if not (is_cutout or is_graphic_edit or (has_graphic_text and not c.is_digital_art)):
         return None
-    reasons: List[str] = []
+    reasons: list[str] = []
     # Only authentic if verified camera hardware OR genuine sensor noise >= 1.35 with low AI probability
     if (c.has_camera or c.noise_mean >= 1.35 or c.real_pct >= 50.0) and c.ai_pct < 50.0:
         if is_cutout:
@@ -399,7 +398,7 @@ def _stage_local_processing(c: _TaxonomyInputs, S: Any) -> _Outcome:
 def _stage_authentic_photograph(c: _TaxonomyInputs, S: Any) -> _Outcome:
     """7. Default: authentic camera / phone photograph (or a scan of a physical print)."""
     m = c.metadata
-    reasons: List[str] = []
+    reasons: list[str] = []
     if c.is_scanned:
         reasons.append(c.scanned.get("details", "High-resolution flatbed scan of physical photographic print"))
         reasons.append("Consistent with a scan of a printed photograph (heuristic)")

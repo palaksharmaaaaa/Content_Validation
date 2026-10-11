@@ -6,8 +6,6 @@ class: informational, never alters P(AI).
 """
 from __future__ import annotations
 
-from typing import List
-
 from PIL import Image
 
 from core.forensics.registry import CheckContext, registry
@@ -21,7 +19,7 @@ HEAVY_COMPRESSION_QUALITY = 70
 
 @registry.register("image", "confidence_limiters", phase="post")
 def check_confidence_limiters(ctx: CheckContext) -> Finding:
-    limiters: List[str] = []
+    limiters: list[str] = []
     try:
         with Image.open(ctx.path) as im:
             w, h = im.size

@@ -2,12 +2,9 @@
 import json
 import random
 
+from tests.golden_support import assert_golden
 from video_detector.attribution import VideoModelAttributionEngine
 from video_detector.provenance import KNOWN_VIDEO_GENERATOR_SIGNATURES
-
-
-
-from tests.golden_support import assert_golden
 
 
 def test_video_attribution_matches_golden(tmp_path):

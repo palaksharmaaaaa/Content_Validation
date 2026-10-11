@@ -7,8 +7,6 @@ import numpy as np
 
 from image_detector.config import CANONICAL_SCREEN_RESOLUTIONS
 from image_detector.features import detect_screenshot
-
-
 from tests.golden_support import assert_golden
 
 

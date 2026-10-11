@@ -10,9 +10,10 @@ from __future__ import annotations
 import functools
 import logging
 import math
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
 from core.forensics.config import TOTAL_LLR_CAP
 from core.forensics.schemas import (
@@ -32,11 +33,11 @@ class CheckContext:
     """Everything a check may read: file path, modality and the profile, provenance, content and detector results so far."""
     path: Path
     modality: str
-    profile: Dict[str, Any] = field(default_factory=dict)
-    provenance: Dict[str, Any] = field(default_factory=dict)
-    content: Dict[str, Any] = field(default_factory=dict)
-    ai_result: Dict[str, Any] = field(default_factory=dict)
-    extra: Dict[str, Any] = field(default_factory=dict)
+    profile: dict[str, Any] = field(default_factory=dict)
+    provenance: dict[str, Any] = field(default_factory=dict)
+    content: dict[str, Any] = field(default_factory=dict)
+    ai_result: dict[str, Any] = field(default_factory=dict)
+    extra: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         self.path = Path(self.path)
@@ -48,7 +49,7 @@ CheckFn = Callable[[CheckContext], Any]
 class CheckRegistry:
     """Holds the dimension checks per modality and phase and runs each one in isolation."""
     def __init__(self) -> None:
-        self._checks: Dict[Tuple[str, str], List[Tuple[str, CheckFn]]] = {}
+        self._checks: dict[tuple[str, str], list[tuple[str, CheckFn]]] = {}
 
     def register(self, modality: str, check_id: str, phase: str = "pre") -> Callable[[CheckFn], CheckFn]:
         """Decorator that registers a check under ``check_id``. Re-registering replaces the old one."""
@@ -61,9 +62,9 @@ class CheckRegistry:
 
         return deco
 
-    def run(self, modality: str, ctx: CheckContext, phase: str = "pre") -> List[Finding]:
+    def run(self, modality: str, ctx: CheckContext, phase: str = "pre") -> list[Finding]:
         """Run every check for a modality and phase. A check that raises becomes an ``ERROR`` finding; the rest still run."""
-        out: List[Finding] = []
+        out: list[Finding] = []
         for check_id, fn in list(self._checks.get((modality, phase), [])):
             try:
                 result = fn(ctx)
@@ -94,14 +95,14 @@ class CheckRegistry:
 registry = CheckRegistry()
 
 
-def run_checks(modality: str, ctx: CheckContext, phase: str = "pre") -> List[Finding]:
+def run_checks(modality: str, ctx: CheckContext, phase: str = "pre") -> list[Finding]:
     """Run the default registry's checks for a modality and phase."""
     return registry.run(modality, ctx, phase)
 
 
-def build_report(findings: List[Finding], gates: Optional[Dict[str, Any]] = None) -> DimensionReport:
+def build_report(findings: list[Finding], gates: dict[str, Any] | None = None) -> DimensionReport:
     """Applies the hybrid-scoring rules and assembles the report."""
-    terms: Dict[str, float] = {}
+    terms: dict[str, float] = {}
     for f in findings:
         if f.evidence_class not in SCORE_ELIGIBLE_CLASSES:
             f.llr = None
@@ -120,7 +121,7 @@ def build_report(findings: List[Finding], gates: Optional[Dict[str, Any]] = None
         scale = TOTAL_LLR_CAP / abs(total)
         terms = {k: v * scale for k, v in terms.items()}
 
-    reliability: Dict[str, Any] = {}
+    reliability: dict[str, Any] = {}
     for f in findings:
         if f.evidence_class == EvidenceClass.RELIABILITY and "level" in f.data:
             reliability = dict(f.data)

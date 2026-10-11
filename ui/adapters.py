@@ -5,27 +5,33 @@ short-circuit shape, display profile blocks, keyframe file, error packaging)."""
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
-
+from typing import Any
 
 from audio_detector import AudioAIDetector
-from image_detector import ImageAIDetector, ImageContentAnalyzer as ContentAnalyzer, ImageModelAttributionEngine as ModelAttributionEngine
-from video_detector import VideoAIDetector
-from audio_detector.dimension_checks import check_audio_gates, gate_short_circuit_result as audio_gate_short_circuit_result, summarize_for_evidence_trail as audio_summarize_for_evidence_trail
-from video_detector.dimension_checks import check_video_gates, gate_short_circuit_result as video_gate_short_circuit_result, summarize_for_evidence_trail as video_summarize_for_evidence_trail
-from image_detector.dimension_checks import check_image_gates, gate_short_circuit_result, summarize_for_evidence_trail
+from audio_detector.dimension_checks import check_audio_gates
+from audio_detector.dimension_checks import gate_short_circuit_result as audio_gate_short_circuit_result
+from audio_detector.dimension_checks import summarize_for_evidence_trail as audio_summarize_for_evidence_trail
 from audio_detector.pipeline import AudioForensicPipeline
+from image_detector import ImageAIDetector
+from image_detector import ImageContentAnalyzer as ContentAnalyzer
+from image_detector import ImageModelAttributionEngine as ModelAttributionEngine
+from image_detector.dimension_checks import check_image_gates, gate_short_circuit_result, summarize_for_evidence_trail
 from image_detector.pipeline import ImageForensicPipeline
-from video_detector.content import VideoContentAnalyzer
-from video_detector.pipeline import VideoForensicPipeline
 from ui.profile_view import add_ui_profile_blocks
 from ui.validators import validate_file
+from video_detector import VideoAIDetector
+from video_detector.content import VideoContentAnalyzer
+from video_detector.dimension_checks import check_video_gates
+from video_detector.dimension_checks import gate_short_circuit_result as video_gate_short_circuit_result
+from video_detector.dimension_checks import summarize_for_evidence_trail as video_summarize_for_evidence_trail
+from video_detector.pipeline import VideoForensicPipeline
 
 
-def _precheck(path: str, filename: str, gates: Dict[str, Any], short_circuit: Callable[[str, Dict[str, Any]], Dict[str, Any]],
-              noun: str, source: Optional[str] = None) -> Tuple[Optional[Dict[str, Any]], Dict[str, Any]]:
+def _precheck(path: str, filename: str, gates: dict[str, Any], short_circuit: Callable[[str, dict[str, Any]], dict[str, Any]],
+              noun: str, source: str | None = None) -> tuple[dict[str, Any] | None, dict[str, Any]]:
     """What happens before any model runs, identical for every modality: a fired gate (hard-block list, recognised scientific
     format) short-circuits to a decision stub, and an unreadable file becomes an error result. Returns ``(result, file_res)``;
     ``result`` is None when the file may be analysed."""
@@ -48,7 +54,7 @@ def process_single_image(
     attribution_engine: ModelAttributionEngine,
     sensitivity: str = "balanced",
     source: str = "User Upload",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Runs end-to-end forensic pipeline on a single image."""
     # 0. Pre-analysis gates (before decoding): hard-block hash list + out-of-scope scientific formats.
     gates = check_image_gates(img_path)
@@ -92,9 +98,9 @@ def process_single_video(
     audio_detector: AudioAIDetector,
     attribution_engine: ModelAttributionEngine,
     sensitivity: str = "balanced",
-    cache_dir: Optional[Path] = None,
-    video_detector: Optional[VideoAIDetector] = None,
-) -> Dict[str, Any]:
+    cache_dir: Path | None = None,
+    video_detector: VideoAIDetector | None = None,
+) -> dict[str, Any]:
     """Runs end-to-end forensic pipeline on a single video."""
     # 0. Pre-analysis gates (before decoding): hard-block hash list + scientific-format recognition.
     gates = check_video_gates(vid_path)
@@ -142,7 +148,7 @@ def process_single_audio(
     content_analyzer: Any,
     attribution_engine: Any,
     sensitivity: str = "balanced",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Runs end-to-end forensic pipeline on a single audio file."""
     # 0. Pre-analysis gates (before decoding): hard-block hash list + symbolic-music recognition.
     gates = check_audio_gates(aud_path)
@@ -193,7 +199,7 @@ def batch_workers(modality: str, n_items: int) -> int:
     return max(1, min(_MAX_WORKERS.get(modality, 1), max(1, cores // 2), n_items))
 
 
-def _analyse_item(item: Dict[str, str], modality: str, detectors: Dict[str, Any], sensitivity: str, cache_dir: Optional[Path]) -> Dict[str, Any]:
+def _analyse_item(item: dict[str, str], modality: str, detectors: dict[str, Any], sensitivity: str, cache_dir: Path | None) -> dict[str, Any]:
     """Analyse one batch item; any failure becomes an error result so one bad file never stops the batch."""
     path = item["path"]
     filename = item["filename"]
@@ -235,13 +241,13 @@ def _analyse_item(item: Dict[str, str], modality: str, detectors: Dict[str, Any]
 
 
 def run_batch_pipeline(
-    items: List[Dict[str, str]],
+    items: list[dict[str, str]],
     modality: str,
-    detectors: Dict[str, Any],
+    detectors: dict[str, Any],
     sensitivity: str = "balanced",
-    cache_dir: Optional[Path] = None,
-    progress_callback: Optional[Callable[[int, int, str], None]] = None,
-) -> List[Dict[str, Any]]:
+    cache_dir: Path | None = None,
+    progress_callback: Callable[[int, int, str], None] | None = None,
+) -> list[dict[str, Any]]:
     """Analyse a list of media items, several at a time on a multi-core machine (see ``batch_workers``).
 
     Results are returned in the order of ``items``. ``progress_callback(done, total, filename)`` is called from the calling thread
@@ -256,7 +262,7 @@ def run_batch_pipeline(
                 progress_callback(len(results), total, item["filename"])
         return results
 
-    results: List[Optional[Dict[str, Any]]] = [None] * total
+    results: list[dict[str, Any] | None] = [None] * total
     pool = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="batch")
     try:
         futures = {pool.submit(_analyse_item, item, modality, detectors, sensitivity, cache_dir): i for i, item in enumerate(items)}

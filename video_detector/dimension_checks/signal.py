@@ -7,8 +7,6 @@ log-odds. Frames come from ``ctx.extra["frames"]`` (consecutive grayscale arrays
 """
 from __future__ import annotations
 
-from typing import List
-
 import numpy as np
 
 from core.forensics.registry import CheckContext, registry
@@ -29,7 +27,7 @@ def _f(check_id, title, status, severity, detail, data=None) -> Finding:
                    evidence_class=EvidenceClass.PHYSICAL_SIGNAL, detail=detail, data=data or {})
 
 
-def _frames(ctx: CheckContext) -> List[np.ndarray]:
+def _frames(ctx: CheckContext) -> list[np.ndarray]:
     fr = ctx.extra.get("frames")
     if fr is None:
         fr = C.read_consecutive_gray(ctx.path)
@@ -37,7 +35,7 @@ def _frames(ctx: CheckContext) -> List[np.ndarray]:
     return fr
 
 
-def _frame_diffs(frames: List[np.ndarray]) -> np.ndarray:
+def _frame_diffs(frames: list[np.ndarray]) -> np.ndarray:
     return np.array([float(np.mean(np.abs(b.astype(np.float32) - a.astype(np.float32)))) for a, b in zip(frames[:-1], frames[1:])])
 
 

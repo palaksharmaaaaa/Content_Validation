@@ -8,9 +8,9 @@ Cross-Modal Synchronization, Feedback Memory Bank, and Continual Auto-Learning P
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 import tempfile
 import wave
+from pathlib import Path
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -19,16 +19,18 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 from audio_detector import AudioAIDetector, AudioContentAnalyzer
+from core.decision import generate_final_decision
 from image_detector import (
     ImageAIDetector,
     ImageContentAnalyzer,
-    ImageModelAttributionEngine as ModelAttributionEngine,
     analyze_image,
 )
-from video_detector import evaluate_cross_modal_consistency
-from core.decision import generate_final_decision
+from image_detector import (
+    ImageModelAttributionEngine as ModelAttributionEngine,
+)
 from ui.profile_view import profile_media
 from ui.validators import analyze_provenance, validate_file
+from video_detector import evaluate_cross_modal_consistency
 
 
 def run_pipeline_test():

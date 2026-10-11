@@ -4,8 +4,6 @@ RELIABILITY class: informational, never alters P(AI).
 """
 from __future__ import annotations
 
-from typing import List
-
 from core.forensics.registry import CheckContext, registry
 from core.forensics.schemas import EvidenceClass, Finding, FindingStatus, Severity
 from video_detector.dimension_checks import container, signal
@@ -18,7 +16,7 @@ HEAVY_COMPRESSION_BPP = 0.05
 
 @registry.register("video", "confidence_limiters", phase="post")
 def check_confidence_limiters(ctx: CheckContext) -> Finding:
-    limiters: List[str] = []
+    limiters: list[str] = []
     st = get_stream(ctx)
     if st["width"] and st["height"] and min(st["width"], st["height"]) < LOW_RES_MIN_SIDE:
         limiters.append(f"Low resolution ({st['width']}x{st['height']}): pixel-level and noise cues are unreliable")

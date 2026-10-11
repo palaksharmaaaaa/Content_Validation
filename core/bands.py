@@ -7,10 +7,10 @@ context channels are independent of the band.
 from __future__ import annotations
 
 import math
-from enum import Enum
+from enum import StrEnum
 
 
-class Band(str, Enum):
+class Band(StrEnum):
     """The five probability bands a score maps to; prefer these over a bare percentage."""
     HIGH_CONFIDENCE_SYNTHETIC = "HIGH_CONFIDENCE_SYNTHETIC"
     LEANING_SYNTHETIC = "LEANING_SYNTHETIC"

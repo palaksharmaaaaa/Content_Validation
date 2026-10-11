@@ -15,7 +15,7 @@ It does not count speakers or identify a language; callers must not expect those
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 
@@ -47,7 +47,7 @@ class AudioContentAnalyzer:
         frames = np.stack([samples[s:s + n_fft] for s in starts]) * np.hanning(n_fft)
         return np.abs(np.fft.rfft(frames, axis=1)).mean(axis=0)
 
-    def analyze_audio_scene(self, samples: np.ndarray, sample_rate: int = 16000) -> Dict[str, Any]:
+    def analyze_audio_scene(self, samples: np.ndarray, sample_rate: int = 16000) -> dict[str, Any]:
         """Dominant sound type, delivery style and level of a recording; ``Unknown`` values when it is too short to measure."""
         if samples is None or len(samples) < 500 or sample_rate <= 0:
             return {"signal_level": UNKNOWN, "dominant_modality": UNKNOWN, "delivery_style": UNKNOWN, "speech_ratio": None,

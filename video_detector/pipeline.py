@@ -18,7 +18,7 @@ import hashlib
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import cv2
 import numpy as np
@@ -47,24 +47,24 @@ class VideoRun:
     """Every intermediate of one video analysis; consumed by the headless report and by the Streamlit adapter."""
 
     path: Path
-    gates: Dict[str, Any]
-    profile: Dict[str, Any]
-    provenance: Dict[str, Any]
-    video_result: Dict[str, Any]
-    audio_result: Optional[Dict[str, Any]]
-    content: Dict[str, Any]
-    keyframe: Optional[np.ndarray]
-    keyframe_path: Optional[str]
-    keyframe_ai: Optional[Dict[str, Any]]
-    cross_modal: Dict[str, Any]
-    attribution: Dict[str, Any]
-    dimension_report: Dict[str, Any]
-    decision: Dict[str, Any]
-    nine_dimensions: Dict[str, Any]
+    gates: dict[str, Any]
+    profile: dict[str, Any]
+    provenance: dict[str, Any]
+    video_result: dict[str, Any]
+    audio_result: dict[str, Any] | None
+    content: dict[str, Any]
+    keyframe: np.ndarray | None
+    keyframe_path: str | None
+    keyframe_ai: dict[str, Any] | None
+    cross_modal: dict[str, Any]
+    attribution: dict[str, Any]
+    dimension_report: dict[str, Any]
+    decision: dict[str, Any]
+    nine_dimensions: dict[str, Any]
     newbie_explanation: str
 
 
-def _terminal_report(status: str, reason: str, trail_line: str) -> Dict[str, Any]:
+def _terminal_report(status: str, reason: str, trail_line: str) -> dict[str, Any]:
     return {
         "content_valid": False,
         "final_status": status,
@@ -76,10 +76,10 @@ def _terminal_report(status: str, reason: str, trail_line: str) -> Dict[str, Any
 
 
 def _evidence_trail(
-    provenance: Dict[str, Any], ai_res: Dict[str, Any], cross_modal: Dict[str, Any],
-    attribution: Dict[str, Any], dimension_report: Dict[str, Any],
-) -> List[str]:
-    trail: List[str] = []
+    provenance: dict[str, Any], ai_res: dict[str, Any], cross_modal: dict[str, Any],
+    attribution: dict[str, Any], dimension_report: dict[str, Any],
+) -> list[str]:
+    trail: list[str] = []
     if provenance.get("c2pa_present"):
         trail.append("C2PA Content Credentials markers found in video container (presence only; not cryptographically verified).")
     trail.extend(ai_res.get("forensic_cues", []))
@@ -95,14 +95,14 @@ class VideoForensicPipeline:
 
     def __init__(
         self,
-        detector: Optional[VideoAIDetector] = None,
-        validator: Optional[VideoValidator] = None,
-        profiler: Optional[VideoProfiler] = None,
-        provenance_validator: Optional[VideoProvenanceValidator] = None,
-        content_analyzer: Optional[VideoContentAnalyzer] = None,
-        attribution_engine: Optional[VideoModelAttributionEngine] = None,
-        cross_modal_engine: Optional[CrossModalConsistencyEngine] = None,
-        audio_detector: Optional[Any] = None,
+        detector: VideoAIDetector | None = None,
+        validator: VideoValidator | None = None,
+        profiler: VideoProfiler | None = None,
+        provenance_validator: VideoProvenanceValidator | None = None,
+        content_analyzer: VideoContentAnalyzer | None = None,
+        attribution_engine: VideoModelAttributionEngine | None = None,
+        cross_modal_engine: CrossModalConsistencyEngine | None = None,
+        audio_detector: Any | None = None,
     ):
         """``audio_detector``: optional object with ``analyze_audio_file(path, sensitivity=...)``; when given, the
         file's audio track is analysed too and fused / cross-checked (injected by the services layer)."""
@@ -121,10 +121,10 @@ class VideoForensicPipeline:
         video_path: str | Path,
         *,
         sensitivity: str = "balanced",
-        filename: Optional[str] = None,
-        gates: Optional[Dict[str, Any]] = None,
-        audio_forensics: Optional[Dict[str, Any]] = None,
-        cache_dir: Optional[Path] = None,
+        filename: str | None = None,
+        gates: dict[str, Any] | None = None,
+        audio_forensics: dict[str, Any] | None = None,
+        cache_dir: Path | None = None,
     ) -> VideoRun:
         """The one analysis sequence. Callers handle gate/validation short-circuits before calling this.
 
@@ -188,7 +188,7 @@ class VideoForensicPipeline:
                         keyframe_ai, cross_modal, attribution, dimension_report, decision, nine_dimensions, newbie)
 
     @staticmethod
-    def _write_keyframe(keyframe: Optional[np.ndarray], cache_dir: Optional[Path], filename: str) -> Optional[str]:
+    def _write_keyframe(keyframe: np.ndarray | None, cache_dir: Path | None, filename: str) -> str | None:
         if keyframe is None or cache_dir is None:
             return None
         folder = Path(cache_dir)
@@ -209,8 +209,8 @@ class VideoForensicPipeline:
         self,
         video_path: str | Path,
         sensitivity: str = "balanced",
-        audio_forensics: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        audio_forensics: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Runs the entire end-to-end video forensic analysis pipeline and returns the headless report."""
         path = Path(video_path)
         if not path.is_file():
@@ -231,7 +231,7 @@ class VideoForensicPipeline:
         return self._report(r, val_res.to_dict())
 
     @staticmethod
-    def _report(r: VideoRun, container_validation: Dict[str, Any]) -> Dict[str, Any]:
+    def _report(r: VideoRun, container_validation: dict[str, Any]) -> dict[str, Any]:
         probs = r.decision["authenticity_probabilities"]
         return {
             "content_valid": True,

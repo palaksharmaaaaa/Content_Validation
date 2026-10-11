@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import pandas as pd
 import streamlit as st
@@ -11,7 +11,7 @@ from ui.layout import render_table
 from ui.results.summary import verdict_style
 
 
-def _row(result: Dict[str, Any], modality: str) -> Dict[str, Any]:
+def _row(result: dict[str, Any], modality: str) -> dict[str, Any]:
     name = result.get("filename", "unknown")
     if not result.get("success"):
         return {"File": name, "Verdict": "Could not process", "AI likelihood": None, "Note": result.get("error", "")}
@@ -39,7 +39,7 @@ def csv_safe(table: pd.DataFrame) -> pd.DataFrame:
     return table.map(cell) if hasattr(table, "map") else table.applymap(cell)
 
 
-def render_batch_overview(results: List[Dict[str, Any]], modality: str) -> Optional[Dict[str, Any]]:
+def render_batch_overview(results: list[dict[str, Any]], modality: str) -> dict[str, Any] | None:
     """Counts, a comparison table with downloads, and a picker. Returns the chosen result."""
     ok = [r for r in results if r.get("success")]
     flagged = [r for r in ok if not r.get("gate_blocked") and verdict_style(r.get("decision", {}))[0] in ("error", "warning")]

@@ -12,7 +12,6 @@ import re
 import subprocess
 import threading
 from pathlib import Path
-from typing import Dict, Optional
 
 from audio_detector.dimension_checks import _common as C
 from core.ffmpeg import ffmpeg_input
@@ -39,7 +38,7 @@ _GEN_RX = {k: re.compile(v, re.I) for k, v in _GENERATORS.items()}
 _ID3_SOFTWARE_FRAMES = ("TSSE", "TSS", "TENC", "TEN", "TPUB", "TCOP", "TXXX", "COMM")
 
 
-def _generator_in(text_fields: Dict[str, str]) -> Optional[str]:
+def _generator_in(text_fields: dict[str, str]) -> str | None:
     for text in text_fields.values():
         for name, rx in _GEN_RX.items():
             if rx.search(text):
@@ -96,7 +95,7 @@ def check_riff_structure(ctx: CheckContext) -> Finding:
     chunks = {c["id"]: c for c in riff["chunks"]}
     fmt = C.parse_wav_fmt(C.riff_chunk_body(ctx.path, chunks["fmt "])) if "fmt " in chunks else None
     bext = C.parse_bext(C.riff_chunk_body(ctx.path, chunks["bext"], limit=1 << 20)) if "bext" in chunks else None
-    info: Dict[str, str] = {}
+    info: dict[str, str] = {}
     for ch in riff["chunks"]:
         if ch["id"] == "LIST":
             info.update(C.parse_list_info(C.riff_chunk_body(ctx.path, ch)))
@@ -127,7 +126,7 @@ DECODE_TIMEOUT_SECONDS = 120
 _FLAC_FMT = {16: "s16le", 24: "s24le"}
 
 
-def _md5_of_decoded(path: Path, sample_fmt: str) -> Optional[str]:
+def _md5_of_decoded(path: Path, sample_fmt: str) -> str | None:
     """MD5 of the PCM that ffmpeg decodes from ``path`` (None if ffmpeg is missing, fails or times out)."""
     try:
         proc = subprocess.Popen(
@@ -136,7 +135,7 @@ def _md5_of_decoded(path: Path, sample_fmt: str) -> Optional[str]:
         )
     except FileNotFoundError:
         return None
-    h = hashlib.md5()
+    h = hashlib.md5(usedforsecurity=False)
     watchdog = threading.Timer(DECODE_TIMEOUT_SECONDS, proc.kill)      # a hostile file must not keep ffmpeg (and this read loop) running
     watchdog.start()
     with proc:  # closes the stdout pipe even on errors (no leaked handle)
@@ -230,7 +229,7 @@ def check_ogg_structure(ctx: CheckContext) -> Finding:
     if not pages:
         return _f("ogg_structure", title, FindingStatus.INFO, Severity.LOW, "No complete Ogg pages could be parsed.")
     crc_fail = sum(1 for p in pages if not p["crc_ok"])
-    by_serial: Dict[int, list] = {}
+    by_serial: dict[int, list] = {}
     for p in pages:
         by_serial.setdefault(p["serial"], []).append(p)
     gaps = regress = 0

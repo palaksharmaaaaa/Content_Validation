@@ -4,9 +4,9 @@ from __future__ import annotations
 import functools
 import threading
 from collections import OrderedDict
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
-
+from typing import Any
 
 _KEY_TYPES = (int, float, str, bytes, bool, type(None))
 
@@ -18,7 +18,7 @@ def stat_cached(maxsize: int = 16) -> Callable:
     keying it by ``id()`` could return a stale result once the object is garbage-collected and its id reused."""
 
     def deco(fn: Callable) -> Callable:
-        cache: "OrderedDict[tuple, Any]" = OrderedDict()
+        cache: OrderedDict[tuple, Any] = OrderedDict()
         lock = threading.Lock()
 
         @functools.wraps(fn)

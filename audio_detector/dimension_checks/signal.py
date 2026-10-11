@@ -7,7 +7,7 @@ studios remove mains hum. Fake hi-res / telephony / loudness findings are inform
 """
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -33,7 +33,7 @@ def _f(check_id, dim, stage, title, status, severity, detail, data=None, llr=Non
                    evidence_class=EvidenceClass.PHYSICAL_SIGNAL, detail=detail, data=data or {}, llr=llr)
 
 
-def _samples(ctx: CheckContext) -> Tuple[np.ndarray, int]:
+def _samples(ctx: CheckContext) -> tuple[np.ndarray, int]:
     s = ctx.extra.get("samples")
     if s is None:
         from audio_detector.validator import AudioValidator
@@ -78,7 +78,7 @@ def check_enf_trace(ctx: CheckContext) -> Finding:
     factor = max(1, int(round(sr / 1000.0)))
     n = len(x) // factor * factor
     xd, fs = x[:n].reshape(-1, factor).mean(axis=1), sr / factor
-    best: Optional[Dict[str, Any]] = None
+    best: dict[str, Any] | None = None
     for nominal in (50, 60):
         f_est, snr = _enf_track(xd, fs, nominal)
         if len(f_est) < ENF_MIN_FRAMES:
@@ -90,7 +90,7 @@ def check_enf_trace(ctx: CheckContext) -> Finding:
         return _f("enf_trace", "O", "signal", title, FindingStatus.NOT_APPLICABLE, Severity.NONE, "Too few analysis frames.")
     good = best["snr"] >= ENF_SNR_MIN
     frac = float(good.mean())
-    data: Dict[str, Any] = {"nominal_hz": best["nominal"], "median_snr": round(best["median_snr"], 1),
+    data: dict[str, Any] = {"nominal_hz": best["nominal"], "median_snr": round(best["median_snr"], 1),
                             "good_frame_fraction": round(frac, 2), "frames": int(len(good))}
     if frac < ENF_PRESENT_FRACTION:
         return _f("enf_trace", "O", "signal", title, FindingStatus.INFO, Severity.NONE,
@@ -125,7 +125,7 @@ def check_enf_trace(ctx: CheckContext) -> Finding:
 # ---------------------------------------------------------------------------------------------
 # Fake hi-res / bit-depth padding
 # ---------------------------------------------------------------------------------------------
-def _welch_db(x: np.ndarray, sr: int) -> Tuple[np.ndarray, np.ndarray]:
+def _welch_db(x: np.ndarray, sr: int) -> tuple[np.ndarray, np.ndarray]:
     n = 4096 if sr <= 64000 else 8192
     win = np.hanning(n)
     hop = n // 2
@@ -139,7 +139,7 @@ def _welch_db(x: np.ndarray, sr: int) -> Tuple[np.ndarray, np.ndarray]:
     return np.fft.rfftfreq(n, 1.0 / sr), 10.0 * np.log10(acc + 1e-20)
 
 
-def _find_cutoff(freqs: np.ndarray, db: np.ndarray, sr: int) -> Optional[float]:
+def _find_cutoff(freqs: np.ndarray, db: np.ndarray, sr: int) -> float | None:
     nyq = sr / 2.0
     edges = np.arange(4000.0, nyq - 250.0, 250.0)
     if len(edges) < 12:
@@ -185,9 +185,7 @@ def check_fake_hires(ctx: CheckContext) -> Finding:
         padded = bool(np.any(v != 0) and np.mean((v & 0xFF) == 0) >= 0.999)
     verdict = "NO_ANOMALY"
     if cutoff is not None:
-        if sr >= 88200 and cutoff <= 24000:
-            verdict = "UPSAMPLED_FROM_LOWER_RATE"
-        elif 32000 <= sr <= 64000 and cutoff < 15000:
+        if sr >= 88200 and cutoff <= 24000 or 32000 <= sr <= 64000 and cutoff < 15000:
             verdict = "UPSAMPLED_FROM_LOWER_RATE"
         elif 32000 <= sr <= 64000 and (15000 <= cutoff <= 16800 or 18000 <= cutoff <= 20800):
             verdict = "POSSIBLE_LOSSY_ORIGIN"

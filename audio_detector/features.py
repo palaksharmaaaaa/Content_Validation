@@ -9,7 +9,7 @@ Analyzes:
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import cv2
 import numpy as np
@@ -23,7 +23,7 @@ from audio_detector.config import (
 )
 
 
-def feature_vector(f: Dict[str, Any]) -> List[float]:
+def feature_vector(f: dict[str, Any]) -> list[float]:
     """The five numbers the neural head is trained on and scores; one definition for training and inference so they cannot drift apart."""
     return [
         float(f["has_vocoder_cutoff"]),
@@ -34,7 +34,7 @@ def feature_vector(f: Dict[str, Any]) -> List[float]:
     ]
 
 
-def compute_spectral_features(samples: np.ndarray, sample_rate: int, exact_zero_is_informative: bool = True) -> Dict[str, Any]:
+def compute_spectral_features(samples: np.ndarray, sample_rate: int, exact_zero_is_informative: bool = True) -> dict[str, Any]:
     """
     Computes acoustic features indicative of neural vocoders and synthetic speech:
     1. Vocoder high-frequency brick-wall cutoff (> 7.5kHz vs < 4kHz).
@@ -143,7 +143,7 @@ def compute_spectral_features(samples: np.ndarray, sample_rate: int, exact_zero_
     }
 
 
-def generate_spectrogram_image(samples: np.ndarray, sample_rate: int) -> Optional[np.ndarray]:
+def generate_spectrogram_image(samples: np.ndarray, sample_rate: int) -> np.ndarray | None:
     """Generates an RGB spectral heatmap image representing frequency energy over time."""
     if len(samples) < 500 or sample_rate <= 0:
         return None
@@ -176,7 +176,7 @@ def generate_spectrogram_image(samples: np.ndarray, sample_rate: int) -> Optiona
 
 def segment_audio_temporal(
     samples: np.ndarray, sample_rate: int, window_sec: float = DEFAULT_WINDOW_SECONDS
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Divides audio into contiguous temporal evaluation chunks."""
     if len(samples) == 0 or sample_rate <= 0:
         return []

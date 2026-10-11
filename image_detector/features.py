@@ -11,20 +11,19 @@ Extracts:
 from __future__ import annotations
 
 import hashlib
+import io
 import logging
 import re
 import threading
-
-import io
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import cv2
-from core.imageio import imread
 import numpy as np
 from PIL import Image, ImageChops, ImageEnhance
 from PIL.ExifTags import TAGS
 
+from core.imageio import imread
 from image_detector.config import AMBIGUOUS_SCREEN_RESOLUTIONS, CANONICAL_SCREEN_RESOLUTIONS, KNOWN_AI_SOFTWARE_SIGNATURES
 
 logger = logging.getLogger(__name__)
@@ -56,7 +55,7 @@ def _downsample_if_needed(img: np.ndarray, max_dim: int = 1536) -> np.ndarray:
     return img
 
 
-def _blank_metadata_info() -> Dict[str, Any]:
+def _blank_metadata_info() -> dict[str, Any]:
     return {
         "has_exif": False,
         "camera_make": None,
@@ -83,7 +82,7 @@ def _blank_metadata_info() -> Dict[str, Any]:
     }
 
 
-def _read_exif_fields(img: Image.Image, info: Dict[str, Any]) -> None:
+def _read_exif_fields(img: Image.Image, info: dict[str, Any]) -> None:
     """Standard EXIF plus the Exif sub-IFD (optical parameters) into ``info``."""
     exif = img.getexif()
     if not exif:
@@ -114,7 +113,7 @@ def _read_exif_fields(img: Image.Image, info: Dict[str, Any]) -> None:
         info["has_optical_parameters"] = True
 
 
-def _xmp_string(img: Image.Image, info: Dict[str, Any]) -> str:
+def _xmp_string(img: Image.Image, info: dict[str, Any]) -> str:
     """The embedded XMP packet as text ("" if none); also records a PNG creation time."""
     xmp_raw = img.info.get("XML:com.adobe.xmp") or img.info.get("xmp")
     if "Creation Time" in img.info:
@@ -124,7 +123,7 @@ def _xmp_string(img: Image.Image, info: Dict[str, Any]) -> str:
     return xmp_raw.decode("utf-8", errors="ignore") if isinstance(xmp_raw, bytes) else str(xmp_raw)
 
 
-def _apply_xmp_signatures(xmp_str: str, info: Dict[str, Any]) -> None:
+def _apply_xmp_signatures(xmp_str: str, info: dict[str, Any]) -> None:
     """IPTC DigitalSourceType / credit / tool markers. All are unauthenticated self-declarations."""
     if "trainedAlgorithmicMedia" in xmp_str:
         info["iptc_digital_source_type"] = "trainedAlgorithmicMedia"
@@ -148,7 +147,7 @@ def _apply_xmp_signatures(xmp_str: str, info: Dict[str, Any]) -> None:
         info["signature_details"] = "Graphic layout designed and exported via Canva"
 
 
-def _apply_software_signatures(info: Dict[str, Any]) -> None:
+def _apply_software_signatures(info: dict[str, Any]) -> None:
     """Editor / enhancer / screenshot-tool classification from the EXIF Software tag."""
     software_val = str(info.get("software") or "").lower()
     if "topaz photo ai" in software_val:
@@ -181,7 +180,7 @@ def _whole_word(sig: str, text: str) -> bool:
     return re.search(r"(?<![a-z0-9])" + re.escape(sig) + r"(?![a-z0-9])", text) is not None
 
 
-def _apply_generic_ai_signature(xmp_str: str, info: Dict[str, Any]) -> None:
+def _apply_generic_ai_signature(xmp_str: str, info: dict[str, Any]) -> None:
     """Whole-word search of the known-generator list across every tag value and the XMP packet; the ambiguous short names are
     only looked for in software-naming fields."""
     if info["ai_signature_found"]:
@@ -196,7 +195,7 @@ def _apply_generic_ai_signature(xmp_str: str, info: Dict[str, Any]) -> None:
             break
 
 
-def extract_image_metadata(image_path: str | Path) -> Dict[str, Any]:
+def extract_image_metadata(image_path: str | Path) -> dict[str, Any]:
     """
     Extracts standard EXIF metadata, optical camera parameters, Adobe XMP packets,
     IPTC digital source types, and classifies generator, editor, and screenshot signatures.
@@ -249,7 +248,7 @@ def _is_four_point_star(cnt: np.ndarray, gray_roi: np.ndarray) -> bool:
     return inside.size > 0 and ring.size > 0 and abs(float(inside.mean()) - float(ring.mean())) >= 25.0 and float(inside.std()) <= 40.0
 
 
-def detect_ai_watermark(image_path: str | Path, img_bgr: np.ndarray) -> Dict[str, Any]:
+def detect_ai_watermark(image_path: str | Path, img_bgr: np.ndarray) -> dict[str, Any]:
     """
     Detects known AI generation watermarks (specifically Google Gemini / Imagen 4-pointed sparkle emblem)
     and visual impression marks in corner quadrants.
@@ -293,7 +292,7 @@ def detect_ai_watermark(image_path: str | Path, img_bgr: np.ndarray) -> Dict[str
     return {"watermark_detected": False, "watermark_type": None, "details": None}
 
 
-def detect_background_cutout(image_path: str | Path, img_bgr: Optional[np.ndarray] = None) -> Dict[str, Any]:
+def detect_background_cutout(image_path: str | Path, img_bgr: np.ndarray | None = None) -> dict[str, Any]:
     """
     Detects whether an image has been subjected to background removal, alpha transparency,
     or replaced with a solid artificial studio backdrop.
@@ -350,7 +349,7 @@ def detect_background_cutout(image_path: str | Path, img_bgr: Optional[np.ndarra
     return {"is_cutout": False, "cutout_type": None, "details": None}
 
 
-def detect_scanned_photo(image_path: str | Path, img_bgr: np.ndarray, meta: Dict[str, Any]) -> Dict[str, Any]:
+def detect_scanned_photo(image_path: str | Path, img_bgr: np.ndarray, meta: dict[str, Any]) -> dict[str, Any]:
     """
     Detects high-resolution flatbed scans of physical photographic prints.
     Telltales: an ultra-high megapixel count (>= 20 MP) together with the dark frame a flatbed leaves at the image edge. A big
@@ -407,7 +406,7 @@ def _art_visual_medium(is_art: bool, is_ink_art: bool, flat_noise: float) -> str
 def _art_confidence_and_details(
     is_ink_art: bool, visual_medium: str, mean_sat: float, high_sat_pct: float,
     flat_noise: float, dark_edge_pct: float, q_colors: int,
-) -> Tuple[float, str]:
+) -> tuple[float, str]:
     if is_ink_art:
         edge_score = min(1.0, dark_edge_pct / 1.5)
         noise_score = min(1.0, max(0.0, (0.40 - flat_noise) / 0.30))
@@ -445,9 +444,9 @@ def _saturated_hue_concentration(img_bgr: np.ndarray) -> float:
 
 def detect_digital_art_and_painting(
     image_path: str | Path,
-    img_bgr: Optional[np.ndarray] = None,
-    metadata: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    img_bgr: np.ndarray | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """
     Detects whether an image is a digital painting, 2D/3D illustration, CGI synthetic render,
     ink/cross-hatched artwork, or stylized vector graphics rather than a natural optical camera capture.
@@ -524,7 +523,7 @@ def detect_digital_art_and_painting(
     }
 
 
-def calculate_sensor_noise_profile(gray_img: np.ndarray) -> Tuple[float, float]:
+def calculate_sensor_noise_profile(gray_img: np.ndarray) -> tuple[float, float]:
     """
     Computes camera sensor noise residual using wavelet / Wiener-approximated median filter subtraction.
     Camera sensors leave Poisson-Gaussian grain. Neural diffusion models
@@ -552,15 +551,15 @@ def calculate_surface_smoothness(gray_img: np.ndarray) -> float:
 
 
 # Returned when no spectrum could be measured (unreadable or tiny picture): no slope, nothing anomalous, no directional peaks.
-_UNMEASURED_FFT: Dict[str, Any] = {
+_UNMEASURED_FFT: dict[str, Any] = {
     "spectral_decay_alpha": None, "is_anomalous_decay": False, "azimuthal_directional_variance": 0.0, "peak_energy_ratio": 1.0, "measured": False,
 }
 
-_fft_memo: Dict[str, Any] = {"key": None, "value": None}
+_fft_memo: dict[str, Any] = {"key": None, "value": None}
 _fft_memo_lock = threading.Lock()
 
 
-def analyze_fft_radial_power_spectrum(gray_img: np.ndarray | str | Path) -> Dict[str, Any]:
+def analyze_fft_radial_power_spectrum(gray_img: np.ndarray | str | Path) -> dict[str, Any]:
     """Fourier radial power-spectrum analysis (see ``_analyze_fft_radial_power_spectrum``). The detector and the moire check ask for
     the same grayscale picture within one analysis, so the last result is reused when the pixels are identical."""
     if not (isinstance(gray_img, np.ndarray) and gray_img.ndim == 2):
@@ -575,7 +574,7 @@ def analyze_fft_radial_power_spectrum(gray_img: np.ndarray | str | Path) -> Dict
     return result
 
 
-def _analyze_fft_radial_power_spectrum(gray_img: np.ndarray | str | Path) -> Dict[str, Any]:
+def _analyze_fft_radial_power_spectrum(gray_img: np.ndarray | str | Path) -> dict[str, Any]:
     """
     Analyzes 2D Fourier Transform Radial Power Spectrum decay.
     Natural optical photography obeys Field's Law: Radial Power P(f) ~ 1 / f^alpha, where alpha ~ 2.0.
@@ -588,7 +587,7 @@ def _analyze_fft_radial_power_spectrum(gray_img: np.ndarray | str | Path) -> Dic
         gray_img = loaded
     elif gray_img.ndim == 3:
         gray_img = cv2.cvtColor(gray_img, cv2.COLOR_BGR2GRAY)
-    
+
     sample = _downsample_if_needed(gray_img, max_dim=1024)
     h, w = sample.shape[:2]
     min_dim = min(h, w)
@@ -662,7 +661,7 @@ def _analyze_fft_radial_power_spectrum(gray_img: np.ndarray | str | Path) -> Dic
 
 def compute_ela(
     image_input: str | Path | np.ndarray | Image.Image, quality: int = 90, multiplier: int = 15
-) -> Tuple[float, Optional[np.ndarray]]:
+) -> tuple[float, np.ndarray | None]:
     """
     Performs Error Level Analysis (ELA). Resaves the image at a known quality level
     and computes the pixel discrepancy between original and recompressed versions.
@@ -707,7 +706,7 @@ def compute_ela(
         return 0.0, None
 
 
-def generate_spatial_manipulation_heatmap(img_bgr: np.ndarray) -> Dict[str, Any]:
+def generate_spatial_manipulation_heatmap(img_bgr: np.ndarray) -> dict[str, Any]:
     """
     Generates a localized spatial manipulation heatmap highlighting regions with
     anomalous bilateral filter residual or synthetic over-smoothing.
@@ -747,7 +746,7 @@ def generate_spatial_manipulation_heatmap(img_bgr: np.ndarray) -> Dict[str, Any]
     }
 
 
-def _device_from_aspect(orientation: str, aspect_ratio: float) -> Optional[str]:
+def _device_from_aspect(orientation: str, aspect_ratio: float) -> str | None:
     """Device class guessed from aspect ratio and orientation when no canonical resolution matched.
 
     Tablet's aspect band (1.30-1.65) is a strict subset of desktop's first band (1.25-1.85), so the more specific
@@ -769,12 +768,12 @@ def _edge_density(strip: np.ndarray) -> float:
     return float(np.sum(cv2.Canny(strip, 50, 150) > 0)) / float(max(1, strip.size))
 
 
-def _bar_signals(gray: np.ndarray, orientation: str, aspect_ratio: float) -> Tuple[List[str], float]:
+def _bar_signals(gray: np.ndarray, orientation: str, aspect_ratio: float) -> tuple[list[str], float]:
     """Mobile status/navigation bars (portrait phones) or a dark desktop taskbar (landscape desktops)."""
     h = gray.shape[0]
     is_mobile = 1.75 <= aspect_ratio <= 2.35
     is_desktop = (1.25 <= aspect_ratio <= 1.85) or (2.30 <= aspect_ratio <= 2.45)
-    found: List[str] = []
+    found: list[str] = []
     gain = 0.0
     if orientation == "Portrait" and is_mobile:
         if 0.015 < _edge_density(gray[:max(10, int(h * 0.045)), :]) < 0.25:
@@ -791,7 +790,7 @@ def _bar_signals(gray: np.ndarray, orientation: str, aspect_ratio: float) -> Tup
     return found, gain
 
 
-def _rectilinear_ui(sample: np.ndarray, meta: Dict[str, Any]) -> bool:
+def _rectilinear_ui(sample: np.ndarray, meta: dict[str, Any]) -> bool:
     """Window/region snip: strong axis-aligned edges plus a dominant flat background tone."""
     grad_x = cv2.Sobel(sample, cv2.CV_32F, 1, 0)
     grad_y = cv2.Sobel(sample, cv2.CV_32F, 0, 1)
@@ -807,8 +806,8 @@ def _rectilinear_ui(sample: np.ndarray, meta: Dict[str, Any]) -> bool:
 
 
 def _ui_structure_signals(
-    gray: np.ndarray, sample: np.ndarray, orientation: str, aspect_ratio: float, meta: Dict[str, Any]
-) -> Tuple[List[str], float, Optional[str]]:
+    gray: np.ndarray, sample: np.ndarray, orientation: str, aspect_ratio: float, meta: dict[str, Any]
+) -> tuple[list[str], float, str | None]:
     """UI-structure evidence: (indicator names, confidence gain, device name if only a snip layout matched)."""
     found, gain = _bar_signals(gray, orientation, aspect_ratio)
     snip_device = None
@@ -821,9 +820,9 @@ def _ui_structure_signals(
 
 def detect_screenshot(
     image_path: str | Path,
-    img_bgr: Optional[np.ndarray] = None,
-    meta: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    img_bgr: np.ndarray | None = None,
+    meta: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """
     Detects whether an image is a screen capture across devices (Mobile Phone, Tablet, Laptop, Desktop)
     in any orientation (Portrait, Landscape, Square).
@@ -856,7 +855,7 @@ def detect_screenshot(
 
     orientation = "Landscape" if w > h else ("Portrait" if h > w else "Square")
     aspect_ratio = float(max(w, h)) / max(1.0, float(min(w, h)))
-    ui_elements: List[str] = []
+    ui_elements: list[str] = []
     confidence = 0.0
     device_type = "None"
     screen_resolution = f"{w}x{h}"
@@ -924,9 +923,9 @@ def detect_screenshot(
 
 def detect_inpainting_and_manipulation(
     image_path: str | Path,
-    img_bgr: Optional[np.ndarray] = None,
-    ela_map: Optional[np.ndarray] = None,
-) -> Dict[str, Any]:
+    img_bgr: np.ndarray | None = None,
+    ela_map: np.ndarray | None = None,
+) -> dict[str, Any]:
     """
     Detects localized generative inpainting, neural face swapping, deep learning denoising/upscaling,
     and composite splicing by evaluating spatial noise-residual inconsistency and ELA variance.
@@ -1022,9 +1021,9 @@ def detect_inpainting_and_manipulation(
 
 def detect_screen_rephotography_moire(
     image_path: str | Path,
-    img_bgr: Optional[np.ndarray] = None,
-    meta: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    img_bgr: np.ndarray | None = None,
+    meta: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """
     Detects screen re-photography (recapture of LCD/OLED/CRT displays) via Moiré interference patterns.
     Moiré occurs when the spatial frequency of the physical display subpixel grid aliasing against
@@ -1087,8 +1086,8 @@ def detect_screen_rephotography_moire(
 
 def detect_spectral_modality(
     image_path: str | Path,
-    img_bgr: Optional[np.ndarray] = None,
-) -> Dict[str, Any]:
+    img_bgr: np.ndarray | None = None,
+) -> dict[str, Any]:
     """
     Classifies electromagnetic spectrum and sensor capture modality:
     - Visible light, colour RGB (standard colour image)

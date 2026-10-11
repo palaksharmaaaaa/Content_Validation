@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from audio_detector import AudioProfiler
 from image_detector import ImageProfiler
@@ -12,7 +12,7 @@ _MIME_DEFAULT = {"image": "png", "video": "mp4", "audio": "wav"}
 _FORMAT_KEY = {"image": "format", "video": "container_format", "audio": "format"}
 
 
-def add_ui_profile_blocks(modality: str, res: Dict[str, Any]) -> Dict[str, Any]:
+def add_ui_profile_blocks(modality: str, res: dict[str, Any]) -> dict[str, Any]:
     """Mutates and returns a valid profile with ``success`` and ``file_identity`` (the measurements stay in the profiler's own blocks)."""
     if not res.get("valid"):
         return res
@@ -28,7 +28,7 @@ def add_ui_profile_blocks(modality: str, res: Dict[str, Any]) -> Dict[str, Any]:
     return res
 
 
-def modality_of_extension(suffix: str) -> Optional[str]:
+def modality_of_extension(suffix: str) -> str | None:
     """The modality whose package supports this file extension (the packages' own SUPPORTED_EXTENSIONS, so they cannot drift)."""
     import audio_detector.config as audio_cfg
     import image_detector.config as image_cfg
@@ -40,7 +40,7 @@ def modality_of_extension(suffix: str) -> Optional[str]:
     return None
 
 
-def profile_media(file_path: str | Path, modality: str = "auto", source: str = "User Upload") -> Dict[str, Any]:
+def profile_media(file_path: str | Path, modality: str = "auto", source: str = "User Upload") -> dict[str, Any]:
     """Profile a file with its modality's profiler and add the display blocks the result page shows."""
     p = Path(file_path)
     if modality == "auto":

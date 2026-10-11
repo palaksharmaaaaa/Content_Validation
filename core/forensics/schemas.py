@@ -7,13 +7,13 @@ a log-odds contribution (``llr``); every other evidence class is advisory and ne
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
 
 from core.forensics.config import PER_FINDING_LLR_CAP
 
 
-class Severity(str, Enum):
+class Severity(StrEnum):
     """How serious a finding is."""
     NONE = "NONE"
     LOW = "LOW"
@@ -22,7 +22,7 @@ class Severity(str, Enum):
     CRITICAL = "CRITICAL"
 
 
-class FindingStatus(str, Enum):
+class FindingStatus(StrEnum):
     """Outcome of a check (pass, warn, fail, info, not applicable, not calibrated, recognised out of scope, error)."""
     PASS = "PASS"
     WARN = "WARN"
@@ -34,7 +34,7 @@ class FindingStatus(str, Enum):
     ERROR = "ERROR"
 
 
-class EvidenceClass(str, Enum):
+class EvidenceClass(StrEnum):
     """What kind of evidence a finding is. Only physical-signal, learned-signal and weak-metadata findings may affect the score."""
     PHYSICAL_SIGNAL = "PHYSICAL_SIGNAL"
     LEARNED_SIGNAL = "LEARNED_SIGNAL"
@@ -60,11 +60,11 @@ class Finding:
     severity: Severity
     evidence_class: EvidenceClass
     detail: str = ""
-    data: Dict[str, Any] = field(default_factory=dict)
-    llr: Optional[float] = None
+    data: dict[str, Any] = field(default_factory=dict)
+    llr: float | None = None
     llr_cap: float = PER_FINDING_LLR_CAP
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Plain-dict form for reports."""
         d = asdict(self)
         d["status"] = self.status.value
@@ -76,15 +76,15 @@ class Finding:
 @dataclass
 class DimensionReport:
     """All findings of one analysis, grouped by stage, plus the capped total log-odds contribution."""
-    findings: List[Finding] = field(default_factory=list)
-    gates: Dict[str, Any] = field(default_factory=dict)
-    score_terms: Dict[str, float] = field(default_factory=dict)
-    reliability: Dict[str, Any] = field(default_factory=dict)
+    findings: list[Finding] = field(default_factory=list)
+    gates: dict[str, Any] = field(default_factory=dict)
+    score_terms: dict[str, float] = field(default_factory=dict)
+    reliability: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Plain-dict form for reports."""
-        by_stage: Dict[str, List[Dict[str, Any]]] = {}
-        counts: Dict[str, int] = {}
+        by_stage: dict[str, list[dict[str, Any]]] = {}
+        counts: dict[str, int] = {}
         for f in self.findings:
             by_stage.setdefault(f.stage, []).append(f.to_dict())
             counts[f.status.value] = counts.get(f.status.value, 0) + 1

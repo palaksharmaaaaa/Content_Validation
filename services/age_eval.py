@@ -19,7 +19,6 @@ import random
 import statistics
 import time
 from pathlib import Path
-from typing import Dict, List
 
 import numpy as np
 
@@ -46,7 +45,7 @@ def run(faces: Path, out: Path, per_minor_band: int, per_adult_band: int, seed: 
     from core.imageio import imread
     from core.perception.age import get_age_estimator
 
-    by: Dict[str, List[Path]] = collections.defaultdict(list)
+    by: dict[str, list[Path]] = collections.defaultdict(list)
     for f in sorted(faces.glob("*.jpg")):
         try:
             by[band_of(int(f.name.split("_")[0]))].append(f)
@@ -75,7 +74,7 @@ def run(faces: Path, out: Path, per_minor_band: int, per_adult_band: int, seed: 
 def summary(out: Path) -> str:
     """Error per band, then recall on under-18s and false-flag rate on adults for the current rule."""
     rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines() if line.strip()]
-    bands: Dict[str, List[dict]] = collections.defaultdict(list)
+    bands: dict[str, list[dict]] = collections.defaultdict(list)
     for r in rows:
         bands[band_of(r["true"])].append(r)
     lines = ["band        n  median |error|  mean signed error  flagged (review)"]
@@ -136,7 +135,7 @@ def wild(images: Path, annotations: Path, out: Path) -> int:
     from core.imageio import imread
     from core.perception.age import get_age_estimator
 
-    gt: Dict[str, List[dict]] = collections.defaultdict(list)
+    gt: dict[str, list[dict]] = collections.defaultdict(list)
     for r in csv.DictReader(annotations.open(encoding="utf-8")):
         name = Path(r["img_name"]).name
         if r["age"] != "-1" and r["face_x0"] != "-1" and (images / name).exists():
@@ -195,7 +194,7 @@ def fairface(parquet: Path, out: Path, per_young_group: int = 400, per_other_gro
     df = pd.read_parquet(parquet)
     rng = random.Random(seed)
     rows = []
-    for gid, name in enumerate(FAIRFACE_GROUPS):
+    for gid, _name in enumerate(FAIRFACE_GROUPS):
         idx = list(df.index[df["age"] == gid])
         rows += rng.sample(idx, min(len(idx), per_young_group if gid < 3 else per_other_group))
     rng.shuffle(rows)

@@ -16,10 +16,10 @@ Depends only on core (atomic JSON I/O, media library) and this package.
 """
 from __future__ import annotations
 
-from datetime import datetime
 import logging
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from audio_detector.config import (
     CALIBRATION_FILE,
@@ -33,11 +33,11 @@ from audio_detector.config import (
     SYNTHETIC_FLATNESS_LOW_THRESHOLD,
 )
 from audio_detector.schemas import AudioFeedbackRecord
-from core.metrics_util import sanitize_metric_value
-from core.hashing import already_recorded
-from core.calibration_io import sanitize_calibration
 from core.atomic_io import atomic_read_json, atomic_write_json, serialized_on
+from core.calibration_io import damped, sanitize_calibration
+from core.hashing import already_recorded
 from core.media_library import MediaLibrary, library_for, register_feedback
+from core.metrics_util import sanitize_metric_value
 
 logger = logging.getLogger("audio_detector.learner")
 
@@ -51,9 +51,9 @@ class AudioSelfImprover:
 
     def __init__(
         self,
-        memory_file: Optional[Path] = None,
-        calibration_file: Optional[Path] = None,
-        library: Optional[MediaLibrary] = None,
+        memory_file: Path | None = None,
+        calibration_file: Path | None = None,
+        library: MediaLibrary | None = None,
     ):
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         self.memory_file = memory_file or MEMORY_FILE
@@ -62,7 +62,7 @@ class AudioSelfImprover:
         # storage via memory_file, don't touch the real library unless one is passed in.
         self.library = library if library is not None else (None if memory_file else library_for("audio"))
 
-    def load_calibration(self) -> Dict[str, Any]:
+    def load_calibration(self) -> dict[str, Any]:
         """Loads active audio calibration parameters."""
         default_calib = {
             "version": 1,
@@ -85,7 +85,7 @@ class AudioSelfImprover:
         loaded = atomic_read_json(self.calibration_file, default=None)
         return sanitize_calibration(loaded, default_calib) if isinstance(loaded, dict) else default_calib
 
-    def save_calibration(self, calib: Dict[str, Any]) -> None:
+    def save_calibration(self, calib: dict[str, Any]) -> None:
         """Saves updated calibration parameters atomically."""
         calib["last_updated"] = datetime.now().isoformat()
         try:
@@ -93,7 +93,7 @@ class AudioSelfImprover:
         except Exception as e:
             logger.error("Failed to save audio calibration atomically: %s", e)
 
-    def load_memory(self) -> List[Dict[str, Any]]:
+    def load_memory(self) -> list[dict[str, Any]]:
         """Loads verified audio memory bank."""
         loaded = atomic_read_json(self.memory_file, default=[])
         return loaded if isinstance(loaded, list) else []
@@ -103,12 +103,12 @@ class AudioSelfImprover:
         self,
         audio_path: str,
         user_label: str,  # 'REAL' or 'AI'
-        acoustic_metrics: Optional[Dict[str, Any]] = None,
-        voice_generator_tag: Optional[str] = None,
+        acoustic_metrics: dict[str, Any] | None = None,
+        voice_generator_tag: str | None = None,
         notes: str = "",
         *,
-        metrics: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        metrics: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Registers audio ground truth feedback and recalibrates acoustic thresholds.
         ``metrics`` is the modality-neutral alias of ``acoustic_metrics``.
@@ -151,19 +151,20 @@ class AudioSelfImprover:
         thresh = calib.setdefault("thresholds", {})
         offsets = calib.setdefault("sensitivity_offsets", {})
         calib["samples_processed"] = len(memory)
+        earlier = len(memory) - 1                   # corrections recorded before this one: later ones move the thresholds less
 
         flatness = acoustic_metrics.get("spectral_flatness")
         flatness = float(flatness) if isinstance(flatness, (int, float)) and not isinstance(flatness, bool) else None
 
         if user_label.upper() == "AI":
             # If synthetic voice was missed, boost vocoder weight and audio AI offset
-            weights["vocoder_cutoff"] = min(0.60, weights.get("vocoder_cutoff", DEFAULT_WEIGHT_VOCODER) + 0.02)
-            offsets["audio_ai_offset"] = min(0.35, offsets.get("audio_ai_offset", 0.0) + 0.03)
+            weights["vocoder_cutoff"] = min(0.60, weights.get("vocoder_cutoff", DEFAULT_WEIGHT_VOCODER) + damped(0.02, earlier))
+            offsets["audio_ai_offset"] = min(0.35, offsets.get("audio_ai_offset", 0.0) + damped(0.03, earlier))
             if flatness is not None and flatness > 0.002:
-                thresh["flatness_synthetic_max"] = min(0.010, thresh.get("flatness_synthetic_max", SYNTHETIC_FLATNESS_LOW_THRESHOLD) + 0.0005)
+                thresh["flatness_synthetic_max"] = min(0.010, thresh.get("flatness_synthetic_max", SYNTHETIC_FLATNESS_LOW_THRESHOLD) + damped(0.0005, earlier))
         elif user_label.upper() == "REAL":
             # If natural whisper / phone audio triggered false positive, lower audio AI offset
-            offsets["audio_ai_offset"] = max(-0.35, offsets.get("audio_ai_offset", 0.0) - 0.03)
+            offsets["audio_ai_offset"] = max(-0.35, offsets.get("audio_ai_offset", 0.0) - damped(0.03, earlier))
 
         self.save_calibration(calib)
         logger.info("AudioSelfImprover dynamically updated calibration (Total records: %d)", len(memory))

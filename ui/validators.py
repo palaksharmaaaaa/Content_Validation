@@ -9,8 +9,9 @@ Completely self-contained with zero external directory dependencies.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any
 from urllib.parse import urlparse
 
 from PIL import Image
@@ -80,7 +81,7 @@ def detect_media_type(file_path: str | Path) -> str:
     return "unknown"
 
 
-def _validation_result(validator_factory: Callable[[], Any], limit_mb: float, file_path: str | Path, kind: str) -> Dict[str, Any]:
+def _validation_result(validator_factory: Callable[[], Any], limit_mb: float, file_path: str | Path, kind: str) -> dict[str, Any]:
     """Run one package validator and package its verdict for the UI; any failure is a clear "not readable" result."""
     try:
         val_res = validator_factory().validate(file_path)
@@ -96,25 +97,25 @@ def _validation_result(validator_factory: Callable[[], Any], limit_mb: float, fi
         return {"readable": False, "format_valid": False, "size_valid": False, "error": str(exc)}
 
 
-def validate_image_file(file_path: str | Path) -> Dict[str, Any]:
+def validate_image_file(file_path: str | Path) -> dict[str, Any]:
     """Check an image file with the image validator (limit from ``image_detector.config``)."""
     limit = MAX_FILE_SIZE_MB_BY_TYPE["image"]
     return _validation_result(lambda: ImageValidator(max_file_size_mb=limit), limit, file_path, "image")
 
 
-def validate_video_file(file_path: str | Path) -> Dict[str, Any]:
+def validate_video_file(file_path: str | Path) -> dict[str, Any]:
     """Check a video file with the video validator (limit from ``video_detector.config``)."""
     limit = MAX_FILE_SIZE_MB_BY_TYPE["video"]
     return _validation_result(lambda: VideoValidator(max_file_size_mb=limit), limit, file_path, "video")
 
 
-def validate_audio_file(file_path: str | Path) -> Dict[str, Any]:
+def validate_audio_file(file_path: str | Path) -> dict[str, Any]:
     """Check an audio file with the audio validator (limit from ``audio_detector.config``)."""
     limit = MAX_FILE_SIZE_MB_BY_TYPE["audio"]
     return _validation_result(lambda: AudioValidator(max_size_mb=limit), limit, file_path, "audio")
 
 
-def validate_file(file_path: str | Path) -> Dict[str, Any]:
+def validate_file(file_path: str | Path) -> dict[str, Any]:
     """Detect the media type and validate with the matching package validator."""
     media_type = detect_media_type(file_path)
     if media_type == "image":
@@ -134,7 +135,7 @@ def validate_file(file_path: str | Path) -> Dict[str, Any]:
     return result
 
 
-def analyze_provenance(file_path: str | Path) -> Dict[str, Any]:
+def analyze_provenance(file_path: str | Path) -> dict[str, Any]:
     """Provenance for any supported media file, via the owning package's validator (single source of truth).
 
     The result carries the nested ``c2pa`` / ``exif`` / ``provenance_verdict`` view plus the package's flat keys.
@@ -175,7 +176,7 @@ def detect_platform(url: str) -> str:
         return "Unknown"
 
 
-def validate_url(url: str) -> Dict[str, Any]:
+def validate_url(url: str) -> dict[str, Any]:
     """Validates URL using OWASP anti-SSRF protections and identifies platform domain."""
     result = {
         "valid_url": False,
@@ -198,7 +199,7 @@ def validate_url(url: str) -> Dict[str, Any]:
     return result
 
 
-def validate_expected_platform(url: str, expected_platform: str) -> Dict[str, Any]:
+def validate_expected_platform(url: str, expected_platform: str) -> dict[str, Any]:
     """Check that a link is well formed and, if a platform is expected, that it matches."""
     result = validate_url(url)
     if not result["valid_url"]:
@@ -222,8 +223,8 @@ def validate_expected_platform(url: str, expected_platform: str) -> Dict[str, An
 
 
 def fetch_media_from_url(
-    url: str, expected_type: str = "image", max_mb: Optional[int] = None, dest_dir: Optional[Path] = None
-) -> Dict[str, Any]:
+    url: str, expected_type: str = "image", max_mb: int | None = None, dest_dir: Path | None = None
+) -> dict[str, Any]:
     """Downloads remote media via anti-SSRF SecureUrlFetcher, enforcing the size limit of the media type (or ``max_mb``).
 
     Pass the session's scratch directory as ``dest_dir`` so the sidebar wipe removes the download."""

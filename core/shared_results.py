@@ -2,12 +2,12 @@
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 import numpy as np
 
 
-def unknown_attribution(reason: str) -> Dict[str, Any]:
+def unknown_attribution(reason: str) -> dict[str, Any]:
     """The canonical "no generator attributed" result (identical across image, audio and video)."""
     return {
         "attributed_model": "Unknown",
@@ -31,7 +31,7 @@ def three_way_label(ai_pct: float, real_pct: float, sensitivity: str, ai_balance
     return "UNDECIDED"
 
 
-def shift_probability_by_log_odds(p_ai: float, extra_log_lrs: Optional[Dict[str, float]]) -> Tuple[float, float, List[str]]:
+def shift_probability_by_log_odds(p_ai: float, extra_log_lrs: dict[str, float] | None) -> tuple[float, float, list[str]]:
     """Applies capped dimension-check terms to a pooled probability in base-10 log-odds space.
 
     Audio and video pool by weighted average, so extra evidence cannot be added to a posterior; it shifts the
@@ -65,17 +65,17 @@ def _share(value: float) -> float:
 
 
 def finalize_attribution(
-    scores: Dict[str, float],
-    catalog: Dict[str, Dict[str, Any]],
+    scores: dict[str, float],
+    catalog: dict[str, dict[str, Any]],
     *,
     declared: bool,
-    cues: List[str],
+    cues: list[str],
     unknown_name: str,
     no_cue_text: str,
     region_of: Any,
     watermark_detected: bool = False,
-    declared_keys: Optional[Set[str]] = None,
-) -> Dict[str, Any]:
+    declared_keys: set[str] | None = None,
+) -> dict[str, Any]:
     """The shared last step of every attribution engine.
 
     A generator is named only when the file itself declares one (a visible watermark, a metadata or software claim). Signal statistics

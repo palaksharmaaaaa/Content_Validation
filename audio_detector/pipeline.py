@@ -16,9 +16,8 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
-from core.decision import generate_final_decision
 from audio_detector.attribution import AudioModelAttributionEngine
 from audio_detector.content import AudioContentAnalyzer
 from audio_detector.detector import AudioAIDetector
@@ -32,6 +31,7 @@ from audio_detector.explain import build_audio_nine_dimensions_dossier, generate
 from audio_detector.profiler import AudioProfiler
 from audio_detector.provenance import AudioProvenanceValidator
 from audio_detector.validator import AudioValidator
+from core.decision import generate_final_decision
 
 logger = logging.getLogger("audio_detector.pipeline")
 
@@ -41,22 +41,22 @@ class AudioRun:
     """Every intermediate of one audio analysis; consumed by the headless report and by the Streamlit adapter."""
 
     path: Path
-    gates: Dict[str, Any]
+    gates: dict[str, Any]
     samples: Any
     sample_rate: int
     duration: float
-    profile: Dict[str, Any]
-    provenance: Dict[str, Any]
-    ai_result: Dict[str, Any]
-    scene: Dict[str, Any]
-    attribution: Dict[str, Any]
-    dimension_report: Dict[str, Any]
-    decision: Dict[str, Any]
-    nine_dimensions: Dict[str, Any]
+    profile: dict[str, Any]
+    provenance: dict[str, Any]
+    ai_result: dict[str, Any]
+    scene: dict[str, Any]
+    attribution: dict[str, Any]
+    dimension_report: dict[str, Any]
+    decision: dict[str, Any]
+    nine_dimensions: dict[str, Any]
     newbie_explanation: str
 
 
-def _terminal_report(status: str, reason: str, trail_line: str) -> Dict[str, Any]:
+def _terminal_report(status: str, reason: str, trail_line: str) -> dict[str, Any]:
     return {
         "content_valid": False,
         "final_status": status,
@@ -67,8 +67,8 @@ def _terminal_report(status: str, reason: str, trail_line: str) -> Dict[str, Any
     }
 
 
-def _evidence_trail(provenance: Dict[str, Any], ai_res: Dict[str, Any], attribution: Dict[str, Any], dimension_report: Dict[str, Any]) -> List[str]:
-    trail: List[str] = []
+def _evidence_trail(provenance: dict[str, Any], ai_res: dict[str, Any], attribution: dict[str, Any], dimension_report: dict[str, Any]) -> list[str]:
+    trail: list[str] = []
     if provenance.get("c2pa_present"):
         trail.append("C2PA Content Credentials markers found in audio stream (presence only; not cryptographically verified).")
     trail.extend(ai_res.get("forensic_cues", []))
@@ -83,12 +83,12 @@ class AudioForensicPipeline:
 
     def __init__(
         self,
-        detector: Optional[AudioAIDetector] = None,
-        validator: Optional[AudioValidator] = None,
-        profiler: Optional[AudioProfiler] = None,
-        provenance_validator: Optional[AudioProvenanceValidator] = None,
-        content_analyzer: Optional[AudioContentAnalyzer] = None,
-        attribution_engine: Optional[AudioModelAttributionEngine] = None,
+        detector: AudioAIDetector | None = None,
+        validator: AudioValidator | None = None,
+        profiler: AudioProfiler | None = None,
+        provenance_validator: AudioProvenanceValidator | None = None,
+        content_analyzer: AudioContentAnalyzer | None = None,
+        attribution_engine: AudioModelAttributionEngine | None = None,
     ):
         self.detector = detector or AudioAIDetector()
         self.detector.load()
@@ -103,9 +103,9 @@ class AudioForensicPipeline:
         audio_path: str | Path,
         *,
         sensitivity: str = "balanced",
-        filename: Optional[str] = None,
-        gates: Optional[Dict[str, Any]] = None,
-        decoded: Optional[Tuple[Any, int, float]] = None,
+        filename: str | None = None,
+        gates: dict[str, Any] | None = None,
+        decoded: tuple[Any, int, float] | None = None,
     ) -> AudioRun:
         """The one analysis sequence. Callers handle gate/validation short-circuits before calling this."""
         path = Path(audio_path)
@@ -151,7 +151,7 @@ class AudioForensicPipeline:
         self,
         audio_path: str | Path,
         sensitivity: str = "balanced",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Runs the entire end-to-end audio forensic analysis pipeline and returns the headless report."""
         path = Path(audio_path)
         if not path.is_file():
@@ -173,7 +173,7 @@ class AudioForensicPipeline:
         return self._report(r, val_res.to_dict())
 
     @staticmethod
-    def _report(r: AudioRun, stream_validation: Dict[str, Any]) -> Dict[str, Any]:
+    def _report(r: AudioRun, stream_validation: dict[str, Any]) -> dict[str, Any]:
         probs = r.decision["authenticity_probabilities"]
         return {
             "content_valid": True,

@@ -9,7 +9,7 @@ Analyzes:
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import cv2
 import numpy as np
@@ -24,7 +24,6 @@ from video_detector.config import (
     MOTION_VAR_UNNATURAL_FREEZE,
 )
 
-
 MIN_MOTION_SAMPLES = 3     # frame-to-frame differences needed before their variance means anything
 
 # Returned when there were not enough comparable frames: no reading at all, never a calm "LOW".
@@ -38,10 +37,10 @@ _UNMEASURED_MOTION = {
 
 
 def compute_interframe_motion_variance(
-    frames: List[np.ndarray],
+    frames: list[np.ndarray],
     temporal_step: int = 1,
-    motion_thresholds: Optional[Dict[str, float]] = None,
-) -> Dict[str, Any]:
+    motion_thresholds: dict[str, float] | None = None,
+) -> dict[str, Any]:
     """
     Computes inter-frame motion delta variance.
     Normalized by sqrt(step) so different video frame rates and sampling intervals remain consistent.
@@ -51,7 +50,7 @@ def compute_interframe_motion_variance(
     if len(frames) < 2:
         return dict(_UNMEASURED_MOTION)
 
-    deltas: List[float] = []
+    deltas: list[float] = []
     norm_factor = math.sqrt(max(1, temporal_step))
 
     prev_gray = None
@@ -105,7 +104,7 @@ def compute_interframe_motion_variance(
     }
 
 
-def detect_diffusion_flickering(frames: List[np.ndarray]) -> Dict[str, Any]:
+def detect_diffusion_flickering(frames: list[np.ndarray]) -> dict[str, Any]:
     """
     Examines high-frequency frame-to-frame luminance and high-frequency edge shifts.
     Generative video architectures (e.g. DiT) often produce high-frequency texture flickering
@@ -141,8 +140,8 @@ def detect_diffusion_flickering(frames: List[np.ndarray]) -> Dict[str, Any]:
 
 
 def group_temporal_segments(
-    analyzed_frames: List[Dict[str, Any]], duration_seconds: float = 0.0
-) -> List[Dict[str, Any]]:
+    analyzed_frames: list[dict[str, Any]], duration_seconds: float = 0.0
+) -> list[dict[str, Any]]:
     """
     Groups contiguous sequence of frames with the same classification status
     into temporal intervals [start_seconds - end_seconds].
@@ -151,7 +150,7 @@ def group_temporal_segments(
     if not analyzed_frames:
         return []
 
-    segments: List[Dict[str, Any]] = []
+    segments: list[dict[str, Any]] = []
     curr_label = analyzed_frames[0]["label"]
     start_time = float(analyzed_frames[0].get("timestamp", 0.0))
     count = 1

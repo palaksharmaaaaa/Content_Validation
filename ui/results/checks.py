@@ -1,13 +1,14 @@
 """ui.results.checks: the Evidence tab - integrity/metadata/context checks, generator attribution, localisation."""
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Dict, Sequence, Tuple
+from typing import Any
 
 import streamlit as st
-from ui.text import code_safe, md_escape, neutralise_links
 
 from ui.stages import collect_findings, render_findings_stage
+from ui.text import md_escape, neutralise_links
 
 
 @dataclass(frozen=True)
@@ -15,7 +16,7 @@ class CheckGroup:
     """A titled set of finding stages shown together on the Evidence tab."""
     title: str
     caption: str
-    stages: Tuple[str, ...]
+    stages: tuple[str, ...]
     show_weight: bool = False
     note: str = ""
 
@@ -53,7 +54,7 @@ AUDIO_CHECKS = (
 )
 
 
-def _render_attribution(decision: Dict[str, Any]) -> None:
+def _render_attribution(decision: dict[str, Any]) -> None:
     attr = decision.get("model_attribution", {})
     state = decision.get("taxonomy_state")
     authentic = state in ("AUTHENTIC_REAL_PHOTOGRAPH", "AUTHENTIC_EDITED") and "Topaz" not in str(attr.get("attributed_model") or "")
@@ -71,7 +72,7 @@ def _render_attribution(decision: Dict[str, Any]) -> None:
     st.caption("Attribution only explains a suspicious result. It is not scored as evidence.")
 
 
-def _render_localization(decision: Dict[str, Any]) -> None:
+def _render_localization(decision: dict[str, Any]) -> None:
     loc = decision.get("localization", {})
     rows = [
         ("Image area flagged", float(loc.get("suspicious_image_area_pct", 0))),
@@ -85,7 +86,7 @@ def _render_localization(decision: Dict[str, Any]) -> None:
             st.write(f"- {label}: {value:.1f}%")
 
 
-def render_evidence(item: Dict[str, Any], groups: Sequence[CheckGroup]) -> None:
+def render_evidence(item: dict[str, Any], groups: Sequence[CheckGroup]) -> None:
     """Draw the Evidence tab: each group of findings as a table, then attribution, localisation and the evidence trail."""
     decision = item.get("decision") or {}
     dim_report = item.get("dimension_report") or {}

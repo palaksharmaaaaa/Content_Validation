@@ -7,8 +7,9 @@ demuxer (concat, HLS, DASH) would read other files named inside the upload.
 """
 from __future__ import annotations
 
+import os
+import shutil
 from pathlib import Path
-from typing import List, Optional
 
 import numpy as np
 
@@ -18,17 +19,24 @@ SAFE_PROTOCOLS = "file,pipe"
 SAFE_DEMUXERS = "wav,mp3,aac,flac,ogg,mov,mp4,m4a,matroska,webm,avi"
 
 
-def ffmpeg_input(path: str | Path, max_seconds: Optional[float] = None) -> List[str]:
+def find_binary(name: str) -> str | None:
+    """Absolute path of ``name`` (ffmpeg, ffprobe) found on PATH, or None. On Windows a bare command is looked up in the current folder
+    first, so a stray ``ffmpeg.exe`` next to wherever the app was started would run instead of the real one; an explicit PATH search never
+    looks there."""
+    return shutil.which(name, path=os.environ.get("PATH", os.defpath))
+
+
+def ffmpeg_input(path: str | Path, max_seconds: float | None = None) -> list[str]:
     """ffmpeg arguments up to and including ``-i <path>``; add the output options after them."""
-    args = ["ffmpeg", "-nostdin", "-v", "error", "-protocol_whitelist", SAFE_PROTOCOLS, "-format_whitelist", SAFE_DEMUXERS]
+    args = [find_binary("ffmpeg") or "ffmpeg", "-nostdin", "-v", "error", "-protocol_whitelist", SAFE_PROTOCOLS, "-format_whitelist", SAFE_DEMUXERS]
     if max_seconds is not None:
         args += ["-t", f"{float(max_seconds):.3f}"]
     return args + ["-i", str(path)]
 
 
-def ffprobe_input(path: str | Path, binary: str = "ffprobe") -> List[str]:
+def ffprobe_input(path: str | Path, binary: str | None = None) -> list[str]:
     """ffprobe arguments up to and including the input; add ``-show_entries`` and friends after them."""
-    return [binary, "-v", "error", "-protocol_whitelist", SAFE_PROTOCOLS, "-format_whitelist", SAFE_DEMUXERS, "-i", str(path)]
+    return [binary or find_binary("ffprobe") or "ffprobe", "-v", "error", "-protocol_whitelist", SAFE_PROTOCOLS, "-format_whitelist", SAFE_DEMUXERS, "-i", str(path)]
 
 
 EBML_MAGIC = bytes([0x1A, 0x45, 0xDF, 0xA3])      # Matroska / WebM

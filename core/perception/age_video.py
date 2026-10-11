@@ -17,7 +17,8 @@ No tracking or identity matching is done: the same child in ten frames counts as
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 
@@ -29,7 +30,7 @@ REPEATED_MIN_SHARE = 0.25
 ADAPTIVE_MAX_FRAMES = 60
 
 
-def pick_frames(n_available: int, max_frames: int) -> List[int]:
+def pick_frames(n_available: int, max_frames: int) -> list[int]:
     """Indices of up to ``max_frames`` frames spread evenly over ``n_available``, always including the first and last."""
     if n_available <= 0 or max_frames <= 0:
         return []
@@ -38,18 +39,18 @@ def pick_frames(n_available: int, max_frames: int) -> List[int]:
     return sorted({int(round(i * (n_available - 1) / (max_frames - 1))) for i in range(max_frames)}) if max_frames > 1 else [0]
 
 
-def _unreadable(reason: str) -> Dict[str, Any]:
+def _unreadable(reason: str) -> dict[str, Any]:
     return {**_empty_result(0), "status": "NO_FRAMES", "review_required": True, "reason": reason}
 
 
-def _flag_entry(result: Dict[str, Any], frame: Optional[int], time: Optional[float]) -> Dict[str, Any]:
+def _flag_entry(result: dict[str, Any], frame: int | None, time: float | None) -> dict[str, Any]:
     """One flagged frame for the report: where it is, the youngest apparent age and which assessments fired."""
     return {"frame": frame, "time": time, "youngest_age": result["youngest_age"], "likely_minor": result["contains_minor"],
             "assessments": sorted({s["assessment"] for s in result["subjects"] if s["assessment"] != "ADULT"}) or [result["status"]]}
 
 
-def _summarise(flagged: List[Dict[str, Any]], ages: List[float], statuses: List[str], model: Optional[str], examined: int,
-               scope: str) -> Dict[str, Any]:
+def _summarise(flagged: list[dict[str, Any]], ages: list[float], statuses: list[str], model: str | None, examined: int,
+               scope: str) -> dict[str, Any]:
     """The result shared by both entry points. A frame whose screening was UNAVAILABLE makes the whole video UNAVAILABLE and
     review_required: a video is never cleared on frames that could not be checked."""
     status = "UNAVAILABLE" if "UNAVAILABLE" in statuses else "OK"
@@ -60,7 +61,7 @@ def _summarise(flagged: List[Dict[str, Any]], ages: List[float], statuses: List[
             "youngest_age": min(ages) if ages else None, "flagged_frames": flagged}
 
 
-def screen_video_file(path, estimator: Optional[AgeEstimator] = None, max_frames: int = ADAPTIVE_MAX_FRAMES) -> Dict[str, Any]:
+def screen_video_file(path, estimator: AgeEstimator | None = None, max_frames: int = ADAPTIVE_MAX_FRAMES) -> dict[str, Any]:
     """Minor screening of a video file with adaptive sampling (core.perception.video_sampling): the frames after every content
     change plus a grid of at most one a second, a frame that looks like the last examined one reusing its result. Same result
     shape as ``screen_video_frames`` plus ``sampling``: how many frames were examined, how many were reused, and the longest
@@ -76,13 +77,13 @@ def screen_video_file(path, estimator: Optional[AgeEstimator] = None, max_frames
     except Exception as exc:  # noqa: BLE001 - an unreadable video is reported, never passed as clear
         return _unreadable(f"the video could not be read ({type(exc).__name__}), so nothing was checked")
 
-    flagged: List[Dict[str, Any]] = []
-    ages: List[float] = []
-    statuses: List[str] = []
-    model: Optional[str] = None
+    flagged: list[dict[str, Any]] = []
+    ages: list[float] = []
+    statuses: list[str] = []
+    model: str | None = None
     last_thumb, last = None, None
     assessed = reused = 0
-    examined_times: List[float] = []
+    examined_times: list[float] = []
     for t, frame in frames:
         examined_times.append(t)
         thumb = vs.thumbnail(frame)
@@ -115,13 +116,13 @@ def _priority(n_flagged: int, n_examined: int) -> str:
     return "SINGLE_FRAME"
 
 
-def _empty_result(n_examined: int) -> Dict[str, Any]:
+def _empty_result(n_examined: int) -> dict[str, Any]:
     return {"scope": "video_sampled_frames", "frames_available": n_examined, "frames_examined": n_examined, "frames_flagged": 0, "priority": "NONE",
             "contains_minor": False, "contains_possible_minor": False, "review_required": False, "youngest_age": None, "flagged_frames": [], "model": None}
 
 
-def screen_video_frames(frames_bgr: Sequence[np.ndarray], timestamps: Optional[Sequence[float]] = None,
-                        estimator: Optional[AgeEstimator] = None, max_frames: int = DEFAULT_MAX_FRAMES) -> Dict[str, Any]:
+def screen_video_frames(frames_bgr: Sequence[np.ndarray], timestamps: Sequence[float] | None = None,
+                        estimator: AgeEstimator | None = None, max_frames: int = DEFAULT_MAX_FRAMES) -> dict[str, Any]:
     """Minor screening for a list of video frames (BGR arrays); see the module doc for the result's meaning."""
     est = estimator or get_age_estimator()
     picks = pick_frames(len(frames_bgr), max_frames)
@@ -129,10 +130,10 @@ def screen_video_frames(frames_bgr: Sequence[np.ndarray], timestamps: Optional[S
         return {**_empty_result(len(frames_bgr)), "frames_examined": 0, "status": "NO_FRAMES", "review_required": True,
                 "reason": "no frames could be read, so nothing was checked"}
 
-    flagged: List[Dict[str, Any]] = []
-    ages: List[float] = []
-    statuses: List[str] = []
-    model: Optional[str] = None
+    flagged: list[dict[str, Any]] = []
+    ages: list[float] = []
+    statuses: list[str] = []
+    model: str | None = None
     for i in picks:
         r = est.assess(frames_bgr[i])
         model = r.get("model", model)

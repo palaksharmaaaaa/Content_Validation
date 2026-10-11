@@ -2,9 +2,10 @@
 image_detector.tests.test_image_detector: Autonomous test suite for Image AI Detection module.
 Verifies all submodules, scoring invariants, neural backbones, and pipeline stages.
 """
+import tempfile
 import unittest
 from pathlib import Path
-import tempfile
+
 import cv2
 import numpy as np
 
@@ -128,8 +129,8 @@ class TestImageDetector(unittest.TestCase):
         self.assertIn("taxonomy_reasons", report)
 
     def test_taxonomy_classification_logic(self):
-        from image_detector.scoring import evaluate_taxonomy_classification
         from image_detector.schemas import ImageTaxonomyState
+        from image_detector.scoring import evaluate_taxonomy_classification
 
         # 1. Fully AI Generated
         s1, l1, d1, r1 = evaluate_taxonomy_classification(
@@ -225,8 +226,8 @@ class TestImageDetector(unittest.TestCase):
         self.assertGreaterEqual(res["high_sat_pct"], 45.0)
 
     def test_taxonomy_digital_art_and_3d_cutout(self):
-        from image_detector.scoring import evaluate_taxonomy_classification
         from image_detector.schemas import ImageTaxonomyState
+        from image_detector.scoring import evaluate_taxonomy_classification
 
         # 3D Render with cutout (e.g. ganesh-idol-emblem.png)
         s, l, d, r = evaluate_taxonomy_classification(
@@ -247,8 +248,8 @@ class TestImageDetector(unittest.TestCase):
 
     def test_screenshot_detection_mobile_and_desktop(self):
         from image_detector.features import detect_screenshot
-        from image_detector.scoring import evaluate_taxonomy_classification
         from image_detector.schemas import ImageTaxonomyState
+        from image_detector.scoring import evaluate_taxonomy_classification
 
         # 1. Create simulated Mobile Portrait Screenshot (1080x2400)
         mobile_shot = np.zeros((2400, 1080, 3), dtype=np.uint8)
@@ -312,8 +313,8 @@ class TestImageDetector(unittest.TestCase):
 
     def test_inpainting_and_manipulation_detection(self):
         from image_detector.features import detect_inpainting_and_manipulation
-        from image_detector.scoring import evaluate_taxonomy_classification
         from image_detector.schemas import ImageTaxonomyState
+        from image_detector.scoring import evaluate_taxonomy_classification
 
         # Create composite image with localized noise discrepancy:
         # Background has noisy camera grain, center square is completely denoised/smoothed
@@ -341,8 +342,8 @@ class TestImageDetector(unittest.TestCase):
         self.assertNotEqual(s, ImageTaxonomyState.AI_ENHANCED_COMPOSITE)
 
     def test_digital_art_alone_does_not_name_an_image_ai(self):
-        from image_detector.scoring import evaluate_taxonomy_classification
         from image_detector.schemas import ImageTaxonomyState
+        from image_detector.scoring import evaluate_taxonomy_classification
 
         art = {"is_digital_art": True, "visual_medium": "Digital 3D CGI / AI Neural Painting", "details": "saturated"}
         # saturation alone also describes corals and sunsets: with a middling score it is not called AI or CGI
@@ -354,8 +355,8 @@ class TestImageDetector(unittest.TestCase):
 
     def test_screen_rephotography_moire_detection(self):
         from image_detector.features import detect_screen_rephotography_moire
-        from image_detector.scoring import evaluate_taxonomy_classification
         from image_detector.schemas import ImageTaxonomyState
+        from image_detector.scoring import evaluate_taxonomy_classification
 
         # Synthetic Moiré frequency grid simulation (diagonal sinusoidal subpixel raster)
         moire_img = np.zeros((512, 512, 3), dtype=np.uint8)
@@ -404,8 +405,8 @@ class TestImageDetector(unittest.TestCase):
         self.assertEqual(res_color["sensor_spectrum"], "Visible light (colour RGB)")
 
     def test_procedural_cgi_synthetic_state(self):
-        from image_detector.scoring import evaluate_taxonomy_classification
         from image_detector.schemas import ImageTaxonomyState
+        from image_detector.scoring import evaluate_taxonomy_classification
 
         # Procedural 3D CGI without diffusion watermark or generative IPTC
         s, l, d, r = evaluate_taxonomy_classification(
@@ -420,6 +421,7 @@ class TestImageDetector(unittest.TestCase):
 
     def test_2026_foundation_model_attribution(self):
         from PIL import Image as PILImage
+
         from image_detector.attribution import ImageModelAttributionEngine
 
         engine = ImageModelAttributionEngine()
@@ -465,8 +467,8 @@ class TestImageDetector(unittest.TestCase):
         self.assertEqual(len(res["results"]), 1)
 
     def test_stylized_character_cutout_classification(self):
-        from image_detector.scoring import evaluate_taxonomy_classification
         from image_detector.schemas import ImageTaxonomyState
+        from image_detector.scoring import evaluate_taxonomy_classification
 
         # Synthetic character cutout on solid background without camera hardware
         state, label, desc, reasons = evaluate_taxonomy_classification(
@@ -515,6 +517,7 @@ def test_profiler_reads_exif_optics_with_real_rationals_and_survives_bad_tag(tmp
 
 def test_fft_analysis_is_reused_for_identical_pixels_and_never_for_different_ones():
     import numpy as np
+
     from image_detector import features
 
     rng = np.random.default_rng(4)

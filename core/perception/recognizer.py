@@ -8,8 +8,8 @@ from __future__ import annotations
 import hashlib
 import logging
 import threading
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -28,11 +28,11 @@ EMBEDDINGS_FILE = Path(__file__).with_name("vocab_embeddings.npz")
 
 def vocabulary_key() -> str:
     """Fingerprint of everything the vocabulary embeddings depend on: the model revision, the prompt length and every prompt."""
-    h = hashlib.sha256(f"{MODEL_ID}@{MODEL_REVISION}|{TEXT_LEN}".encode("utf-8"))
+    h = hashlib.sha256(f"{MODEL_ID}@{MODEL_REVISION}|{TEXT_LEN}".encode())
     for name in sorted(VOCABS):
         h.update(name.encode("utf-8"))
         for label, prompt in VOCABS[name]:
-            h.update(f"\x00{label}\x00{prompt}".encode("utf-8"))
+            h.update(f"\x00{label}\x00{prompt}".encode())
     return h.hexdigest()
 
 
@@ -43,7 +43,7 @@ class ZeroShotRecognizer:
         self._id = model_id
         self._model = None
         self._proc = None
-        self._text: Dict[str, "object"] = {}
+        self._text: dict[str, object] = {}
         self._lock = threading.Lock()
         self._failed = False
 
@@ -118,7 +118,7 @@ class ZeroShotRecognizer:
             feats = self._model.get_image_features(**self._proc(images=pil, return_tensors="pt")).pooler_output
         return feats / feats.norm(dim=-1, keepdim=True)
 
-    def classify_embeddings(self, feats, vocab: str, top_k: int = 3) -> List[List[Tuple[str, float]]]:
+    def classify_embeddings(self, feats, vocab: str, top_k: int = 3) -> list[list[tuple[str, float]]]:
         """For each embedding, the ``top_k`` (label, probability) of the vocabulary. Probabilities are within the closed
         vocabulary, so a high value means "best of these options", not "certainly this"."""
         import torch
@@ -132,13 +132,13 @@ class ZeroShotRecognizer:
             out.append([(labels[int(i)], float(p)) for p, i in zip(top.values, top.indices)])
         return out
 
-    def classify(self, images_rgb: Sequence[np.ndarray], vocab: str, top_k: int = 3) -> List[List[Tuple[str, float]]]:
+    def classify(self, images_rgb: Sequence[np.ndarray], vocab: str, top_k: int = 3) -> list[list[tuple[str, float]]]:
         """Top matches in ``vocab`` for each RGB image/crop."""
         if self._ensure() is None or not len(images_rgb):
             return [[] for _ in images_rgb]
         return self.classify_embeddings(self.embed(images_rgb), vocab, top_k)
 
-    def classify_multi(self, image_rgb: np.ndarray, vocabs: Sequence[str], top_k: int = 3) -> Dict[str, List[Tuple[str, float]]]:
+    def classify_multi(self, image_rgb: np.ndarray, vocabs: Sequence[str], top_k: int = 3) -> dict[str, list[tuple[str, float]]]:
         """Encode one image once and score it against several vocabularies."""
         if self._ensure() is None:
             return {v: [] for v in vocabs}
@@ -146,7 +146,7 @@ class ZeroShotRecognizer:
         return {v: self.classify_embeddings(feats, v, top_k)[0] for v in vocabs}
 
 
-_default: Optional[ZeroShotRecognizer] = None
+_default: ZeroShotRecognizer | None = None
 _default_lock = threading.Lock()
 
 

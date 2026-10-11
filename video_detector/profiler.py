@@ -10,16 +10,17 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, Tuple
+from typing import Any
+
+import cv2
 
 from core.ffmpeg import open_video
 from core.hashing import file_digests
-import cv2
 
 logger = logging.getLogger("video_detector.profiler")
 
 
-def compute_file_hashes(file_path: str | Path) -> Tuple[str, str, int]:
+def compute_file_hashes(file_path: str | Path) -> tuple[str, str, int]:
     """Calculates SHA-256, MD5, and exact file size in bytes (shared cached implementation)."""
     return file_digests(file_path)
 
@@ -30,7 +31,7 @@ class VideoProfiler:
     def __init__(self):
         pass
 
-    def profile_video(self, file_path: str | Path) -> Dict[str, Any]:
+    def profile_video(self, file_path: str | Path) -> dict[str, Any]:
         """Extracts complete stream specifications and hashes from a video."""
         path = Path(file_path)
         if not path.is_file():

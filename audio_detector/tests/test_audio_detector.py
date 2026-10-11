@@ -2,10 +2,11 @@
 audio_detector.tests.test_audio_detector: Autonomous test suite for Audio AI Detection module.
 Verifies all submodules, vocoder cutoffs, spectral flatness, and pipeline stages.
 """
-import unittest
-from pathlib import Path
 import tempfile
+import unittest
 import wave
+from pathlib import Path
+
 import numpy as np
 
 from audio_detector.attribution import AudioModelAttributionEngine

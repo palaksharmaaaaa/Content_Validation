@@ -3,16 +3,15 @@ from __future__ import annotations
 
 import importlib
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import streamlit as st
 
 from audio_detector import AudioSelfImprover
 from image_detector import ImageSelfImprover
-from video_detector import VideoSelfImprover
-
 from image_detector.config import SCORE_UNUSED_WEIGHTS
 from ui.layout import render_table
+from video_detector import VideoSelfImprover
 
 _MODALITIES = (("Image", "image", ImageSelfImprover), ("Video", "video", VideoSelfImprover), ("Audio", "audio", AudioSelfImprover))
 _UNUSED_WEIGHTS = {"image": SCORE_UNUSED_WEIGHTS}
@@ -42,11 +41,11 @@ def render_retrain_panel() -> None:
                         (st.success if result.promoted else st.warning)(result.message)
 
 
-def _records(learner) -> List[Dict[str, Any]]:
+def _records(learner) -> list[dict[str, Any]]:
     return list(learner.load_memory())
 
 
-def _recent_table(records: Dict[str, List[Dict[str, Any]]], limit: int = 15) -> List[Dict[str, str]]:
+def _recent_table(records: dict[str, list[dict[str, Any]]], limit: int = 15) -> list[dict[str, str]]:
     rows = []
     for modality, recs in records.items():
         for rec in recs:

@@ -17,11 +17,16 @@ Depends only on core (atomic JSON I/O, media library) and this package.
 """
 from __future__ import annotations
 
-from datetime import datetime
 import logging
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
+from core.atomic_io import atomic_read_json, atomic_write_json, serialized_on
+from core.calibration_io import damped, sanitize_calibration
+from core.hashing import already_recorded
+from core.media_library import MediaLibrary, library_for, register_feedback
+from core.metrics_util import sanitize_metric_value
 from video_detector.config import (
     DATA_DIR,
     DEFAULT_WEIGHT_FLICKER,
@@ -32,11 +37,6 @@ from video_detector.config import (
     MOTION_VAR_UNNATURAL_FREEZE,
 )
 from video_detector.schemas import VideoFeedbackRecord
-from core.metrics_util import sanitize_metric_value
-from core.hashing import already_recorded
-from core.calibration_io import sanitize_calibration
-from core.atomic_io import atomic_read_json, atomic_write_json, serialized_on
-from core.media_library import MediaLibrary, library_for, register_feedback
 
 logger = logging.getLogger("video_detector.learner")
 
@@ -50,10 +50,10 @@ class VideoSelfImprover:
 
     def __init__(
         self,
-        memory_dir: Optional[Path] = None,
-        memory_file: Optional[Path] = None,
-        calibration_file: Optional[Path] = None,
-        library: Optional[MediaLibrary] = None,
+        memory_dir: Path | None = None,
+        memory_file: Path | None = None,
+        calibration_file: Path | None = None,
+        library: MediaLibrary | None = None,
     ):
         self.memory_dir = memory_dir or DATA_DIR
         self.memory_dir.mkdir(parents=True, exist_ok=True)
@@ -63,7 +63,7 @@ class VideoSelfImprover:
         # storage via memory_file, don't touch the real library unless one is passed in.
         self.library = library if library is not None else (None if memory_file else library_for("video"))
 
-    def load_calibration(self) -> Dict[str, Any]:
+    def load_calibration(self) -> dict[str, Any]:
         """Loads active video calibration parameters."""
         default_calib = {
             "version": 1,
@@ -86,7 +86,7 @@ class VideoSelfImprover:
         loaded = atomic_read_json(self.calibration_file, default=None)
         return sanitize_calibration(loaded, default_calib) if isinstance(loaded, dict) else default_calib
 
-    def save_calibration(self, calib: Dict[str, Any]) -> None:
+    def save_calibration(self, calib: dict[str, Any]) -> None:
         """Saves updated calibration parameters atomically."""
         calib["last_updated"] = datetime.now().isoformat()
         try:
@@ -94,7 +94,7 @@ class VideoSelfImprover:
         except Exception as e:
             logger.error("Failed to save video calibration atomically: %s", e)
 
-    def load_memory(self) -> List[Dict[str, Any]]:
+    def load_memory(self) -> list[dict[str, Any]]:
         """Loads verified video memory bank."""
         loaded = atomic_read_json(self.feedback_file, default=[])
         return loaded if isinstance(loaded, list) else []
@@ -104,13 +104,13 @@ class VideoSelfImprover:
         self,
         video_path: str,
         user_label: str,  # 'REAL' or 'AI'
-        video_metrics: Optional[Dict[str, Any]] = None,
-        temporal_metrics: Optional[Dict[str, Any]] = None,
+        video_metrics: dict[str, Any] | None = None,
+        temporal_metrics: dict[str, Any] | None = None,
         notes: str = "",
         *,
-        metrics: Optional[Dict[str, Any]] = None,
+        metrics: dict[str, Any] | None = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Registers ground-truth video feedback and recalibrates temporal warping and flicker thresholds.
         """
@@ -152,6 +152,7 @@ class VideoSelfImprover:
         calib.setdefault("temporal_weights", {})
         offsets = calib.setdefault("sensitivity_offsets", {})
         calib["samples_processed"] = len(memory)
+        earlier = len(memory) - 1                   # corrections recorded before this one: later ones move the thresholds less
 
         tc = raw_metrics.get("temporal_consistency", {})
         motion_var = raw_metrics.get("motion_variance", tc.get("motion_variance"))
@@ -159,12 +160,12 @@ class VideoSelfImprover:
 
         if user_label.upper() == "AI":
             if motion_var is not None and motion_var < 100.0:
-                m_thresh["suspicious_flicker_var"] = max(50.0, m_thresh.get("suspicious_flicker_var", MOTION_VAR_SUSPICIOUS_FLICKER) - 2.0)
-                offsets["video_ai_offset"] = min(0.30, offsets.get("video_ai_offset", 0.0) + 0.03)
+                m_thresh["suspicious_flicker_var"] = max(50.0, m_thresh.get("suspicious_flicker_var", MOTION_VAR_SUSPICIOUS_FLICKER) - damped(2.0, earlier))
+                offsets["video_ai_offset"] = min(0.30, offsets.get("video_ai_offset", 0.0) + damped(0.03, earlier))
         elif user_label.upper() == "REAL":
             if motion_var is not None and motion_var > 60.0:
-                m_thresh["high_warping_var"] = min(200.0, m_thresh.get("high_warping_var", MOTION_VAR_HIGH_WARPING) + 3.0)
-                offsets["video_ai_offset"] = max(-0.30, offsets.get("video_ai_offset", 0.0) - 0.03)
+                m_thresh["high_warping_var"] = min(200.0, m_thresh.get("high_warping_var", MOTION_VAR_HIGH_WARPING) + damped(3.0, earlier))
+                offsets["video_ai_offset"] = max(-0.30, offsets.get("video_ai_offset", 0.0) - damped(0.03, earlier))
 
         self.save_calibration(calib)
         logger.info("VideoSelfImprover updated calibration from feedback (Total records: %d)", len(memory))

@@ -9,8 +9,8 @@ Absence of any marker is never scored.
 from __future__ import annotations
 
 import re
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import numpy as np
 
@@ -67,7 +67,7 @@ def _moov(ctx: CheckContext):
     return top, C.load_moov(ctx.path, top)
 
 
-def _generator_in(texts: List[str]) -> Optional[str]:
+def _generator_in(texts: list[str]) -> str | None:
     for text in texts:
         for sig, rx in _GEN_RX:
             if rx.search(text):
@@ -75,7 +75,7 @@ def _generator_in(texts: List[str]) -> Optional[str]:
     return None
 
 
-def _tools(texts: List[str]) -> Dict[str, List[str]]:
+def _tools(texts: list[str]) -> dict[str, list[str]]:
     blob = " \n".join(texts).lower()
     return {
         "capture_tools": [k for k, v in _CAPTURE.items() if re.search(v, blob)],
@@ -93,7 +93,7 @@ def check_isobmff_boxes(ctx: CheckContext) -> Finding:
     top = C.walk_top_level(ctx.path)
     types = [b["type"] for b in top["boxes"]]
     ftyp = next((b for b in top["boxes"] if b["type"] == "ftyp"), None)
-    brands: List[str] = []
+    brands: list[str] = []
     major = None
     if ftyp:
         body = C.read_range(ctx.path, ftyp["offset"] + ftyp["header"], min(ftyp["size"] - ftyp["header"], 256))
@@ -133,12 +133,12 @@ def check_isobmff_tables(ctx: CheckContext) -> Finding:
     if not moov or not moov["tracks"]:
         return _na("isobmff_tables", title, "No parseable movie index (moov) was found.")
     size = top["file_size"]
-    tracks_out: List[Dict[str, Any]] = []
+    tracks_out: list[dict[str, Any]] = []
     any_issue = any_vfr = False
     for t in moov["tracks"]:
         if t["handler"] != "vide":
             continue
-        issues: List[str] = []
+        issues: list[str] = []
         stts = t["stts"] if t["stts"] is not None else np.zeros((0, 2), np.uint64)
         n_stts = int(stts[:, 0].sum()) if len(stts) else 0
         ts = (t["mdhd"] or {}).get("timescale") or 0
@@ -186,7 +186,7 @@ def check_isobmff_tables(ctx: CheckContext) -> Finding:
 
 
 # ---------------------------------------------------------------------------------------------
-def _xmp_creator_tools(xmp: str) -> List[str]:
+def _xmp_creator_tools(xmp: str) -> list[str]:
     return re.findall(r"CreatorTool[^>]*>([^<]{1,200})<", xmp) + re.findall(r'CreatorTool="([^"]{1,200})"', xmp)
 
 
@@ -203,8 +203,8 @@ def check_mp4_metadata(ctx: CheckContext) -> Finding:
     mv = moov["mvhd"] or {}
     creation = C.mac_time(mv.get("creation", 0))
     modification = C.mac_time(mv.get("modification", 0))
-    paradoxes: List[str] = []
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    paradoxes: list[str] = []
+    now = datetime.now(UTC).replace(tzinfo=None)
     if creation and modification and modification < creation - timedelta(seconds=60):
         paradoxes.append("modification time precedes creation time")
     for name, v in (("creation", creation), ("modification", modification)):

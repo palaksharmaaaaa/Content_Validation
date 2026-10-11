@@ -130,6 +130,7 @@ def test_nan_age_is_not_adult():
 
 def test_ood_gate_needs_at_least_as_many_samples_as_features():
     import numpy as np
+
     from core.forensics.ood import OODGate
     rng = np.random.default_rng(0)
     assert not OODGate().fit(rng.normal(size=(40, 64))).calibrated            # 40 samples cannot describe 64 dimensions
@@ -179,7 +180,6 @@ def test_benchmark_counts_an_error_result_as_failed_not_abstained(tmp_path):
 
 def test_a_zip_larger_than_the_scan_window_is_still_found(tmp_path):
     import io
-    import os
     import zipfile
 
     from PIL import Image
@@ -199,7 +199,6 @@ def test_a_zip_larger_than_the_scan_window_is_still_found(tmp_path):
 
 def test_two_processes_updating_one_json_file_lose_no_update(tmp_path):
     """The per-path thread lock cannot stop a second process; the process lock must."""
-    import json
     import subprocess
     import sys
     import textwrap

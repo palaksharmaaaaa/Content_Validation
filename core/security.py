@@ -11,16 +11,16 @@ from __future__ import annotations
 import ipaddress
 import logging
 import os
-from pathlib import Path, PureWindowsPath
 import re
 import socket
 import tempfile
 import threading
-from typing import Any, Dict, List, Optional, Tuple
+from pathlib import Path, PureWindowsPath
+from typing import Any
 from urllib.parse import urljoin, urlparse
 
-from PIL import Image
 import requests
+from PIL import Image
 from requests.adapters import HTTPAdapter
 
 logger = logging.getLogger("core.security")
@@ -73,14 +73,10 @@ def is_ip_restricted(ip_obj: ipaddress.IPv4Address | ipaddress.IPv6Address) -> b
     ):
         return True
 
-    for net in RESTRICTED_NETWORKS:
-        if ip_obj in net:
-            return True
-
-    return False
+    return any(ip_obj in net for net in RESTRICTED_NETWORKS)
 
 
-def normalise_host(hostname: str) -> Optional[str]:
+def normalise_host(hostname: str) -> str | None:
     """The host exactly as the HTTP client will look it up: lower case, no trailing dot, internationalised names as punycode.
     None when it cannot be encoded."""
     host = (hostname or "").strip().lower().rstrip(".")
@@ -92,7 +88,7 @@ def normalise_host(hostname: str) -> Optional[str]:
         return None
 
 
-def validate_secure_url(url: str) -> Tuple[bool, str, List[str]]:
+def validate_secure_url(url: str) -> tuple[bool, str, list[str]]:
     """
     Exhaustively audits URL to eliminate Server-Side Request Forgery (SSRF) and DNS rebinding.
     Returns (is_valid, reason, resolved_ips).
@@ -138,7 +134,7 @@ def validate_secure_url(url: str) -> Tuple[bool, str, List[str]]:
     except socket.gaierror as exc:
         return False, f"Could not resolve hostname '{hostname_clean}': {exc}", []
 
-    resolved_ips: List[str] = []
+    resolved_ips: list[str] = []
     for item in addr_info:
         sockaddr = item[4]
         ip_str = sockaddr[0]
@@ -219,12 +215,12 @@ class _PinnedResolver:
     Host header and TLS SNI are untouched, so certificate validation behaves normally.
     """
 
-    def __init__(self, hostname: str, allowed_ips: List[str]):
+    def __init__(self, hostname: str, allowed_ips: list[str]):
         self._hostname = (normalise_host(hostname) or hostname or "").lower().rstrip(".")
         self._allowed_ips = set(allowed_ips)
-        self._previous: Optional[Dict[str, set]] = None
+        self._previous: dict[str, set] | None = None
 
-    def __enter__(self) -> "_PinnedResolver":
+    def __enter__(self) -> _PinnedResolver:
         _install_pinning()
         self._previous = getattr(_pin_state, "pins", None)
         pins = dict(self._previous or {})
@@ -255,19 +251,19 @@ class SecureUrlFetcher:
         "Accept": "*/*",
     }
 
-    def __init__(self, max_mb: float = 100, timeout_seconds: int = 60, deadline_seconds: Optional[float] = None):
+    def __init__(self, max_mb: float = 100, timeout_seconds: int = 60, deadline_seconds: float | None = None):
         self.max_bytes = max_mb * 1024 * 1024
         self.timeout = timeout_seconds
         # requests' timeout is per socket read, so a server that dribbles a byte at a time never trips it; the whole fetch gets a deadline.
         self.deadline = float(deadline_seconds) if deadline_seconds else float(timeout_seconds) * 2.0
 
     @staticmethod
-    def _failure(message: str) -> Dict[str, Any]:
+    def _failure(message: str) -> dict[str, Any]:
         return {"success": False, "error": message}
 
     def _get_following_redirects(
-        self, session: requests.Session, url: str, hostname: str, resolved_ips: List[str]
-    ) -> Tuple[Optional[requests.Response], Optional[str]]:
+        self, session: requests.Session, url: str, hostname: str, resolved_ips: list[str]
+    ) -> tuple[requests.Response | None, str | None]:
         """GET with manual redirect handling: every hop is re-validated (blocks open-redirect SSRF pivots).
 
         Returns (response, error). Each request is pinned to the IPs that were validated for its host.
@@ -298,7 +294,7 @@ class SecureUrlFetcher:
             return None, "No response received from remote server."
         return resp, None
 
-    def _response_rejection(self, resp: requests.Response) -> Optional[str]:
+    def _response_rejection(self, resp: requests.Response) -> str | None:
         """Reason to refuse the response before downloading its body (declared size / HTML page), else None."""
         cl = resp.headers.get("content-length")
         if cl and cl.isdigit() and int(cl) > self.max_bytes:
@@ -328,15 +324,15 @@ class SecureUrlFetcher:
     def fetch(
         self,
         url: str,
-        dest_dir: Optional[Path] = None,
+        dest_dir: Path | None = None,
         expected_type: str = "image",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Safely downloads remote media under a wall-clock deadline. A file is created only for an accepted download.
 
         The work runs on a helper thread: when the deadline passes the caller gets a failure at once and the helper is told to stop
         and delete anything it wrote (it may linger until its server stops talking, but it holds no lock and no result is used).
         """
-        outcome: Dict[str, Any] = {}
+        outcome: dict[str, Any] = {}
         cancel = threading.Event()
         worker_fetcher = SecureUrlFetcher.__new__(SecureUrlFetcher)
         worker_fetcher.__dict__.update(self.__dict__)
@@ -358,9 +354,9 @@ class SecureUrlFetcher:
     def _fetch_impl(
         self,
         url: str,
-        dest_dir: Optional[Path] = None,
+        dest_dir: Path | None = None,
         expected_type: str = "image",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         url = (url or "").strip()                # the same text is validated, parsed and requested: no pin can be skipped by padding
         valid, msg, resolved_ips = validate_secure_url(url)
         if not valid:
@@ -374,7 +370,7 @@ class SecureUrlFetcher:
         if not Path(safe_name).suffix:
             safe_name += suffix                  # a link like https://host/download still yields a typed file name
 
-        temp_path: Optional[Path] = None
+        temp_path: Path | None = None
         resp = None
         with requests.Session() as session:
             session.trust_env = False                      # proxies and .netrc from the environment would route around the address checks

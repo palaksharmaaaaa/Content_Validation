@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
 
 _HEADER = "| Version | Date | Train Loss | Val Accuracy | New Samples | Cumulative Samples |\n|---|---|---|---|---|---|\n"
 
@@ -22,10 +21,10 @@ class RetrainResult:
     samples_folded_in: int
     cumulative_samples: int
     message: str
-    old_accuracy: Optional[float] = None
+    old_accuracy: float | None = None
 
 
-def _rows(log_path: Path) -> List[List[str]]:
+def _rows(log_path: Path) -> list[list[str]]:
     if not log_path.is_file():
         return []
     rows = []
@@ -36,7 +35,7 @@ def _rows(log_path: Path) -> List[List[str]]:
     return rows
 
 
-def read_last_accuracy(log_path: str | Path) -> Optional[float]:
+def read_last_accuracy(log_path: str | Path) -> float | None:
     """Validation accuracy of the most recently promoted checkpoint, or None if none was ever promoted."""
     rows = _rows(Path(log_path))
     if not rows:

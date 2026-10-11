@@ -9,15 +9,17 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 WINDOW = 4 * 1024 * 1024
 
 _ZIP_LOCAL = b"PK\x03\x04"
 _ZIP_END = b"PK\x05\x06"
+# A real tag, not the bare word: "<script" or "<html" must be followed by whitespace, "/" or ">" (so prose such as "<html5" or a tag name
+# in metadata text does not count), and "<?php" by whitespace.
+_ACTIVE_CONTENT = re.compile(rb"<(?:script|html)[\s/>]|<\?php\s")
 
 
-def read_windows(path: Path, window: int = WINDOW) -> Tuple[bytes, bytes, int]:
+def read_windows(path: Path, window: int = WINDOW) -> tuple[bytes, bytes, int]:
     """Returns (head, tail, size). head/tail are each at most ``window`` bytes."""
     path = Path(path)
     size = path.stat().st_size
@@ -31,18 +33,18 @@ def read_windows(path: Path, window: int = WINDOW) -> Tuple[bytes, bytes, int]:
     return head, tail, size
 
 
-def scan_signatures(buf: bytes, trailing_only: bool) -> List[str]:
+def scan_signatures(buf: bytes, trailing_only: bool) -> list[str]:
     """
     Signatures of other file types. ``trailing_only=True`` is for data known to follow the media payload
     (additional low-false-positive signatures are enabled there).
     """
-    found: List[str] = []
+    found: list[str] = []
     low = buf.lower()
     if _ZIP_LOCAL in buf and _ZIP_END in buf:
         found.append("ZIP")
     if b"%PDF-" in buf:
         found.append("PDF")
-    if b"<script" in low or b"<html" in low or b"<?php" in low:
+    if _ACTIVE_CONTENT.search(low):
         found.append("HTML/Script")
     if b"This program cannot be run in DOS mode" in buf:
         found.append("PE executable")
@@ -56,7 +58,7 @@ def scan_signatures(buf: bytes, trailing_only: bool) -> List[str]:
     return found
 
 
-def scan_windows(windows: List[Tuple[bytes, bool]]) -> List[str]:
+def scan_windows(windows: list[tuple[bytes, bool]]) -> list[str]:
     """Signatures across several byte windows of one file, as ``[(buffer, trailing_only), ...]``. A ZIP is recognised when its local-file
     header is in one window and its end-of-directory record in another, which is what an archive larger than a window looks like."""
     found: set = set()
@@ -77,9 +79,9 @@ INJECTION_PATTERNS = [
 ]
 
 
-def find_injection(fields: Dict[str, str]) -> List[Dict[str, str]]:
+def find_injection(fields: dict[str, str]) -> list[dict[str, str]]:
     """Return the metadata fields that contain instruction-like text aimed at AI readers (prompt-injection patterns)."""
-    matches: List[Dict[str, str]] = []
+    matches: list[dict[str, str]] = []
     for key, text in fields.items():
         for rx in INJECTION_PATTERNS:
             m = rx.search(text)

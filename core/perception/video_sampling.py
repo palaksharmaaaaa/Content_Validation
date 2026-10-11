@@ -17,8 +17,8 @@ gap is never hidden.
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import List, Optional, Sequence, Tuple
 
 import cv2
 import numpy as np
@@ -55,8 +55,8 @@ def thumb_diff(a: np.ndarray, b: np.ndarray) -> float:
 @dataclass
 class Probes:
     """Thumbnails of a video taken at evenly spaced moments."""
-    times: List[float] = field(default_factory=list)
-    thumbs: List[np.ndarray] = field(default_factory=list)
+    times: list[float] = field(default_factory=list)
+    thumbs: list[np.ndarray] = field(default_factory=list)
     duration: float = 0.0
     fps: float = 0.0
 
@@ -85,7 +85,7 @@ def probe_video(path, n_probes: int = PROBES) -> Probes:
     return out
 
 
-def find_changes(probes: Probes) -> List[int]:
+def find_changes(probes: Probes) -> list[int]:
     """Indices of the probes that start a new shot or bring a visible change (never index 0)."""
     if len(probes.thumbs) < 2:
         return []
@@ -94,25 +94,25 @@ def find_changes(probes: Probes) -> List[int]:
     return [i + 1 for i, d in enumerate(diffs) if d > threshold]
 
 
-def choose_times(probes: Probes, max_frames: int = 60) -> Tuple[List[float], dict]:
+def choose_times(probes: Probes, max_frames: int = 60) -> tuple[list[float], dict]:
     """Moments (seconds) to examine, sorted, at most ``max_frames``: the start and end, the frames just after each content change,
     and a grid of at most one a second (thinned evenly when the budget cannot afford it)."""
     if not probes.times:
         return [], {"changes": 0, "grid_seconds": None}
     changes = find_changes(probes)
-    priority: List[float] = [probes.times[0], probes.times[-1]]
+    priority: list[float] = [probes.times[0], probes.times[-1]]
     for i in changes:
         priority += [probes.times[i], min(probes.times[-1], probes.times[i] + EVENT_SECOND_FRAME)]
     spacing = max(GRID_SECONDS, probes.duration / max(1, max_frames))
     grid = list(np.arange(spacing / 2, probes.duration, spacing))
 
-    def dedupe(times: Sequence[float], kept: List[float]) -> List[float]:
+    def dedupe(times: Sequence[float], kept: list[float]) -> list[float]:
         for t in times:
             if all(abs(t - k) >= MIN_GAP_SECONDS for k in kept):
                 kept.append(float(t))
         return kept
 
-    chosen: List[float] = []
+    chosen: list[float] = []
     dedupe(priority[: max(2, max_frames * 6 // 10)], chosen)       # changes may take at most 60 % of the budget
     dedupe(grid, chosen)
     dedupe(priority[max(2, max_frames * 6 // 10):], chosen)
@@ -137,12 +137,12 @@ def iter_frames(path, times: Sequence[float]):
         cap.release()
 
 
-def read_frames(path, times: Sequence[float]) -> List[Tuple[float, np.ndarray]]:
+def read_frames(path, times: Sequence[float]) -> list[tuple[float, np.ndarray]]:
     """The frames at the given moments, as (time, BGR frame); moments that cannot be read are skipped. Holds them all: prefer ``iter_frames``."""
     return list(iter_frames(path, times))
 
 
-def longest_gap(times: Sequence[float], duration: float) -> Optional[float]:
+def longest_gap(times: Sequence[float], duration: float) -> float | None:
     """The longest stretch of the video (seconds) between examined moments, counting from the start and to the end."""
     if not times or duration <= 0:
         return None

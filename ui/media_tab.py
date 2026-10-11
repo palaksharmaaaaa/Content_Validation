@@ -8,9 +8,10 @@ directory, results are cached by file content, several files get a comparison ta
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Set, Tuple
+from typing import Any
 
 import streamlit as st
 
@@ -28,10 +29,10 @@ class MediaTabSpec:
     key: str                       # "img" | "vid" | "aud": prefix for widget keys and session-state entries
     modality: str                  # "image" | "video" | "audio"
     noun: str                      # "Image" | "Video" | "Audio"
-    file_types: List[str]
+    file_types: list[str]
     hint: str                      # one line under the uploader: what the engine looks at
     url_placeholder: str
-    render_result: Callable[[Dict[str, Any]], None]
+    render_result: Callable[[dict[str, Any]], None]
     tag_upload_source: bool = False  # image items record where they came from
 
 
@@ -46,11 +47,11 @@ def _save_upload(spec_key: str, session_dir: Path, up: Any, index: int) -> Path:
     return path
 
 
-def _within_limits(spec: MediaTabSpec, candidates: List[Tuple[str, int]], already_used: int = 0) -> Set[int]:
+def _within_limits(spec: MediaTabSpec, candidates: list[tuple[str, int]], already_used: int = 0) -> set[int]:
     """Indexes of the (name, size) candidates that fit the per-file and per-batch limits of ``spec.modality`` (core/limits.py), taken in
     order; every other file is reported to the user with the reason. ``already_used`` is the bytes the batch already holds."""
     limits = limits_for(spec.modality)
-    kept: Set[int] = set()
+    kept: set[int] = set()
     total = already_used
     for i, (name, size) in enumerate(candidates):
         if size > limits.file_bytes:
@@ -64,7 +65,7 @@ def _within_limits(spec: MediaTabSpec, candidates: List[Tuple[str, int]], alread
     return kept
 
 
-def _ingest_uploads(spec: MediaTabSpec, session_dir: Path) -> List[Dict[str, Any]]:
+def _ingest_uploads(spec: MediaTabSpec, session_dir: Path) -> list[dict[str, Any]]:
     round_key = f"{spec.key}_uploader_round"
     uploaded = st.file_uploader(
         f"Drop {spec.noun.lower()} files here (one or several)", type=spec.file_types,
@@ -79,7 +80,7 @@ def _ingest_uploads(spec: MediaTabSpec, session_dir: Path) -> List[Dict[str, Any
             if st.button("Remove all", key=f"{spec.key}_remove_all"):
                 st.session_state[round_key] = st.session_state.get(round_key, 0) + 1
                 st.rerun()
-    items: List[Dict[str, Any]] = []
+    items: list[dict[str, Any]] = []
     kept = _within_limits(spec, [(up.name, up.size) for up in uploaded or []])
     for idx, up in enumerate(uploaded or []):
         if idx not in kept:
@@ -91,7 +92,7 @@ def _ingest_uploads(spec: MediaTabSpec, session_dir: Path) -> List[Dict[str, Any
     return items
 
 
-def _ingest_urls(spec: MediaTabSpec, session_dir: Path) -> List[Dict[str, Any]]:
+def _ingest_urls(spec: MediaTabSpec, session_dir: Path) -> list[dict[str, Any]]:
     """Links the user asked to fetch. They are fetched when the button is pressed and then kept in the session, because Streamlit
     re-runs the script on every interaction and the button is only "pressed" in the run that follows the click."""
     url_key = f"{spec.key}_url_items"
@@ -105,7 +106,7 @@ def _ingest_urls(spec: MediaTabSpec, session_dir: Path) -> List[Dict[str, Any]]:
         if not urls:
             st.error("Enter at least one link starting with http:// or https://")
         else:
-            fetched_items: List[Dict[str, Any]] = []
+            fetched_items: list[dict[str, Any]] = []
             for idx, url in enumerate(urls):
                 with st.spinner(f"Downloading {idx + 1} of {len(urls)}"):
                     fetched = fetch_media_from_url(url, expected_type=spec.modality, dest_dir=session_dir)
@@ -122,7 +123,7 @@ def _ingest_urls(spec: MediaTabSpec, session_dir: Path) -> List[Dict[str, Any]]:
     return [it for it in st.session_state.get(url_key, []) if Path(it["path"]).is_file()]
 
 
-def _analyse(spec: MediaTabSpec, items: List[Dict[str, Any]], detectors: Dict[str, Any], sensitivity_key: str, session_dir: Path) -> List[Dict[str, Any]]:
+def _analyse(spec: MediaTabSpec, items: list[dict[str, Any]], detectors: dict[str, Any], sensitivity_key: str, session_dir: Path) -> list[dict[str, Any]]:
     """Batch-analyse ``items``, reusing the session's previous results when the same bytes were already analysed."""
     if not items:
         return []
@@ -146,7 +147,7 @@ def _analyse(spec: MediaTabSpec, items: List[Dict[str, Any]], detectors: Dict[st
     return results
 
 
-def render_media_tab(spec: MediaTabSpec, detectors: Dict[str, Any], sensitivity_key: str, session_dir: Path) -> None:
+def render_media_tab(spec: MediaTabSpec, detectors: dict[str, Any], sensitivity_key: str, session_dir: Path) -> None:
     """Draw one tab: uploader and optional links, analyse (cached by file content), then show the result or a comparison table."""
     uploads = _ingest_uploads(spec, session_dir)
     links = _ingest_urls(spec, session_dir)

@@ -10,7 +10,6 @@ Completely self-contained with zero outside dependencies.
 from __future__ import annotations
 
 import logging
-
 from pathlib import Path
 
 import cv2

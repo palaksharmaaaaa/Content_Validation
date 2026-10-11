@@ -6,12 +6,11 @@ results instead of raising on malformed input.
 from __future__ import annotations
 
 import logging
-
 import struct
 import subprocess
 import wave
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -49,12 +48,12 @@ def sniff_audio_format(head: bytes) -> str:
 
 
 # ---- RIFF / WAV ------------------------------------------------------------------------------
-def walk_riff(path: Path, max_chunks: int = 4096) -> Dict[str, Any]:
+def walk_riff(path: Path, max_chunks: int = 4096) -> dict[str, Any]:
     """
     RIFF/WAVE chunk walk that SEEKS through the file (header-sized reads only), so structure after a large
     ``data`` chunk (LIST INFO, bext, cue lists) is seen regardless of file size.
     """
-    out: Dict[str, Any] = {"ok": False, "form": None, "declared_size": None, "chunks": [], "issues": []}
+    out: dict[str, Any] = {"ok": False, "form": None, "declared_size": None, "chunks": [], "issues": []}
     size = Path(path).stat().st_size
     with open(path, "rb") as f:
         head = f.read(12)
@@ -85,13 +84,13 @@ def walk_riff(path: Path, max_chunks: int = 4096) -> Dict[str, Any]:
     return out
 
 
-def riff_chunk_body(path: Path, chunk: Dict[str, Any], limit: int = 65536) -> bytes:
+def riff_chunk_body(path: Path, chunk: dict[str, Any], limit: int = 65536) -> bytes:
     with open(path, "rb") as f:
         f.seek(chunk["offset"] + 8)
         return f.read(min(chunk["size"], limit))
 
 
-def parse_wav_fmt(body: bytes) -> Optional[Dict[str, int]]:
+def parse_wav_fmt(body: bytes) -> dict[str, int] | None:
     if len(body) < 16:
         return None
     tag, ch, sr, _br, _ba, bits = struct.unpack("<HHIIHH", body[:16])
@@ -100,7 +99,7 @@ def parse_wav_fmt(body: bytes) -> Optional[Dict[str, int]]:
     return {"format_tag": tag, "channels": ch, "sample_rate": sr, "bits": bits}
 
 
-def parse_bext(body: bytes) -> Dict[str, Any]:
+def parse_bext(body: bytes) -> dict[str, Any]:
     """EBU Tech 3285 Broadcast Audio Extension fields (ASCII, null padded)."""
     def txt(a: int, b: int) -> str:
         return body[a:b].split(b"\x00")[0].decode("ascii", errors="replace").strip()
@@ -114,8 +113,8 @@ def parse_bext(body: bytes) -> Dict[str, Any]:
     return out
 
 
-def parse_list_info(body: bytes) -> Dict[str, str]:
-    out: Dict[str, str] = {}
+def parse_list_info(body: bytes) -> dict[str, str]:
+    out: dict[str, str] = {}
     if body[:4] != b"INFO":
         return out
     i = 4
@@ -146,7 +145,7 @@ def _decode_text(enc: int, raw: bytes) -> str:
         return raw.decode("latin-1", errors="replace")
 
 
-def parse_id3v2(data: bytes) -> Optional[Dict[str, Any]]:
+def parse_id3v2(data: bytes) -> dict[str, Any] | None:
     if len(data) < 10 or data[:3] != b"ID3":
         return None
     major, rev, flags = data[3], data[4], data[5]
@@ -155,8 +154,8 @@ def parse_id3v2(data: bytes) -> Optional[Dict[str, Any]]:
     tag_size = _synchsafe(data[6:10])
     body = data[10 : 10 + tag_size]
     id_len, hdr_len = (3, 6) if major == 2 else (4, 10)
-    frames: List[Dict[str, Any]] = []
-    text: Dict[str, str] = {}
+    frames: list[dict[str, Any]] = []
+    text: dict[str, str] = {}
     i, padding, has_apic = 0, 0, False
     while i + hdr_len <= len(body):
         fid = body[i : i + id_len]
@@ -198,7 +197,7 @@ def parse_id3v2(data: bytes) -> Optional[Dict[str, Any]]:
 
 
 # ---- FLAC / MP3 -------------------------------------------------------------------------------
-def flac_streaminfo(data: bytes) -> Optional[Dict[str, Any]]:
+def flac_streaminfo(data: bytes) -> dict[str, Any] | None:
     if data[:4] != b"fLaC" or len(data) < 4 + 4 + 34:
         return None
     if (data[4] & 0x7F) != 0:
@@ -217,7 +216,7 @@ _MP3_BR_L3_V1 = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 32
 _MP3_BR_L3_V2 = [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160]
 
 
-def mp3_first_frame(data: bytes, start: int = 0) -> Optional[Dict[str, Any]]:
+def mp3_first_frame(data: bytes, start: int = 0) -> dict[str, Any] | None:
     n = len(data)
     i = start
     while i + 4 <= min(n, start + 65536):
@@ -239,7 +238,7 @@ def mp3_first_frame(data: bytes, start: int = 0) -> Optional[Dict[str, Any]]:
 
 
 # ---- Ogg --------------------------------------------------------------------------------------
-def _ogg_crc_table() -> List[int]:
+def _ogg_crc_table() -> list[int]:
     table = []
     for i in range(256):
         r = i << 24
@@ -259,8 +258,8 @@ def ogg_crc(page: bytes) -> int:
     return crc
 
 
-def parse_ogg_pages(data: bytes, max_pages: int = 50000) -> List[Dict[str, Any]]:
-    pages: List[Dict[str, Any]] = []
+def parse_ogg_pages(data: bytes, max_pages: int = 50000) -> list[dict[str, Any]]:
+    pages: list[dict[str, Any]] = []
     i, n = 0, len(data)
     while i + 27 <= n and len(pages) < max_pages:
         if data[i : i + 4] != b"OggS":
@@ -286,7 +285,7 @@ def parse_ogg_pages(data: bytes, max_pages: int = 50000) -> List[Dict[str, Any]]
 
 
 # ---- native-rate loading ----------------------------------------------------------------------
-def container_info(path: Path) -> Optional[Dict[str, Any]]:
+def container_info(path: Path) -> dict[str, Any] | None:
     """Native {sample_rate, bits, channels, format} from the container header (None if unknown)."""
     head, _tail, size = read_windows(path, window=WINDOW)
     fmt = sniff_audio_format(head)
@@ -323,7 +322,7 @@ def container_info(path: Path) -> Optional[Dict[str, Any]]:
     return None
 
 
-def load_native_mono(path: Path, max_seconds: float = 30.0) -> Optional[Tuple[np.ndarray, int, Optional[int]]]:
+def load_native_mono(path: Path, max_seconds: float = 30.0) -> tuple[np.ndarray, int, int | None] | None:
     """
     Mono float32 samples at the file's native sample rate (first ``max_seconds``), plus the container's
     bit depth. WAV PCM is read natively; other formats need ffmpeg. Returns None if neither works.
@@ -349,7 +348,7 @@ def load_native_mono(path: Path, max_seconds: float = 30.0) -> Optional[Tuple[np
     try:
         res = subprocess.run(
             ffmpeg_input(path, max_seconds=max_seconds) + ["-vn", "-ac", "1", "-f", "f32le", "-"],
-            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=120,
+            stdin=subprocess.DEVNULL, capture_output=True, timeout=120,
         )
     except (FileNotFoundError, subprocess.TimeoutExpired):
         return None
@@ -359,9 +358,9 @@ def load_native_mono(path: Path, max_seconds: float = 30.0) -> Optional[Tuple[np
 
 
 # ---- free-text metadata collection -------------------------------------------------------------
-def parse_vorbis_comment(body: bytes) -> Dict[str, str]:
+def parse_vorbis_comment(body: bytes) -> dict[str, str]:
     """Vorbis-comment payload (vendor string + user comments) -> {NAME: value}."""
-    out: Dict[str, str] = {}
+    out: dict[str, str] = {}
     try:
         (vlen,) = struct.unpack("<I", body[:4])
         out["VENDOR"] = body[4 : 4 + vlen].decode("utf-8", errors="replace")
@@ -380,11 +379,11 @@ def parse_vorbis_comment(body: bytes) -> Dict[str, str]:
     return out
 
 
-def collect_text_fields(path: Path) -> Dict[str, str]:
+def collect_text_fields(path: Path) -> dict[str, str]:
     """Free-text metadata from ID3v2, RIFF LIST INFO / bext, FLAC and Ogg Vorbis/Opus comments."""
     head, _tail, _size = read_windows(path)
     fmt = sniff_audio_format(head)
-    fields: Dict[str, str] = {}
+    fields: dict[str, str] = {}
     id3 = parse_id3v2(head)
     if id3:
         for k, v in id3["text"].items():

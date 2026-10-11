@@ -87,6 +87,7 @@ class TestImageInPlaceRetrain(unittest.TestCase):
 class TestVideoInPlaceRetrain(unittest.TestCase):
     def test_retrain_reads_videos_in_place(self):
         import cv2
+
         from video_detector.retrain import run_retrain
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

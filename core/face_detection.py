@@ -11,7 +11,6 @@ from __future__ import annotations
 import logging
 import threading
 from pathlib import Path
-from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -27,7 +26,7 @@ NMS_THRESHOLD = 0.30
 MAX_SIDE = 1280             # larger images are downscaled for speed; boxes are mapped back
 MIN_FACE_PIXELS = 24        # smaller than this (in the original image) is not reported
 
-Face = Tuple[int, int, int, int, float]  # x, y, w, h, confidence
+Face = tuple[int, int, int, int, float]  # x, y, w, h, confidence
 
 
 class FaceFinder:
@@ -35,7 +34,7 @@ class FaceFinder:
 
     def __init__(self, model_path: Path = MODEL_PATH):
         self._path = Path(model_path)
-        self._net: Optional["cv2.FaceDetectorYN"] = None
+        self._net: cv2.FaceDetectorYN | None = None
         self._lock = threading.Lock()
         self._init_lock = threading.Lock()
         self._failed = False
@@ -55,11 +54,11 @@ class FaceFinder:
                     logger.warning("Face detector unavailable (%s): %s", self._path.name, exc)
             return self._net
 
-    def find(self, image_bgr: np.ndarray) -> List[Face]:
+    def find(self, image_bgr: np.ndarray) -> list[Face]:
         """Faces in a BGR image as (x, y, w, h, confidence) in original pixel coordinates, most confident first."""
         return [(*d["box"], d["score"]) for d in self.find_detailed(image_bgr)]
 
-    def find_detailed(self, image_bgr: np.ndarray) -> List[dict]:
+    def find_detailed(self, image_bgr: np.ndarray) -> list[dict]:
         """Like ``find`` but each face is ``{box: (x, y, w, h), score, landmarks: 5x2 array}`` (right eye, left eye, nose,
         right mouth corner, left mouth corner), all in original pixel coordinates."""
         if image_bgr is None or not hasattr(image_bgr, "shape") or image_bgr.ndim < 2:
@@ -79,7 +78,7 @@ class FaceFinder:
         with self._lock:
             net.setInputSize((frame.shape[1], frame.shape[0]))
             _ok, raw = net.detect(np.ascontiguousarray(frame, dtype=np.uint8))
-        faces: List[dict] = []
+        faces: list[dict] = []
         for row in (raw if raw is not None else []):
             x, y, fw, fh = (float(v) / scale for v in row[:4])
             x1, y1 = max(0, int(round(x))), max(0, int(round(y)))
@@ -90,7 +89,7 @@ class FaceFinder:
         return sorted(faces, key=lambda f: f["score"], reverse=True)
 
 
-_default: Optional[FaceFinder] = None
+_default: FaceFinder | None = None
 _default_lock = threading.Lock()
 
 

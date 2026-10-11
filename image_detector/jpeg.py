@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 from PIL import Image
 
@@ -32,13 +31,13 @@ _ZIGZAG = [
 ]
 
 
-def libjpeg_table(base: List[int], quality: int) -> List[int]:
+def libjpeg_table(base: list[int], quality: int) -> list[int]:
     q = max(1, min(100, int(quality)))
     scale = 5000 // q if q < 50 else 200 - 2 * q
     return [max(1, min(255, (b * scale + 50) // 100)) for b in base]
 
 
-def estimate_libjpeg_quality(tables: Dict[int, List[int]]) -> Optional[int]:
+def estimate_libjpeg_quality(tables: dict[int, list[int]]) -> int | None:
     """Quality (1-100) if the luma table equals the libjpeg-scaled standard table, else None."""
     luma = tables.get(0)
     if not luma or len(luma) != 64:
@@ -54,7 +53,7 @@ def estimate_libjpeg_quality(tables: Dict[int, List[int]]) -> Optional[int]:
 
 
 
-def jpeg_compression(path: str | Path) -> Tuple[bool, Optional[int]]:
+def jpeg_compression(path: str | Path) -> tuple[bool, int | None]:
     """(is_jpeg, libjpeg-equivalent quality). The quality is None for a JPEG written with its own tables (a camera, Photoshop, ...)
     and for anything that is not a JPEG or cannot be read."""
     try:

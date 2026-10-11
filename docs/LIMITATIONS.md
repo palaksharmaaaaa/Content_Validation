@@ -24,10 +24,10 @@ What this project does not do, or has not been shown to do. Numbers below were m
 - **The out-of-distribution gate needs at least as many reference files as features** (and at least 20); with fewer it stays uncalibrated rather than flagging ordinary files.
 - **Text taken from a file is escaped before display** (`ui/text.py`) and spreadsheet formulas are neutralised in CSV exports, but this is checked only by unit tests and AppTest, not by a browser-level review.
 - **Open items.**
-  - The signature scan for scripts and HTML (`polyglot_signatures`) is a plain byte search; a picture whose metadata legitimately contains the text `<html` is flagged, and the finding is advisory only.
-  - Feedback is deduplicated by file content and label and every calibration value is clamped, but many distinct, wrongly labelled files can still move the thresholds; the Learning tab shows what changed.
+  - Feedback is deduplicated by file content and label, each correction moves the thresholds less than the one before (the steps shrink as 1 / (1 + n/10)^2, so their total is bounded and volume alone cannot reach a clamp), and every value is clamped and validated on load. One kind of mistaken correction can still shift a threshold by up to that bound, and the Learning tab shows what changed.
+  - The script/HTML signature needs a real tag (`<script`, `<html` followed by a space, `/` or `>`, or `<?php `), so prose in metadata no longer matches; a picture that really embeds such a tag is still flagged, and the finding is advisory only.
   - Golden tests compare digests of whole outputs: they detect any change but do not say what is right. Accuracy on real AI media is unmeasured (see the first bullet).
-  - Video frames are opened by OpenCV only from local files: a link is downloaded by the hardened fetcher first, so `cv2.VideoCapture` never receives a URL.
+  - Video frames are opened by OpenCV only from local files in a supported container (MP4/MOV, MKV/WebM, AVI): a link is downloaded by the hardened fetcher first, and a playlist named like a video is refused before OpenCV sees it.
 - **What is not covered at all** is listed in [CHECKS.md](CHECKS.md#not-covered).
 
 ## Operations
@@ -38,7 +38,7 @@ What this project does not do, or has not been shown to do. Numbers below were m
 - **No authentication, by design.** The app is a self-contained tool and ships with no sign-in. It listens on 127.0.0.1 by default. Per-session scratch folders keep uploads apart, but every user of one installation shares the same learned corrections, the same Learning tab (file names and notes included) and the same feedback copies; put your own access control in front of it if you serve it to other people.
 - **Batches run in parallel on multi-core machines** (images and audio about 2x faster, video about 1.15x); on a dual-core machine they stay sequential.
 - **Size limits** (`limits.toml`, or `OMNIFORENSICS_MAX_<IMAGE|VIDEO|AUDIO>_<FILE|BATCH>_MB`): one file up to 10 MB for an image, 100 MB for a video (and 1 hour), 10 MB for audio (and 1 hour); one batch up to 500 MB per type. Each uploader hands its per-file limit to Streamlit, so the browser refuses a bigger file at once; restart the app after changing `limits.toml`.
-- **`ffmpeg` is called with only the `file` and `pipe` protocols, only the container formats the app supports (`-format_whitelist`), no terminal input and a bounded decode.** An upload that is really a playlist, concat list, HLS or DASH manifest is refused instead of being followed to other files. The program is found on `PATH` by name (on Windows the current folder is searched first), so run the app from a folder you trust.
+- **`ffmpeg` is called with only the `file` and `pipe` protocols, only the container formats the app supports (`-format_whitelist`), no terminal input and a bounded decode.** An upload that is really a playlist, concat list, HLS or DASH manifest is refused instead of being followed to other files. The program is found by an explicit `PATH` search, never in the current folder.
 - **Without `ffmpeg`**, WAV audio (8, 16, 24 and 32-bit PCM) is still read natively and video frames are still read through OpenCV, but compressed audio cannot be decoded and a video's audio track is skipped.
 
 ## Age and minor screening

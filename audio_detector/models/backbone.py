@@ -5,7 +5,6 @@ Self-contained neural module with zero outside dependencies.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 import torch
 from torch import nn
@@ -30,15 +29,15 @@ class AudioClassifierNet(nn.Module):
 
 
 def build_audio_classifier(
-    checkpoint_path: Optional[str | Path] = None,
+    checkpoint_path: str | Path | None = None,
     in_features: int = 5,
     hidden: int = 32,
-    device: Optional[torch.device] = None,
+    device: torch.device | None = None,
 ) -> AudioClassifierNet:
     """Instantiates and optionally loads pre-trained weights for AudioClassifierNet."""
     dev = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = AudioClassifierNet(in_features=in_features, hidden=hidden)
-    
+
     if checkpoint_path:
         ckpt = Path(checkpoint_path)
         if ckpt.is_file():

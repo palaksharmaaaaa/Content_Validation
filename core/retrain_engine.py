@@ -10,9 +10,10 @@ from __future__ import annotations
 
 import logging
 import math
+from collections.abc import Callable
 from datetime import date
 from pathlib import Path
-from typing import Callable, List, Tuple
+from typing import Any
 
 from core.checkpoint_log import (
     RetrainResult,
@@ -25,9 +26,90 @@ from core.media_library import MediaLibrary
 
 logger = logging.getLogger("core.retrain_engine")
 
-Sample = Tuple[str, Path, str]  # (sha256, path, "ai_generated" | "real")
+Sample = tuple[str, Path, str]  # (sha256, path, "ai_generated" | "real")
 # train_fn(train_samples, val_samples, candidate_path) -> (train_loss, val_accuracy)
-TrainFn = Callable[[List[Sample], List[Sample], Path], Tuple[float, float]]
+TrainFn = Callable[[list[Sample], list[Sample], Path], tuple[float, float]]
+
+
+MIN_DRIFT_SAMPLES = 10    # a two-sample statistical test says nothing; below this the report is skipped
+
+
+def generate_drift_report(
+    reference_samples: list[Sample],
+    current_samples: list[Sample],
+    report_output_path: Path | None = None,
+) -> dict[str, Any]:
+    """Produces an Evidently AI dataset drift report comparing reference vs. current samples.
+
+    The only feature compared is file size: it flags a batch of very differently sized files, not a change in what the pictures show.
+    Evidently is an optional dependency (requirements-dev.txt); without it the report is skipped with a message, never an error.
+
+    Saves an interactive HTML report if report_output_path is provided.
+    """
+    if min(len(reference_samples), len(current_samples)) < MIN_DRIFT_SAMPLES:
+        return {
+            "drift_detected": False,
+            "drift_share": 0.0,
+            "drifted_features": 0,
+            "report_path": None,
+            "message": f"Too few samples for a drift report (need at least {MIN_DRIFT_SAMPLES} on each side; "
+                       f"have {len(reference_samples)} and {len(current_samples)}).",
+        }
+
+    try:
+        import pandas as pd
+        from evidently import Report
+        from evidently.presets import DataDriftPreset
+
+        def _to_df(samples: list[Sample]) -> pd.DataFrame:
+            rows = []
+            for _, path, _label in samples:
+                p = Path(path)
+                size_kb = (p.stat().st_size / 1024.0) if p.is_file() else 0.0
+                rows.append({"file_size_kb": size_kb})          # the class label is not a feature: a different AI/real mix is not drift
+            return pd.DataFrame(rows)
+
+        ref_df = _to_df(reference_samples)
+        curr_df = _to_df(current_samples)
+
+        report = Report([DataDriftPreset()])
+        snapshot = report.run(reference_data=ref_df, current_data=curr_df)
+
+        report_str = None
+        if report_output_path:
+            p_out = Path(report_output_path)
+            p_out.parent.mkdir(parents=True, exist_ok=True)
+            snapshot.save_html(str(p_out))
+            report_str = str(p_out)
+
+        snap_dict = snapshot.dict()
+        metrics = snap_dict.get("metrics", [])
+        drift_share = 0.0
+        drift_count = 0
+        for m in metrics:
+            val = m.get("value")
+            if isinstance(val, dict) and "share" in val:
+                drift_share = float(val.get("share", 0.0))
+                drift_count = int(val.get("count", 0))
+                break
+
+        drift_detected = drift_share > 0.5
+        return {
+            "drift_detected": drift_detected,
+            "drift_share": round(drift_share, 4),
+            "drifted_features": drift_count,
+            "report_path": report_str,
+            "message": f"Drift analysis complete. Drifted features: {drift_count} (share: {drift_share:.1%}).",
+        }
+    except Exception as exc:
+        logger.warning("Evidently drift report generation encountered an error: %s", exc)
+        return {
+            "drift_detected": False,
+            "drift_share": 0.0,
+            "drifted_features": 0,
+            "report_path": None,
+            "message": f"Evidently drift analysis failed: {exc}",
+        }
 
 
 def run_retrain(
@@ -38,6 +120,7 @@ def run_retrain(
     min_new: int = 1,
     replay_ratio: int = 4,
     min_replay: int = 50,
+    drift_report_path: Path | None = None,
 ) -> RetrainResult:
     """Fine-tune on newly labelled media plus a replay sample, then promote the candidate only if its validation accuracy is not worse than the last promoted one; otherwise discard it and leave the live checkpoint untouched."""
     log_path, live_checkpoint = Path(log_path), Path(live_checkpoint)
@@ -74,10 +157,19 @@ def run_retrain(
                              f"Rolled back: validation accuracy {val_acc:.1%} is below the current "
                              f"checkpoint's {old_acc:.1%}. Labels stay queued.", old_acc)
 
+    # Automated Evidently AI drift analysis prior to promotion
+    drift_info = generate_drift_report(val, train, report_output_path=drift_report_path)
+    drift_msg = ""
+    if drift_info.get("drift_detected"):
+        logger.warning("Feature drift flagged prior to model promotion: %s", drift_info.get("message"))
+        drift_msg = f" [Drift warning: {drift_info['drifted_features']} feature(s) drifted ({drift_info['drift_share']:.1%})]"
+    elif drift_info.get("report_path"):
+        drift_msg = f" [Evidently drift report saved to {drift_info['report_path']}]"
+
     candidate.replace(live_checkpoint)
     folded = len(new_samples)
     library.mark_seen(sha for sha, _, _ in new_samples)
     cumulative += folded
     append_row(log_path, next_version(log_path), date.today().isoformat(), train_loss, val_acc, folded, cumulative)
     return RetrainResult(True, val_acc, folded, cumulative,
-                         f"Promoted: validation accuracy {val_acc:.1%} on {len(val)} held-out files.", old_acc)
+                         f"Promoted: validation accuracy {val_acc:.1%} on {len(val)} held-out files.{drift_msg}", old_acc)

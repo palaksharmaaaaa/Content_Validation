@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -28,16 +28,16 @@ MIN_DISTINCTIVE_MARKER = 8          # characters; the four-letter tags are too s
 WINDOW = 512 * 1024                 # bytes read from the start and from the end of the file
 
 
-def markers_in(buffer: bytes) -> List[str]:
+def markers_in(buffer: bytes) -> list[str]:
     return [m.decode("ascii") for m in MARKERS if m in buffer]
 
 
-def has_credentials(buffer: bytes, found: List[str]) -> bool:
+def has_credentials(buffer: bytes, found: list[str]) -> bool:
     """True for a distinctive marker, or for any marker together with the JUMBF box type."""
     return any(len(m) >= MIN_DISTINCTIVE_MARKER for m in found) or (b"jumb" in buffer and bool(found))
 
 
-def scan_file(file_path: str | Path) -> Dict[str, Any]:
+def scan_file(file_path: str | Path) -> dict[str, Any]:
     """``{c2pa_present, status, manifests_found}`` from the first and last WINDOW bytes of the file."""
     path = Path(file_path)
     if not path.is_file():

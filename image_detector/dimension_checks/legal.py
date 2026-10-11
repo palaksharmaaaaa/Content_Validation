@@ -5,7 +5,6 @@ findings never alter P(AI) and are not legal advice; they surface facts a review
 from __future__ import annotations
 
 import logging
-from typing import List
 
 from PIL import Image
 
@@ -27,8 +26,8 @@ def _f(check_id, title, status, severity, detail, data=None) -> Finding:
 
 
 @registry.register("image", "rights_and_privacy", phase="post")
-def check_rights_and_privacy(ctx: CheckContext) -> List[Finding]:
-    out: List[Finding] = []
+def check_rights_and_privacy(ctx: CheckContext) -> list[Finding]:
+    out: list[Finding] = []
     copyright_text, artist, has_gps = "", "", False
     try:
         with Image.open(ctx.path) as im:

@@ -4,8 +4,6 @@ findings never alter P(AI) and are not legal advice.
 """
 from __future__ import annotations
 
-from typing import List
-
 from audio_detector.dimension_checks import _common as C
 from core.forensics.registry import CheckContext, registry
 from core.forensics.schemas import EvidenceClass, Finding, FindingStatus, Severity
@@ -26,8 +24,8 @@ def _is_speech(content: dict) -> bool:
 
 
 @registry.register("audio", "rights_and_privacy", phase="post")
-def check_rights_and_privacy(ctx: CheckContext) -> List[Finding]:
-    out: List[Finding] = []
+def check_rights_and_privacy(ctx: CheckContext) -> list[Finding]:
+    out: list[Finding] = []
     fields = C.collect_text_fields(ctx.path)
     copyright_text = next((fields[k] for k in ("id3:TCOP", "id3:TCO", "riff:ICOP", "vorbis:COPYRIGHT") if fields.get(k)), "")
     publisher = next((fields[k] for k in ("id3:TPUB", "riff:IENG", "bext:originator") if fields.get(k)), "")

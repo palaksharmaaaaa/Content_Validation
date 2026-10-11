@@ -5,7 +5,13 @@ import numpy as np
 import pytest
 
 from audio_detector.dimension_checks import (
-    AudioDimensionAnalysis, check_audio_gates, context, legal, lifecycle, normalize_provenance, reliability,
+    AudioDimensionAnalysis,
+    check_audio_gates,
+    context,
+    legal,
+    lifecycle,
+    normalize_provenance,
+    reliability,
 )
 from audio_detector.tests.audio_fixtures import id3v23, text_frame_v23, tone, write_wav, write_wav_with_chunks
 from core.forensics.registry import CheckContext

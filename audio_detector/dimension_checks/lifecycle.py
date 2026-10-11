@@ -4,7 +4,7 @@ RELIABILITY class: explains why forensic traces may be degraded; never changes P
 """
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from audio_detector.dimension_checks import _common as C
 from audio_detector.dimension_checks import container, signal
@@ -21,7 +21,7 @@ def _duration(ctx: CheckContext) -> float:
     return float(ctx.profile.get("duration_seconds") or 0.0)
 
 
-def assess_transcoding(ctx: CheckContext) -> Dict[str, Any]:
+def assess_transcoding(ctx: CheckContext) -> dict[str, Any]:
     head, _t, size = C.read_windows(ctx.path)
     fmt = C.sniff_audio_format(head)
     dur = _duration(ctx)

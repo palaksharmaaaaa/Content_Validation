@@ -5,7 +5,7 @@ Self-contained module schemas with zero outside dependencies.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class ImageTaxonomyState:
@@ -93,33 +93,33 @@ class ImageForensicResult:
     taxonomy_state: str = ImageTaxonomyState.AUTHENTIC_REAL_PHOTOGRAPH
     taxonomy_label: str = "Authentic Real Photograph"
     taxonomy_description: str = ""
-    taxonomy_reasons: List[str] = field(default_factory=list)
+    taxonomy_reasons: list[str] = field(default_factory=list)
     # Multi-Dimensional Taxonomy Categorization (Dimensions B, C, D, E)
-    subject_genre: Optional[str] = None
+    subject_genre: str | None = None
     visual_medium: str = "Photographic Capture"
     sensor_spectrum: str = "Visible light (colour RGB)"
     document_layout: str = "None (Standard Visual Content)"
     watermark_detected: bool = False
-    watermark_details: Optional[str] = None
+    watermark_details: str | None = None
     background_cutout_detected: bool = False
     scanned_photo_detected: bool = False
     screen_recapture_detected: bool = False
-    screen_recapture_details: Optional[Dict[str, Any]] = None
+    screen_recapture_details: dict[str, Any] | None = None
     neural_enhancer_detected: bool = False
     digital_art_detected: bool = False
     screenshot_detected: bool = False
-    screenshot_details: Optional[Dict[str, Any]] = None
+    screenshot_details: dict[str, Any] | None = None
     inpainting_detected: bool = False
-    inpainting_details: Optional[Dict[str, Any]] = None
-    log_likelihood_ratios: Dict[str, float] = field(default_factory=dict)
+    inpainting_details: dict[str, Any] | None = None
+    log_likelihood_ratios: dict[str, float] = field(default_factory=dict)
     posterior_log_odds: float = 0.0
     ai_spatial_area_pct: float = 0.0
-    heatmap_rgb: Optional[Any] = None
-    forensic_cues: List[str] = field(default_factory=list)
-    forensic_metrics: Dict[str, Any] = field(default_factory=dict)
-    error: Optional[str] = None
+    heatmap_rgb: Any | None = None
+    forensic_cues: list[str] = field(default_factory=list)
+    forensic_metrics: dict[str, Any] = field(default_factory=dict)
+    error: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "is_available": self.is_available,
             "backend": self.backend,
@@ -171,8 +171,8 @@ class ImageValidationResult:
     color_mode: str = ""
     file_size_mb: float = 0.0
     file_hash_sha256: str = ""
-    quality: Dict[str, Any] = field(default_factory=dict)
-    error: Optional[str] = None
+    quality: dict[str, Any] = field(default_factory=dict)
+    error: str | None = None
 
     def __getitem__(self, item: str) -> Any:
         return getattr(self, item)
@@ -183,7 +183,7 @@ class ImageValidationResult:
     def __contains__(self, item: str) -> bool:
         return hasattr(self, item)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "valid": self.valid,
             "filename": self.filename,
@@ -205,10 +205,10 @@ class ImageFeedbackRecord:
     timestamp: str
     image_path: str
     user_label: str
-    metrics: Dict[str, Any] = field(default_factory=dict)
+    metrics: dict[str, Any] = field(default_factory=dict)
     notes: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "timestamp": self.timestamp,
             "image_path": self.image_path,

@@ -8,7 +8,6 @@
 from __future__ import annotations
 
 import os
-from typing import Dict, Optional
 
 _done = False
 
@@ -37,7 +36,7 @@ def silence_noise() -> None:
         pass
 
 
-def is_cached(repo_id: str, revision: Optional[str] = None) -> bool:
+def is_cached(repo_id: str, revision: str | None = None) -> bool:
     """True if the model's config is already in the local Hugging Face cache (at ``revision`` when one is given)."""
     try:
         from huggingface_hub import try_to_load_from_cache
@@ -47,10 +46,10 @@ def is_cached(repo_id: str, revision: Optional[str] = None) -> bool:
         return False
 
 
-def load_kwargs(repo_id: str, revision: Optional[str] = None) -> Dict[str, object]:
+def load_kwargs(repo_id: str, revision: str | None = None) -> dict[str, object]:
     """``from_pretrained`` keyword arguments: the pinned ``revision`` (so every machine loads identical weights), and offline
     when that revision is cached, normal (downloading) otherwise."""
-    kwargs: Dict[str, object] = {"revision": revision} if revision else {}
+    kwargs: dict[str, object] = {"revision": revision} if revision else {}
     if is_cached(repo_id, revision):
         kwargs["local_files_only"] = True
     return kwargs

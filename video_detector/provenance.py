@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from core.c2pa import scan_file as scan_c2pa_file
 from core.provenance_view import build_c2pa_block, build_exif_block, build_provenance_view
@@ -44,7 +44,7 @@ class VideoProvenanceValidator:
         pass
 
     @staticmethod
-    def _container_camera_brand(head: bytes) -> Optional[str]:
+    def _container_camera_brand(head: bytes) -> str | None:
         """Camera/device brand string found in the first container bytes (unauthenticated; None if absent)."""
         low = head.decode("latin-1").lower()
         for brand in ("Apple", "GoPro", "DJI", "Sony", "Canon", "Nikon", "Samsung", "Panasonic"):
@@ -56,7 +56,7 @@ class VideoProvenanceValidator:
     def _declared_texts(path: Path, head: bytes, tail: bytes) -> list:
         """The text a file *declares* about itself: MP4/MOV metadata items, track handler names, XMP, Matroska writer strings. The
         compressed picture data is never searched; a short vendor name turns up there by chance."""
-        from video_detector.dimension_checks import _common as C            # imported here: that package imports this module
+        from video_detector.dimension_checks import _common as C  # imported here: that package imports this module
 
         texts: list = []
         kind = C.sniff_video_format(head)
@@ -73,11 +73,11 @@ class VideoProvenanceValidator:
             texts.append(xmp)
         return texts
 
-    def scan_c2pa(self, file_path: str | Path) -> Dict[str, Any]:
+    def scan_c2pa(self, file_path: str | Path) -> dict[str, Any]:
         """Content Credentials marker scan (presence only; see core.c2pa)."""
         return scan_c2pa_file(file_path)
 
-    def analyze_provenance(self, file_path: str | Path) -> Dict[str, Any]:
+    def analyze_provenance(self, file_path: str | Path) -> dict[str, Any]:
         """Analyzes video atoms, encoder signatures, and cryptographic provenance."""
         path = Path(file_path)
         if not path.is_file():

@@ -1,7 +1,7 @@
 """Synthetic video fixtures: hand-built ISOBMFF boxes (no codec needed) and cv2/ffmpeg clip writers."""
 import struct
+from collections.abc import Sequence
 from pathlib import Path
-from typing import List, Optional, Sequence, Tuple
 
 import cv2
 import numpy as np
@@ -31,7 +31,7 @@ def hdlr(handler: bytes = b"vide", name: str = "VideoHandler") -> bytes:
     return fullbox(b"hdlr", b"\x00" * 4 + handler + b"\x00" * 12 + name.encode() + b"\x00")
 
 
-def stts(entries: Sequence[Tuple[int, int]]) -> bytes:
+def stts(entries: Sequence[tuple[int, int]]) -> bytes:
     return fullbox(b"stts", struct.pack(">I", len(entries)) + b"".join(struct.pack(">II", c, d) for c, d in entries))
 
 
@@ -47,7 +47,7 @@ def stco(offsets: Sequence[int]) -> bytes:
     return fullbox(b"stco", struct.pack(">I", len(offsets)) + b"".join(struct.pack(">I", o) for o in offsets))
 
 
-def stsc(entries: Sequence[Tuple[int, int, int]]) -> bytes:
+def stsc(entries: Sequence[tuple[int, int, int]]) -> bytes:
     return fullbox(b"stsc", struct.pack(">I", len(entries)) + b"".join(struct.pack(">III", *e) for e in entries))
 
 
@@ -61,7 +61,7 @@ def fiel(count=2, order=1) -> bytes:
 
 
 def trak(handler=b"vide", fourcc=b"avc1", handler_name="VideoHandler", timescale=25000, stts_entries=((25, 1000),),
-         sample_count: Optional[int] = None, stss_idx=(1,), chunk_offsets=(0,), sample_per_chunk: Optional[int] = None,
+         sample_count: int | None = None, stss_idx=(1,), chunk_offsets=(0,), sample_per_chunk: int | None = None,
          entry_children=b"", track_creation=0, track_modification=0, media_creation=0, media_modification=0) -> bytes:
     total = sum(c for c, _ in stts_entries)
     count = total if sample_count is None else sample_count
@@ -85,14 +85,14 @@ def ilst_item(key: bytes, text: str) -> bytes:
 
 
 def build_mp4(tracks: Sequence[bytes] = (), moov_extra: bytes = b"", brand: bytes = b"isom", faststart: bool = False,
-              mdat_payload: bytes = b"\x00" * 2000, mvhd_args: Optional[dict] = None, extra_top: bytes = b"") -> bytes:
+              mdat_payload: bytes = b"\x00" * 2000, mvhd_args: dict | None = None, extra_top: bytes = b"") -> bytes:
     ftyp = box(b"ftyp", brand + struct.pack(">I", 512) + brand + b"iso2avc1mp41")
     mdat = box(b"mdat", mdat_payload)
     moov = box(b"moov", mvhd(**(mvhd_args or {})) + b"".join(tracks) + moov_extra)
     return ftyp + (moov + mdat if faststart else mdat + moov) + extra_top
 
 
-def write_clip(path: Path, frames: List[np.ndarray], fps: float = 25.0) -> Path:
+def write_clip(path: Path, frames: list[np.ndarray], fps: float = 25.0) -> Path:
     h, w = frames[0].shape[:2]
     wr = cv2.VideoWriter(str(path), cv2.VideoWriter_fourcc(*"mp4v"), fps, (w, h))
     for f in frames:
@@ -101,7 +101,7 @@ def write_clip(path: Path, frames: List[np.ndarray], fps: float = 25.0) -> Path:
     return Path(path)
 
 
-def moving_square_frames(n=40, size=(160, 120), step=3) -> List[np.ndarray]:
+def moving_square_frames(n=40, size=(160, 120), step=3) -> list[np.ndarray]:
     out = []
     for i in range(n):
         f = np.full((size[1], size[0], 3), 90, np.uint8)

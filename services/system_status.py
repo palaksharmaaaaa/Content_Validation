@@ -8,12 +8,11 @@ face authenticity) and never the large downloaded ones.
 """
 from __future__ import annotations
 
-import shutil
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Dict, List
 
 from core.atomic_io import atomic_read_json
+from core.ffmpeg import find_binary
 from core.forensics.config import hardblock_file
 
 OK, INFO, WARN = "ok", "info", "warn"
@@ -27,7 +26,7 @@ class StatusRow:
     state: str      # short value, e.g. "Heuristic mode"
     hint: str       # what to do / what it means
 
-    def to_dict(self) -> Dict[str, str]:
+    def to_dict(self) -> dict[str, str]:
         """Plain-dict form."""
         return asdict(self)
 
@@ -58,13 +57,13 @@ def _age_row() -> StatusRow:
     return StatusRow("Minor screening (age model)", OK, "Ready", "MiVOLO v2 estimates apparent age; uncertain people are sent to review.")
 
 
-def collect_status() -> List[StatusRow]:
+def collect_status() -> list[StatusRow]:
     """Inspect the installation (models, calibration, OOD fit, hard-block list, ffmpeg, compute device) and return the status rows."""
     import audio_detector.config as audio_cfg
     import image_detector.config as image_cfg
     import video_detector.config as video_cfg
 
-    rows: List[StatusRow] = []
+    rows: list[StatusRow] = []
     for label, cfg, checkpoint, ood_stats in (
         ("Image", image_cfg, image_cfg.DEFAULT_CHECKPOINT, Path(image_cfg.__file__).parent / "data" / "ood_stats.npz"),
         ("Video", video_cfg, video_cfg.DEFAULT_VIDEO_CHECKPOINT, Path(video_cfg.__file__).parent / "data" / "ood_stats.npz"),
@@ -79,16 +78,18 @@ def collect_status() -> List[StatusRow]:
                               "Thresholds adapt only when you submit feedback."))
         rows.append(StatusRow(f"{label} out-of-distribution check", OK if ood_stats.is_file() else INFO,
                               "Fitted" if ood_stats.is_file() else "Not fitted",
-                              "Fit it from your library: python -m %s_detector.dimension_checks.fit_ood" % label.lower()))
+                              f"Fit it from your library: python -m {label.lower()}_detector.dimension_checks.fit_ood"))
 
     from core.face_detection import get_face_finder
 
     faces_ok = get_face_finder().available
     rows.append(StatusRow("Face detector", OK if faces_ok else WARN, "YuNet loaded" if faces_ok else "Unavailable",
                           "Counts faces with a trained network." if faces_ok else "Model file core/models/face_detection_yunet_2023mar.onnx is missing; faces will not be counted."))
-    from core.perception.detector import MODEL_ID as DETECTOR_ID, MODEL_REVISION as DETECTOR_REV
+    from core.perception.detector import MODEL_ID as DETECTOR_ID
+    from core.perception.detector import MODEL_REVISION as DETECTOR_REV
     from core.perception.face_attributes import get_face_attributes
-    from core.perception.recognizer import MODEL_ID as RECOGNIZER_ID, MODEL_REVISION as RECOGNIZER_REV
+    from core.perception.recognizer import MODEL_ID as RECOGNIZER_ID
+    from core.perception.recognizer import MODEL_REVISION as RECOGNIZER_REV
     from services.fetch_models import present
 
     # The loaders insist on the pinned revision, so "present" must mean that revision, not just any cached copy of the repository.
@@ -120,7 +121,7 @@ def collect_status() -> List[StatusRow]:
     hb = _hardblock_entries(hardblock_file())
     rows.append(StatusRow("Hard-block list", OK if hb else INFO, f"{hb} hash(es)" if hb else "Empty",
                           "Optional: list SHA-256 hashes (one per line) in core/data/hardblock_sha256.txt."))
-    ffmpeg = shutil.which("ffmpeg")
+    ffmpeg = find_binary("ffmpeg")
     rows.append(StatusRow("ffmpeg", OK if ffmpeg else WARN, "Found" if ffmpeg else "Missing",
                           "Needed to decode compressed audio/video." if not ffmpeg else "Used for audio/video decoding."))
     try:

@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import streamlit as st
 
 from ui.layout import render_table
-
 
 PREVIEW_MAX_SIDE = 1600
 
@@ -28,7 +27,7 @@ def _preview_source(path: str | Path) -> Any:
         return str(path)
 
 
-def render_image_preview(item: Dict[str, Any], profile_data: Dict[str, Any], ai_result: Dict[str, Any]) -> None:
+def render_image_preview(item: dict[str, Any], profile_data: dict[str, Any], ai_result: dict[str, Any]) -> None:
     """Show the image, plus the spatial anomaly heatmap when one exists."""
     left, right = st.columns(2)
     with left:
@@ -41,7 +40,7 @@ def render_image_preview(item: Dict[str, Any], profile_data: Dict[str, Any], ai_
             st.caption("No anomaly map for this format.")
 
 
-def render_video_preview(item: Dict[str, Any]) -> None:
+def render_video_preview(item: dict[str, Any]) -> None:
     """Show the video's keyframe."""
     left, right = st.columns([1.2, 1], gap="medium")
     with left:
@@ -55,7 +54,7 @@ def render_video_preview(item: Dict[str, Any]) -> None:
                 st.image(keyframe, caption="Sampled keyframe", width="stretch")
 
 
-def render_audio_preview(item: Dict[str, Any]) -> None:
+def render_audio_preview(item: dict[str, Any]) -> None:
     """Play the audio file."""
     left, right = st.columns([1, 1.2], gap="medium")
     with left:
@@ -65,7 +64,7 @@ def render_audio_preview(item: Dict[str, Any]) -> None:
             st.image(item["spec_img"], caption="Spectrogram (frequency over time): look for a hard ceiling or unnaturally smooth bands", width="stretch")
 
 
-def render_timeline(segments: List[Dict[str, Any]], title: str) -> None:
+def render_timeline(segments: list[dict[str, Any]], title: str) -> None:
     """Per-segment verdicts along the clip, as a small table."""
     if not segments:
         return

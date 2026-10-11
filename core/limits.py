@@ -19,13 +19,13 @@ import os
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 MODALITIES = ("image", "video", "audio")
 # (maximum size of one file, maximum total size of one batch), in megabytes (1 MB = 1024 * 1024 bytes)
-DEFAULTS: Dict[str, Dict[str, float]] = {
+DEFAULTS: dict[str, dict[str, float]] = {
     "image": {"file_mb": 10.0, "batch_mb": 500.0},
     "video": {"file_mb": 100.0, "batch_mb": 500.0},
     "audio": {"file_mb": 10.0, "batch_mb": 500.0},
@@ -48,7 +48,7 @@ class Limits:
         return int(self.batch_mb * BYTES_PER_MB)
 
 
-def _positive(value: Any, source: str) -> Optional[float]:
+def _positive(value: Any, source: str) -> float | None:
     try:
         number = float(value)
     except (TypeError, ValueError):
@@ -59,7 +59,7 @@ def _positive(value: Any, source: str) -> Optional[float]:
     return number
 
 
-def _file_values() -> Dict[str, Any]:
+def _file_values() -> dict[str, Any]:
     path = Path(os.environ.get("OMNIFORENSICS_LIMITS_FILE") or LIMITS_FILE)
     if not path.is_file():
         return {}
@@ -78,7 +78,7 @@ def limits_for(modality: str) -> Limits:
         raise ValueError(f"modality must be one of {MODALITIES}, not {modality!r}")
     table = _file_values().get(name)
     table = table if isinstance(table, dict) else {}
-    resolved: Dict[str, float] = {}
+    resolved: dict[str, float] = {}
     for key, default in DEFAULTS[name].items():
         env_name = f"OMNIFORENSICS_MAX_{name.upper()}_{key.upper()}"
         value = _positive(os.environ[env_name], f"environment variable {env_name}") if env_name in os.environ else None
@@ -88,7 +88,7 @@ def limits_for(modality: str) -> Limits:
     return Limits(file_mb=resolved["file_mb"], batch_mb=resolved["batch_mb"])
 
 
-def streamlit_upload_ceiling_mb() -> Optional[float]:
+def streamlit_upload_ceiling_mb() -> float | None:
     """Streamlit's configured ``server.maxUploadSize`` in MB, or None if it cannot be read."""
     try:
         from streamlit import config

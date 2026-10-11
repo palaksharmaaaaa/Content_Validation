@@ -5,7 +5,7 @@ Self-contained module schemas with zero outside dependencies.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -22,17 +22,17 @@ class VideoForensicResult:
     confidence: float = 0.0
     label: str = "UNDECIDED"
     prediction: str = "UNDECIDED"
-    temporal_consistency: Dict[str, Any] = field(default_factory=dict)
-    diffusion_flicker: Dict[str, Any] = field(default_factory=dict)
-    ai_duration_pct: Optional[float] = None       # share of the timeline in segments labelled AI-generated (None when the duration is unknown)
+    temporal_consistency: dict[str, Any] = field(default_factory=dict)
+    diffusion_flicker: dict[str, Any] = field(default_factory=dict)
+    ai_duration_pct: float | None = None       # share of the timeline in segments labelled AI-generated (None when the duration is unknown)
     is_blank: bool = False                        # every sampled frame was blank (no variation): there is nothing to judge
-    mean_frame_noise: Optional[float] = None      # mean median-filter noise residual over the frames the built-in scorer examined (None when an external frame detector scored them)
-    temporal_segments: List[Dict[str, Any]] = field(default_factory=list)
-    forensic_cues: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    error: Optional[str] = None
+    mean_frame_noise: float | None = None      # mean median-filter noise residual over the frames the built-in scorer examined (None when an external frame detector scored them)
+    temporal_segments: list[dict[str, Any]] = field(default_factory=list)
+    forensic_cues: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
+    error: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "valid": self.valid,
             "filename": self.filename,
@@ -71,7 +71,7 @@ class VideoValidationResult:
     height: int = 0
     aspect_ratio: float = 1.0
     codec: str = "UNKNOWN"
-    error: Optional[str] = None
+    error: str | None = None
 
     def __getitem__(self, item: str) -> Any:
         return getattr(self, item)
@@ -82,7 +82,7 @@ class VideoValidationResult:
     def __contains__(self, item: str) -> bool:
         return hasattr(self, item)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "valid": self.valid,
             "filename": self.filename,
@@ -105,10 +105,10 @@ class VideoFeedbackRecord:
     timestamp: str
     video_path: str
     user_label: str
-    metrics: Dict[str, Any] = field(default_factory=dict)
+    metrics: dict[str, Any] = field(default_factory=dict)
     notes: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "timestamp": self.timestamp,
             "video_path": self.video_path,

@@ -8,12 +8,10 @@ Contains:
 """
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
-from core.decision import normalize_percentages  # noqa: F401  (re-exported: audio_detector.detector and the package API import it from here)
-from core.shared_results import three_way_label, binary_entropy
 from audio_detector.config import (
     AI_THRESHOLD_BALANCED,
     AI_THRESHOLD_HIGH,
@@ -23,9 +21,10 @@ from audio_detector.config import (
     DEFAULT_WEIGHT_VOCODER,
     DIGITAL_SILENCE_RATIO_THRESHOLD,
     REAL_THRESHOLD,
-    SYNTHETIC_FLATNESS_HIGH_THRESHOLD,
     SYNTHETIC_FLATNESS_LOW_THRESHOLD,
 )
+from core.decision import normalize_percentages  # noqa: F401  (re-exported: audio_detector.detector and the package API import it from here)
+from core.shared_results import binary_entropy, three_way_label
 
 
 def calculate_audio_epistemic_uncertainty(prob_ai: float) -> float:
@@ -34,12 +33,12 @@ def calculate_audio_epistemic_uncertainty(prob_ai: float) -> float:
 
 
 def pool_acoustic_evidence(
-    features: Dict[str, Any],
-    weights: Optional[Dict[str, float]] = None,
-    neural_prob: Optional[float] = None,
+    features: dict[str, Any],
+    weights: dict[str, float] | None = None,
+    neural_prob: float | None = None,
     sensitivity_offset: float = 0.0,
-    thresholds: Optional[Dict[str, float]] = None,
-) -> Tuple[float, float]:
+    thresholds: dict[str, float] | None = None,
+) -> tuple[float, float]:
     """
     Pools acoustic forensic features with neural synthesizer probability.
 

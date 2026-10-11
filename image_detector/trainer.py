@@ -12,12 +12,12 @@ from __future__ import annotations
 import argparse
 import logging
 import os
-from pathlib import Path
 import random
-from typing import Any, Dict, List, Optional, Tuple
+from pathlib import Path
+from typing import Any
 
-from PIL import Image
 import torch
+from PIL import Image
 from torch import nn, optim
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
@@ -38,12 +38,12 @@ def _transforms():
     return train, transforms.Compose([resize, transforms.ToTensor(), _NORMALISE])
 
 
-def _scan(folder: Path) -> List[Path]:
+def _scan(folder: Path) -> list[Path]:
     """Supported image files under ``folder`` (none when it does not exist), in a stable order."""
     return sorted(p for p in folder.rglob("*") if p.is_file() and p.suffix.lower() in SUPPORTED_EXTENSIONS) if folder.is_dir() else []
 
 
-def _labelled(root: Path) -> List[Tuple[Path, int]]:
+def _labelled(root: Path) -> list[tuple[Path, int]]:
     """``root/ai_generated`` as label 0 and ``root/real`` as label 1."""
     return [(p, 0) for p in _scan(root / "ai_generated")] + [(p, 1) for p in _scan(root / "real")]
 
@@ -51,7 +51,7 @@ def _labelled(root: Path) -> List[Tuple[Path, int]]:
 class ImageDataset(Dataset):
     """PyTorch Dataset for image authenticity classification."""
 
-    def __init__(self, samples: List[Tuple[Path, int]], transform=None):
+    def __init__(self, samples: list[tuple[Path, int]], transform=None):
         self.samples = samples
         self.transform = transform
 
@@ -83,8 +83,8 @@ class ImageDetectorTrainer:
     def __init__(
         self,
         architecture: str = "resnet18",
-        checkpoint_path: Optional[Path] = None,
-        device: Optional[str] = None,
+        checkpoint_path: Path | None = None,
+        device: str | None = None,
     ):
         self.architecture = architecture.lower()
         self.checkpoint_path = checkpoint_path or DEFAULT_CHECKPOINT
@@ -97,7 +97,7 @@ class ImageDetectorTrainer:
 
     def prepare_data(
         self, dataset_dir: Path | str, batch_size: int = 16, val_split: float = 0.2
-    ) -> Tuple[DataLoader, Optional[DataLoader]]:
+    ) -> tuple[DataLoader, DataLoader | None]:
         """Reads a dataset folder with ``ai_generated/`` and ``real/`` (split at random, fixed seed), or pre-split ``train/`` and ``val/``."""
         root = Path(dataset_dir)
         train_tf, val_tf = _transforms()
@@ -123,13 +123,13 @@ class ImageDetectorTrainer:
 
     def train(
         self,
-        train_loader: Optional[DataLoader] = None,
-        val_loader: Optional[DataLoader] = None,
+        train_loader: DataLoader | None = None,
+        val_loader: DataLoader | None = None,
         epochs: int = 5,
         lr: float = 1e-4,
-        dataset_root: Optional[Path | str] = None,
+        dataset_root: Path | str | None = None,
         batch_size: int = 16,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Runs the training and evaluation loop. Supports both direct DataLoaders or dataset_root path."""
         if train_loader is None:
             if dataset_root is None:
@@ -187,10 +187,10 @@ class ImageDetectorTrainer:
 
     def loaders_from_samples(
         self,
-        train_samples: List[Tuple[Path, int]],
-        val_samples: List[Tuple[Path, int]],
+        train_samples: list[tuple[Path, int]],
+        val_samples: list[tuple[Path, int]],
         batch_size: int = 16,
-    ) -> Tuple[Optional[DataLoader], Optional[DataLoader]]:
+    ) -> tuple[DataLoader | None, DataLoader | None]:
         """
         Builds loaders that read images IN PLACE from their original locations (label 0=ai_generated,
         1=real) -- no dataset copy, no files written. Used with core.media_library's content-hash
@@ -201,7 +201,7 @@ class ImageDetectorTrainer:
         val_loader = DataLoader(ImageDataset(val_samples, val_tf), batch_size=batch_size, shuffle=False) if val_samples else None
         return train_loader, val_loader
 
-    def save_checkpoint(self, path: Optional[Path] = None) -> None:
+    def save_checkpoint(self, path: Path | None = None) -> None:
         """Serializes trained weights and metadata."""
         save_path = path or self.checkpoint_path
         save_path.parent.mkdir(parents=True, exist_ok=True)
@@ -220,8 +220,8 @@ class ImageDetectorTrainer:
         self,
         dataset_dir: Path | str,
         output_npz_path: Path | str,
-        max_samples_per_class: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        max_samples_per_class: int | None = None,
+    ) -> dict[str, Any]:
         """
         Extracts compact 512-dim embeddings + 12-dim forensic vectors from an image dataset folder
         into a rebuildable .npz cache keyed by content hash. Source images are only read, never
@@ -236,7 +236,7 @@ class ImageDetectorTrainer:
             ai_files = ai_files[:max_samples_per_class]
             real_files = real_files[:max_samples_per_class]
 
-        samples: List[Tuple[Any, int]] = [(p, 0) for p in ai_files] + [(p, 1) for p in real_files]
+        samples: list[tuple[Any, int]] = [(p, 0) for p in ai_files] + [(p, 1) for p in real_files]
         if not samples:
             raise ValueError(f"No valid image files found in {dataset_path}")
 
@@ -254,7 +254,7 @@ class ImageDetectorTrainer:
         batch_size: int = 32,
         val_split: float = 0.2,
         combine_forensics: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Ultra-fast zero-retention training directly on precomputed .npz feature archives.
         Trains without reading any image files from disk.
@@ -290,7 +290,7 @@ class ImageDetectorTrainer:
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.AdamW(head.parameters(), lr=lr, weight_decay=1e-3)
 
-        history: Dict[str, List[float]] = {"train_loss": [], "val_acc": []}
+        history: dict[str, list[float]] = {"train_loss": [], "val_acc": []}
 
         for epoch in range(epochs):
             head.train()

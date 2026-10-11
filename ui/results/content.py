@@ -1,10 +1,12 @@
 """ui.results.content: Scene, entity and inventory sections."""
 from __future__ import annotations
-from typing import Any, Dict, Optional
+
+from typing import Any
+
 import streamlit as st
 
-from ui.layout import render_table
 from image_detector.explain import IPTC_SOURCE_TYPE_MAPPING
+from ui.layout import render_table
 
 
 def _pct(value: Any) -> str:
@@ -27,7 +29,7 @@ def _person_label(group: int) -> str:
     return "?" if group is None or group < 0 else f"Person {chr(ord('A') + group % 26)}"
 
 
-def _render_visual_scene(content: Dict[str, Any]) -> None:
+def _render_visual_scene(content: dict[str, Any]) -> None:
     """Scene, people, animals, vehicles, objects, colours and atmosphere for an image or video frame."""
     humans = (content.get("entities") or {}).get("humans", {})
     animals = (content.get("entities") or {}).get("animals", {})
@@ -85,7 +87,7 @@ def _render_visual_scene(content: Dict[str, Any]) -> None:
     st.write(f"Colour tone **{tone.get('color_tone', 'Neutral')}**, contrast **{tone.get('atmospheric_mood', 'Balanced')}**, light **{lighting.get('lighting_style', 'Ambient')}**.")
 
 
-def render_scene_and_content_intelligence(content_data: Dict[str, Any], modality: str = "image") -> None:
+def render_scene_and_content_intelligence(content_data: dict[str, Any], modality: str = "image") -> None:
     """
     Renders comprehensive scene, content, environment, daytime, tone,
     entities, items, and purpose analysis BEFORE presenting AI detection.
@@ -106,7 +108,7 @@ def render_scene_and_content_intelligence(content_data: Dict[str, Any], modality
         col3.metric("Signal level", str(content_data.get("signal_level") or "Not determined"))
 
         with st.expander("Measurements", expanded=True):
-            for label, key, unit in (("Share of energy in the voice band", "speech_ratio", None), ("RMS level", "rms_energy", ""),
+            for label, key, _unit in (("Share of energy in the voice band", "speech_ratio", None), ("RMS level", "rms_energy", ""),
                                      ("Crest factor (peak / RMS)", "crest_factor", "")):
                 value = content_data.get(key)
                 if value is None:
@@ -119,10 +121,10 @@ def render_scene_and_content_intelligence(content_data: Dict[str, Any], modality
 
 
 def render_image_type_and_category(
-    decision: Dict[str, Any],
-    content_res: Dict[str, Any],
-    ai_result: Dict[str, Any],
-    nine_dims: Optional[Dict[str, Any]] = None,
+    decision: dict[str, Any],
+    content_res: dict[str, Any],
+    ai_result: dict[str, Any],
+    nine_dims: dict[str, Any] | None = None,
 ) -> None:
     """Renders Image Type and Category Identification."""
     st.markdown("#### Category")
@@ -152,10 +154,10 @@ def render_image_type_and_category(
 
 
 def render_quantified_detections_and_inventory(
-    decision: Dict[str, Any],
-    content_res: Dict[str, Any],
-    ai_result: Dict[str, Any],
-    profile_data: Dict[str, Any],
+    decision: dict[str, Any],
+    content_res: dict[str, Any],
+    ai_result: dict[str, Any],
+    profile_data: dict[str, Any],
 ) -> None:
     """Renders Algorithmic Detection & Quantified Inventory (Percentages & Counts)."""
     st.markdown("#### What was detected")
@@ -204,7 +206,7 @@ def render_quantified_detections_and_inventory(
         st.write(f"• **Vehicles Detected ({len(vehicles)} total):** {veh_summary}")
 
 
-def render_minor_screening(content: Dict[str, Any]) -> None:
+def render_minor_screening(content: dict[str, Any]) -> None:
     """The minor-screening result of an image or video, shown above the tabs so a flag cannot be missed.
 
     The screening is recall-first: it sends uncertain people to a human instead of deciding. It estimates *apparent* age from

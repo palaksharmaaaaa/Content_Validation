@@ -5,13 +5,13 @@ matches perceived difference) and each cluster centre is named by its nearest en
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import cv2
 import numpy as np
 
 # name -> sRGB reference colour
-_NAMED: Dict[str, Tuple[int, int, int]] = {
+_NAMED: dict[str, tuple[int, int, int]] = {
     "black": (0, 0, 0), "charcoal": (54, 54, 54), "dark gray": (89, 89, 89), "gray": (128, 128, 128), "light gray": (190, 190, 190),
     "silver": (215, 215, 215), "white": (255, 255, 255), "cream": (255, 248, 220), "ivory": (250, 245, 230), "beige": (225, 205, 170),
     "tan": (200, 165, 120), "khaki": (190, 180, 120), "brown": (110, 70, 40), "dark brown": (65, 40, 25), "chocolate": (90, 55, 30),
@@ -34,7 +34,7 @@ def name_color(r: int, g: int, b: int) -> str:
     return _NAMES[int(np.argmin(((_REF_LAB - lab) ** 2).sum(axis=1)))]
 
 
-def dominant_colors(image_bgr: np.ndarray, k: int = 6, side: int = 96) -> List[Dict[str, Any]]:
+def dominant_colors(image_bgr: np.ndarray, k: int = 6, side: int = 96) -> list[dict[str, Any]]:
     """Up to ``k`` dominant colours as ``{hex, rgb, color_name, coverage_pct}``, largest first. Clusters that get the same
     name are merged so the list reads as distinct colours. Deterministic."""
     if image_bgr is None or image_bgr.size == 0:
@@ -47,7 +47,7 @@ def dominant_colors(image_bgr: np.ndarray, k: int = 6, side: int = 96) -> List[D
     cv2.setRNGSeed(0)
     _compact, labels, centers = cv2.kmeans(lab, k, None, (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 0.5), 3, cv2.KMEANS_PP_CENTERS)
     counts = np.bincount(labels.ravel(), minlength=k).astype(np.float64)
-    merged: Dict[str, Dict[str, Any]] = {}
+    merged: dict[str, dict[str, Any]] = {}
     for idx in np.argsort(counts)[::-1]:
         rgb = cv2.cvtColor(centers[idx].reshape(1, 1, 3).astype(np.uint8), cv2.COLOR_LAB2RGB)[0, 0]
         r, g, b = (int(v) for v in rgb)

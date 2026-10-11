@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import argparse
 import logging
+from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Callable, Iterable, Optional
 
 import numpy as np
 
@@ -44,7 +44,7 @@ def _default_vectorizer() -> Callable[[Path], np.ndarray]:
     return vec
 
 
-def main(argv: Optional[list] = None) -> None:
+def main(argv: list | None = None) -> None:
     from audio_detector.dimension_checks import DEFAULT_OOD_STATS
     from core.media_library import library_for
 

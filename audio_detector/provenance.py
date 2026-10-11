@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from core.c2pa import scan_file as scan_c2pa_file
 from core.provenance_view import build_c2pa_block, build_exif_block, build_provenance_view
@@ -27,13 +27,13 @@ class AudioProvenanceValidator:
     def __init__(self):
         pass
 
-    def scan_c2pa(self, file_path: str | Path) -> Dict[str, Any]:
+    def scan_c2pa(self, file_path: str | Path) -> dict[str, Any]:
         """Content Credentials marker scan (presence only; see core.c2pa)."""
         return scan_c2pa_file(file_path)
 
     @staticmethod
-    def _declared_tags(path: Path) -> Dict[str, str]:
-        from audio_detector.dimension_checks import _common as C            # imported here: that package imports this one's siblings
+    def _declared_tags(path: Path) -> dict[str, str]:
+        from audio_detector.dimension_checks import _common as C  # imported here: that package imports this one's siblings
 
         try:
             return {f"tag:{k}": v for k, v in C.collect_text_fields(path).items() if k.split(":")[-1].upper() in _SOFTWARE_TAGS}
@@ -41,7 +41,7 @@ class AudioProvenanceValidator:
             logger.debug("declared tags unreadable for %s: %s", path.name, exc)
             return {}
 
-    def analyze_provenance(self, file_path: str | Path) -> Dict[str, Any]:
+    def analyze_provenance(self, file_path: str | Path) -> dict[str, Any]:
         """Analyzes audio chunk headers, encoder footprints, and C2PA credentials."""
         path = Path(file_path)
         if not path.is_file():

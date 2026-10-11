@@ -7,26 +7,25 @@ Guarantees:
 """
 from __future__ import annotations
 
+import contextlib
+import functools
+import hashlib
 import json
 import logging
 import os
 import shutil
-from pathlib import Path
 import tempfile
 import threading
-from typing import Any, Optional
-
 import time
 import weakref
-import functools
-import hashlib
-import contextlib
+from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger("core.atomic_io")
 
 # Weak values: a path's lock exists only while some caller holds it, so the registry cannot grow without bound,
 # yet two callers contending on the same path always share one lock (the holder keeps it alive).
-_FILE_LOCKS: "weakref.WeakValueDictionary[str, threading.RLock]" = weakref.WeakValueDictionary()
+_FILE_LOCKS: weakref.WeakValueDictionary[str, threading.RLock] = weakref.WeakValueDictionary()
 _REGISTRY_LOCK = threading.Lock()
 
 
@@ -84,7 +83,7 @@ def process_lock(target_path: Path, timeout: float = _PROCESS_LOCK_TIMEOUT):
     read-modify-write on the same JSON file lose one of the updates. Re-entrant for the thread that holds it. Raises ``TimeoutError``
     rather than waiting for ever."""
     canonical = os.path.normcase(str(Path(target_path).resolve()))
-    lock_file = get_ephemeral_cache_dir() / "locks" / (hashlib.sha1(canonical.encode("utf-8")).hexdigest()[:24] + ".lock")      # not beside the data
+    lock_file = get_ephemeral_cache_dir() / "locks" / (hashlib.sha1(canonical.encode("utf-8"), usedforsecurity=False).hexdigest()[:24] + ".lock")      # not beside the data
     key = str(lock_file)
     depths = getattr(_held, "depths", None)
     if depths is None:
@@ -226,7 +225,7 @@ def atomic_read_json(file_path: str | Path, default: Any = None) -> Any:
     with lock:
         for attempt in range(6):
             try:
-                with open(target, "r", encoding="utf-8") as f:
+                with open(target, encoding="utf-8") as f:
                     return json.load(f)
             except (PermissionError, json.JSONDecodeError, UnicodeDecodeError) as exc:
                 if attempt == 5:
@@ -277,7 +276,7 @@ def get_session_cache_dir(session_id: str) -> Path:
     return d
 
 
-def purge_ephemeral_cache(cache_dir: Optional[Path] = None) -> int:
+def purge_ephemeral_cache(cache_dir: Path | None = None) -> int:
     """Purges all transient media files from OS temp cache with zero disk leak."""
     target_dir = cache_dir or get_ephemeral_cache_dir()
     purged = 0
@@ -299,7 +298,7 @@ SESSION_DIR_PREFIX = "session_"
 STALE_SESSION_SECONDS = 24 * 3600
 
 
-def purge_stale_sessions(max_age_seconds: float = STALE_SESSION_SECONDS, now: Optional[float] = None) -> int:
+def purge_stale_sessions(max_age_seconds: float = STALE_SESSION_SECONDS, now: float | None = None) -> int:
     """Remove per-session scratch folders nobody has touched for ``max_age_seconds`` (default a day).
 
     Sessions are cleaned when their user presses "Clear uploaded files"; a closed browser tab never does, so without this sweep

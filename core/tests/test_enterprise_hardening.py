@@ -3,21 +3,21 @@ core.tests.test_enterprise_hardening: Test suite verifying OWASP security,
 anti-SSRF protections, atomic file persistence, and headless service orchestration.
 """
 import concurrent.futures
-from pathlib import Path
+import ipaddress
 import tempfile
 import unittest
+from pathlib import Path
 
 from PIL import Image
 
 from core.atomic_io import atomic_read_json, atomic_update_json, atomic_write_json
-from services.forensic_service import ForensicService
 from core.security import (
     SAFE_MAX_IMAGE_PIXELS,
     is_ip_restricted,
     sanitize_filename,
     validate_secure_url,
 )
-import ipaddress
+from services.forensic_service import ForensicService
 
 
 class TestEnterpriseHardening(unittest.TestCase):

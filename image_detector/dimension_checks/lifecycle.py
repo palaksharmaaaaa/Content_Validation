@@ -6,7 +6,7 @@ RELIABILITY class: explains why forensic traces may be degraded; never changes P
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from PIL import Image
 
@@ -24,7 +24,7 @@ W_STANDARD_TABLES = 0.25
 W_SUBSAMPLED = 0.15
 
 
-def assess_platform_reencode(ctx: CheckContext) -> Dict[str, Any]:
+def assess_platform_reencode(ctx: CheckContext) -> dict[str, Any]:
     cues = []
     score = 0.0
     try:

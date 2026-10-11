@@ -14,21 +14,21 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
-
-from core.hashing import file_digests
-from core.perception.colors import dominant_colors
-from image_detector.features import analyze_fft_radial_power_spectrum, calculate_sensor_noise_profile, calculate_surface_smoothness
+from typing import Any
 
 import cv2
-from core.imageio import imread
 import numpy as np
 from PIL import Image
+
+from core.hashing import file_digests
+from core.imageio import imread
+from core.perception.colors import dominant_colors
+from image_detector.features import analyze_fft_radial_power_spectrum, calculate_sensor_noise_profile, calculate_surface_smoothness
 
 logger = logging.getLogger("image_detector.profiler")
 
 
-def compute_file_hashes(file_path: str | Path) -> Tuple[str, str, int]:
+def compute_file_hashes(file_path: str | Path) -> tuple[str, str, int]:
     """Calculates SHA-256, MD5, and exact file size in bytes (shared cached implementation)."""
     return file_digests(file_path)
 
@@ -55,7 +55,7 @@ def compute_pixel_entropy(image_bgr: np.ndarray) -> float:
         return 0.0
 
 
-def parse_gps_info(gps_dict: dict) -> Dict[str, Any]:
+def parse_gps_info(gps_dict: dict) -> dict[str, Any]:
     """Extracts latitude, longitude, and altitude from EXIF GPS IFD."""
     try:
         from PIL.ExifTags import GPSTAGS
@@ -92,7 +92,7 @@ def parse_gps_info(gps_dict: dict) -> Dict[str, Any]:
     return {"has_gps": False, "latitude": None, "longitude": None, "altitude_m": None, "coordinates_str": None}
 
 
-def _blank_exif_info() -> Dict[str, Any]:
+def _blank_exif_info() -> dict[str, Any]:
     return {
         "has_exif": False,
         "camera_make": None,
@@ -118,7 +118,7 @@ def _blank_exif_info() -> Dict[str, Any]:
 _METERING_MODES = {1: "Average", 2: "CenterWeightedAverage", 3: "Spot", 4: "MultiSpot", 5: "Pattern", 6: "Partial"}
 
 
-def _apply_exif_tag(stag: str, sv: Any, exif_info: Dict[str, Any]) -> None:
+def _apply_exif_tag(stag: str, sv: Any, exif_info: dict[str, Any]) -> None:
     if stag == "ExposureTime":
         val = float(sv)
         exif_info["exposure_time"] = f"1/{round(1.0 / val)}s" if val < 1.0 else f"{val:.2f}s"
@@ -142,7 +142,7 @@ def _apply_exif_tag(stag: str, sv: Any, exif_info: Dict[str, Any]) -> None:
         exif_info["color_space_tag"] = "sRGB" if int(sv) == 1 else ("Adobe RGB" if int(sv) == 2 else "Uncalibrated")
 
 
-def _apply_sub_ifd(exif_data: Any, exif_info: Dict[str, Any]) -> None:
+def _apply_sub_ifd(exif_data: Any, exif_info: dict[str, Any]) -> None:
     """Fills exposure/optics/GPS fields from the Exif (0x8769) and GPS (0x8825) sub-IFDs."""
     from PIL.ExifTags import TAGS
 
@@ -164,9 +164,9 @@ def _apply_sub_ifd(exif_data: Any, exif_info: Dict[str, Any]) -> None:
         logger.debug("Sub-IFD EXIF extraction exception: %s", e)
 
 
-def _read_container_info(path: Path) -> Dict[str, Any]:
+def _read_container_info(path: Path) -> dict[str, Any]:
     """PIL-level container facts: colour mode, ICC, DPI and EXIF acquisition metadata."""
-    info: Dict[str, Any] = {
+    info: dict[str, Any] = {
         "dpi_x": None, "dpi_y": None, "color_mode": None, "has_icc": False,        # None: the file records no resolution
         "icc_profile_name": "ICC profile embedded", "exif_info": _blank_exif_info(),
     }
@@ -204,7 +204,7 @@ def _read_container_info(path: Path) -> Dict[str, Any]:
     return info
 
 
-def _orientation_and_aspect(ratio: float) -> Tuple[str, str]:
+def _orientation_and_aspect(ratio: float) -> tuple[str, str]:
     if ratio > 1.08:
         orientation = "Landscape (Horizontal)"
     elif ratio < 0.92:
@@ -228,7 +228,7 @@ _ASPECT_LABELS = (
 )
 
 
-def _channel_statistics(img_bgr: np.ndarray, channels: int) -> Tuple[np.ndarray, Dict[str, Dict[str, Any]]]:
+def _channel_statistics(img_bgr: np.ndarray, channels: int) -> tuple[np.ndarray, dict[str, dict[str, Any]]]:
     """Returns (gray plane, {means, stds, mins, maxs}) for colour or single-channel images."""
     if channels >= 3:
         b, g, r = img_bgr[:, :, 0], img_bgr[:, :, 1], img_bgr[:, :, 2]
@@ -245,7 +245,7 @@ def _channel_statistics(img_bgr: np.ndarray, channels: int) -> Tuple[np.ndarray,
     }
 
 
-def _luminance_statistics(gray: np.ndarray) -> Dict[str, Any]:
+def _luminance_statistics(gray: np.ndarray) -> dict[str, Any]:
     lum_min, lum_max = int(np.min(gray)), int(np.max(gray))
     hi = int(np.sum(gray >= 252))
     lo = int(np.sum(gray <= 4))
@@ -263,7 +263,7 @@ def _luminance_statistics(gray: np.ndarray) -> Dict[str, Any]:
     }
 
 
-def _dominant_palette(img_bgr: np.ndarray, gray: np.ndarray, channels: int) -> Tuple[List[Dict[str, Any]], int]:
+def _dominant_palette(img_bgr: np.ndarray, gray: np.ndarray, channels: int) -> tuple[list[dict[str, Any]], int]:
     """Up to six dominant colours with human names; also returns the number of unique quantised colours."""
     bgr = img_bgr[:, :, :3] if channels >= 3 else cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
     small = cv2.resize(bgr, (100, 100), interpolation=cv2.INTER_AREA)
@@ -273,7 +273,7 @@ def _dominant_palette(img_bgr: np.ndarray, gray: np.ndarray, channels: int) -> T
     return palette, len(colors)
 
 
-def _raw_physical_signals(gray: np.ndarray) -> Dict[str, Any]:
+def _raw_physical_signals(gray: np.ndarray) -> dict[str, Any]:
     """Noise residuals, bilateral smoothness, spectral decay, edge density and sharpness."""
     h, w = gray.shape[:2]
     sample = gray
@@ -311,7 +311,7 @@ class ImageProfiler:
     def __init__(self):
         pass
 
-    def profile_image(self, file_path: str | Path, source: str = "User Upload") -> Dict[str, Any]:
+    def profile_image(self, file_path: str | Path, source: str = "User Upload") -> dict[str, Any]:
         """Extracts complete technical profile, EXIF, DPI, pixel stats, and physical signals of an image."""
         path = Path(file_path)
         if not path.is_file():

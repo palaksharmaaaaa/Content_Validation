@@ -3,7 +3,7 @@ video_detector.dimension_checks.integrity: file-integrity & security checks. SEC
 """
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 from core.forensics.bytescan import WINDOW, find_injection, scan_windows
 from core.forensics.registry import CheckContext, registry
@@ -41,12 +41,12 @@ def _printable(t: str) -> bool:
     return len(t) == 4 and all(0x20 <= ord(c) <= 0x7E or ord(c) == 0xA9 for c in t)
 
 
-def _declared_end(ctx_path, head: bytes, size: int) -> Tuple[str, Optional[int], Dict[str, Any]]:
+def _declared_end(ctx_path, head: bytes, size: int) -> tuple[str, int | None, dict[str, Any]]:
     """(format, end offset of the structured container or None, extras)."""
     fmt = C.sniff_video_format(head)
     if fmt in ("mp4", "mov"):
         top = C.walk_top_level(ctx_path)
-        extras: Dict[str, Any] = {"truncated": False}
+        extras: dict[str, Any] = {"truncated": False}
         for b in top["boxes"]:
             if not _printable(b["type"]):
                 return fmt, b["offset"], extras  # garbage where a box should start: trailing/appended data
@@ -89,7 +89,7 @@ def check_polyglot_signatures(ctx: CheckContext) -> Finding:
     head, tail, size = C.read_windows(ctx.path)
     fmt, end, extras = _declared_end(ctx.path, head, size)
     windows = [(head, False), (tail, False)]
-    if end is not None and 1 < size - end:
+    if end is not None and size - end > 1:
         with open(ctx.path, "rb") as f:
             f.seek(end)
             windows.append((f.read(WINDOW), True))

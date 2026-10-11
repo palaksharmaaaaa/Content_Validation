@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import argparse
 import logging
+from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Callable, Iterable, Optional
 
 import numpy as np
 
@@ -25,7 +25,7 @@ def fit_ood_gate(paths: Iterable[Path], out_path: Path, embedder: Callable[[Path
     return fit_gate_from_files(paths, out_path, embedder, max_samples, "embeddable images")
 
 
-def main(argv: Optional[list] = None) -> None:
+def main(argv: list | None = None) -> None:
     from core.media_library import library_for
     from image_detector.dimension_checks import DEFAULT_OOD_STATS, _default_embedder
 

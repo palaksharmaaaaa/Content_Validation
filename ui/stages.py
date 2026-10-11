@@ -6,7 +6,8 @@ separated from the ``render_*`` functions so they can be unit-tested without a S
 """
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from collections.abc import Iterable
+from typing import Any
 
 import streamlit as st
 
@@ -45,17 +46,17 @@ _BAND = {
 _SCORE_ELIGIBLE = {c.value for c in SCORE_ELIGIBLE_CLASSES}          # one definition, shared with the scoring code
 
 
-def status_badge(status: str) -> Tuple[str, str]:
+def status_badge(status: str) -> tuple[str, str]:
     """(symbol, label) for a finding status."""
     return _STATUS.get(status, ("❔", status))
 
 
-def band_badge(band: str) -> Tuple[str, str]:
+def band_badge(band: str) -> tuple[str, str]:
     """(symbol, label) for a probability band."""
     return _BAND.get(band, ("❔", band))
 
 
-def _weight_text(finding: Dict[str, Any]) -> str:
+def _weight_text(finding: dict[str, Any]) -> str:
     cls = finding.get("evidence_class", "")
     llr = finding.get("llr")
     if cls not in _SCORE_ELIGIBLE:
@@ -66,9 +67,9 @@ def _weight_text(finding: Dict[str, Any]) -> str:
     return f"{llr:+.2f} log-odds ({kind}, capped)"
 
 
-def findings_to_rows(findings: Iterable[Dict[str, Any]], show_weight: bool = False) -> List[Dict[str, str]]:
+def findings_to_rows(findings: Iterable[dict[str, Any]], show_weight: bool = False) -> list[dict[str, str]]:
     """Table rows (status, check, class, detail, optional evidence weight) for a list of findings."""
-    rows: List[Dict[str, str]] = []
+    rows: list[dict[str, str]] = []
     for f in findings:
         emoji, label = status_badge(f.get("status", ""))
         row = {
@@ -83,16 +84,16 @@ def findings_to_rows(findings: Iterable[Dict[str, Any]], show_weight: bool = Fal
     return rows
 
 
-def collect_findings(report: Optional[Dict[str, Any]], stage_names: Iterable[str]) -> List[Dict[str, Any]]:
+def collect_findings(report: dict[str, Any] | None, stage_names: Iterable[str]) -> list[dict[str, Any]]:
     """Findings from the named stages of a report, in the order given."""
     by_stage = (report or {}).get("findings_by_stage", {})
-    out: List[Dict[str, Any]] = []
+    out: list[dict[str, Any]] = []
     for name in stage_names:
         out.extend(by_stage.get(name, []))
     return out
 
 
-def ood_text(ood: Optional[Dict[str, Any]]) -> str:
+def ood_text(ood: dict[str, Any] | None) -> str:
     """One-sentence description of an out-of-distribution result."""
     if not ood:
         return "OOD status unavailable."
@@ -108,7 +109,7 @@ def ood_text(ood: Optional[Dict[str, Any]]) -> str:
 # ---------------------------------------------------------------------------------------------
 # Streamlit renderers
 # ---------------------------------------------------------------------------------------------
-def render_gate_banner(gate: Optional[Dict[str, Any]]) -> bool:
+def render_gate_banner(gate: dict[str, Any] | None) -> bool:
     """Renders a top-of-page banner when a gate fired. Returns True if analysis was blocked/short-circuited."""
     if not gate or not gate.get("triggered"):
         return False
@@ -132,9 +133,9 @@ def render_gate_banner(gate: Optional[Dict[str, Any]]) -> bool:
 def render_findings_stage(
     title: str,
     caption: str,
-    findings: List[Dict[str, Any]],
+    findings: list[dict[str, Any]],
     show_weight: bool = False,
-    advisory_note: Optional[str] = None,
+    advisory_note: str | None = None,
 ) -> None:
     """One collapsible group of checks. Opens by itself when something was flagged."""
     flagged = [f for f in findings if f.get("status") in ("FAIL", "WARN")]

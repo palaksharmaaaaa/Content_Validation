@@ -25,10 +25,12 @@ these can be identified from audio content alone the way the original six can; a
 spectral calibration for them only once backed by actual sample analysis, not guessed numbers.
 """
 from __future__ import annotations
+
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from core.shared_results import finalize_attribution, unknown_attribution
 
 logger = logging.getLogger("audio_detector.attribution")
@@ -125,23 +127,23 @@ class AudioModelAttributionEngine:
     def attribute_audio(
         self,
         audio_path: str | Path,
-        acoustic_data: Optional[Dict[str, Any]] = None,
-        profile_data: Optional[Dict[str, Any]] = None,
-        provenance_data: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        acoustic_data: dict[str, Any] | None = None,
+        profile_data: dict[str, Any] | None = None,
+        provenance_data: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Attributes audio to likely generative synthesizer."""
         path = Path(audio_path)
         if not path.is_file():
             return self._unknown_attribution("File not found")
 
-        scores: Dict[str, float] = {k: 0.05 for k in KNOWN_AUDIO_GENERATORS}
-        cues: List[str] = []
+        scores: dict[str, float] = {k: 0.05 for k in KNOWN_AUDIO_GENERATORS}
+        cues: list[str] = []
         declared = False                                   # a generator is named only if the file's own metadata says so
 
         # 1. Metadata / Provenance inspection
         if provenance_data:
             meta = provenance_data.get("metadata", {})
-            for k, v in meta.items():
+            for v in meta.values():
                 val_str = str(v).lower()
                 if _word("elevenlabs", val_str) or _word("eleven labs", val_str):
                     scores["elevenlabs"] += 0.85
@@ -227,10 +229,10 @@ class AudioModelAttributionEngine:
         self,
         media_path: str | Path,
         modality: str = "audio",
-        forensic_data: Optional[Dict[str, Any]] = None,
-        profile_data: Optional[Dict[str, Any]] = None,
-        provenance_data: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        forensic_data: dict[str, Any] | None = None,
+        profile_data: dict[str, Any] | None = None,
+        provenance_data: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Unified attribution interface for multi-modal workflows."""
         return self.attribute_audio(
             audio_path=media_path,
@@ -239,5 +241,5 @@ class AudioModelAttributionEngine:
             provenance_data=provenance_data,
         )
 
-    def _unknown_attribution(self, reason: str) -> Dict[str, Any]:
+    def _unknown_attribution(self, reason: str) -> dict[str, Any]:
         return unknown_attribution(reason)

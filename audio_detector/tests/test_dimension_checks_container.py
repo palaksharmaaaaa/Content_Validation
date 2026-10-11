@@ -6,7 +6,13 @@ import pytest
 
 from audio_detector.dimension_checks import container
 from audio_detector.tests.audio_fixtures import (
-    id3v23, ogg_page, text_frame_v23, tone, txxx_v23, write_wav, write_wav_with_chunks,
+    id3v23,
+    ogg_page,
+    text_frame_v23,
+    tone,
+    txxx_v23,
+    write_wav,
+    write_wav_with_chunks,
 )
 from core.forensics.registry import CheckContext, build_report
 from core.forensics.schemas import EvidenceClass, FindingStatus

@@ -35,3 +35,12 @@ def test_find_injection():
     assert hits and hits[0]["field"] == "comment"
     assert bytescan.find_injection({"comment": "A lovely song about the sea."}) == []
     assert bytescan.find_injection({}) == []
+
+
+def test_prose_that_merely_mentions_html_is_not_active_content():
+    from core.forensics.bytescan import scan_signatures
+
+    assert scan_signatures(b"camera note: exported for <html5 players, see <scripting guide", False) == []
+    assert "HTML/Script" in scan_signatures(b"x <script>alert(1)</script>", False)
+    assert "HTML/Script" in scan_signatures(b"<HTML lang=en>", False)
+    assert "HTML/Script" in scan_signatures(b"<?php echo 1; ?>", False)

@@ -15,7 +15,7 @@ import struct
 import threading
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, Set, Tuple, Union
+from typing import Any
 
 from core.forensics.config import hardblock_file
 from core.hashing import file_sha256
@@ -32,7 +32,7 @@ class GateResult:
     triggered: bool
     note: str = ""      # why the gate is inactive, when it is (a list that cannot be read must never look like "clear")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Plain-dict form for reports."""
         out = {"status": self.status, "sha256": self.sha256, "triggered": self.triggered}
         if self.note:
@@ -40,11 +40,11 @@ class GateResult:
         return out
 
 
-_blocklist_cache: Dict[Tuple[str, int, int], Set[str]] = {}
+_blocklist_cache: dict[tuple[str, int, int], set[str]] = {}
 _blocklist_lock = threading.Lock()
 
 
-def _load_blocklist(path: Path) -> Optional[Set[str]]:
+def _load_blocklist(path: Path) -> set[str] | None:
     """The SHA-256 entries of the block list (None when there is no list). A large list is parsed once and again only if the file changes."""
     try:
         stat = path.stat()
@@ -55,7 +55,7 @@ def _load_blocklist(path: Path) -> Optional[Set[str]]:
         cached = _blocklist_cache.get(key)
     if cached is not None:
         return cached
-    out: Set[str] = set()
+    out: set[str] = set()
     try:
         raw = path.read_bytes()
     except OSError as exc:                   # a directory, a locked or unreadable file
@@ -82,10 +82,10 @@ def _load_blocklist(path: Path) -> Optional[Set[str]]:
 
 class HardBlockGate:
     """Stops analysis when a file's SHA-256 is on the operator's block list. No classifier is built in."""
-    def __init__(self, blocklist_path: Optional[Union[str, Path]] = None):
+    def __init__(self, blocklist_path: str | Path | None = None):
         self._explicit = Path(blocklist_path) if blocklist_path else None
 
-    def check(self, file_path: Union[str, Path]) -> GateResult:
+    def check(self, file_path: str | Path) -> GateResult:
         """Hash the file and compare it with the block list."""
         path = Path(file_path)
         try:
@@ -126,7 +126,7 @@ def _tiff_has_tag(head: bytes, wanted: int) -> bool:
     return False
 
 
-def recognize_scientific_format(file_path: Union[str, Path]) -> Optional[Dict[str, str]]:
+def recognize_scientific_format(file_path: str | Path) -> dict[str, str] | None:
     """Name the scientific/medical format (DICOM, FITS, GeoTIFF, ...) by magic bytes, or None. Such files are recognised but not scored."""
     path = Path(file_path)
     try:
@@ -154,7 +154,7 @@ def recognize_scientific_format(file_path: Union[str, Path]) -> Optional[Dict[st
     return None
 
 
-def recognize_symbolic_music(file_path: Union[str, Path]) -> Optional[Dict[str, str]]:
+def recognize_symbolic_music(file_path: str | Path) -> dict[str, str] | None:
     """Symbolic (non-waveform) music files: no acoustic authenticity can be scored from them."""
     try:
         with open(Path(file_path), "rb") as f:

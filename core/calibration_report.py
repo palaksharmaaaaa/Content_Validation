@@ -7,7 +7,8 @@ heuristics; this module is how that claim is replaced by measured numbers (see s
 from __future__ import annotations
 
 from collections import Counter
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from collections.abc import Iterable
+from typing import Any
 
 from core.bands import classify_band_from_percent
 
@@ -18,13 +19,13 @@ _AI_LABELS = {"ai", "ai_generated", "ai-generated", "synthetic", "fake", "genera
 _REAL_LABELS = {"real", "authentic", "genuine", "human"}
 
 
-def _label_class(label: str) -> Optional[int]:
+def _label_class(label: str) -> int | None:
     """1 for an AI label, 0 for a real label, None for anything else: an unrecognised label is never counted as real."""
     name = str(label).strip().lower()
     return 1 if name in _AI_LABELS else 0 if name in _REAL_LABELS else None
 
 
-def evaluate(pairs: Iterable[Tuple[str, float]], threshold: float = 50.0, bins: int = 10) -> Dict[str, Any]:
+def evaluate(pairs: Iterable[tuple[str, float]], threshold: float = 50.0, bins: int = 10) -> dict[str, Any]:
     """``pairs``: (ground-truth label, predicted P(AI) in percent). Returns accuracy, ECE, Brier, band occupancy."""
     pairs = list(pairs)
     classes = [(_label_class(lab), p) for lab, p in pairs]
@@ -32,7 +33,7 @@ def evaluate(pairs: Iterable[Tuple[str, float]], threshold: float = 50.0, bins: 
     data = [(c, max(0.0, min(100.0, float(p))) / 100.0) for c, p in classes if c is not None and p is not None and float(p) == float(p)]
     n = len(data)
     n_ai = sum(y for y, _ in data)
-    warnings: List[str] = []
+    warnings: list[str] = []
     if len(pairs) - n:
         warnings.append(f"{len(pairs) - n} sample(s) were left out: an unrecognised label ({unlabeled}) or a missing score.")
     if n == 0:
@@ -51,7 +52,7 @@ def evaluate(pairs: Iterable[Tuple[str, float]], threshold: float = 50.0, bins: 
     recall = tp / (tp + fn) if tp + fn else None
     f1 = 2 * tp / (2 * tp + fp + fn) if (2 * tp + fp + fn) else None
 
-    table: List[Dict[str, Any]] = []
+    table: list[dict[str, Any]] = []
     ece = 0.0
     for b in range(bins):
         lo, hi = b / bins, (b + 1) / bins
@@ -63,7 +64,7 @@ def evaluate(pairs: Iterable[Tuple[str, float]], threshold: float = 50.0, bins: 
         ece += len(members) / n * abs(conf - freq)
         table.append({"bin": f"{lo:.1f}-{hi:.1f}", "n": len(members), "mean_predicted": round(conf, 4), "observed_ai_rate": round(freq, 4)})
 
-    occupancy: Dict[str, Counter] = {"ai": Counter(), "real": Counter()}
+    occupancy: dict[str, Counter] = {"ai": Counter(), "real": Counter()}
     for y, p in data:
         occupancy["ai" if y else "real"][classify_band_from_percent(p * 100.0).value] += 1
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from core.benchmark import evaluate_folder, write_report
 from image_detector.config import SUPPORTED_EXTENSIONS
@@ -14,11 +14,11 @@ from image_detector.detector import ImageAIDetector
 class ImageBenchmarkSuite:
     """Scores a detector on a labelled folder."""
 
-    def __init__(self, detector: Optional[ImageAIDetector] = None):
+    def __init__(self, detector: ImageAIDetector | None = None):
         self.detector = detector or ImageAIDetector()
         self.detector.load()
 
-    def evaluate_dataset(self, dataset_dir: Path | str, sensitivity: str = "balanced") -> Dict[str, Any]:
+    def evaluate_dataset(self, dataset_dir: Path | str, sensitivity: str = "balanced") -> dict[str, Any]:
         report = evaluate_folder(dataset_dir, SUPPORTED_EXTENSIONS, lambda p: self.detector.predict(p, sensitivity=sensitivity))
         report["sensitivity"] = sensitivity
         return report

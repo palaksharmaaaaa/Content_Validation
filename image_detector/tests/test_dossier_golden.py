@@ -3,8 +3,6 @@ import json
 import random
 
 from image_detector.explain import IPTC_SOURCE_TYPE_MAPPING, build_nine_dimensions_dossier
-
-
 from tests.golden_support import assert_golden
 
 

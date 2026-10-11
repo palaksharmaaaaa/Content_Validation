@@ -5,12 +5,12 @@ page is supporting detail.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import streamlit as st
-from ui.text import code_safe, md_escape, neutralise_links
 
 from ui.stages import band_badge, collect_findings, ood_text
+from ui.text import neutralise_links
 
 # (taxonomy state, extra final_status values, st level, headline, what it means)
 _VERDICTS = (
@@ -33,7 +33,7 @@ _NO_CONTENT = ("info", "No usable content", "The file has no variation to analys
 _UNDETERMINED = ("info", "Inconclusive", "The evidence is balanced or the file is heavily compressed. The engine does not guess.")
 
 
-def verdict_style(decision: Dict[str, Any]) -> Tuple[str, str, str]:
+def verdict_style(decision: dict[str, Any]) -> tuple[str, str, str]:
     """(st level, headline, meaning) for a decision dict."""
     state = decision.get("taxonomy_state")
     status = decision.get("final_status", "UNDETERMINED")
@@ -45,7 +45,7 @@ def verdict_style(decision: Dict[str, Any]) -> Tuple[str, str, str]:
     return _UNDETERMINED
 
 
-def key_reasons(decision: Dict[str, Any], dim_report: Optional[Dict[str, Any]], limit: int = 4) -> List[str]:
+def key_reasons(decision: dict[str, Any], dim_report: dict[str, Any] | None, limit: int = 4) -> list[str]:
     """The few strongest human-readable reasons: classifier reasons first, then checks that were flagged."""
     reasons = [r for r in decision.get("taxonomy_reasons", []) if r]
     for finding in collect_findings(dim_report, ["file_integrity", "metadata", "formats", "container", "signal", "faces"]):
@@ -56,7 +56,7 @@ def key_reasons(decision: Dict[str, Any], dim_report: Optional[Dict[str, Any]], 
     return reasons[:limit]
 
 
-def render_summary(item: Dict[str, Any], title: str) -> None:
+def render_summary(item: dict[str, Any], title: str) -> None:
     """Draw the verdict card: category, AI likelihood, evidence strength, main reasons and a trust note."""
     decision = item.get("decision") or {}
     probs = decision.get("authenticity_probabilities", {})

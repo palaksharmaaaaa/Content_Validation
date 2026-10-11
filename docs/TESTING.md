@@ -48,3 +48,13 @@ Goldens that depend on learned state (calibration files, a checkpoint) are recor
 ## Coverage
 
 Measured on 2026-10-11 on Python 3.14 with `coverage run --source=core,image_detector,audio_detector,video_detector,services,ui -m pytest`: **86 % of statements** (14,348 statements, 1,962 not run; line coverage, not branch coverage; test files excluded). The weakest parts are the command-line and training tools, which the suite only touches lightly: `services/blind_test.py`, `services/calibration_cli.py` and `services/build_vocab_embeddings.py` (0 %), `services/age_eval.py` (34 %), the three `fit_ood.py` scripts (37-52 %) and `image_detector/face_training.py` (48 %). Coverage says which lines ran, not that their results are right: the golden tests pin outputs, and real accuracy on real AI media is unmeasured (see [LIMITATIONS.md](LIMITATIONS.md)).
+
+## Lint, fuzzing and optional quality tools
+
+`pip install -r requirements-dev.txt` adds the tools below; CI installs them from `requirements.lock.txt`.
+
+- **`ruff check .`** (rules in `pyproject.toml`: pycodestyle, pyflakes, isort, pyupgrade for Python 3.14, bugbear, simplify) and **bandit** (security lint, same file) run before the tests in CI and are clean today.
+- **`tests/test_property_fuzzing.py`** feeds random bytes to the C2PA scanner, the RIFF and signature parsers and the image profiler with Hypothesis, and asserts they never crash. It skips when Hypothesis is not installed.
+- **Evidently** (`core/retrain_engine.py`): before a retrained model is promoted, a drift report compares the validation and training samples. The only feature it compares is file size, so it flags unusually differently sized files, not a change in what the media show; it only adds a warning to the result message. With fewer than 10 samples on either side, or without Evidently, the report is skipped.
+- **Cleanlab** (`ui/results/feedback.py`): a correction that contradicts a detector result that is at least 80 % sure the other way, with a label quality score under 0.20, is held back until the reviewer ticks a confirmation box, so one mistaken click does not move the thresholds. For one example the score is the detector's own probability for the label chosen (Cleanlab's default "self confidence"); it is computed directly when Cleanlab is not installed, so the guard never switches off.
+- **`tests/test_video_memory_profile.py`** bounds Python-side memory during frame extraction with `tracemalloc`; it cannot see leaks in OpenCV's native buffers.

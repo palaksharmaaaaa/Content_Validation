@@ -11,9 +11,8 @@ audio_detector/data/audio_fingerprint_index.jsonl. This fingerprint is coarse: a
 from __future__ import annotations
 
 import logging
-
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 
@@ -77,7 +76,7 @@ def best_ber(query: np.ndarray, ref: np.ndarray) -> float:
     return best
 
 
-def _prepare(row: Dict[str, Any]) -> None:
+def _prepare(row: dict[str, Any]) -> None:
     row["_fp"] = np.frombuffer(bytes.fromhex(row["fp"]), dtype="<u4").astype(np.uint32)
 
 

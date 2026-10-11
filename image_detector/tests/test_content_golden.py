@@ -5,8 +5,6 @@ import cv2
 import numpy as np
 
 from image_detector.content import ImageContentAnalyzer
-
-
 from tests.golden_support import assert_golden
 
 

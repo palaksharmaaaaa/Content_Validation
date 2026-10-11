@@ -1,7 +1,7 @@
 """ui.results.models_panel: which model and algorithm ran at every step, where it came from and what it was trained on."""
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 import streamlit as st
 
@@ -11,7 +11,7 @@ from ui.text import md_escape, neutralise_links
 
 
 @st.cache_data(ttl=300, show_spinner=False)
-def cached_manifest(modality: str) -> Dict[str, Any]:
+def cached_manifest(modality: str) -> dict[str, Any]:
     """The model manifest for ``modality``; cached briefly because reading the checkpoints is not free and the page reruns on every click."""
     return manifest(modality)
 

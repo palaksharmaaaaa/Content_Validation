@@ -9,16 +9,15 @@ Completely self-contained with zero outside dependencies.
 from __future__ import annotations
 
 import logging
-
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import cv2
-from core.imageio import imread
 import numpy as np
 from PIL import Image, ImageOps
 
 from core.hashing import file_sha256
+from core.imageio import imread
 from image_detector.config import MAX_FILE_SIZE_MB, MIN_RESOLUTION, SUPPORTED_EXTENSIONS
 from image_detector.schemas import ImageValidationResult
 
@@ -159,7 +158,7 @@ class ImageValidator:
 
 
 
-def analyze_image(image_path: str | Path) -> Dict[str, Any]:
+def analyze_image(image_path: str | Path) -> dict[str, Any]:
     """Inspects visual quality and dimensions of an image, returning flat dictionary."""
     res = ImageValidator().validate(image_path)
     d = res.to_dict()

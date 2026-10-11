@@ -5,7 +5,7 @@ Self-contained module schemas with zero outside dependencies.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -24,16 +24,16 @@ class AudioForensicResult:
     has_vocoder_cutoff: bool = False
     cutoff_freq_hz: float = 0.0
     spectral_flatness: float = 0.0
-    digital_silence_ratio: Optional[float] = 0.0       # None: not measured (8-bit audio)
+    digital_silence_ratio: float | None = 0.0       # None: not measured (8-bit audio)
     high_freq_ratio: float = 0.0
-    acoustic_features: Dict[str, Any] = field(default_factory=dict)
-    temporal_segments: List[Dict[str, Any]] = field(default_factory=list)
-    forensic_cues: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    spectrogram_image: Optional[Any] = None
-    error: Optional[str] = None
+    acoustic_features: dict[str, Any] = field(default_factory=dict)
+    temporal_segments: list[dict[str, Any]] = field(default_factory=list)
+    forensic_cues: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
+    spectrogram_image: Any | None = None
+    error: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "valid": self.valid,
             "filename": self.filename,
@@ -71,14 +71,14 @@ class AudioValidationResult:
     format: str = "UNKNOWN"
     is_clipped: bool = False
     is_silent: bool = False
-    error: Optional[str] = None
-    extracted_samples: Optional[Any] = None
+    error: str | None = None
+    extracted_samples: Any | None = None
 
     @property
     def is_valid(self) -> bool:
         return self.valid
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "valid": self.valid,
             "readable": self.valid,
@@ -106,10 +106,10 @@ class AudioFeedbackRecord:
     timestamp: str
     audio_path: str
     user_label: str
-    features: Dict[str, Any] = field(default_factory=dict)
+    features: dict[str, Any] = field(default_factory=dict)
     notes: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "timestamp": self.timestamp,
             "audio_path": self.audio_path,

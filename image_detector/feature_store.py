@@ -17,13 +17,14 @@ import hashlib
 import io
 import logging
 import os
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import cv2
 import numpy as np
-from PIL import Image
 import torch
+from PIL import Image
 from torch import nn
 from torch.utils.data import Dataset
 from torchvision import transforms
@@ -31,13 +32,20 @@ from torchvision import transforms
 from core.imageio import imread
 from core.media_library import compute_file_sha256
 from image_detector.config import DEFAULT_CHECKPOINT, IMAGE_SIZE
-from image_detector.features import analyze_fft_radial_power_spectrum, calculate_sensor_noise_profile, calculate_surface_smoothness, compute_ela, detect_inpainting_and_manipulation, detect_screenshot
+from image_detector.features import (
+    analyze_fft_radial_power_spectrum,
+    calculate_sensor_noise_profile,
+    calculate_surface_smoothness,
+    compute_ela,
+    detect_inpainting_and_manipulation,
+    detect_screenshot,
+)
 from image_detector.models.backbone import build_image_classifier
 
 logger = logging.getLogger("image_detector.feature_store")
 
 
-def _decode_image_input(image_input: Union[str, Path, bytes, bytearray, io.BytesIO, np.ndarray, Image.Image]) -> Tuple[Optional[np.ndarray], Optional[Path]]:
+def _decode_image_input(image_input: str | Path | bytes | bytearray | io.BytesIO | np.ndarray | Image.Image) -> tuple[np.ndarray | None, Path | None]:
     """
     Decodes any image input type (path, bytes, io.BytesIO, numpy array, PIL Image)
     into a BGR OpenCV numpy array in RAM without writing to disk.
@@ -83,12 +91,12 @@ class FeatureStore:
 
     def __init__(
         self,
-        checkpoint_path: Optional[Path | str] = None,
-        device: Optional[str] = None,
+        checkpoint_path: Path | str | None = None,
+        device: str | None = None,
     ):
         self.device = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
         self.checkpoint_path = Path(checkpoint_path) if checkpoint_path else DEFAULT_CHECKPOINT
-        self.backbone: Optional[nn.Module] = None
+        self.backbone: nn.Module | None = None
         self.fingerprint = "uninitialized"
         self.transform = transforms.Compose([
             transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
@@ -126,8 +134,8 @@ class FeatureStore:
 
     def extract_features(
         self,
-        image_input: Union[str, Path, bytes, bytearray, io.BytesIO, np.ndarray, Image.Image],
-    ) -> Optional[Dict[str, np.ndarray]]:
+        image_input: str | Path | bytes | bytearray | io.BytesIO | np.ndarray | Image.Image,
+    ) -> dict[str, np.ndarray] | None:
         """
         Extracts both the 512-dim neural embedding and the 12-dim physical forensic feature vector.
         Operates entirely in-memory with zero disk footprint.
@@ -205,10 +213,10 @@ class FeatureStore:
 
     def build_feature_bank(
         self,
-        samples: List[Tuple[Any, int]],
-        output_npz_path: Union[str, Path],
-        progress_callback: Optional[Callable[[int, int, str], None]] = None,
-    ) -> Dict[str, Any]:
+        samples: list[tuple[Any, int]],
+        output_npz_path: str | Path,
+        progress_callback: Callable[[int, int, str], None] | None = None,
+    ) -> dict[str, Any]:
         """
         Extracts compact representations for (path_or_bytes, label) samples into one .npz archive.
         Source files are only ever read. Rows are keyed by content hash (file bytes for paths, the
@@ -218,7 +226,7 @@ class FeatureStore:
         output_path = Path(output_npz_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        cached: Dict[str, Tuple[np.ndarray, np.ndarray]] = {}
+        cached: dict[str, tuple[np.ndarray, np.ndarray]] = {}
         if output_path.exists():
             try:
                 with np.load(str(output_path), allow_pickle=False) as data:   # closed before the file is replaced below
@@ -228,10 +236,10 @@ class FeatureStore:
             except Exception as exc:  # stale/corrupt cache is simply rebuilt
                 logger.info("Ignoring unusable feature cache %s: %s", output_path.name, exc)
 
-        embeddings_list: List[np.ndarray] = []
-        forensics_list: List[np.ndarray] = []
-        labels_list: List[int] = []
-        hashes_list: List[str] = []
+        embeddings_list: list[np.ndarray] = []
+        forensics_list: list[np.ndarray] = []
+        labels_list: list[int] = []
+        hashes_list: list[str] = []
         reused = 0
 
         total_samples = len(samples)
@@ -291,7 +299,7 @@ class FeatureStore:
         }
 
     @staticmethod
-    def load_feature_bank(npz_path: Union[str, Path]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def load_feature_bank(npz_path: str | Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Loads (embeddings, forensics, labels) from a compressed .npz archive."""
         with np.load(str(npz_path), allow_pickle=False) as data:
             return data["embeddings"], data["forensics"], data["labels"]
@@ -305,7 +313,7 @@ class FeatureBankDataset(Dataset):
 
     def __init__(
         self,
-        npz_path_or_arrays: Union[str, Path, Tuple[np.ndarray, np.ndarray, np.ndarray]],
+        npz_path_or_arrays: str | Path | tuple[np.ndarray, np.ndarray, np.ndarray],
         combine_forensics: bool = True,
     ):
         if isinstance(npz_path_or_arrays, (str, Path)):
@@ -324,7 +332,7 @@ class FeatureBankDataset(Dataset):
     def __len__(self) -> int:
         return len(self.y)
 
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
         return torch.from_numpy(self.X[idx]), torch.tensor(self.y[idx], dtype=torch.long)
 
 

@@ -6,11 +6,9 @@ absent. The explicit generator-parameter PNG chunk is the single case allowed th
 """
 from __future__ import annotations
 
-import logging
-
 import json
+import logging
 from collections import Counter
-from typing import Optional
 
 from PIL import Image, JpegImagePlugin
 
@@ -27,7 +25,7 @@ DIM = "O"
 EXPLICIT_GENERATOR_LLR = 0.40
 
 
-def _f(check_id, title, status, severity, detail, data=None, llr: Optional[float] = None, cap: Optional[float] = None) -> Finding:
+def _f(check_id, title, status, severity, detail, data=None, llr: float | None = None, cap: float | None = None) -> Finding:
     kw = {}
     if cap is not None:
         kw["llr_cap"] = cap
@@ -71,7 +69,7 @@ def check_jpeg_quant_tables(ctx: CheckContext) -> Finding:
 _A1111_MARKERS = ("Steps:", "Sampler:", "CFG scale:")
 
 
-def _generator_from_text(fields: dict) -> Optional[str]:
+def _generator_from_text(fields: dict) -> str | None:
     params = fields.get("parameters", "")
     if params and sum(m in params for m in _A1111_MARKERS) >= 2:
         return "Stable Diffusion (A1111/Forge)"

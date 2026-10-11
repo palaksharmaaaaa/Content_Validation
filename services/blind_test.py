@@ -17,8 +17,9 @@ import os
 import sys
 import time
 from collections import Counter, defaultdict
+from collections.abc import Iterable, Iterator
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, Optional
+from typing import Any
 
 _EXT = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff", ".jfif"}
 _AI_STATES = {"FULLY_AI_GENERATED", "AI_ENHANCED_COMPOSITE", "PROCEDURAL_CGI_SYNTHETIC",
@@ -26,7 +27,7 @@ _AI_STATES = {"FULLY_AI_GENERATED", "AI_ENHANCED_COMPOSITE", "PROCEDURAL_CGI_SYN
 _REAL_STATES = {"AUTHENTIC_REAL_PHOTOGRAPH", "AUTHENTIC_EDITED", "AUTHENTIC_RECAPTURED_SCREEN", "AUTHENTIC_SCREENSHOT"}
 
 
-def verdict_of(taxonomy_state: Optional[str]) -> str:
+def verdict_of(taxonomy_state: str | None) -> str:
     """Collapse the taxonomy into the three answers a person wants: AI, REAL or UNSURE."""
     if taxonomy_state in _AI_STATES:
         return "AI"
@@ -44,7 +45,7 @@ def iter_images(folders: Iterable[Path]) -> Iterator[Path]:
                     yield Path(root) / name
 
 
-def _record(path: Path, item: Dict[str, Any], seconds: float) -> Dict[str, Any]:
+def _record(path: Path, item: dict[str, Any], seconds: float) -> dict[str, Any]:
     decision = item.get("decision") or {}
     probs = decision.get("authenticity_probabilities") or {}
     content = item.get("content_res") or {}
@@ -68,7 +69,7 @@ def _record(path: Path, item: Dict[str, Any], seconds: float) -> Dict[str, Any]:
     }
 
 
-def run(folders: List[Path], out: Path, limit: int = 0) -> int:
+def run(folders: list[Path], out: Path, limit: int = 0) -> int:
     """Analyse every image not already in ``out``; append one JSON line per image. Returns the number analysed."""
     from services.forensic_service import ForensicService
     from ui.adapters import process_single_image
@@ -99,14 +100,14 @@ def run(folders: List[Path], out: Path, limit: int = 0) -> int:
     return count
 
 
-def summary(out: Path, truth: Dict[str, str], split: str = "all") -> Dict[str, Any]:
+def summary(out: Path, truth: dict[str, str], split: str = "all") -> dict[str, Any]:
     """Score recorded verdicts against ``truth`` ({path fragment: 'ai'|'real'}); unlabelled groups get a verdict histogram."""
     rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines() if line.strip()]
     if split != "all":   # "val": only files the face model never trained on (same content-hash split as face_training)
         from core.hashing import file_sha256
         from core.media_library import partition
 
-        def in_split(r: Dict[str, Any]) -> bool:
+        def in_split(r: dict[str, Any]) -> bool:
             if r["verdict"] == "ERROR":
                 return True
             try:
@@ -115,14 +116,14 @@ def summary(out: Path, truth: Dict[str, str], split: str = "all") -> Dict[str, A
                 return False
 
         rows = [r for r in rows if in_split(r)]
-    groups: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+    groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for r in rows:
         label = next((v for k, v in truth.items() if k.replace("\\", "/") in r["path"].replace("\\", "/")), None)
         groups[label or "unlabelled"].append(r)
-    report: Dict[str, Any] = {"total": len(rows), "errors": sum(r["verdict"] == "ERROR" for r in rows), "groups": {}}
+    report: dict[str, Any] = {"total": len(rows), "errors": sum(r["verdict"] == "ERROR" for r in rows), "groups": {}}
     for label, rs in groups.items():
         hist = Counter(r["verdict"] for r in rs)
-        entry: Dict[str, Any] = {"n": len(rs), "verdicts": dict(hist)}
+        entry: dict[str, Any] = {"n": len(rs), "verdicts": dict(hist)}
         if label in ("ai", "real"):
             want = label.upper()
             decided = [r for r in rs if r["verdict"] in ("AI", "REAL")]

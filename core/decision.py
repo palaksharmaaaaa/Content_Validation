@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -23,7 +23,7 @@ def normalize_percentages(
     undecided_val: float | None = None,
     min_undecided: float = 3.0,
     decimals: int = 1,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """
     Single source of truth for percentage normalization, used by audio_detector,
     image_detector, video_detector, and this module's own generate_final_decision.
@@ -82,7 +82,7 @@ _FACE_DISAGREES_BELOW = 0.10   # face classifier this sure the main face is real
 _SCORE_BACKED_AUTHENTIC = ("AUTHENTIC_REAL_PHOTOGRAPH", "AUTHENTIC_EDITED", "AUTHENTIC_RECAPTURED_SCREEN")
 
 
-def _attribution_stub(label: str, model_key: str = "unknown", region: str = "N/A") -> Dict[str, Any]:
+def _attribution_stub(label: str, model_key: str = "unknown", region: str = "N/A") -> dict[str, Any]:
     return {
         "attributed_model": label,
         "model_key": model_key,
@@ -96,16 +96,16 @@ def _attribution_stub(label: str, model_key: str = "unknown", region: str = "N/A
 def _terminal_dossier(
     status: str,
     reason: str,
-    trail: List[str],
+    trail: list[str],
     *,
     content_valid: bool,
-    attribution: Dict[str, Any],
-    inventory: Optional[Dict[str, Any]] = None,
-    provenance: Optional[Dict[str, Any]] = None,
-    cross_modal: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    attribution: dict[str, Any],
+    inventory: dict[str, Any] | None = None,
+    provenance: dict[str, Any] | None = None,
+    cross_modal: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Dossier for outcomes that stop before any fusion (invalid file, blank media, no usable evidence)."""
-    out: Dict[str, Any] = {
+    out: dict[str, Any] = {
         "content_valid": content_valid,
         "final_status": status,
         "reason": reason,
@@ -127,8 +127,8 @@ def _terminal_dossier(
 class _Evidence:
     """Evidence gathered from every modality before fusion."""
 
-    probs: List[Tuple[float, float, float]] = field(default_factory=list)  # (ai%, real%, weight)
-    trail: List[str] = field(default_factory=list)
+    probs: list[tuple[float, float, float]] = field(default_factory=list)  # (ai%, real%, weight)
+    trail: list[str] = field(default_factory=list)
     img_ai: float = 0.0
     img_spatial_area: float = 0.0
     vid_ai: float = 0.0
@@ -137,11 +137,11 @@ class _Evidence:
     aud_ai: float = 0.0
     aud_real: float = 0.0
     aud_dur_pct: float = 0.0
-    c2pa: Dict[str, Any] = field(default_factory=dict)
+    c2pa: dict[str, Any] = field(default_factory=dict)
     declared_ai: bool = False      # the file's own metadata or manifest says it is AI-generated (unauthenticated, but scored)
 
 
-def _evidence_weight(result: Dict[str, Any], base: float) -> float:
+def _evidence_weight(result: dict[str, Any], base: float) -> float:
     """A modality that is mostly undecided (say 99 % of its mass) must count for correspondingly little in the fusion."""
     try:
         undecided = float(result.get("undecided_percentage", 0.0) or 0.0)
@@ -150,12 +150,12 @@ def _evidence_weight(result: Dict[str, Any], base: float) -> float:
     return base * max(0.0, min(1.0, 1.0 - undecided / 100.0))
 
 
-def _read_pair(result: Dict[str, Any]) -> Tuple[float, float]:
+def _read_pair(result: dict[str, Any]) -> tuple[float, float]:
     """(ai%, real%) of a modality result, which carries ``ai_percentage`` and ``real_percentage``."""
     return float(result.get("ai_percentage", 0.0)), float(result.get("real_percentage", 0.0))
 
 
-def _collect_image(ev: _Evidence, ai_result: Optional[Dict[str, Any]]) -> None:
+def _collect_image(ev: _Evidence, ai_result: dict[str, Any] | None) -> None:
     if not (ai_result and (ai_result.get("is_available") or "ai_percentage" in ai_result)):
         return
     ev.img_ai, img_real = _read_pair(ai_result)
@@ -165,7 +165,7 @@ def _collect_image(ev: _Evidence, ai_result: Optional[Dict[str, Any]]) -> None:
     ev.trail.extend(f"[Image Forensic] {cue}" for cue in ai_result.get("forensic_cues", []))
 
 
-def _collect_video(ev: _Evidence, video_result: Optional[Dict[str, Any]]) -> None:
+def _collect_video(ev: _Evidence, video_result: dict[str, Any] | None) -> None:
     vid = video_result if (video_result and "ai_percentage" in video_result) else None
     if not vid:
         return
@@ -181,7 +181,7 @@ def _collect_video(ev: _Evidence, video_result: Optional[Dict[str, Any]]) -> Non
         ev.trail.append(f"[Video Temporal] High inter-frame warping risk ({risk}, motion delta: {float(temp.get('mean_motion_delta') or 0.0):.2f})")
 
 
-def _collect_audio(ev: _Evidence, audio_result: Optional[Dict[str, Any]]) -> None:
+def _collect_audio(ev: _Evidence, audio_result: dict[str, Any] | None) -> None:
     if not (audio_result and (audio_result.get("has_audio_track") or "ai_percentage" in audio_result)):
         return
     ev.aud_ai, ev.aud_real = _read_pair(audio_result)
@@ -191,7 +191,7 @@ def _collect_audio(ev: _Evidence, audio_result: Optional[Dict[str, Any]]) -> Non
     ev.trail.extend(f"[Audio Forensic] {cue}" for cue in audio_result.get("forensic_cues", []))
 
 
-def _collect_provenance(ev: _Evidence, prov: Dict[str, Any]) -> None:
+def _collect_provenance(ev: _Evidence, prov: dict[str, Any]) -> None:
     """Only declared-AI provenance is scored. C2PA marker presence and camera EXIF are unauthenticated: reported, never scored."""
     c2pa = prov.get("c2pa") or prov  # nested (UI validator) or flat (package provenance) shape
     ev.c2pa = c2pa
@@ -215,7 +215,7 @@ def _collect_provenance(ev: _Evidence, prov: Dict[str, Any]) -> None:
         ev.trail.append(f"[Hardware Provenance] Camera hardware EXIF tags present (unauthenticated, not scored): {make} {model}".strip())
 
 
-def _collect_cross_modal(ev: _Evidence, cross_modal: Optional[Dict[str, Any]]) -> None:
+def _collect_cross_modal(ev: _Evidence, cross_modal: dict[str, Any] | None) -> None:
     if not (cross_modal and cross_modal.get("is_multimodal")):
         return
     ev.trail.extend(f"[Cross-Modal] {cue}" for cue in cross_modal.get("cues", []))
@@ -226,7 +226,7 @@ def _collect_cross_modal(ev: _Evidence, cross_modal: Optional[Dict[str, Any]]) -
         ev.trail.append(f"[Cross-Modal] Audio and video disagree (risk {risk}); not scored.")
 
 
-def _collect_attribution(ev: _Evidence, attribution: Optional[Dict[str, Any]]) -> None:
+def _collect_attribution(ev: _Evidence, attribution: dict[str, Any] | None) -> None:
     """Attribution is explanation only: it derives from the same pixels/samples, so scoring it would double count."""
     if not attribution:
         return
@@ -239,14 +239,14 @@ def _collect_attribution(ev: _Evidence, attribution: Optional[Dict[str, Any]]) -
         )
 
 
-def _decision_mode(ai_result: Optional[Dict[str, Any]], audio_result: Optional[Dict[str, Any]], ev: "_Evidence") -> str:
+def _decision_mode(ai_result: dict[str, Any] | None, audio_result: dict[str, Any] | None, ev: _Evidence) -> str:
     """'image_authoritative' only for a lone image result carrying a taxonomy state; otherwise 'fused'."""
     if ai_result and ai_result.get("taxonomy_state") and not ev.has_video and not (audio_result and ev.aud_ai + ev.aud_real > 0.0):
         return "image_authoritative"
     return "fused"
 
 
-def _authentic_attribution() -> Dict[str, Any]:
+def _authentic_attribution() -> dict[str, Any]:
     return {
         "attributed_model": "None (Authentic Capture)",
         "model_key": "none_authentic",
@@ -268,7 +268,7 @@ def _status_means_ai(final_status: str, p_ai: float) -> bool:
     return final_status not in (_STATUS_UNDETERMINED, "UNDECIDED", "BLANK_OR_DEGRADED") and final_status not in _REAL_LEANING_STATUSES and p_ai >= 50.0
 
 
-def _worst_face_p(ai_result: Dict[str, Any]) -> float:
+def _worst_face_p(ai_result: dict[str, Any]) -> float:
     """The face classifier's worst P(AI) for the main face, 1.0 (no disagreement) when it was not measured."""
     value = (ai_result.get("face_check") or {}).get("worst_p_ai")
     try:
@@ -277,7 +277,7 @@ def _worst_face_p(ai_result: Dict[str, Any]) -> float:
         return 1.0
 
 
-def _fuse(probs: List[Tuple[float, float, float]]) -> Tuple[float, float, float]:
+def _fuse(probs: list[tuple[float, float, float]]) -> tuple[float, float, float]:
     """Weighted natural-log-odds pooling of (ai%, real%, weight) triples -> (p_ai, p_real, p_undecided) percentages."""
     pooled = 0.0
     for ai_p, real_p, w in probs:
@@ -289,7 +289,7 @@ def _fuse(probs: List[Tuple[float, float, float]]) -> Tuple[float, float, float]
     return normalize_percentages(ai_val=p_ai_fused * 100.0, real_val=(1.0 - p_ai_fused) * 100.0, decimals=1)
 
 
-def _status_from_probabilities(p_ai: float, p_real: float) -> Tuple[str, str]:
+def _status_from_probabilities(p_ai: float, p_real: float) -> tuple[str, str]:
     if p_ai >= 65.0:
         return _STATUS_LIKELY_SYNTHETIC, "Forensic signals indicate high likelihood of synthetic/generative AI creation."
     if p_real >= 55.0 and p_ai < 35.0:
@@ -299,7 +299,7 @@ def _status_from_probabilities(p_ai: float, p_real: float) -> Tuple[str, str]:
     return _STATUS_UNDETERMINED, "Forensic evidence is balanced or out-of-distribution; explicit uncertainty maintained."
 
 
-def _taxonomy_from_fused(final_status: str, p_ai: float, p_real: float) -> Tuple[str, str, str]:
+def _taxonomy_from_fused(final_status: str, p_ai: float, p_real: float) -> tuple[str, str, str]:
     if final_status == _STATUS_UNDETERMINED and p_ai < 50.0:
         return ("UNDETERMINED", "Undetermined / Mixed Signals", "Forensic evidence is balanced or out-of-distribution.")
     if final_status in ("LIKELY_SYNTHETIC", "LIKELY AI-GENERATED") or p_ai >= 65.0:
@@ -317,7 +317,7 @@ def _taxonomy_from_fused(final_status: str, p_ai: float, p_real: float) -> Tuple
     return ("UNDETERMINED", "Undetermined / Mixed Signals", "Forensic evidence is balanced or out-of-distribution.")
 
 
-def _inventory_summary(inv: Dict[str, Any]) -> Dict[str, Any]:
+def _inventory_summary(inv: dict[str, Any]) -> dict[str, Any]:
     """Flattens the nested content inventory (image/video or audio shape) into the dossier's inventory block."""
     humans = inv.get("entities", {}).get("humans", {})
     animals = inv.get("entities", {}).get("animals", {})
@@ -353,7 +353,7 @@ def _inventory_summary(inv: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _what_it_represents(inv: Dict[str, Any]) -> str:
+def _what_it_represents(inv: dict[str, Any]) -> str:
     parts = []
     purpose = inv["photographic_purpose"]
     if purpose and purpose not in ("General Scene", "General Depiction", "General"):
@@ -367,7 +367,7 @@ def _what_it_represents(inv: Dict[str, Any]) -> str:
     return " • ".join(parts) if parts else (inv["depiction_summary"] or "Standard visual capture")
 
 
-def _provenance_summary(prov: Dict[str, Any], c2pa: Dict[str, Any]) -> Dict[str, Any]:
+def _provenance_summary(prov: dict[str, Any], c2pa: dict[str, Any]) -> dict[str, Any]:
     present = c2pa.get("c2pa_present", False)
     signature = "Marker present (unverified)" if c2pa.get("is_signed") else ("No signature marker" if present else "Absent")
     exif = prov.get("exif", {})
@@ -383,17 +383,17 @@ def _provenance_summary(prov: Dict[str, Any], c2pa: Dict[str, Any]) -> Dict[str,
 
 
 def generate_final_decision(
-    file_validation: Dict[str, Any],
-    quality_result: Dict[str, Any],
-    ai_result: Optional[Dict[str, Any]] = None,
-    audio_result: Optional[Dict[str, Any]] = None,
-    content_inventory: Optional[Dict[str, Any]] = None,
-    provenance_result: Optional[Dict[str, Any]] = None,
-    cross_modal_result: Optional[Dict[str, Any]] = None,
-    attribution_result: Optional[Dict[str, Any]] = None,
+    file_validation: dict[str, Any],
+    quality_result: dict[str, Any],
+    ai_result: dict[str, Any] | None = None,
+    audio_result: dict[str, Any] | None = None,
+    content_inventory: dict[str, Any] | None = None,
+    provenance_result: dict[str, Any] | None = None,
+    cross_modal_result: dict[str, Any] | None = None,
+    attribution_result: dict[str, Any] | None = None,
     *,
-    video_result: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    video_result: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """
     Generates a structured forensic dossier via multi-evidence log-odds fusion.
 
@@ -440,7 +440,7 @@ def generate_final_decision(
     p_ai, p_real, p_undecided = _fuse(ev.probs)
     final_status, reason = _status_from_probabilities(p_ai, p_real)
     decision_mode = _decision_mode(ai_result, audio_result, ev)
-    tax_reasons: List[str] = []
+    tax_reasons: list[str] = []
     if decision_mode == "image_authoritative":
         tax_state, tax_label, tax_desc = (ai_result.get(k) for k in ("taxonomy_state", "taxonomy_label", "taxonomy_description"))
         tax_reasons = list(ai_result.get("taxonomy_reasons", []))

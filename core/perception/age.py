@@ -25,8 +25,9 @@ from __future__ import annotations
 import logging
 import math
 import threading
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any
 
 import cv2
 import numpy as np
@@ -53,10 +54,10 @@ MINOR_LABELS = ("baby", "toddler", "child", "teenager")
 _CROP_PAD = 0.10
 AGE_BATCH = 16                  # people aged per forward pass
 
-Box = Tuple[int, int, int, int]  # x, y, w, h
+Box = tuple[int, int, int, int]  # x, y, w, h
 
 
-def _letterbox_normalise(crop_bgr: Optional[np.ndarray]) -> np.ndarray:
+def _letterbox_normalise(crop_bgr: np.ndarray | None) -> np.ndarray:
     """MiVOLO's own preprocessing: fit into a black-padded 384 x 384 square, BGR to RGB, ImageNet normalisation. A missing
     crop becomes the all-black image after normalisation, exactly as the reference code does. Returns CHW float32."""
     if crop_bgr is None or crop_bgr.size == 0:
@@ -82,11 +83,11 @@ def _crop(image: np.ndarray, box: Box, pad: float = _CROP_PAD) -> np.ndarray:
     return image[max(0, y - py): min(h, y + bh + py), max(0, x - px): min(w, x + bw + px)]
 
 
-def pair_faces_with_persons(faces: Sequence[Box], persons: Sequence[Box]) -> List[Tuple[Optional[int], Optional[int]]]:
+def pair_faces_with_persons(faces: Sequence[Box], persons: Sequence[Box]) -> list[tuple[int | None, int | None]]:
     """(face index, person index) for every subject. A face joins the smallest person box that contains its centre; a person
     takes at most one face (the largest). Faces without a person and persons without a face stay as one-sided subjects."""
-    taken: Dict[int, int] = {}
-    unmatched_faces: List[int] = []
+    taken: dict[int, int] = {}
+    unmatched_faces: list[int] = []
     for fi in sorted(range(len(faces)), key=lambda i: -(faces[i][2] * faces[i][3])):
         fx, fy, fw, fh = faces[fi]
         cx, cy = fx + fw / 2, fy + fh / 2
@@ -95,13 +96,13 @@ def pair_faces_with_persons(faces: Sequence[Box], persons: Sequence[Box]) -> Lis
             taken[min(owners, key=lambda i: persons[i][2] * persons[i][3])] = fi
         else:
             unmatched_faces.append(fi)
-    pairs: List[Tuple[Optional[int], Optional[int]]] = [(fi, pi) for pi, fi in taken.items()]
+    pairs: list[tuple[int | None, int | None]] = [(fi, pi) for pi, fi in taken.items()]
     pairs += [(fi, None) for fi in unmatched_faces]
     pairs += [(None, pi) for pi in range(len(persons)) if pi not in taken]
     return pairs
 
 
-def _as_bgr(image: Any) -> Optional[np.ndarray]:
+def _as_bgr(image: Any) -> np.ndarray | None:
     """``image`` as a 3-channel uint8 BGR array: grey (2-D or 1-channel) is expanded and an alpha channel dropped. None if it is neither."""
     if image is None or not isinstance(image, np.ndarray) or image.size == 0:
         return None
@@ -116,7 +117,7 @@ def _as_bgr(image: Any) -> Optional[np.ndarray]:
     return image if image.ndim == 3 and image.shape[2] == 3 else None
 
 
-def classify_minor(age: Optional[float], minor_group_share: Optional[float], usable: bool) -> str:
+def classify_minor(age: float | None, minor_group_share: float | None, usable: bool) -> str:
     """The recall-first decision rule (see module doc). ``usable`` is False when no crop was big enough to judge."""
     if age is not None and not math.isfinite(age):
         age = None                        # a failed estimate is no estimate: it must not count as adult
@@ -165,12 +166,12 @@ class AgeEstimator:
         """True once the model has loaded."""
         return self._ensure() is not None
 
-    def _ages(self, face_crops: Sequence[Optional[np.ndarray]], body_crops: Sequence[Optional[np.ndarray]]) -> List[float]:
+    def _ages(self, face_crops: Sequence[np.ndarray | None], body_crops: Sequence[np.ndarray | None]) -> list[float]:
         """Apparent age per (face, body) pair, in chunks of ``AGE_BATCH`` so a crowd photograph cannot exhaust memory (each pair is
         3.5 MB of input). The network is in eval mode, so a chunk's result does not depend on its neighbours."""
         import torch
 
-        ages: List[float] = []
+        ages: list[float] = []
         for start in range(0, len(face_crops), AGE_BATCH):
             pairs = zip(face_crops[start:start + AGE_BATCH], body_crops[start:start + AGE_BATCH], strict=True)
             batch = np.stack([np.concatenate([_letterbox_normalise(f), _letterbox_normalise(b)], axis=0) for f, b in pairs])
@@ -181,7 +182,7 @@ class AgeEstimator:
         return ages
 
     @staticmethod
-    def _age_group_shares(crops_bgr: Sequence[np.ndarray]) -> List[Optional[float]]:
+    def _age_group_shares(crops_bgr: Sequence[np.ndarray]) -> list[float | None]:
         """Share of child + teenager in the SigLIP 2 age-group opinion for each crop (None if SigLIP is unavailable)."""
         from core.perception.recognizer import get_recognizer
 
@@ -193,7 +194,7 @@ class AgeEstimator:
         return [round(sum(p for label, p in row if label in MINOR_LABELS), 3) if row else None for row in tops]
 
     @staticmethod
-    def _rotated_face(image_bgr: np.ndarray, person: Box) -> Optional[Dict[str, Any]]:
+    def _rotated_face(image_bgr: np.ndarray, person: Box) -> dict[str, Any] | None:
         """A sideways or upside-down face inside a person's box that the upright finder missed: the box is turned until the face
         is upright, and the turned box also becomes the body crop. None if no such face is found."""
         from core.perception.face_scan import ROTATIONS, get_screening_finder
@@ -216,8 +217,8 @@ class AgeEstimator:
         bx, by, bw, bh = best["box"]
         return {"rot": best["rot"], "face": face, "body": turned, "face_box": [bx + x0, by + y0, bw, bh]}
 
-    def assess(self, image_bgr: np.ndarray, faces: Optional[Sequence[Box]] = None, persons: Optional[Sequence[Box]] = None,
-               scan_rotated: bool = True, persons_available: Optional[bool] = None) -> Dict[str, Any]:
+    def assess(self, image_bgr: np.ndarray, faces: Sequence[Box] | None = None, persons: Sequence[Box] | None = None,
+               scan_rotated: bool = True, persons_available: bool | None = None) -> dict[str, Any]:
         """Age and minor screening for everyone in the image. ``faces`` / ``persons`` are (x, y, w, h) boxes in the pixels of
         ``image_bgr``; when omitted they are detected here (YuNet faces, RF-DETR persons). A person with no upright face is also
         searched for a sideways or upside-down one (``scan_rotated``); if one is found the person is aged both ways and the younger
@@ -226,7 +227,7 @@ class AgeEstimator:
         Never raises, and never reports "nobody" when it could not look: if the age model fails, or the person detector is missing
         and no face was found, the result is ``status: UNAVAILABLE`` with ``review_required: True``. Callers that pass ``persons``
         from their own detector say so with ``persons_available=False`` when that detector could not run."""
-        base: Dict[str, Any] = {"model": f"{MODEL_ID}@{MODEL_REVISION[:7]}", "subjects": [], "n_subjects": 0, "youngest_age": None,
+        base: dict[str, Any] = {"model": f"{MODEL_ID}@{MODEL_REVISION[:7]}", "subjects": [], "n_subjects": 0, "youngest_age": None,
                                 "contains_minor": False, "contains_possible_minor": False, "review_required": False}
         image_bgr = _as_bgr(image_bgr)
         if image_bgr is None:
@@ -268,14 +269,14 @@ class AgeEstimator:
                 "review_required": bool(flags & {"LIKELY_MINOR", "POSSIBLE_MINOR", "UNDETERMINED"}),
                 "person_detector_available": persons_available}
 
-    def _judge(self, image_bgr: np.ndarray, faces: List[Box], persons: List[Box],
-               pairs: List[Tuple[Optional[int], Optional[int]]], scan_rotated: bool) -> List[Dict[str, Any]]:
+    def _judge(self, image_bgr: np.ndarray, faces: list[Box], persons: list[Box],
+               pairs: list[tuple[int | None, int | None]], scan_rotated: bool) -> list[dict[str, Any]]:
         """One verdict per (face, person) pair. Every subject is judged from one or more (face crop, body crop) variants; the
         youngest age and the largest child share win."""
-        variants: List[Tuple[int, Optional[np.ndarray], Optional[np.ndarray]]] = []
-        evidence: List[str] = []
-        face_boxes: List[Optional[List[int]]] = []
-        rotation: List[int] = []
+        variants: list[tuple[int, np.ndarray | None, np.ndarray | None]] = []
+        evidence: list[str] = []
+        face_boxes: list[list[int] | None] = []
+        rotation: list[int] = []
         for i, (fi, pi) in enumerate(pairs):
             fc = _crop(image_bgr, faces[fi]) if fi is not None else None
             bc = _crop(image_bgr, persons[pi], pad=0.03) if pi is not None else None
@@ -294,8 +295,8 @@ class AgeEstimator:
                     variants.append((i, turned["face"], turned["body"]))
                     evidence[i], face_boxes[i], rotation[i] = "face+body (rotated face)", turned["face_box"], turned["rot"]
 
-        ages: Dict[int, float] = {}
-        shares: Dict[int, Optional[float]] = {}
+        ages: dict[int, float] = {}
+        shares: dict[int, float | None] = {}
         if variants:
             for (i, _f, _b), a in zip(variants, self._ages([v[1] for v in variants], [v[2] for v in variants]), strict=True):
                 ages[i] = min(a, ages.get(i, a))
@@ -321,7 +322,7 @@ class AgeEstimator:
         return subjects
 
 
-_default: Optional[AgeEstimator] = None
+_default: AgeEstimator | None = None
 _default_lock = threading.Lock()
 
 

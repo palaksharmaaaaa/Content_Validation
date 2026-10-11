@@ -7,11 +7,10 @@ pixels, not labels).
 """
 from __future__ import annotations
 
-import logging
-
 import io
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+import logging
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import numpy as np
 from PIL import Image
@@ -49,7 +48,7 @@ _BRANDS = {
 }
 
 
-def _brand_of(text: str) -> Optional[str]:
+def _brand_of(text: str) -> str | None:
     low = (text or "").lower()
     for brand, tokens in _BRANDS.items():
         if any(t in low for t in tokens):
@@ -57,7 +56,7 @@ def _brand_of(text: str) -> Optional[str]:
     return None
 
 
-def _read_exif(path) -> Dict[str, Dict[int, Any]]:
+def _read_exif(path) -> dict[str, dict[int, Any]]:
     try:
         with Image.open(path) as im:
             ex = im.getexif()
@@ -109,7 +108,7 @@ def check_exif_consistency(ctx: CheckContext) -> Finding:
               "EXIF is partial; coherent as far as present, no inference drawn.", data)
 
 
-def _parse_dt(v: Any) -> Optional[datetime]:
+def _parse_dt(v: Any) -> datetime | None:
     try:
         return datetime.strptime(_s(v)[:19], "%Y:%m:%d %H:%M:%S")
     except Exception as exc:
@@ -131,13 +130,13 @@ def check_timestamp_sanity(ctx: CheckContext) -> Finding:
     if not any((orig, digi, mod, gps_date)):
         return _f("timestamp_sanity", "Timestamp plausibility", FindingStatus.NOT_APPLICABLE, Severity.NONE,
                   "No EXIF timestamps present.")
-    paradoxes: List[str] = []
+    paradoxes: list[str] = []
     slack = timedelta(seconds=60)
     if orig and digi and digi < orig - slack:
         paradoxes.append("DateTimeDigitized precedes DateTimeOriginal")
     if orig and mod and mod < orig - slack:
         paradoxes.append("ModifyDate precedes DateTimeOriginal")
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = datetime.now(UTC).replace(tzinfo=None)
     for name, v in (("DateTimeOriginal", orig), ("DateTimeDigitized", digi), ("ModifyDate", mod)):
         if v and v > now + timedelta(days=1):
             paradoxes.append(f"{name} is in the future")
@@ -152,7 +151,7 @@ def check_timestamp_sanity(ctx: CheckContext) -> Finding:
 
 
 def _gray_grid(im: Image.Image) -> np.ndarray:
-    return np.asarray(im.convert("L").resize((32, 24), Image.LANCZOS), dtype=np.float32)
+    return np.asarray(im.convert("L").resize((32, 24), Image.Resampling.LANCZOS), dtype=np.float32)
 
 
 @registry.register("image", "thumbnail_match")

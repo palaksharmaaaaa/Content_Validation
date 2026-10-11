@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from core.decision import generate_final_decision
 from image_detector.attribution import ImageModelAttributionEngine
@@ -34,9 +34,9 @@ logger = logging.getLogger("image_detector.pipeline")
 
 
 def _quantified_inventory(
-    ai_res: Dict[str, Any], content_res: Dict[str, Any], profile_res: Dict[str, Any],
+    ai_res: dict[str, Any], content_res: dict[str, Any], profile_res: dict[str, Any],
     ai_percentage: float, real_percentage: float, undecided_percentage: float,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Quantified inventory summary (percentages, counts, pixel-physics metrics)."""
     return {
         "authenticity_probabilities": {
@@ -76,9 +76,9 @@ def _quantified_inventory(
 
 
 def _evidence_trail(
-    provenance_res: Dict[str, Any], ai_res: Dict[str, Any], attribution_res: Dict[str, Any], dimension_report: Dict[str, Any]
-) -> List[str]:
-    evidence_trail: List[str] = []
+    provenance_res: dict[str, Any], ai_res: dict[str, Any], attribution_res: dict[str, Any], dimension_report: dict[str, Any]
+) -> list[str]:
+    evidence_trail: list[str] = []
     if provenance_res.get("c2pa_present"):
         evidence_trail.append("C2PA Content Credentials markers found in file (presence only; not cryptographically verified).")
     if provenance_res.get("has_camera_hardware"):
@@ -100,20 +100,20 @@ class ImageRun:
     """Every intermediate of one image analysis; consumed by the headless report and by the Streamlit adapter."""
 
     path: Path
-    gates: Dict[str, Any]
-    profile: Dict[str, Any]
-    provenance: Dict[str, Any]
-    quality: Dict[str, Any]
-    ai_result: Dict[str, Any]
-    content: Dict[str, Any]
-    attribution: Dict[str, Any]
-    dimension_report: Dict[str, Any]
-    decision: Dict[str, Any]
-    nine_dimensions: Dict[str, Any]
+    gates: dict[str, Any]
+    profile: dict[str, Any]
+    provenance: dict[str, Any]
+    quality: dict[str, Any]
+    ai_result: dict[str, Any]
+    content: dict[str, Any]
+    attribution: dict[str, Any]
+    dimension_report: dict[str, Any]
+    decision: dict[str, Any]
+    nine_dimensions: dict[str, Any]
     newbie_explanation: str
 
 
-def _flat_quality(validation: Any) -> Dict[str, Any]:
+def _flat_quality(validation: Any) -> dict[str, Any]:
     """Validator result as one flat dict (the nested ``quality`` block is merged up, as the decision layer expects)."""
     flat = validation.to_dict()
     if isinstance(flat.get("quality"), dict):
@@ -125,7 +125,7 @@ FACE_LED_WEIGHT = 0.65     # share of the AI score taken from the face classifie
 FACE_LED_MIN_P = 0.95      # ... and only when it is this sure
 
 
-def _face_led_verdict(ai_result: Dict[str, Any], face_p_ai: float) -> None:
+def _face_led_verdict(ai_result: dict[str, Any], face_p_ai: float) -> None:
     """Portrait-style images: the face classifier (trained on exactly that kind of image) leads the verdict.
     The AI score becomes a weighted blend of the pixel detector and the face score, and the category follows the score.
     One-directional: a face that looks real never raises confidence, because an unseen generator would also look real."""
@@ -151,12 +151,12 @@ class ImageForensicPipeline:
 
     def __init__(
         self,
-        detector: Optional[ImageAIDetector] = None,
-        validator: Optional[ImageValidator] = None,
-        profiler: Optional[ImageProfiler] = None,
-        provenance_validator: Optional[ImageProvenanceValidator] = None,
-        content_analyzer: Optional[ImageContentAnalyzer] = None,
-        attribution_engine: Optional[ImageModelAttributionEngine] = None,
+        detector: ImageAIDetector | None = None,
+        validator: ImageValidator | None = None,
+        profiler: ImageProfiler | None = None,
+        provenance_validator: ImageProvenanceValidator | None = None,
+        content_analyzer: ImageContentAnalyzer | None = None,
+        attribution_engine: ImageModelAttributionEngine | None = None,
     ):
         self.detector = detector or ImageAIDetector()
         self.detector.load()
@@ -168,7 +168,7 @@ class ImageForensicPipeline:
 
     def extract_pre_analysis_details(
         self, image_path: str | Path, source: str = "User Upload"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Stage 1: Extracts each and every detail (dimensions, DPI, pixel-by-pixel information,
         EXIF details, colors, noise metrics) before running any AI predictions.
@@ -181,9 +181,9 @@ class ImageForensicPipeline:
         *,
         sensitivity: str = "balanced",
         source: str = "User Upload",
-        filename: Optional[str] = None,
-        gates: Optional[Dict[str, Any]] = None,
-        quality: Optional[Dict[str, Any]] = None,
+        filename: str | None = None,
+        gates: dict[str, Any] | None = None,
+        quality: dict[str, Any] | None = None,
     ) -> ImageRun:
         """The one analysis sequence. Callers handle gate/validation short-circuits before calling this."""
         path = Path(image_path)
@@ -236,7 +236,7 @@ class ImageForensicPipeline:
         image_path: str | Path,
         sensitivity: str = "balanced",
         source: str = "User Upload",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Runs the entire end-to-end linear image forensic analysis pipeline and returns the headless report."""
         path = Path(image_path)
         if not path.is_file():
@@ -258,7 +258,7 @@ class ImageForensicPipeline:
         return self._report(r, val_res.to_dict())
 
     @staticmethod
-    def _report(r: ImageRun, quality_validation: Dict[str, Any]) -> Dict[str, Any]:
+    def _report(r: ImageRun, quality_validation: dict[str, Any]) -> dict[str, Any]:
         ai_res, content_res, decision = r.ai_result, r.content, r.decision
         probs = decision["authenticity_probabilities"]
         category_identification = {
@@ -319,7 +319,7 @@ class ImageForensicPipeline:
         }
 
 
-def _terminal_report(status: str, reason: str, trail_line: str) -> Dict[str, Any]:
+def _terminal_report(status: str, reason: str, trail_line: str) -> dict[str, Any]:
     return {
         "content_valid": False,
         "final_status": status,

@@ -11,8 +11,8 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Dict, List, Tuple
 
 from core.calibration_report import evaluate
 from core.media_library import library_for
@@ -29,11 +29,11 @@ def _scorer(modality: str) -> Callable[[Path], float]:
     return lambda p: float(svc.video_detector.analyze_video(str(p))["ai_percentage"])
 
 
-def collect_pairs(modality: str, split: str, limit: int, scorer: Callable[[Path], float]) -> List[Tuple[str, float]]:
+def collect_pairs(modality: str, split: str, limit: int, scorer: Callable[[Path], float]) -> list[tuple[str, float]]:
     """Score the library's files and return (true label, AI percentage) pairs; unreadable files are skipped with a message."""
     lib = library_for(modality)
     samples = lib.samples(split=None if split == "all" else split)
-    pairs: List[Tuple[str, float]] = []
+    pairs: list[tuple[str, float]] = []
     for _sha, path, label in samples[: limit or None]:
         try:
             pairs.append((label, scorer(path)))
@@ -42,7 +42,7 @@ def collect_pairs(modality: str, split: str, limit: int, scorer: Callable[[Path]
     return pairs
 
 
-def main(argv=None) -> Dict:
+def main(argv=None) -> dict:
     """Entry point: ``python -m services.calibration_cli --modality image|audio|video``."""
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
     ap.add_argument("--modality", choices=("image", "audio", "video"), required=True)

@@ -8,8 +8,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from core.decision import generate_final_decision, normalize_percentages
 from audio_detector.explain import build_audio_nine_dimensions_dossier, generate_audio_newbie_explanation
+from core.decision import generate_final_decision, normalize_percentages
 from video_detector.explain import build_video_nine_dimensions_dossier, generate_video_newbie_explanation
 from video_detector.learner import VideoSelfImprover
 
@@ -138,10 +138,11 @@ class TestVideoLearnerAtomic(unittest.TestCase):
             self.assertEqual(loaded[-1]["user_label"], "AI")
 
 
-from audio_detector.validator import AudioValidator
-from video_detector.face import VideoFaceDeepfakeDetector
-from services.forensic_service import ForensicService
 import numpy as np
+
+from audio_detector.validator import AudioValidator
+from services.forensic_service import ForensicService
+from video_detector.face import VideoFaceDeepfakeDetector
 
 
 class TestForensicServiceFacade(unittest.TestCase):

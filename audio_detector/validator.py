@@ -9,16 +9,13 @@ Completely self-contained with zero outside dependencies.
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 import subprocess
 import tempfile
-from typing import Optional, Tuple
 import wave
+from pathlib import Path
 
 import numpy as np
 
-from core.ffmpeg import ffmpeg_input, pcm_to_float
-from core.hashing import file_sha256
 from audio_detector.config import (
     MAX_DURATION_SECONDS,
     MAX_FILE_SIZE_MB,
@@ -26,6 +23,8 @@ from audio_detector.config import (
     TARGET_SAMPLE_RATE,
 )
 from audio_detector.schemas import AudioValidationResult
+from core.ffmpeg import ffmpeg_input, pcm_to_float
+from core.hashing import file_sha256
 
 logger = logging.getLogger("audio_detector.validator")
 
@@ -144,10 +143,10 @@ class AudioValidator:
         )
 
 
-    def _ffmpeg_decode(self, path: Path, tmp_wav_path: str, downmix: list) -> Optional[Tuple[np.ndarray, int]]:
+    def _ffmpeg_decode(self, path: Path, tmp_wav_path: str, downmix: list) -> tuple[np.ndarray, int] | None:
         """Decode ``path`` to 16 kHz mono PCM with the given channel option; None if ffmpeg fails or writes nothing."""
         cmd = ffmpeg_input(path, max_seconds=self.max_duration_sec + 1.0) + ["-y", *downmix, "-ar", str(self.target_sr), "-vn", "-f", "wav", tmp_wav_path]
-        res = subprocess.run(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=120)
+        res = subprocess.run(cmd, stdin=subprocess.DEVNULL, capture_output=True, timeout=120)
         if res.returncode != 0 or not Path(tmp_wav_path).is_file() or Path(tmp_wav_path).stat().st_size <= 44:
             return None
         with wave.open(tmp_wav_path, "rb") as wf:
@@ -156,7 +155,7 @@ class AudioValidator:
 
     def extract_pcm_samples(
         self, audio_path: str | Path
-    ) -> Tuple[Optional[np.ndarray], int, float]:
+    ) -> tuple[np.ndarray | None, int, float]:
         """
         Transcodes any audio format to 16kHz mono float32 PCM samples in [-1.0, 1.0].
         Safe with timeout and native wave fallback.
@@ -165,7 +164,7 @@ class AudioValidator:
         if not path.is_file():
             return None, self.target_sr, 0.0
 
-        tmp_wav_path: Optional[str] = None
+        tmp_wav_path: str | None = None
         try:
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_f:
                 tmp_wav_path = tmp_f.name

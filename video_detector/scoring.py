@@ -8,12 +8,10 @@ Contains:
 """
 from __future__ import annotations
 
-from typing import Dict, Optional, Tuple
-
 import numpy as np
 
 from core.decision import normalize_percentages  # noqa: F401  (re-exported: other modules import it from here)
-from core.shared_results import three_way_label, binary_entropy
+from core.shared_results import binary_entropy, three_way_label
 from video_detector.config import (
     AI_THRESHOLD_BALANCED,
     AI_THRESHOLD_HIGH,
@@ -31,12 +29,12 @@ def calculate_video_epistemic_uncertainty(prob_ai: float) -> float:
 
 def pool_video_temporal_score(
     mean_frame_ai: float,
-    warping_risk: Optional[str],
-    has_flicker: Optional[bool],
-    temporal_weights: Optional[Dict[str, float]] = None,
+    warping_risk: str | None,
+    has_flicker: bool | None,
+    temporal_weights: dict[str, float] | None = None,
     sensitivity_offset: float = 0.0,
-    neural_prob: Optional[float] = None,
-) -> Tuple[float, float]:
+    neural_prob: float | None = None,
+) -> tuple[float, float]:
     """
     Pools frame-level spatial synthesis scores with macro temporal motion variance,
     diffusion flicker cues, and neural transition discriminator probabilities.

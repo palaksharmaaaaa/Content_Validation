@@ -1,5 +1,6 @@
 import shutil
 import wave
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -9,7 +10,7 @@ from core.ffmpeg import ffmpeg_input, ffprobe_input, pcm_to_float
 
 def test_every_call_is_hardened():
     cmd = ffmpeg_input("x.mp3", max_seconds=5)
-    assert cmd[:2] == ["ffmpeg", "-nostdin"] and ["-protocol_whitelist", "file,pipe"] == cmd[cmd.index("-protocol_whitelist"):][:2]
+    assert Path(cmd[0]).stem.lower() == "ffmpeg" and cmd[1] == "-nostdin" and ["-protocol_whitelist", "file,pipe"] == cmd[cmd.index("-protocol_whitelist"):][:2]
     assert cmd[-2:] == ["-i", "x.mp3"] and "-t" in cmd
     assert "-t" not in ffmpeg_input("x.mp3")
     assert "-protocol_whitelist" in ffprobe_input("x.mp3")
@@ -90,3 +91,16 @@ def test_a_playlist_named_like_a_video_is_never_given_to_opencv(tmp_path):
         real.write_bytes(head + b"\x00" * 32)
         assert looks_like_video_container(real) is True, head
     assert looks_like_video_container(tmp_path / "missing.mp4") is False
+
+
+def test_a_binary_in_the_current_folder_is_never_picked_up(tmp_path, monkeypatch):
+    """On Windows a bare command is searched in the current folder first; find_binary must not do that."""
+    import os
+
+    from core.ffmpeg import find_binary
+
+    for name in ("ffmpeg.exe", "ffmpeg", "ffmpeg.bat"):
+        (tmp_path / name).write_text("echo planted")
+    monkeypatch.chdir(tmp_path)
+    found = find_binary("ffmpeg")
+    assert found is None or Path(found).resolve().parent != tmp_path.resolve()

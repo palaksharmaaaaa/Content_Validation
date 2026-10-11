@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import logging
 import os
+from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, Optional, Union
+from typing import Any
 
 import numpy as np
 
@@ -22,17 +23,17 @@ THRESHOLD_PERCENTILE = 99.0
 class OODGate:
     """Mahalanobis out-of-distribution gate. Reports ``NOT_CALIBRATED`` until fitted on enough embeddings; never invents a threshold."""
     def __init__(self) -> None:
-        self.mean: Optional[np.ndarray] = None
-        self.inv_cov: Optional[np.ndarray] = None
-        self.threshold: Optional[float] = None
-        self.n_samples: Optional[int] = None          # how many reference files the gate was fitted on
+        self.mean: np.ndarray | None = None
+        self.inv_cov: np.ndarray | None = None
+        self.threshold: float | None = None
+        self.n_samples: int | None = None          # how many reference files the gate was fitted on
 
     @property
     def calibrated(self) -> bool:
         """True once a mean, covariance and threshold exist."""
         return self.mean is not None and self.inv_cov is not None and self.threshold is not None
 
-    def fit(self, embeddings: np.ndarray) -> "OODGate":
+    def fit(self, embeddings: np.ndarray) -> OODGate:
         """Fit on an (n, d) embedding matrix; too few samples leaves the gate uncalibrated."""
         x = np.asarray(embeddings, dtype=np.float64)
         if x.ndim == 2:
@@ -53,7 +54,7 @@ class OODGate:
         self.threshold = float(np.percentile(d, THRESHOLD_PERCENTILE))
         return self
 
-    def score(self, vector: np.ndarray) -> Dict[str, Any]:
+    def score(self, vector: np.ndarray) -> dict[str, Any]:
         """Distance of one vector from the fitted distribution and its IN/OUT-of-distribution status."""
         if not self.calibrated:
             return {"status": "NOT_CALIBRATED", "distance": None, "threshold": None}
@@ -67,7 +68,7 @@ class OODGate:
         status = "OUT_OF_DISTRIBUTION" if dist > self.threshold else "IN_DISTRIBUTION"
         return {"status": status, "distance": dist, "threshold": self.threshold}
 
-    def save(self, path: Union[str, Path]) -> None:
+    def save(self, path: str | Path) -> None:
         """Write the fitted statistics to a compressed ``.npz``."""
         if not self.calibrated:
             raise ValueError("Cannot save an uncalibrated OODGate")
@@ -80,7 +81,7 @@ class OODGate:
         os.replace(partial, p)
 
     @classmethod
-    def load(cls, path: Union[str, Path]) -> "OODGate":
+    def load(cls, path: str | Path) -> OODGate:
         """Load statistics saved by ``save``; returns an uncalibrated gate if the file is missing."""
         gate = cls()
         p = Path(path)
@@ -99,11 +100,11 @@ class OODGate:
 
 def fit_gate_from_files(
     paths: Iterable[Path],
-    out_path: Union[str, Path],
+    out_path: str | Path,
     vectorizer: Callable[[Path], np.ndarray],
     max_samples: int,
     noun: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Vectorise up to ``max_samples`` files (one that cannot be read is skipped), fit an ``OODGate`` and save it.
 
     ``noun`` names what is counted in the "need at least N" message (images, files, videos).

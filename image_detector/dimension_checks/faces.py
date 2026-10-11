@@ -9,11 +9,11 @@ classifier trained by ``image_detector.face_training``; both are reported honest
 from __future__ import annotations
 
 import cv2
-from core.imageio import imread
 
 from core.face_detection import get_face_finder
 from core.forensics.registry import CheckContext, registry
 from core.forensics.schemas import EvidenceClass, Finding, FindingStatus, Severity
+from core.imageio import imread
 from image_detector.face_authenticity import MIN_FACE_PIXELS, get_face_authenticity
 
 AI_LIKE_LLR = 0.40    # base-10 log-likelihood ratio added toward AI (the whole hybrid-scoring budget)

@@ -7,12 +7,12 @@ a field the dossier does not produce can then never be silently missing, and a d
 """
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 import streamlit as st
-from ui.text import code_safe, md_escape, neutralise_links
 
 from image_detector.explain import build_nine_dimensions_dossier
+from ui.text import code_safe, neutralise_links
 
 _KEYS = tuple(f"dimension_{i}" for i in range(1, 10))
 _SKIP = {"title", "description", "dimension_id", "diagnosis"}
@@ -48,7 +48,7 @@ def _fmt(value: Any) -> str:
     return code_safe(value)
 
 
-def _assessment(d: Dict[str, Any]) -> Optional[str]:
+def _assessment(d: dict[str, Any]) -> str | None:
     """``"warn"`` when a flag in the dimension is suspicious, ``"ok"`` when every flag present is unremarkable, ``None`` when it
     holds no flag or the measurement is missing."""
     states = []
@@ -64,7 +64,7 @@ def _assessment(d: Dict[str, Any]) -> Optional[str]:
     return "warn" if any(states) else "ok"
 
 
-def _render_dimension(d: Dict[str, Any], number: int) -> None:
+def _render_dimension(d: dict[str, Any], number: int) -> None:
     st.markdown(f"#### {d.get('title') or f'Dimension {number}'}")
     if d.get("description"):
         st.caption(neutralise_links(d["description"]))
@@ -83,14 +83,14 @@ def _render_dimension(d: Dict[str, Any], number: int) -> None:
         st.info(neutralise_links(diagnosis))
 
 
-def _tab_label(d: Dict[str, Any], number: int) -> str:
+def _tab_label(d: dict[str, Any], number: int) -> str:
     title = str(d.get("title") or "")
     name = title.split(":", 1)[1].strip() if ":" in title else title
     name = name.split("&")[0].split("(")[0].strip()
     return f"{number}. {name[:24]}" if name else f"{number}"
 
 
-def render_nine_dimensions_breakdown(nine_dims: Dict[str, Any], expanded: bool = True) -> None:
+def render_nine_dimensions_breakdown(nine_dims: dict[str, Any], expanded: bool = True) -> None:
     """Render the dossier's nine dimensions as tabs."""
     if not nine_dims:
         return
@@ -106,7 +106,7 @@ def render_nine_dimensions_breakdown(nine_dims: Dict[str, Any], expanded: bool =
                 _render_dimension(d, i)
 
 
-def image_nine_dimensions(item: Dict[str, Any], profile_data: Dict[str, Any], ai_result: Dict[str, Any], content_res: Dict[str, Any]) -> Any:
+def image_nine_dimensions(item: dict[str, Any], profile_data: dict[str, Any], ai_result: dict[str, Any], content_res: dict[str, Any]) -> Any:
     """The item's precomputed nine-dimension dossier, or one built on demand from its parts."""
     nine_dims = item.get("nine_dimensions_dossier")
     if not nine_dims and profile_data and ai_result:

@@ -5,13 +5,14 @@ The texture score (waxy skin, missing sensor noise) is a heuristic cue, not a tr
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any
+
 import cv2
 import numpy as np
 
 from core.face_detection import get_face_finder
-from core.perception.face_texture import risk_label, texture_cues
 from core.perception.face_attributes import get_face_attributes, group_same_person
+from core.perception.face_texture import risk_label, texture_cues
 
 logger = logging.getLogger("image_detector.face")
 
@@ -25,11 +26,11 @@ class FaceDeepfakeDetector:
     def __init__(self):
         pass
 
-    def detect_faces(self, image_bgr: np.ndarray) -> List[Tuple[int, int, int, int, float]]:
+    def detect_faces(self, image_bgr: np.ndarray) -> list[tuple[int, int, int, int, float]]:
         """Faces found by the YuNet detector, as (x, y, w, h, confidence)."""
         return get_face_finder().find(image_bgr)
 
-    def analyze_faces(self, image_bgr: np.ndarray) -> Dict[str, Any]:
+    def analyze_faces(self, image_bgr: np.ndarray) -> dict[str, Any]:
         """
         Localizes faces and evaluates synthetic skin smoothing, bilateral texture anomalies,
         and deepfake-associated cues.
@@ -60,7 +61,7 @@ class FaceDeepfakeDetector:
 
         attributes = get_face_attributes()
         embeddings = []
-        for (x, y, w, h, area), found in zip(faces, detailed):
+        for (x, y, w, h, _area), found in zip(faces, detailed):
             face_roi_gray = gray[y : y + h, x : x + w]
             if face_roi_gray.size == 0:
                 continue

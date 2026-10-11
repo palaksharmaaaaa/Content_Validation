@@ -15,12 +15,11 @@ from __future__ import annotations
 import logging
 import threading
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import torch
 
-from core.shared_results import shift_probability_by_log_odds
 from audio_detector.config import DEFAULT_AUDIO_CHECKPOINT
 from audio_detector.features import (
     compute_spectral_features,
@@ -38,6 +37,7 @@ from audio_detector.scoring import (
     pool_acoustic_evidence,
 )
 from audio_detector.validator import AudioValidator
+from core.shared_results import shift_probability_by_log_odds
 
 logger = logging.getLogger("audio_detector")
 
@@ -55,7 +55,7 @@ def _is_8bit_pcm(path: Path) -> bool:
         return False
 
 
-def _covered_seconds(segments: List[Dict[str, Any]], label: str) -> float:
+def _covered_seconds(segments: list[dict[str, Any]], label: str) -> float:
     """Seconds of the timeline covered by segments with ``label``. The analysis windows overlap by half, so their lengths are merged, not added."""
     spans = sorted((float(s["start_seconds"]), float(s["end_seconds"])) for s in segments if s.get("label") == label)
     total, current_end = 0.0, None
@@ -77,14 +77,14 @@ class AudioAIDetector:
 
     def __init__(
         self,
-        checkpoint_path: Optional[Path | str] = None,
-        self_improver: Optional[AudioSelfImprover] = None,
+        checkpoint_path: Path | str | None = None,
+        self_improver: AudioSelfImprover | None = None,
     ):
         self.checkpoint_path = Path(checkpoint_path) if checkpoint_path else DEFAULT_AUDIO_CHECKPOINT
         self.self_improver = self_improver or AudioSelfImprover()
         self.validator = AudioValidator()
-        self.model: Optional[AudioClassifierNet] = None
-        self.device: Optional[torch.device] = None
+        self.model: AudioClassifierNet | None = None
+        self.device: torch.device | None = None
         self._is_loaded = False
         self._load_lock = threading.RLock()
 
@@ -109,7 +109,7 @@ class AudioAIDetector:
         self._is_loaded = True
         return True
 
-    def _neural_probability(self, spectral_feats: Dict[str, Any]) -> Optional[float]:
+    def _neural_probability(self, spectral_feats: dict[str, Any]) -> float | None:
         """P(AI) from the optional neural head over five spectral features (None if unavailable or failing)."""
         if self.model is None or self.device is None:
             return None
@@ -123,8 +123,8 @@ class AudioAIDetector:
             return None
 
     @staticmethod
-    def _forensic_cues(spectral_feats: Dict[str, Any], thresh: Dict[str, Any]) -> List[str]:
-        cues: List[str] = []
+    def _forensic_cues(spectral_feats: dict[str, Any], thresh: dict[str, Any]) -> list[str]:
+        cues: list[str] = []
         if spectral_feats.get("has_vocoder_cutoff"):
             cues.append(
                 f"Sharp brick-wall frequency cutoff at {spectral_feats['cutoff_freq_hz']} Hz, well below the recording's Nyquist limit (neural vocoders do this; so do some codecs and band-limited sources)"
@@ -136,7 +136,7 @@ class AudioAIDetector:
         return cues
 
     @staticmethod
-    def _failure_result(path: Path, label: str, cue: str, status: str, error: str) -> Dict[str, Any]:
+    def _failure_result(path: Path, label: str, cue: str, status: str, error: str) -> dict[str, Any]:
         """Result dict for unreadable / empty audio and for unexpected errors (same shape as a normal result)."""
         res = AudioForensicResult(
             valid=False, filename=path.name, label=label, prediction=label, forensic_cues=[cue], error=error,
@@ -151,10 +151,10 @@ class AudioAIDetector:
 
     @staticmethod
     def _success_result(
-        path: Path, sr: int, duration: float, spectral_feats: Dict[str, Any], temporal_segments: List[Dict[str, Any]],
-        cues: List[str], spectrogram_img: Any, *, p_ai: float, p_real: float,
-        percentages: Tuple[float, float, float], label: str,
-    ) -> Dict[str, Any]:
+        path: Path, sr: int, duration: float, spectral_feats: dict[str, Any], temporal_segments: list[dict[str, Any]],
+        cues: list[str], spectrogram_img: Any, *, p_ai: float, p_real: float,
+        percentages: tuple[float, float, float], label: str,
+    ) -> dict[str, Any]:
         """The full result dict for an analysed track (typed result plus the legacy flat keys consumers read)."""
         ai_pct, real_pct, undecided_pct = percentages
         ai_duration_sec = _covered_seconds(temporal_segments, "LIKELY AI-GENERATED")
@@ -197,10 +197,10 @@ class AudioAIDetector:
         self,
         file_path: str | Path,
         sensitivity: str = "balanced",
-        pre_extracted: Optional[Tuple[Optional[np.ndarray], int, float]] = None,
+        pre_extracted: tuple[np.ndarray | None, int, float] | None = None,
         generate_spectrogram: bool = False,
-        extra_log_lrs: Optional[Dict[str, float]] = None,
-    ) -> Dict[str, Any]:
+        extra_log_lrs: dict[str, float] | None = None,
+    ) -> dict[str, Any]:
         """
         Runs comprehensive acoustic AI voice clone and speech synthesis detection.
         ``extra_log_lrs``: optional capped base-10 log-odds terms from the dimension checks

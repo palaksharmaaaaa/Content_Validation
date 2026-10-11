@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ def _range_for(path: str):
 def _clean(loaded: Any, default: Any, path: str) -> Any:
     if isinstance(default, dict):
         source = loaded if isinstance(loaded, dict) else {}
-        out: Dict[str, Any] = {}
+        out: dict[str, Any] = {}
         for key, dv in default.items():
             out[key] = _clean(source.get(key), dv, f"{path}.{key}")
         for key, value in source.items():                                # extra keys survive only if they are plain finite values
@@ -42,10 +42,24 @@ def _clean(loaded: Any, default: Any, path: str) -> Any:
     return loaded
 
 
-def sanitize_calibration(loaded: Any, default: Dict[str, Any]) -> Dict[str, Any]:
+def sanitize_calibration(loaded: Any, default: dict[str, Any]) -> dict[str, Any]:
     """``loaded`` with every missing, non-numeric, non-finite or out-of-range value replaced by its default, section by section."""
     cleaned = _clean(loaded, default, "")
     samples = cleaned.get("samples_processed")
     if not isinstance(samples, int) or isinstance(samples, bool) or samples < 0:
         cleaned["samples_processed"] = 0
     return cleaned
+
+
+DAMPING_SAMPLES = 10     # after this many recorded corrections a new one moves the thresholds a quarter as far as the first did
+
+
+def damped(step: float, corrections_so_far: int) -> float:
+    """``step`` scaled down as corrections accumulate: step / (1 + n / DAMPING_SAMPLES) ** 2.
+
+    The first corrections move the thresholds by about the full step, so a few reviews make a visible difference. The steps shrink fast
+    enough that their sum converges (to step * DAMPING_SAMPLES): however many files are submitted, the total movement from one kind of
+    correction cannot exceed that bound, so volume alone can never push a threshold to its clamp. The clamps in each learner stay as a
+    second, hard stop.
+    """
+    return step / (1.0 + max(0, corrections_so_far) / DAMPING_SAMPLES) ** 2

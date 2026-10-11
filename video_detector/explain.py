@@ -6,7 +6,7 @@ into clear, engaging narrative explanations for beginners and comprehensive audi
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional, NamedTuple
+from typing import Any, NamedTuple
 
 from video_detector.config import NOISE_AI_THRESHOLD, NOISE_BASELINE
 
@@ -35,7 +35,7 @@ class _VideoDossierContext(NamedTuple):
     total_frames: Any
 
 
-def _video_dimension_1(c: _VideoDossierContext) -> Dict[str, Any]:
+def _video_dimension_1(c: _VideoDossierContext) -> dict[str, Any]:
     """1. Acquisition Hardware & Provenance Identity"""
     has_c2pa = c.prov.get("c2pa_present", False)
     atoms = c.prov.get("container_atoms", [])
@@ -51,7 +51,7 @@ def _video_dimension_1(c: _VideoDossierContext) -> Dict[str, Any]:
     return d1
 
 
-def _video_dimension_2(c: _VideoDossierContext) -> Dict[str, Any]:
+def _video_dimension_2(c: _VideoDossierContext) -> dict[str, Any]:
     """2. Photometric & Temporal Geometry"""
     d2 = {
         "dimension_id": 2,
@@ -66,7 +66,7 @@ def _video_dimension_2(c: _VideoDossierContext) -> Dict[str, Any]:
     return d2
 
 
-def _video_dimension_3(c: _VideoDossierContext) -> Dict[str, Any]:
+def _video_dimension_3(c: _VideoDossierContext) -> dict[str, Any]:
     """3. Sensor Shot Noise & Micro-Grain Consistency"""
     noise_mean = c.vid_res.get("mean_frame_noise")
     d3 = {
@@ -90,7 +90,7 @@ def _video_dimension_3(c: _VideoDossierContext) -> Dict[str, Any]:
     return d3
 
 
-def _video_dimension_4(c: _VideoDossierContext) -> Dict[str, Any]:
+def _video_dimension_4(c: _VideoDossierContext) -> dict[str, Any]:
     """4. Inter-Frame Motion Vectors & Warping"""
     motion_var = c.temp.get("motion_variance")
     warping_risk = c.temp.get("temporal_warping_risk")
@@ -112,7 +112,7 @@ def _video_dimension_4(c: _VideoDossierContext) -> Dict[str, Any]:
     return d4
 
 
-def _video_dimension_5(c: _VideoDossierContext) -> Dict[str, Any]:
+def _video_dimension_5(c: _VideoDossierContext) -> dict[str, Any]:
     """5. Temporal Diffusion Flickering & Latent Drift"""
     flicker = c.vid_res.get("diffusion_flicker") or {}
     score = flicker.get("flicker_score") if flicker.get("frames_compared", 0) >= 3 else None
@@ -132,7 +132,7 @@ def _video_dimension_5(c: _VideoDossierContext) -> Dict[str, Any]:
     return d5
 
 
-def _video_dimension_6(c: _VideoDossierContext) -> Dict[str, Any]:
+def _video_dimension_6(c: _VideoDossierContext) -> dict[str, Any]:
     """6. Visual Genre & Semantic Subject-Matter Catalog"""
     d6 = {
         "dimension_id": 6,
@@ -147,7 +147,7 @@ def _video_dimension_6(c: _VideoDossierContext) -> Dict[str, Any]:
     return d6
 
 
-def _video_dimension_7(c: _VideoDossierContext) -> Dict[str, Any]:
+def _video_dimension_7(c: _VideoDossierContext) -> dict[str, Any]:
     """7. Video Synthesis Medium & Generative Model Archetype"""
     d7 = {
         "dimension_id": 7,
@@ -161,7 +161,7 @@ def _video_dimension_7(c: _VideoDossierContext) -> Dict[str, Any]:
     return d7
 
 
-def _video_dimension_8(c: _VideoDossierContext) -> Dict[str, Any]:
+def _video_dimension_8(c: _VideoDossierContext) -> dict[str, Any]:
     """8. Sensor Spectrum & Dynamic Range"""
     d8 = {
         "dimension_id": 8,
@@ -173,7 +173,7 @@ def _video_dimension_8(c: _VideoDossierContext) -> Dict[str, Any]:
     return d8
 
 
-def _video_dimension_9(c: _VideoDossierContext) -> Dict[str, Any]:
+def _video_dimension_9(c: _VideoDossierContext) -> dict[str, Any]:
     """9. Foundation Model Attribution & Watermarking"""
     d9 = {
         "dimension_id": 9,
@@ -188,13 +188,13 @@ def _video_dimension_9(c: _VideoDossierContext) -> Dict[str, Any]:
 
 
 def build_video_nine_dimensions_dossier(
-    profile_data: Dict[str, Any],
-    video_result: Dict[str, Any],
-    content_inventory: Optional[Dict[str, Any]] = None,
-    provenance_result: Optional[Dict[str, Any]] = None,
-    attribution_result: Optional[Dict[str, Any]] = None,
-    cross_modal_result: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Dict[str, Any]]:
+    profile_data: dict[str, Any],
+    video_result: dict[str, Any],
+    content_inventory: dict[str, Any] | None = None,
+    provenance_result: dict[str, Any] | None = None,
+    attribution_result: dict[str, Any] | None = None,
+    cross_modal_result: dict[str, Any] | None = None,
+) -> dict[str, dict[str, Any]]:
     """Constructs an exhaustive 9-dimensional forensic analysis dossier for video assets."""
     prof = profile_data or {}
     geom = prof.get("geometry", {})
@@ -231,10 +231,10 @@ def build_video_nine_dimensions_dossier(
 
 def generate_video_newbie_explanation(
     filename: str,
-    profile_data: Dict[str, Any],
-    content_inventory: Dict[str, Any],
-    video_result: Dict[str, Any],
-    decision: Dict[str, Any],
+    profile_data: dict[str, Any],
+    content_inventory: dict[str, Any],
+    video_result: dict[str, Any],
+    decision: dict[str, Any],
 ) -> str:
     """Generates an engaging, accessible narrative explanation of video forensics for non-technical users."""
     geom = profile_data.get("geometry", {})

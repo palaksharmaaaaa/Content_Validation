@@ -17,38 +17,38 @@ import logging
 import threading
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import cv2
-from core.imageio import imread
 import numpy as np
-from PIL import Image
 import torch
+from PIL import Image
 from torchvision import transforms
 
 from core.frame_scorer import score_frame
+from core.imageio import imread
 from image_detector.config import (
-    LOSSY_JPEG_BELOW_QUALITY,
-    MIN_FFT_SCORING_SIDE,
     AI_NOISE_MU,
     AI_NOISE_SIGMA,
     AI_SMOOTH_MU,
     AI_SMOOTH_SIGMA,
     CANONICAL_RESOLUTIONS,
-    DEFAULT_FEATURE_WEIGHTS,
     DEFAULT_CHECKPOINT,
-    EXIF_CONTRADICTION_LR,
-    SMALL_IMAGE_MAX_SIDE,
+    DEFAULT_FEATURE_WEIGHTS,
     DIGITAL_ART_LR_SCALE,
+    EXIF_CONTRADICTION_LR,
     EXIF_TRUSTED_CREDIT,
     EXIF_UNTRUSTED_CREDIT,
     FFT_DECAY_ALPHA_JPEG,
     FFT_DECAY_ALPHA_OPTICAL,
     IMAGE_SIZE,
+    LOSSY_JPEG_BELOW_QUALITY,
+    MIN_FFT_SCORING_SIDE,
     REAL_NOISE_MU,
     REAL_NOISE_SIGMA,
     REAL_SMOOTH_MU,
     REAL_SMOOTH_SIGMA,
+    SMALL_IMAGE_MAX_SIDE,
 )
 from image_detector.features import (
     analyze_fft_radial_power_spectrum,
@@ -66,9 +66,9 @@ from image_detector.features import (
     extract_image_metadata,
     generate_spatial_manipulation_heatmap,
 )
+from image_detector.jpeg import jpeg_compression
 from image_detector.learner import ImageSelfImprover
 from image_detector.models.backbone import build_image_classifier
-from image_detector.jpeg import jpeg_compression
 from image_detector.schemas import ImageForensicResult, ImageTaxonomyState
 from image_detector.scoring import (
     calculate_image_epistemic_uncertainty,
@@ -107,19 +107,19 @@ class _Signals:
 
     img_bgr: np.ndarray
     path: Path
-    meta: Dict[str, Any]
+    meta: dict[str, Any]
     noise_mean: float
     smoothness: float
-    fft: Dict[str, Any]
-    watermark: Dict[str, Any]
-    cutout: Dict[str, Any]
-    scanned: Dict[str, Any]
-    art: Dict[str, Any]
-    screenshot: Dict[str, Any]
-    inpainting: Dict[str, Any]
-    screen_recapture: Dict[str, Any]
-    spectral: Dict[str, Any]
-    heatmap: Dict[str, Any]
+    fft: dict[str, Any]
+    watermark: dict[str, Any]
+    cutout: dict[str, Any]
+    scanned: dict[str, Any]
+    art: dict[str, Any]
+    screenshot: dict[str, Any]
+    inpainting: dict[str, Any]
+    screen_recapture: dict[str, Any]
+    spectral: dict[str, Any]
+    heatmap: dict[str, Any]
     lossy_jpeg: bool = False         # a JPEG compressed hard enough that fine grain is gone whatever made it
 
 
@@ -127,8 +127,8 @@ class _Signals:
 class _Terms:
     """Accumulated base-10 log-odds terms and the human-readable cues explaining them."""
 
-    lrs: Dict[str, float] = field(default_factory=dict)
-    cues: List[str] = field(default_factory=list)
+    lrs: dict[str, float] = field(default_factory=dict)
+    cues: list[str] = field(default_factory=list)
 
 
 class ImageAIDetector:
@@ -140,8 +140,8 @@ class ImageAIDetector:
 
     def __init__(
         self,
-        checkpoint_path: Optional[Path | str] = None,
-        self_improver: Optional[ImageSelfImprover] = None,
+        checkpoint_path: Path | str | None = None,
+        self_improver: ImageSelfImprover | None = None,
     ):
         self.checkpoint_path = Path(checkpoint_path) if checkpoint_path else DEFAULT_CHECKPOINT
         self.self_improver = self_improver or ImageSelfImprover()
@@ -193,7 +193,7 @@ class ImageAIDetector:
 
     # ------------------------------------------------------------------ input decoding
     @staticmethod
-    def _decode_input(image_path: Any) -> Tuple[Optional[np.ndarray], Path, Any]:
+    def _decode_input(image_path: Any) -> tuple[np.ndarray | None, Path, Any]:
         """Decodes any supported input into (BGR array, nominal path, source for metadata extraction)."""
         path = Path("in_memory.png")
         if isinstance(image_path, np.ndarray):
@@ -243,7 +243,7 @@ class ImageAIDetector:
 
     # ------------------------------------------------------------------ evidence terms
     @staticmethod
-    def _metadata_terms(sig: _Signals, provenance: Optional[Dict[str, Any]], ev: _Terms) -> Tuple[bool, bool]:
+    def _metadata_terms(sig: _Signals, provenance: dict[str, Any] | None, ev: _Terms) -> tuple[bool, bool]:
         """Camera/AI-signature/C2PA metadata terms. Returns (has_camera_hardware, metadata_absent)."""
         meta = sig.meta
         has_camera = bool(meta.get("camera_make") and meta.get("camera_model"))
@@ -312,7 +312,7 @@ class ImageAIDetector:
               + ((x - mu_real) ** 2) / (2 * (s_real ** 2) * np.log(10)))
         return float(np.clip(lr, -3.0, 3.0))
 
-    def _pixel_terms(self, sig: _Signals, has_camera: bool, weights: Dict[str, float], offsets: Dict[str, float], ev: _Terms) -> Tuple[float, float]:
+    def _pixel_terms(self, sig: _Signals, has_camera: bool, weights: dict[str, float], offsets: dict[str, float], ev: _Terms) -> tuple[float, float]:
         """Sensor-noise and surface-smoothness terms, including the unauthenticated-EXIF trust policy. Returns raw (lr_noise, lr_smooth)."""
         w_noise, w_smooth = weights["noise"], weights["smooth"]
         meta, scanned, art = sig.meta, sig.scanned.get("is_scanned"), sig.art.get("is_digital_art")
@@ -370,7 +370,7 @@ class ImageAIDetector:
         return lr_noise, lr_smooth
 
     @staticmethod
-    def _fft_term(sig: _Signals, has_camera: bool, w_fft: float, ev: _Terms) -> Tuple[Optional[float], bool]:
+    def _fft_term(sig: _Signals, has_camera: bool, w_fft: float, ev: _Terms) -> tuple[float | None, bool]:
         """2D FFT radial power-spectrum decay term. Returns (alpha, is_anomaly); alpha is None when no spectrum was measured."""
         alpha = sig.fft.get("spectral_decay_alpha")
         if alpha is None:
@@ -394,7 +394,7 @@ class ImageAIDetector:
         return alpha, bool(is_anomaly)
 
     @staticmethod
-    def _canonical_term(sig: _Signals, has_camera: bool, ev: _Terms) -> Tuple[bool, bool]:
+    def _canonical_term(sig: _Signals, has_camera: bool, ev: _Terms) -> tuple[bool, bool]:
         """Aspect ratio / canonical generator canvas term. Returns (is_canonical_gen, is_square_gen)."""
         h, w = sig.img_bgr.shape[:2]
         is_canonical = (w, h) in CANONICAL_RESOLUTIONS
@@ -404,7 +404,7 @@ class ImageAIDetector:
             ev.cues.append(f"Canonical AI generative canvas geometry: {w}x{h}")
         return is_canonical, is_square
 
-    def _neural_term(self, img_bgr: np.ndarray, ev: _Terms) -> Optional[float]:
+    def _neural_term(self, img_bgr: np.ndarray, ev: _Terms) -> float | None:
         """Neural backbone log-odds term (None when no checkpoint is loaded or inference fails)."""
         if self.model is None or self.transform is None:
             return None
@@ -422,7 +422,7 @@ class ImageAIDetector:
             return None
 
     @staticmethod
-    def _dimension_terms(extra_log_lrs: Optional[Dict[str, float]], ev: _Terms) -> None:
+    def _dimension_terms(extra_log_lrs: dict[str, float] | None, ev: _Terms) -> None:
         """Capped dimension-check terms (already clamped by core.forensics.registry.build_report)."""
         for dim_key, dim_val in (extra_log_lrs or {}).items():
             if dim_val:
@@ -430,7 +430,7 @@ class ImageAIDetector:
                 ev.cues.append(f"Dimension check '{dim_key}' adjusted log-odds by {float(dim_val):+.2f}")
 
     @staticmethod
-    def _calibrated_weights(calib: Dict[str, Any]) -> Dict[str, float]:
+    def _calibrated_weights(calib: dict[str, Any]) -> dict[str, float]:
         w = calib.get("feature_weights", {})
         parts = {
             "noise": w.get("noise_residual", DEFAULT_FEATURE_WEIGHTS["noise_residual"]),
@@ -444,12 +444,12 @@ class ImageAIDetector:
     # ------------------------------------------------------------------ public API
     def predict(
         self,
-        image_path: Union[str, Path, bytes, bytearray, io.BytesIO, np.ndarray, Image.Image],
+        image_path: str | Path | bytes | bytearray | io.BytesIO | np.ndarray | Image.Image,
         sensitivity: str = "balanced",
-        face_boxes: Optional[List[Dict[str, int]]] = None,
-        provenance: Optional[Dict[str, Any]] = None,
-        extra_log_lrs: Optional[Dict[str, float]] = None,
-    ) -> Dict[str, Any]:
+        face_boxes: list[dict[str, int]] | None = None,
+        provenance: dict[str, Any] | None = None,
+        extra_log_lrs: dict[str, float] | None = None,
+    ) -> dict[str, Any]:
         """
         Deep forensic evaluation across physical, spectral, and neural modalities.
         ``extra_log_lrs``: optional capped base-10 log-odds terms from the dimension checks
@@ -558,7 +558,7 @@ class ImageAIDetector:
 
     predict_image = predict
 
-    def predict_frame(self, frame_bgr: np.ndarray, sensitivity: str = "balanced") -> Dict[str, Any]:
+    def predict_frame(self, frame_bgr: np.ndarray, sensitivity: str = "balanced") -> dict[str, Any]:
         """Fast frame-level inference for video frames (the shared scorer in core.frame_scorer). A frame that cannot be scored
         carries ``ai_prob`` None, so the caller leaves it out instead of counting a neutral 0.5."""
         try:

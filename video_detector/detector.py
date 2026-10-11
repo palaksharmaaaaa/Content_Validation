@@ -13,16 +13,17 @@ from __future__ import annotations
 
 import logging
 import threading
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
 import cv2
 import numpy as np
-from PIL import Image
 import torch
+from PIL import Image
 
-from core.shared_results import shift_probability_by_log_odds
 from core.frame_scorer import score_frame
+from core.shared_results import shift_probability_by_log_odds
 from video_detector.config import (
     DEFAULT_MAX_FRAMES,
     DEFAULT_VIDEO_CHECKPOINT,
@@ -55,9 +56,9 @@ class VideoAIDetector:
 
     def __init__(
         self,
-        checkpoint_path: Optional[Path | str] = None,
-        frame_detector: Optional[Any] = None,
-        self_improver: Optional[VideoSelfImprover] = None,
+        checkpoint_path: Path | str | None = None,
+        frame_detector: Any | None = None,
+        self_improver: VideoSelfImprover | None = None,
         max_sampled_frames: int = DEFAULT_MAX_FRAMES,
     ):
         self.checkpoint_path = Path(checkpoint_path) if checkpoint_path else DEFAULT_VIDEO_CHECKPOINT
@@ -98,17 +99,17 @@ class VideoAIDetector:
         self._is_loaded = True
         return True
 
-    def _score_frame_internal(self, frame_bgr: np.ndarray, sensitivity: str) -> Dict[str, Any]:
+    def _score_frame_internal(self, frame_bgr: np.ndarray, sensitivity: str) -> dict[str, Any]:
         """Scores one frame with the shared scorer (used when no external frame detector is attached)."""
         return score_frame(frame_bgr, sensitivity)
 
     def _analyze_frames(
-        self, frames: List[np.ndarray], timestamps: List[float], sensitivity: str,
-        progress_callback: Optional[Callable[[int, int, str], None]],
-    ) -> Tuple[List[Dict[str, Any]], List[float]]:
+        self, frames: list[np.ndarray], timestamps: list[float], sensitivity: str,
+        progress_callback: Callable[[int, int, str], None] | None,
+    ) -> tuple[list[dict[str, Any]], list[float]]:
         """Scores every sampled frame (blank frames are recorded as UNDECIDED and excluded from the mean)."""
-        analyzed: List[Dict[str, Any]] = []
-        scores: List[float] = []
+        analyzed: list[dict[str, Any]] = []
+        scores: list[float] = []
         total = len(frames)
         for idx, (frame, ts) in enumerate(zip(frames, timestamps)):
             if progress_callback:
@@ -131,7 +132,7 @@ class VideoAIDetector:
             scores.append(frame_res["ai_prob"])
         return analyzed, scores
 
-    def _neural_transition_probability(self, frames: List[np.ndarray]) -> Optional[float]:
+    def _neural_transition_probability(self, frames: list[np.ndarray]) -> float | None:
         """Mean P(AI) of the optional neural temporal discriminator over inter-frame difference images."""
         if self.model is None or len(frames) < 2:
             return None
@@ -159,7 +160,7 @@ class VideoAIDetector:
             return None
 
     @staticmethod
-    def _ai_duration_pct(segments: List[Dict[str, Any]], duration: float) -> Optional[float]:
+    def _ai_duration_pct(segments: list[dict[str, Any]], duration: float) -> float | None:
         """Percentage of the timeline covered by segments labelled AI-generated; None when the duration is unknown."""
         if not duration or duration <= 0:
             return None
@@ -168,9 +169,9 @@ class VideoAIDetector:
 
     @staticmethod
     def _forensic_cues(
-        neural_transition_ai: Optional[float], temporal_res: Dict[str, Any], flicker_res: Dict[str, Any], mean_frame_ai: float
-    ) -> List[str]:
-        cues: List[str] = []
+        neural_transition_ai: float | None, temporal_res: dict[str, Any], flicker_res: dict[str, Any], mean_frame_ai: float
+    ) -> list[str]:
+        cues: list[str] = []
         if neural_transition_ai is not None:
             cues.append(f"Neural temporal discriminator transition AI probability: {neural_transition_ai * 100:.1f}%")
         risk = temporal_res["temporal_warping_risk"]
@@ -188,9 +189,9 @@ class VideoAIDetector:
         self,
         video_path: str | Path,
         sensitivity: str = "balanced",
-        progress_callback: Optional[Callable[[int, int, str], None]] = None,
-        extra_log_lrs: Optional[Dict[str, float]] = None,
-    ) -> Dict[str, Any]:
+        progress_callback: Callable[[int, int, str], None] | None = None,
+        extra_log_lrs: dict[str, float] | None = None,
+    ) -> dict[str, Any]:
         """
         Runs comprehensive temporal and spatial video AI detection.
         ``extra_log_lrs``: optional capped base-10 log-odds terms from the dimension checks

@@ -58,7 +58,7 @@ def test_near_duplicates_never_straddle_the_train_validation_split(tmp_path):
     rng = np.random.default_rng(3)
     files = []
     for i in range(40):
-        base = Image.fromarray(rng.integers(0, 255, (96, 96, 3), dtype=np.uint8)).resize((256, 256), Image.BICUBIC)
+        base = Image.fromarray(rng.integers(0, 255, (96, 96, 3), dtype=np.uint8)).resize((256, 256), Image.Resampling.BICUBIC)
         orig = tmp_path / f"p{i}.png"
         base.save(orig)
         copy = tmp_path / f"p{i}_copy.jpg"

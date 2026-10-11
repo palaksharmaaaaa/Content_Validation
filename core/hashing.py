@@ -10,11 +10,10 @@ import hashlib
 import threading
 from collections import OrderedDict
 from pathlib import Path
-from typing import Tuple
 
 _CHUNK = 1024 * 1024
 _CACHE_MAX = 64
-_cache: "OrderedDict[tuple, Tuple[str, str, int]]" = OrderedDict()
+_cache: OrderedDict[tuple, tuple[str, str, int]] = OrderedDict()
 _lock = threading.Lock()
 
 
@@ -23,8 +22,8 @@ def _stat_key(path: Path) -> tuple:
     return (str(path.resolve()), st.st_size, st.st_mtime_ns)
 
 
-def _stream(path: Path) -> Tuple[str, str, int]:
-    sha, md5, total = hashlib.sha256(), hashlib.md5(), 0
+def _stream(path: Path) -> tuple[str, str, int]:
+    sha, md5, total = hashlib.sha256(), hashlib.md5(usedforsecurity=False), 0
     with open(path, "rb") as f:
         while chunk := f.read(_CHUNK):
             sha.update(chunk)
@@ -33,7 +32,7 @@ def _stream(path: Path) -> Tuple[str, str, int]:
     return sha.hexdigest(), md5.hexdigest(), total
 
 
-def file_digests(path: str | Path, cached: bool = True) -> Tuple[str, str, int]:
+def file_digests(path: str | Path, cached: bool = True) -> tuple[str, str, int]:
     """Returns (sha256_hex, md5_hex, size_bytes). MD5 is for legacy display only, never for integrity decisions."""
     p = Path(path)
     if not cached:
@@ -52,7 +51,7 @@ def file_digests(path: str | Path, cached: bool = True) -> Tuple[str, str, int]:
     return value
 
 
-def already_recorded(memory: list, path: str | Path, label: str) -> Tuple[bool, str | None]:
+def already_recorded(memory: list, path: str | Path, label: str) -> tuple[bool, str | None]:
     """(True, digest) when ``memory`` already holds this file's content with this label. Calibration steps once per distinct file and
     label, so one reviewer repeating the same submission cannot push the thresholds to their limits. The digest is None if unreadable."""
     try:

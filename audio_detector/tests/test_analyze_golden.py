@@ -4,8 +4,8 @@ import json
 import numpy as np
 
 from audio_detector import AudioAIDetector
-from tests.golden_support import assert_golden, skip_unless_state_matches
 from audio_detector.tests.audio_fixtures import tone, write_wav
+from tests.golden_support import assert_golden, skip_unless_state_matches
 
 
 def clean(r):

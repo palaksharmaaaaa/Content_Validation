@@ -2,9 +2,10 @@
 video_detector.tests.test_video_detector: Autonomous test suite for Video AI Detection module.
 Verifies all submodules, temporal analysis, optical flow, and pipeline stages.
 """
+import tempfile
 import unittest
 from pathlib import Path
-import tempfile
+
 import cv2
 import numpy as np
 

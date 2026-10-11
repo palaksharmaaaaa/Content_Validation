@@ -1,11 +1,9 @@
 """audio_detector.batch: sequential headless batch runner for audio forensics; see core.batch."""
 from __future__ import annotations
 
-from typing import Optional
-
-from core.batch import SequentialBatch
 from audio_detector.config import SUPPORTED_EXTENSIONS
 from audio_detector.pipeline import AudioForensicPipeline
+from core.batch import SequentialBatch
 
 
 class AudioBatchProcessor(SequentialBatch):
@@ -13,6 +11,6 @@ class AudioBatchProcessor(SequentialBatch):
 
     extensions = SUPPORTED_EXTENSIONS
 
-    def __init__(self, pipeline: Optional[AudioForensicPipeline] = None):
+    def __init__(self, pipeline: AudioForensicPipeline | None = None):
         super().__init__(pipeline or AudioForensicPipeline())
 

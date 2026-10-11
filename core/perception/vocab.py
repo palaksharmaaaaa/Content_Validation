@@ -5,10 +5,8 @@ confidence threshold and treat a low top score as "not sure". Add or remove entr
 """
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
-
 # (label, is_indoor). Used for "where was this taken" and the indoor/outdoor decision.
-SCENES: List[Tuple[str, bool]] = [
+SCENES: list[tuple[str, bool]] = [
     ("living room", True), ("bedroom", True), ("kitchen", True), ("bathroom", True), ("dining room", True), ("office", True),
     ("classroom", True), ("lecture hall", True), ("library", True), ("restaurant", True), ("cafe", True), ("shop interior", True),
     ("shopping mall", True), ("hospital", True), ("gym", True), ("hotel room", True), ("auditorium or stage", True),
@@ -22,7 +20,7 @@ SCENES: List[Tuple[str, bool]] = [
     ("stadium", False), ("amusement park", False), ("snow landscape", False), ("sunset sky", False), ("night city", False),
 ]
 
-TIME_OF_DAY: List[Tuple[str, str]] = [
+TIME_OF_DAY: list[tuple[str, str]] = [
     ("bright daylight", "a photo taken in bright daylight"),
     ("overcast daylight", "a photo taken on an overcast day"),
     ("golden hour or sunset", "a photo taken at sunset in warm golden light"),
@@ -31,7 +29,7 @@ TIME_OF_DAY: List[Tuple[str, str]] = [
     ("studio lighting", "a photo taken with professional studio lighting"),
 ]
 
-GENRE: List[Tuple[str, str]] = [
+GENRE: list[tuple[str, str]] = [
     ("selfie", "a selfie taken at arm's length"),
     ("portrait", "a portrait photo of one person"),
     ("group photo", "a group photo of several people posing"),
@@ -46,7 +44,7 @@ GENRE: List[Tuple[str, str]] = [
     ("artwork or illustration", "a drawing, painting or digital illustration"),
 ]
 
-ANIMALS: List[str] = [
+ANIMALS: list[str] = [
     "dog", "puppy", "labrador retriever", "german shepherd", "golden retriever", "pug", "beagle", "bulldog", "husky", "street dog", "pomeranian",
     "cat", "kitten", "tabby cat", "black cat", "persian cat", "horse", "pony", "donkey", "camel", "cow", "buffalo", "bull", "goat", "sheep",
     "pig", "elephant", "monkey", "langur", "squirrel", "rabbit", "deer", "tiger", "lion", "leopard", "bear", "fox", "wolf", "zebra", "giraffe",
@@ -54,7 +52,7 @@ ANIMALS: List[str] = [
     "fish", "turtle", "crocodile", "snake", "lizard", "frog", "butterfly", "bee", "spider", "cockroach", "mosquito",
 ]
 
-VEHICLES: List[str] = [
+VEHICLES: list[str] = [
     "hatchback car", "sedan car", "SUV", "pickup truck", "minivan", "sports car", "taxi", "police car", "ambulance", "jeep",
     "auto rickshaw", "e-rickshaw", "motorcycle", "scooter", "moped", "bicycle", "electric scooter", "city bus", "school bus", "coach bus",
     "truck", "tipper truck", "tanker truck", "tractor", "bulldozer", "train", "metro train", "tram", "airplane", "helicopter",
@@ -62,14 +60,14 @@ VEHICLES: List[str] = [
 ]
 
 # Age-group descriptions for the second, independent opinion in core.perception.age (the first labels are the minor ones).
-AGE_GROUPS: List[Tuple[str, str]] = [
+AGE_GROUPS: list[tuple[str, str]] = [
     ("baby", "a photo of a baby."), ("toddler", "a photo of a toddler."), ("child", "a photo of a young child."),
     ("teenager", "a photo of a teenager."), ("young adult", "a photo of a young adult in their twenties."),
     ("adult", "a photo of an adult in their thirties or forties."), ("middle-aged", "a photo of a middle-aged person."),
     ("elderly", "a photo of an elderly person."),
 ]
 
-VOCABS: Dict[str, List[Tuple[str, str]]] = {}
+VOCABS: dict[str, list[tuple[str, str]]] = {}
 
 
 VOCABS["scene"] = [(label, f"a photo of a {label}.") for label, _indoor in SCENES]

@@ -7,34 +7,40 @@ Every page has the same shape so it reads the same for an image, a clip or a rec
 """
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Sequence, Tuple
+from typing import Any
 
 import streamlit as st
-from ui.results.models_panel import render_models_panel
-from ui.text import code_safe, md_escape, neutralise_links
 
 from ui.results.checks import AUDIO_CHECKS, IMAGE_CHECKS, VIDEO_CHECKS, CheckGroup, render_evidence
-from ui.results.content import render_image_type_and_category, render_minor_screening, render_quantified_detections_and_inventory, render_scene_and_content_intelligence
+from ui.results.content import (
+    render_image_type_and_category,
+    render_minor_screening,
+    render_quantified_detections_and_inventory,
+    render_scene_and_content_intelligence,
+)
 from ui.results.dimensions import image_nine_dimensions, render_nine_dimensions_breakdown
 from ui.results.explanation import image_explanation, render_explanation
 from ui.results.feedback import render_export, render_feedback
 from ui.results.media import render_audio_preview, render_image_preview, render_timeline, render_video_preview
+from ui.results.models_panel import render_models_panel
 from ui.results.profile import render_audio_signal_specs, render_pre_analysis_specifications, render_video_stream_specs
 from ui.results.summary import render_summary
 from ui.stages import render_gate_banner
+from ui.text import code_safe, md_escape
 
 
 @dataclass(frozen=True)
 class _Parts:
     """Everything a page needs, pulled out of a result item (tolerates items from either orchestration path)."""
 
-    item: Dict[str, Any]
+    item: dict[str, Any]
     filename: str
-    profile: Dict[str, Any]
-    result: Dict[str, Any]       # the detector's own output
-    content: Dict[str, Any]
-    decision: Dict[str, Any]
+    profile: dict[str, Any]
+    result: dict[str, Any]       # the detector's own output
+    content: dict[str, Any]
+    decision: dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -42,9 +48,9 @@ class _Page:
     noun: str
     modality: str
     key_prefix: str
-    profile_keys: Tuple[str, str]
-    result_keys: Tuple[str, str]
-    content_keys: Tuple[str, str]
+    profile_keys: tuple[str, str]
+    result_keys: tuple[str, str]
+    content_keys: tuple[str, str]
     checks: Sequence[CheckGroup]
     preview: Callable[[_Parts], None]
     timeline: Callable[[_Parts], None]
@@ -52,11 +58,11 @@ class _Page:
     explanation: Callable[[_Parts], Any]
 
 
-def _first(item: Dict[str, Any], keys: Tuple[str, str]) -> Dict[str, Any]:
+def _first(item: dict[str, Any], keys: tuple[str, str]) -> dict[str, Any]:
     return item.get(keys[0]) or item.get(keys[1]) or {}
 
 
-def _parts(item: Dict[str, Any], page: _Page) -> _Parts:
+def _parts(item: dict[str, Any], page: _Page) -> _Parts:
     return _Parts(
         item=item, filename=item.get("filename", page.noun.lower()), profile=_first(item, page.profile_keys),
         result=_first(item, page.result_keys), content=_first(item, page.content_keys), decision=item.get("decision") or {},
@@ -117,7 +123,7 @@ AUDIO_PAGE = _Page(
 )
 
 
-def _render_page(item: Dict[str, Any], page: _Page) -> None:
+def _render_page(item: dict[str, Any], page: _Page) -> None:
     if not item or not item.get("success"):
         st.error(f"Could not process `{code_safe((item or {}).get('filename', 'this file'))}`: {md_escape((item or {}).get('error', 'unknown error'))}")
         return
@@ -146,16 +152,16 @@ def _render_page(item: Dict[str, Any], page: _Page) -> None:
         render_export(item["path"], page.modality, p.decision, p.profile, p.result, unique_key)
 
 
-def render_image_result(item: Dict[str, Any]) -> None:
+def render_image_result(item: dict[str, Any]) -> None:
     """The full result page for one analysed image."""
     _render_page(item, IMAGE_PAGE)
 
 
-def render_video_result(item: Dict[str, Any]) -> None:
+def render_video_result(item: dict[str, Any]) -> None:
     """The full result page for one analysed video."""
     _render_page(item, VIDEO_PAGE)
 
 
-def render_audio_result(item: Dict[str, Any]) -> None:
+def render_audio_result(item: dict[str, Any]) -> None:
     """The full result page for one analysed audio file."""
     _render_page(item, AUDIO_PAGE)

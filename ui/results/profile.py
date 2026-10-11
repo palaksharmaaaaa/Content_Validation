@@ -1,8 +1,11 @@
 """ui.results.profile: File profile sections (identity, geometry, EXIF, photometrics, palette, physical signals) and stream/signal specs."""
 from __future__ import annotations
-from typing import Any, Dict, NamedTuple
+
+from typing import Any, NamedTuple
+
 import streamlit as st
-from ui.text import code_safe, md_escape, neutralise_links
+
+from ui.text import code_safe, md_escape
 
 
 class _ProfileView(NamedTuple):
@@ -177,7 +180,7 @@ _PROFILE_SECTIONS = (_render_profile_section_1, _render_profile_section_2, _rend
 
 
 def render_pre_analysis_specifications(
-    profile_data: Dict[str, Any], expanded: bool = True, source: str = "User Upload"
+    profile_data: dict[str, Any], expanded: bool = True, source: str = "User Upload"
 ) -> None:
     """
     Renders Pre-Analysis Feature & Metadata Extraction.
@@ -219,7 +222,7 @@ def _or_unknown(value: Any, text: str) -> str:
     return "Not recorded" if value in (None, "") else text
 
 
-def render_video_stream_specs(profile_data: Dict[str, Any]) -> None:
+def render_video_stream_specs(profile_data: dict[str, Any]) -> None:
     """Show the video stream profile (codec, resolution, frame rate, duration)."""
     st.markdown("#### Stream profile")
     st.caption("Container and stream facts read from the file before any detector runs.")
@@ -245,7 +248,7 @@ def render_video_stream_specs(profile_data: Dict[str, Any]) -> None:
     st.markdown("---")
 
 
-def render_audio_signal_specs(item: Dict[str, Any], profile_data: Dict[str, Any]) -> None:
+def render_audio_signal_specs(item: dict[str, Any], profile_data: dict[str, Any]) -> None:
     """Show the audio signal profile (format, sample rate, levels, dynamics)."""
     st.markdown("#### Signal profile")
     st.caption("Stream facts read from the file's own header, and level measurements from the decoded signal.")

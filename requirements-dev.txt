@@ -1,0 +1,12 @@
+# Development and optional-quality tools (pip install -r requirements.txt -r requirements-dev.txt). Tested on Python 3.14.
+# ruff, bandit : lint / security lint (configuration in pyproject.toml)
+# hypothesis    : property-based fuzz tests (tests/test_property_fuzzing.py skips without it)
+# evidently     : dataset drift report before a retrained model is promoted (core/retrain_engine.py skips it without it)
+# cleanlab      : label-quality score for feedback (ui/results/feedback.py computes the same score directly without it)
+# coverage      : coverage measurement (docs/TESTING.md)
+hypothesis>=6.169.0
+evidently>=0.7.23
+cleanlab>=2.9.0
+ruff>=0.17.0
+bandit>=1.9.4
+coverage>=7.16.2

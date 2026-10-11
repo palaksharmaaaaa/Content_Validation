@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import threading
-from typing import List, Optional, Sequence, Tuple
+from collections.abc import Sequence
 
 import cv2
 import numpy as np
@@ -33,7 +33,7 @@ TILE_STRIDE = 300           # tiles overlap by 100 px so a face on a seam is who
 TILE_SCALE = 2.0
 MERGE_IOU = 0.40
 
-Box = Tuple[int, int, int, int]  # x, y, w, h
+Box = tuple[int, int, int, int]  # x, y, w, h
 
 # Image rotations (degrees clockwise) that bring a sideways or upside-down face upright, and OpenCV's name for each.
 ROTATIONS = {90: cv2.ROTATE_90_CLOCKWISE, 180: cv2.ROTATE_180, 270: cv2.ROTATE_90_COUNTERCLOCKWISE}
@@ -48,9 +48,9 @@ def _iou(a: Box, b: Box) -> float:
     return inter / float(a[2] * a[3] + b[2] * b[3] - inter)
 
 
-def merge_scored(scored: List[Tuple[Box, float]], iou: float = MERGE_IOU) -> List[Tuple[Box, float]]:
+def merge_scored(scored: list[tuple[Box, float]], iou: float = MERGE_IOU) -> list[tuple[Box, float]]:
     """Greedy non-maximum suppression: keep the most confident box of every overlapping group."""
-    kept: List[Tuple[Box, float]] = []
+    kept: list[tuple[Box, float]] = []
     for box, score in sorted(scored, key=lambda s: -s[1]):
         if all(_iou(box, k) < iou for k, _ in kept):
             kept.append((box, score))
@@ -73,7 +73,7 @@ class ScreeningFaceFinder:
     """Thread-safe YuNet wrapper; ``find`` returns [] if the model is unavailable."""
 
     def __init__(self) -> None:
-        self._net: Optional["cv2.FaceDetectorYN"] = None
+        self._net: cv2.FaceDetectorYN | None = None
         self._lock = threading.Lock()
         self._init_lock = threading.Lock()
         self._failed = False
@@ -88,17 +88,17 @@ class ScreeningFaceFinder:
                     logger.warning("Screening face finder unavailable: %s", exc)
             return self._net
 
-    def _detect(self, frame: np.ndarray) -> List[Tuple[Box, float]]:
+    def _detect(self, frame: np.ndarray) -> list[tuple[Box, float]]:
         with self._lock:
             self._net.setInputSize((frame.shape[1], frame.shape[0]))
             _ok, raw = self._net.detect(np.ascontiguousarray(frame, dtype=np.uint8))
         return [((float(r[0]), float(r[1]), float(r[2]), float(r[3])), float(r[-1])) for r in (raw if raw is not None else [])]
 
-    def find(self, image_bgr: np.ndarray) -> List[Box]:
+    def find(self, image_bgr: np.ndarray) -> list[Box]:
         """Faces as (x, y, w, h) in the pixels of ``image_bgr``: the whole image plus enlarged overlapping tiles, merged."""
         return [b for b, _ in self.find_scored(image_bgr)]
 
-    def find_scored(self, image_bgr: np.ndarray) -> List[Tuple[Box, float]]:
+    def find_scored(self, image_bgr: np.ndarray) -> list[tuple[Box, float]]:
         """Like ``find`` with each face's detector confidence."""
         if image_bgr is None or image_bgr.ndim < 2 or min(image_bgr.shape[:2]) < 16 or self._ensure() is None:
             return []
@@ -113,7 +113,7 @@ class ScreeningFaceFinder:
         work = cv2.resize(image_bgr, (max(1, int(w0 * shrink)), max(1, int(h0 * shrink))), interpolation=cv2.INTER_AREA) if shrink < 1.0 else image_bgr
         h, w = work.shape[:2]
 
-        found: List[Tuple[Box, float]] = [((x, y, bw, bh), s) for (x, y, bw, bh), s in self._detect(work)]
+        found: list[tuple[Box, float]] = [((x, y, bw, bh), s) for (x, y, bw, bh), s in self._detect(work)]
         if max(h, w) > TILE:
             for ty in range(0, max(1, h - TILE + TILE_STRIDE), TILE_STRIDE):
                 for tx in range(0, max(1, w - TILE + TILE_STRIDE), TILE_STRIDE):
@@ -134,25 +134,25 @@ class ScreeningFaceFinder:
                 boxes.append(((x1, y1, x2 - x1, y2 - y1), score))
         return boxes
 
-    def find_rotated(self, image_bgr: np.ndarray, rotations: Sequence[int] = (90, 270, 180)) -> List[dict]:
+    def find_rotated(self, image_bgr: np.ndarray, rotations: Sequence[int] = (90, 270, 180)) -> list[dict]:
         """Faces that are sideways or upside down: the image is rotated, scanned as usual, and the boxes mapped back. Each hit is
         ``{box, rot, rot_box, score}``: ``box`` in the original pixels, ``rot`` the clockwise turn that makes the face upright and
         ``rot_box`` its box in that turned image (crop the age model's face from there). Overlapping hits keep the most confident."""
         if image_bgr is None or image_bgr.ndim < 2 or min(image_bgr.shape[:2]) < 16 or self._ensure() is None:
             return []
         height, width = image_bgr.shape[:2]
-        hits: List[dict] = []
+        hits: list[dict] = []
         for rot in rotations:
             for rbox, score in self.find_scored(cv2.rotate(image_bgr, ROTATIONS[rot])):
                 hits.append({"box": unrotate_box(rbox, rot, width, height), "rot": rot, "rot_box": rbox, "score": score})
-        kept: List[dict] = []
+        kept: list[dict] = []
         for hit in sorted(hits, key=lambda h: -h["score"]):
             if all(_iou(hit["box"], k["box"]) < MERGE_IOU for k in kept):
                 kept.append(hit)
         return kept
 
 
-_default: Optional[ScreeningFaceFinder] = None
+_default: ScreeningFaceFinder | None = None
 _default_lock = threading.Lock()
 
 

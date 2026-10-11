@@ -7,7 +7,7 @@ logistic curve and blended. The cut-offs are hand-set heuristics, not calibrated
 """
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 import cv2
 import numpy as np
@@ -26,7 +26,7 @@ REAL_LABEL_AT = 0.35
 _SENSITIVE = ("high", "aggressive")
 
 
-def score_frame(frame_bgr: np.ndarray, sensitivity: str = "balanced") -> Dict[str, Any]:
+def score_frame(frame_bgr: np.ndarray, sensitivity: str = "balanced") -> dict[str, Any]:
     """``{label, prediction, ai_prob, real_prob, frame_noise}`` for one BGR frame."""
     sensitive = sensitivity in _SENSITIVE
     gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)

@@ -1,7 +1,6 @@
 """Golden regression for the image scoring pipeline."""
 import json
 
-
 import cv2
 import numpy as np
 from PIL import Image

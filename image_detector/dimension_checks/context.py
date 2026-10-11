@@ -9,7 +9,7 @@ Set OMNI_CONTEXT_HASH_INDEX or place the file at image_detector/data/context_has
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from PIL import Image
 
@@ -23,7 +23,7 @@ DEFAULT_INDEX = Path(__file__).resolve().parents[1] / "data" / "context_hash_ind
 MATCH_HAMMING = 6
 
 
-def _prepare(row: Dict[str, Any]) -> None:
+def _prepare(row: dict[str, Any]) -> None:
     int(row["phash"], 16)
 
 

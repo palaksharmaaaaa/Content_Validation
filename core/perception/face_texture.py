@@ -7,8 +7,6 @@ adds no risk, never a made-up value.
 """
 from __future__ import annotations
 
-from typing import Dict, Optional
-
 import cv2
 import numpy as np
 
@@ -18,7 +16,7 @@ HIGH_RISK_AT = 0.70
 SUSPICIOUS_AT = 0.45
 
 
-def texture_cues(face_gray: np.ndarray) -> Optional[Dict[str, object]]:
+def texture_cues(face_gray: np.ndarray) -> dict[str, object] | None:
     """Texture measurements for one grey face crop, or None for an empty crop."""
     if face_gray is None or face_gray.size == 0:
         return None

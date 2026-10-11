@@ -95,8 +95,8 @@ def test_pipeline_recognizes_fits_without_verdict(pipeline, tmp_path):
 
 
 def test_security_findings_do_not_change_probabilities(pipeline, tmp_path):
-    import zipfile
     import io
+    import zipfile
 
     clean = _noise_png(tmp_path / "clean.png")
     dirty = tmp_path / "dirty.png"

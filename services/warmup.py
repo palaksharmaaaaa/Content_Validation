@@ -12,7 +12,7 @@ from __future__ import annotations
 import logging
 import os
 import threading
-from typing import Callable, Optional, Sequence
+from collections.abc import Callable, Sequence
 
 logger = logging.getLogger("services.warmup")
 
@@ -48,7 +48,7 @@ def enabled() -> bool:
     return os.environ.get(ENV_WARMUP, "1").strip().lower() not in {"0", "false", "no", "off"}
 
 
-def start_background_warmup(loaders: Optional[Sequence[Callable[[], object]]] = None) -> Optional[threading.Thread]:
+def start_background_warmup(loaders: Sequence[Callable[[], object]] | None = None) -> threading.Thread | None:
     """Start the warm-up thread once per process; later calls return ``None``. Also ``None`` when disabled."""
     global _started
     if not enabled():

@@ -16,18 +16,19 @@ install_benign_reset_filter()  # hides the harmless Windows 'connection forcibly
 
 # Enforce strict parsing and decompression bomb ceiling
 from core.security import SAFE_MAX_IMAGE_PIXELS
+
 Image.MAX_IMAGE_PIXELS = SAFE_MAX_IMAGE_PIXELS
 ImageFile.LOAD_TRUNCATED_IMAGES = False
 
 from services.forensic_service import ForensicService
+from ui.layout import inject_css
+from ui.media_tab import MediaTabSpec, render_media_tab
 from ui.results import (
-    render_learning_dashboard,
     render_audio_result,
     render_image_result,
+    render_learning_dashboard,
     render_video_result,
 )
-from ui.media_tab import MediaTabSpec, render_media_tab
-from ui.layout import inject_css
 from ui.shell import render_sidebar
 from ui.validators import (
     SUPPORTED_AUDIO_EXTENSIONS,
@@ -35,7 +36,6 @@ from ui.validators import (
     SUPPORTED_VIDEO_EXTENSIONS,
     validate_expected_platform,
 )
-
 
 DETECTOR_CHECKPOINT = Path(__file__).resolve().parent / "image_detector" / "models" / "ai_detector.pt"
 

@@ -9,7 +9,7 @@ Completely self-contained with zero outside dependencies.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 logger = logging.getLogger("video_detector.cross_modal")
 
@@ -22,10 +22,10 @@ class CrossModalConsistencyEngine:
 
     def evaluate_consistency(
         self,
-        video_forensics: Dict[str, Any],
-        audio_forensics: Optional[Dict[str, Any]] = None,
-        content_inventory: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        video_forensics: dict[str, Any],
+        audio_forensics: dict[str, Any] | None = None,
+        content_inventory: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Evaluates cross-modal coherence; always includes ``cross_modal_status`` for display."""
         res = self._evaluate(video_forensics, audio_forensics, content_inventory)
         res["cross_modal_status"] = res.get("status", "CROSS_MODAL_COHERENT")
@@ -33,10 +33,10 @@ class CrossModalConsistencyEngine:
 
     def _evaluate(
         self,
-        video_forensics: Dict[str, Any],
-        audio_forensics: Optional[Dict[str, Any]] = None,
-        content_inventory: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        video_forensics: dict[str, Any],
+        audio_forensics: dict[str, Any] | None = None,
+        content_inventory: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Evaluates cross-modal coherence between video and audio.
         """
@@ -116,9 +116,9 @@ class CrossModalConsistencyEngine:
 
 
 def evaluate_cross_modal_consistency(
-    video_forensics: Dict[str, Any],
-    audio_forensics: Optional[Dict[str, Any]] = None,
-    content_inventory: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    video_forensics: dict[str, Any],
+    audio_forensics: dict[str, Any] | None = None,
+    content_inventory: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Evaluates cross-modal coherence between video visual frames and audio speech track."""
     return CrossModalConsistencyEngine().evaluate_consistency(video_forensics, audio_forensics, content_inventory)

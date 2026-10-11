@@ -7,7 +7,8 @@ only: no certificate chain or hash binding is validated anywhere, so nothing her
 """
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, Optional
+from collections.abc import Iterable
+from typing import Any
 
 PROVENANCE_RULE = (
     "Rule: Absence of C2PA metadata indicates UNKNOWN provenance, "
@@ -15,7 +16,7 @@ PROVENANCE_RULE = (
 )
 
 
-def build_c2pa_block(present: bool, manifests_found: Iterable[str], ai_declaration: bool = False) -> Dict[str, Any]:
+def build_c2pa_block(present: bool, manifests_found: Iterable[str], ai_declaration: bool = False) -> dict[str, Any]:
     """The single C2PA block shape shared by all modalities. Reports marker presence only; never 'verified'."""
     manifests = list(manifests_found)
     is_signed = present and any(m in ("c2pa.claim", "c2pa.signature", "c2pa.assertion") for m in manifests)
@@ -41,15 +42,15 @@ def build_c2pa_block(present: bool, manifests_found: Iterable[str], ai_declarati
 
 
 def build_exif_block(
-    camera_make: Optional[str] = None,
-    camera_model: Optional[str] = None,
-    software: Optional[str] = None,
-    datetime_original: Optional[str] = None,
+    camera_make: str | None = None,
+    camera_model: str | None = None,
+    software: str | None = None,
+    datetime_original: str | None = None,
     ai_signature_found: bool = False,
-    signature_details: Optional[str] = None,
-    raw_tags: Optional[Dict[str, Any]] = None,
-    has_exif: Optional[bool] = None,
-) -> Dict[str, Any]:
+    signature_details: str | None = None,
+    raw_tags: dict[str, Any] | None = None,
+    has_exif: bool | None = None,
+) -> dict[str, Any]:
     """The single EXIF/camera block shape shared by all modalities (unauthenticated metadata)."""
     return {
         "has_exif": bool(has_exif if has_exif is not None else (camera_make or camera_model or software or raw_tags)),
@@ -63,7 +64,7 @@ def build_exif_block(
     }
 
 
-def build_provenance_view(c2pa: Dict[str, Any], exif: Dict[str, Any]) -> Dict[str, Any]:
+def build_provenance_view(c2pa: dict[str, Any], exif: dict[str, Any]) -> dict[str, Any]:
     """Rule-based verdict over the c2pa/exif blocks (declarations only; hardware EXIF is unauthenticated)."""
     if c2pa["c2pa_present"]:
         if c2pa["ai_declaration"]:

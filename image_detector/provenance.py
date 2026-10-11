@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
+
 from core.c2pa import scan_file as scan_c2pa_file
 from core.provenance_view import build_c2pa_block, build_exif_block, build_provenance_view
 
@@ -22,11 +23,11 @@ class ImageProvenanceValidator:
     def __init__(self):
         pass
 
-    def scan_c2pa(self, file_path: str | Path) -> Dict[str, Any]:
+    def scan_c2pa(self, file_path: str | Path) -> dict[str, Any]:
         """Content Credentials marker scan (presence only; see core.c2pa)."""
         return scan_c2pa_file(file_path)
 
-    def analyze_provenance(self, file_path: str | Path) -> Dict[str, Any]:
+    def analyze_provenance(self, file_path: str | Path) -> dict[str, Any]:
         """Runs complete provenance and metadata analysis on an image."""
         path = Path(file_path)
         if not path.is_file():
@@ -102,7 +103,7 @@ class ImageProvenanceValidator:
             "cues": cues,
         }
 
-    def _extract_deep_metadata(self, path: Path) -> Dict[str, Any]:
+    def _extract_deep_metadata(self, path: Path) -> dict[str, Any]:
         """Extracts standard EXIF and deep XMP/IPTC metadata packets."""
         from image_detector.features import extract_image_metadata
         return extract_image_metadata(path)

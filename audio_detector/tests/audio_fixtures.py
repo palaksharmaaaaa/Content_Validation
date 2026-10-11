@@ -2,7 +2,6 @@
 import struct
 import wave
 from pathlib import Path
-from typing import Dict
 
 import numpy as np
 
@@ -55,7 +54,7 @@ def synchsafe(n: int) -> bytes:
     return bytes([(n >> 21) & 0x7F, (n >> 14) & 0x7F, (n >> 7) & 0x7F, n & 0x7F])
 
 
-def id3v23(frames: Dict[str, bytes], padding=0) -> bytes:
+def id3v23(frames: dict[str, bytes], padding=0) -> bytes:
     body = b""
     for fid, payload in frames.items():
         body += fid.encode("ascii") + struct.pack(">I", len(payload)) + b"\x00\x00" + payload

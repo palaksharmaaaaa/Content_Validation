@@ -12,8 +12,9 @@ from __future__ import annotations
 
 import logging
 import threading
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -79,7 +80,7 @@ class FaceAuthenticityClassifier:
     def __init__(self, checkpoint: Path = CHECKPOINT):
         self._path = Path(checkpoint)
         self._model = None
-        self._meta: Dict[str, Any] = {}
+        self._meta: dict[str, Any] = {}
         self._lock = threading.Lock()
         self._failed = False
 
@@ -111,12 +112,12 @@ class FaceAuthenticityClassifier:
         return self._ensure() is not None
 
     @property
-    def meta(self) -> Dict[str, Any]:
+    def meta(self) -> dict[str, Any]:
         """Training metadata saved with the checkpoint (validation accuracy, sample counts)."""
         self._ensure()
         return self._meta
 
-    def predict_crops(self, rgb_crops: List[np.ndarray]) -> List[float]:
+    def predict_crops(self, rgb_crops: list[np.ndarray]) -> list[float]:
         """P(AI-generated), in [0, 1], for each INPUT_SIZE RGB crop."""
         net = self._ensure()
         if net is None or not rgb_crops:
@@ -127,10 +128,10 @@ class FaceAuthenticityClassifier:
             logits = net(torch.stack([to_tensor(c) for c in rgb_crops]))
             return [float(p) for p in torch.softmax(logits, dim=1)[:, 1]]
 
-    def analyse(self, image_bgr: np.ndarray, faces: Sequence[Tuple[int, int, int, int, float]]) -> Dict[str, Any]:
+    def analyse(self, image_bgr: np.ndarray, faces: Sequence[tuple[int, int, int, int, float]]) -> dict[str, Any]:
         """Judge every face of at least MIN_FACE_PIXELS. Returns ``{available, faces: [{bbox, p_ai}], skipped_small}``."""
         usable = [f for f in faces if min(f[2], f[3]) >= MIN_FACE_PIXELS]
-        out: Dict[str, Any] = {"available": self.available, "faces": [], "skipped_small": len(faces) - len(usable)}
+        out: dict[str, Any] = {"available": self.available, "faces": [], "skipped_small": len(faces) - len(usable)}
         if not out["available"] or not usable:
             return out
         probs = self.predict_crops([crop_face(image_bgr, f) for f in usable])
@@ -138,7 +139,7 @@ class FaceAuthenticityClassifier:
         return out
 
 
-_default: Optional[FaceAuthenticityClassifier] = None
+_default: FaceAuthenticityClassifier | None = None
 _default_lock = threading.Lock()
 
 

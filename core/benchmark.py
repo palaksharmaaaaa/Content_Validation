@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -21,7 +22,7 @@ AI_LABEL = "LIKELY AI-GENERATED"
 REAL_LABEL = "LIKELY REAL"
 
 
-def roc_auc(scores: List[float], truth: List[int]) -> Optional[float]:
+def roc_auc(scores: list[float], truth: list[int]) -> float | None:
     """P(a random AI file scores above a random real one), ties counting half; None when one class is missing."""
     pos = [s for s, t in zip(scores, truth) if t == 1]
     neg = [s for s, t in zip(scores, truth) if t == 0]
@@ -50,7 +51,7 @@ def _as_mapping(result: Any) -> Mapping[str, Any]:
     return to_dict() if callable(to_dict) else {}
 
 
-def _ratio(num: float, den: float) -> Optional[float]:
+def _ratio(num: float, den: float) -> float | None:
     return round(num / den, 4) if den else None
 
 
@@ -58,11 +59,11 @@ def evaluate_folder(
     dataset_dir: Path | str,
     extensions: Iterable[str],
     predict: Callable[[Path], Any],
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Run ``predict`` on every supported file under ``<dataset>/ai_generated`` and ``<dataset>/real`` and score the labels it returns."""
     root = Path(dataset_dir)
     exts = {e.lower() for e in extensions}
-    labelled: List[Tuple[Path, int]] = []
+    labelled: list[tuple[Path, int]] = []
     for sub, truth in (("ai_generated", 1), ("real", 0)):
         folder = root / sub
         if folder.is_dir():
@@ -71,9 +72,9 @@ def evaluate_folder(
         raise ValueError(f"No supported files found in {root / 'ai_generated'} or {root / 'real'}")
 
     tp = fp = tn = fn = abstained = failed = 0
-    scores: List[float] = []
-    score_truth: List[int] = []
-    latencies: List[float] = []
+    scores: list[float] = []
+    score_truth: list[int] = []
+    latencies: list[float] = []
     for path, truth in labelled:
         started = time.perf_counter()
         try:
@@ -121,5 +122,5 @@ def evaluate_folder(
     }
 
 
-def write_report(report: Dict[str, Any], destination: Path | str) -> None:
+def write_report(report: dict[str, Any], destination: Path | str) -> None:
     atomic_write_json(destination, report)

@@ -11,15 +11,13 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import cv2
-
-from core.ffmpeg import open_video
 import numpy as np
 
+from core.ffmpeg import open_video
 from video_detector.config import DEFAULT_MAX_FRAMES
-
 
 logger = logging.getLogger("video_detector.extractor")
 
@@ -42,7 +40,7 @@ class VideoFrameExtractor:
         self.max_frames = max_frames
 
     @staticmethod
-    def get_video_metadata(video_path: str | Path) -> Dict[str, Any]:
+    def get_video_metadata(video_path: str | Path) -> dict[str, Any]:
         """Reads container metadata, codec, duration, and frame rate safely."""
         path = Path(video_path)
         if not path.is_file():
@@ -82,8 +80,8 @@ class VideoFrameExtractor:
             cap.release()
 
     def extract_sampled_frames(
-        self, video_path: str | Path, max_frames: Optional[int] = None
-    ) -> Tuple[List[np.ndarray], List[float], int]:
+        self, video_path: str | Path, max_frames: int | None = None
+    ) -> tuple[list[np.ndarray], list[float], int]:
         """
         Extracts uniformly distributed frames across the video timeline.
         Returns:

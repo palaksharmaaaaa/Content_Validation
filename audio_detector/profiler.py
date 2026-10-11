@@ -11,27 +11,26 @@ from __future__ import annotations
 
 import json
 import logging
-import shutil
 import subprocess
 import wave
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
-from core.ffmpeg import ffprobe_input
-from core.hashing import file_digests
 import numpy as np
 
 from audio_detector.validator import AudioValidator
+from core.ffmpeg import ffprobe_input, find_binary
+from core.hashing import file_digests
 
 logger = logging.getLogger("audio_detector.profiler")
 
 
-def compute_file_hashes(file_path: str | Path) -> Tuple[str, str, int]:
+def compute_file_hashes(file_path: str | Path) -> tuple[str, str, int]:
     """Calculates SHA-256, MD5, and exact file size in bytes (shared cached implementation)."""
     return file_digests(file_path)
 
 
-def _positive_int(value: Any) -> Optional[int]:
+def _positive_int(value: Any) -> int | None:
     """``int(value)`` when it is a positive number (ffprobe reports numbers as strings, and "0" for "unknown"), else None."""
     try:
         number = int(value)
@@ -40,13 +39,13 @@ def _positive_int(value: Any) -> Optional[int]:
     return number if number > 0 else None
 
 
-def read_stream_info(path: Path) -> Dict[str, Optional[Any]]:
+def read_stream_info(path: Path) -> dict[str, Any | None]:
     """What the file itself says about its audio stream: ``sample_rate`` (native), ``channels``, ``bit_depth`` and ``codec``.
 
     Everything the engine analyses is decoded to 16 kHz mono, so those numbers are not the file's. A PCM WAV is read from its own
     header; any other format is asked of ``ffprobe`` when it is installed. A value that cannot be determined is ``None``: it is
     shown as "not recorded", never guessed."""
-    info: Dict[str, Optional[Any]] = {"sample_rate": None, "channels": None, "bit_depth": None, "codec": None}
+    info: dict[str, Any | None] = {"sample_rate": None, "channels": None, "bit_depth": None, "codec": None}
     if path.suffix.lower() == ".wav":
         try:
             with wave.open(str(path), "rb") as w:
@@ -54,7 +53,7 @@ def read_stream_info(path: Path) -> Dict[str, Optional[Any]]:
             return info
         except (wave.Error, EOFError, OSError):
             pass                                          # not plain PCM (float, extensible, damaged): ask ffprobe
-    ffprobe = shutil.which("ffprobe")
+    ffprobe = find_binary("ffprobe")
     if not ffprobe:
         return info
     try:
@@ -93,7 +92,7 @@ class AudioProfiler:
     def __init__(self):
         self.validator = AudioValidator()
 
-    def profile_audio(self, file_path: str | Path, decoded: Optional[Tuple[Any, int, float]] = None) -> Dict[str, Any]:
+    def profile_audio(self, file_path: str | Path, decoded: tuple[Any, int, float] | None = None) -> dict[str, Any]:
         """Extracts complete signal specifications and hashes from an audio file. ``decoded`` is the (samples, rate, seconds) the
         caller already decoded; passing it avoids decoding the file a second time."""
         path = Path(file_path)

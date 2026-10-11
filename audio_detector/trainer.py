@@ -13,7 +13,7 @@ import argparse
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import torch
@@ -28,9 +28,9 @@ from audio_detector.validator import AudioValidator
 logger = logging.getLogger("audio_detector.trainer")
 
 
-def _labelled(root: Path) -> List[Tuple[Path, int]]:
+def _labelled(root: Path) -> list[tuple[Path, int]]:
     """Audio files under ``root/ai_generated`` (label 0) and ``root/real`` (label 1), in a stable order."""
-    out: List[Tuple[Path, int]] = []
+    out: list[tuple[Path, int]] = []
     for sub_dir, label in (("ai_generated", 0), ("real", 1)):
         folder = root / sub_dir
         if folder.is_dir():
@@ -48,7 +48,7 @@ class AcousticFeatureDataset(Dataset):
     def __len__(self) -> int:
         return len(self.labels)
 
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
         return self.features[idx], self.labels[idx]
 
 
@@ -61,8 +61,8 @@ class AudioDetectorTrainer:
 
     def __init__(
         self,
-        checkpoint_path: Optional[Path | str] = None,
-        device: Optional[str] = None,
+        checkpoint_path: Path | str | None = None,
+        device: str | None = None,
     ):
         self.checkpoint_path = Path(checkpoint_path) if checkpoint_path else DEFAULT_AUDIO_CHECKPOINT
         if device:
@@ -72,7 +72,7 @@ class AudioDetectorTrainer:
         self.validator = AudioValidator()
         self.model = AudioClassifierNet().to(self.device)
 
-    def extract_features_from_file(self, audio_path: Path | str) -> Optional[np.ndarray]:
+    def extract_features_from_file(self, audio_path: Path | str) -> np.ndarray | None:
         """Extracts 5-dimensional acoustic feature vector."""
         samples, sr, _ = self.validator.extract_pcm_samples(audio_path)
         if samples is None or len(samples) < 1000:
@@ -82,7 +82,7 @@ class AudioDetectorTrainer:
 
     def prepare_data_from_directory(
         self, dataset_dir: Path | str
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Scans dataset with 'ai_generated' and 'real' subdirectories."""
         dataset_path = Path(dataset_dir)
         X, y = [], []
@@ -111,9 +111,9 @@ class AudioDetectorTrainer:
         batch_size: int = 16,
         lr: float = 1e-3,
         val_split: float = 0.2,
-        X_val: Optional[np.ndarray] = None,
-        y_val: Optional[np.ndarray] = None,
-    ) -> Dict[str, Any]:
+        X_val: np.ndarray | None = None,
+        y_val: np.ndarray | None = None,
+    ) -> dict[str, Any]:
         """
         Trains acoustic classifier model. By default holds out a random `val_split` of X; if an
         explicit (X_val, y_val) set is given (e.g. the content-hash validation partition from
@@ -138,7 +138,7 @@ class AudioDetectorTrainer:
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.Adam(self.model.parameters(), lr=lr)
 
-        history: Dict[str, List[float]] = {"loss": [], "val_accuracy": []}
+        history: dict[str, list[float]] = {"loss": [], "val_accuracy": []}
         self.training_meta = {                                  # saved with the checkpoint: what the model was trained on
             "train_samples": len(X_train), "val_samples": int(val_size),
             "unit": "audio files (one acoustic feature vector each)", "epochs_run": epochs, "initial_weights": "random (trained from scratch)",
@@ -182,14 +182,14 @@ class AudioDetectorTrainer:
         return history
 
     def arrays_from_samples(
-        self, samples: List[Tuple[Path, int]]
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        self, samples: list[tuple[Path, int]]
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Extracts acoustic feature vectors from audio files IN PLACE (label 0=ai_generated, 1=real).
         Files that can't be decoded are skipped. Returns empty arrays if nothing was usable.
         """
-        X: List[np.ndarray] = []
-        y: List[int] = []
+        X: list[np.ndarray] = []
+        y: list[int] = []
         for path, label in samples:
             vec = self.extract_features_from_file(path)
             if vec is not None:
@@ -199,7 +199,7 @@ class AudioDetectorTrainer:
             return np.zeros((0, 5), dtype=np.float32), np.zeros((0,), dtype=np.int64)
         return np.array(X, dtype=np.float32), np.array(y, dtype=np.int64)
 
-    def save_checkpoint(self, path: Optional[Path | str] = None) -> None:
+    def save_checkpoint(self, path: Path | str | None = None) -> None:
         """Serializes audio classifier checkpoint."""
         save_path = Path(path) if path else self.checkpoint_path
         save_path.parent.mkdir(parents=True, exist_ok=True)
@@ -218,15 +218,15 @@ class AudioDetectorTrainer:
         self,
         dataset_dir: Path | str,
         output_npz_path: Path | str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Extracts acoustic features from audio recordings and saves to compressed .npz archive.
         """
         output_path = Path(output_npz_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        X: List[np.ndarray] = []
-        y: List[int] = []
+        X: list[np.ndarray] = []
+        y: list[int] = []
         total_source_bytes = 0
 
         for p, label in _labelled(Path(dataset_dir)):
@@ -262,7 +262,7 @@ class AudioDetectorTrainer:
         batch_size: int = 16,
         lr: float = 1e-3,
         val_split: float = 0.2,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Trains audio model directly from a .npz feature bank with zero raw audio on disk."""
         with np.load(str(npz_path)) as data:
             X, y = data["features"], data["labels"]

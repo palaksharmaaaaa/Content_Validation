@@ -40,6 +40,10 @@ jobs:
           pip install "torch==${TORCH}" "torchvision==${TV}" --index-url https://download.pytorch.org/whl/cpu
           grep -viE '^(torch|torchvision)==' requirements.lock.txt > ci-requirements.txt
           pip install -r ci-requirements.txt
+      - name: Lint (ruff) and security lint (bandit)
+        run: |
+          python -m ruff check .
+          python -m bandit -q -c pyproject.toml -r core image_detector audio_detector video_detector services ui app.py
       - name: Cache pretrained models
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:

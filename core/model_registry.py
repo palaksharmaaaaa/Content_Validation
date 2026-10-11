@@ -12,9 +12,9 @@ A number that is not known is reported as "not stated" and never replaced by an 
 from __future__ import annotations
 
 import logging
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -43,19 +43,22 @@ class ModelInfo:
     used_by: tuple = ("image", "video", "audio")
     active: bool = True            # False when the weights are not present on this machine
     note: str = ""                 # anything the reader should know (limits, caveats)
-    trained_files: Optional[int] = None   # distinct files this project trained it on (counted in the total); None if unknown or not trained here
+    trained_files: int | None = None   # distinct files this project trained it on (counted in the total); None if unknown or not trained here
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d["used_by"] = list(self.used_by)
         return d
 
 
 # --------------------------------------------------------------------------------------------- fixed facts
-def _upstream() -> List[ModelInfo]:
-    from core.perception.age import MODEL_ID as age_id, MODEL_REVISION as age_rev
-    from core.perception.detector import MODEL_ID as det_id, MODEL_REVISION as det_rev
-    from core.perception.recognizer import MODEL_ID as rec_id, MODEL_REVISION as rec_rev
+def _upstream() -> list[ModelInfo]:
+    from core.perception.age import MODEL_ID as age_id
+    from core.perception.age import MODEL_REVISION as age_rev
+    from core.perception.detector import MODEL_ID as det_id
+    from core.perception.detector import MODEL_REVISION as det_rev
+    from core.perception.recognizer import MODEL_ID as rec_id
+    from core.perception.recognizer import MODEL_REVISION as rec_rev
 
     return [
         ModelInfo("Find faces", "YuNet", "face_detection_yunet_2023mar.onnx (OpenCV Zoo)", PRETRAINED,
@@ -88,7 +91,7 @@ _FACE_DATASET_LICENCE = ("The Kaggle page could not be read when this was checke
 
 
 # --------------------------------------------------------------------------------------------- run-time facts
-def _read_checkpoint_meta(path: Path) -> Optional[Dict[str, Any]]:
+def _read_checkpoint_meta(path: Path) -> dict[str, Any] | None:
     """The ``meta`` saved in a checkpoint, ``{}`` for one saved without it, None if there is no usable checkpoint."""
     if not path.is_file() or path.stat().st_size < 1024:
         return None
@@ -103,12 +106,12 @@ def _read_checkpoint_meta(path: Path) -> Optional[Dict[str, Any]]:
         return None
 
 
-def _count(meta: Dict[str, Any], key: str) -> Optional[int]:
+def _count(meta: dict[str, Any], key: str) -> int | None:
     value = meta.get(key)
     return int(value) if isinstance(value, (int, float)) and value >= 0 else None
 
 
-def _trained_text(meta: Dict[str, Any]) -> tuple:
+def _trained_text(meta: dict[str, Any]) -> tuple:
     """(description, size text, total files) for a checkpoint trained here."""
     train, val = _count(meta, "train_samples"), _count(meta, "val_samples")
     unit = meta.get("unit", "samples")
@@ -147,7 +150,6 @@ def _backbone(modality: str) -> ModelInfo:
     arch = {"image": "ResNet-18 / ResNet-50 / MobileNetV3-Small (chosen when training)",
             "video": "ResNet-18 judging pairs of consecutive frames",
             "audio": "small multi-layer perceptron over 5 acoustic features"}[modality]
-    init = "torchvision ImageNet-1K weights" if modality != "audio" else "random weights"
     base = dict(step=f"Learned {modality} AI-versus-real classifier (optional)", name=arch, variant=f"{Path(str(path)).name}", used_by=(modality,),
                 licence="Apache-2.0 (this project); " + ("starting weights are torchvision ImageNet-1K (ImageNet terms: non-commercial research)." if modality != "audio" else "no third-party weights."),
                 source=f"{modality}_detector/trainer.py")
@@ -176,7 +178,6 @@ def _heuristics(modality: str) -> ModelInfo:
 
 
 def _ood(modality: str) -> ModelInfo:
-    import importlib
 
     from core.forensics.ood import OODGate
 
@@ -191,7 +192,7 @@ def _ood(modality: str) -> ModelInfo:
                      note="Reports NOT_CALIBRATED until you fit it on at least as many files as it has features.")
 
 
-def _calibration(modality: str) -> Optional[Dict[str, Any]]:
+def _calibration(modality: str) -> dict[str, Any] | None:
     from core.atomic_io import atomic_read_json
 
     data = atomic_read_json(ROOT / f"{modality}_detector" / "data" / f"{modality}_calibration.json", default=None)
@@ -199,18 +200,18 @@ def _calibration(modality: str) -> Optional[Dict[str, Any]]:
 
 
 # --------------------------------------------------------------------------------------------- public
-def manifest(modality: str) -> Dict[str, Any]:
+def manifest(modality: str) -> dict[str, Any]:
     """Every step used for ``modality`` (image, video or audio) and what is known about its model and training data."""
     if modality not in ("image", "video", "audio"):
         raise ValueError(f"modality must be image, video or audio, not {modality!r}")
-    models: List[ModelInfo] = [_heuristics(modality)]
+    models: list[ModelInfo] = [_heuristics(modality)]
     if modality == "image":
         models.append(_face_model())
     models.append(_backbone(modality))
     models.append(_ood(modality))
     models += [m for m in _upstream() if modality in m.used_by]
 
-    trained_here: List[Dict[str, Any]] = []
+    trained_here: list[dict[str, Any]] = []
     total = 0
     for m in models:
         if m.active and m.trained_files is not None:

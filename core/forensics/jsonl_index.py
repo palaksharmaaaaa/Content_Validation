@@ -8,17 +8,18 @@ from __future__ import annotations
 import json
 import logging
 import threading
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
-_cache: Dict[Tuple[str, str, int, int], List[Dict[str, Any]]] = {}
+_cache: dict[tuple[str, str, int, int], list[dict[str, Any]]] = {}
 _lock = threading.Lock()
 _MAX_CACHED = 8
 
 
-def load_index(path: Path, prepare: Callable[[Dict[str, Any]], None]) -> List[Dict[str, Any]]:
+def load_index(path: Path, prepare: Callable[[dict[str, Any]], None]) -> list[dict[str, Any]]:
     """Rows of the index at ``path`` (empty when it does not exist). ``prepare(row)`` adds derived fields and raises for a bad row."""
     path = Path(path)
     try:
@@ -30,7 +31,7 @@ def load_index(path: Path, prepare: Callable[[Dict[str, Any]], None]) -> List[Di
         cached = _cache.get(key)
     if cached is not None:
         return cached
-    rows: List[Dict[str, Any]] = []
+    rows: list[dict[str, Any]] = []
     for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
         line = line.strip()
         if not line:

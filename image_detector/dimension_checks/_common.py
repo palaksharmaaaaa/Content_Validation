@@ -6,11 +6,9 @@ Pure stdlib + Pillow + numpy + cv2. All scans are bounded (WINDOW bytes head/tai
 from __future__ import annotations
 
 import logging
-
 import struct
 import zlib
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -50,7 +48,7 @@ def sniff_format(head: bytes) -> str:
     return "unknown"
 
 
-def jpeg_end_offset(data: bytes) -> Optional[int]:
+def jpeg_end_offset(data: bytes) -> int | None:
     """Offset just past the first image's EOI marker (None if the stream is malformed)."""
     if not data.startswith(b"\xff\xd8"):
         return None
@@ -73,7 +71,7 @@ def jpeg_end_offset(data: bytes) -> Optional[int]:
     return None
 
 
-def png_end_offset(data: bytes) -> Optional[int]:
+def png_end_offset(data: bytes) -> int | None:
     if not data.startswith(b"\x89PNG\r\n\x1a\n"):
         return None
     i, n = 8, len(data)
@@ -89,13 +87,13 @@ def png_end_offset(data: bytes) -> Optional[int]:
 _PNG_TEXT_CHUNKS = {"tEXt", "zTXt", "iTXt", "eXIf"}
 
 
-def parse_png_chunks(path: Path, max_chunks: int = 4096, body_limit: int = 1_000_000) -> List[Tuple[str, bytes]]:
+def parse_png_chunks(path: Path, max_chunks: int = 4096, body_limit: int = 1_000_000) -> list[tuple[str, bytes]]:
     """
     PNG chunk walk that SEEKS through the file, so text/metadata chunks located after a large IDAT are seen
     regardless of file size. Only text/EXIF chunk bodies are read (up to ``body_limit`` bytes); other chunks
     are reported with an empty body.
     """
-    out: List[Tuple[str, bytes]] = []
+    out: list[tuple[str, bytes]] = []
     size = Path(path).stat().st_size
     with open(path, "rb") as f:
         if f.read(8) != b"\x89PNG\r\n\x1a\n":
@@ -121,9 +119,9 @@ def _inflate_bounded(data: bytes, max_len: int) -> bytes:
     return zlib.decompressobj().decompress(data, max_len)
 
 
-def png_text_fields(chunks: List[Tuple[str, bytes]], max_len: int = 200_000) -> Dict[str, str]:
+def png_text_fields(chunks: list[tuple[str, bytes]], max_len: int = 200_000) -> dict[str, str]:
     """tEXt / zTXt / iTXt key -> text (decoded leniently, truncated)."""
-    out: Dict[str, str] = {}
+    out: dict[str, str] = {}
     for ctype, body in chunks:
         try:
             if ctype == "tEXt":
@@ -146,9 +144,9 @@ def png_text_fields(chunks: List[Tuple[str, bytes]], max_len: int = 200_000) -> 
     return out
 
 
-def collect_text_fields(path: Path) -> Dict[str, str]:
+def collect_text_fields(path: Path) -> dict[str, str]:
     """Free-text metadata fields from PNG chunks, EXIF string tags, and XMP."""
-    fields: Dict[str, str] = {}
+    fields: dict[str, str] = {}
     head, _tail, _size = read_windows(path)
     fmt = sniff_format(head)
     if fmt == "png":
@@ -177,7 +175,7 @@ def collect_text_fields(path: Path) -> Dict[str, str]:
     return fields
 
 
-def extract_exif_thumbnail(path: Path) -> Optional[bytes]:
+def extract_exif_thumbnail(path: Path) -> bytes | None:
     """Returns the IFD1 embedded JPEG thumbnail bytes from a JPEG's Exif APP1 segment, if any."""
     with open(path, "rb") as f:
         data = f.read(512 * 1024)
@@ -224,8 +222,8 @@ from image_detector.jpeg import estimate_libjpeg_quality, libjpeg_table  # noqa:
 
 
 # ---- perceptual hashes ---------------------------------------------------------------------
-def _gray_array(im: Image.Image, size: Tuple[int, int]) -> np.ndarray:
-    return np.asarray(im.convert("L").resize(size, Image.LANCZOS), dtype=np.float32)
+def _gray_array(im: Image.Image, size: tuple[int, int]) -> np.ndarray:
+    return np.asarray(im.convert("L").resize(size, Image.Resampling.LANCZOS), dtype=np.float32)
 
 
 def dhash64(im: Image.Image) -> int:

@@ -97,8 +97,8 @@ class CrossBottleneckAttn(nn.Module):
         x1 = x[:, :dim, :, :]
         x2 = x[:, dim:, :, :]
 
-        _assert(H == self.pos_embed.height, "")
-        _assert(W == self.pos_embed.width, "")
+        _assert(self.pos_embed.height == H, "")
+        _assert(self.pos_embed.width == W, "")
 
         q_f, k_f, v_f = self.get_qkv(x1, self.qkv_f)
         q_p, k_p, v_p = self.get_qkv(x2, self.qkv_p)

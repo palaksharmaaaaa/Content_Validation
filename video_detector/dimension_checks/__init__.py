@@ -12,25 +12,27 @@ Public API
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import numpy as np
 
-from core.forensics.reporting import UNKNOWN_SOURCE_MIN_AI_PERCENT as _UNKNOWN_MIN
-from core.forensics.reporting import add_band_and_open_set, summarize_for_evidence_trail
 from core.forensics.gates import HardBlockGate, recognize_scientific_format
 from core.forensics.ood import OODGate
 from core.forensics.registry import CheckContext, build_report, registry
+from core.forensics.reporting import UNKNOWN_SOURCE_MIN_AI_PERCENT as _UNKNOWN_MIN
+from core.forensics.reporting import add_band_and_open_set, summarize_for_evidence_trail
 from core.forensics.schemas import Finding
 
 # Importing the modules registers their checks. Order = execution order within a phase.
-from video_detector.dimension_checks import integrity  # noqa: F401
-from video_detector.dimension_checks import container  # noqa: F401
-from video_detector.dimension_checks import signal  # noqa: F401
-from video_detector.dimension_checks import context  # noqa: F401
-from video_detector.dimension_checks import legal  # noqa: F401
-from video_detector.dimension_checks import lifecycle  # noqa: F401
-from video_detector.dimension_checks import reliability  # noqa: F401
+from video_detector.dimension_checks import (
+    container,  # noqa: F401
+    context,  # noqa: F401
+    integrity,  # noqa: F401
+    legal,  # noqa: F401
+    lifecycle,  # noqa: F401
+    reliability,  # noqa: F401
+    signal,  # noqa: F401
+)
 
 DEFAULT_OOD_STATS = Path(__file__).resolve().parents[1] / "data" / "ood_stats.npz"
 UNKNOWN_SOURCE_MIN_AI_PERCENT = _UNKNOWN_MIN  # re-exported for callers
@@ -45,20 +47,20 @@ __all__ = [
 ]
 
 
-def normalize_provenance(prov: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+def normalize_provenance(prov: dict[str, Any] | None) -> dict[str, Any]:
     prov = prov or {}
     c2pa = prov.get("c2pa") if isinstance(prov.get("c2pa"), dict) else {}
     return {"c2pa_present": bool(prov.get("c2pa_present") or c2pa.get("c2pa_present"))}
 
 
-def check_video_gates(path: Union[str, Path]) -> Dict[str, Any]:
+def check_video_gates(path: str | Path) -> dict[str, Any]:
     hb = HardBlockGate().check(path)
     recog = recognize_scientific_format(path)
     final_status = "HARD_BLOCK_ESCALATE" if hb.triggered else ("RECOGNIZED_OUT_OF_SCOPE" if recog else None)
     return {"hard_block": hb.to_dict(), "recognition": recog, "triggered": final_status is not None, "final_status": final_status}
 
 
-def gate_short_circuit_result(path: Union[str, Path], gates: Dict[str, Any]) -> Dict[str, Any]:
+def gate_short_circuit_result(path: str | Path, gates: dict[str, Any]) -> dict[str, Any]:
     status = gates["final_status"]
     if status == "HARD_BLOCK_ESCALATE":
         reason = "File hash matches the operator-supplied hard-block list. Analysis stopped; escalate per policy."
@@ -73,7 +75,7 @@ def gate_short_circuit_result(path: Union[str, Path], gates: Dict[str, Any]) -> 
     }
 
 
-def temporal_vector(result: Optional[Dict[str, Any]]) -> Optional[np.ndarray]:
+def temporal_vector(result: dict[str, Any] | None) -> np.ndarray | None:
     """5-dim temporal feature vector used by the video OOD gate (None if features are unavailable)."""
     if not result:
         return None
@@ -96,19 +98,19 @@ def temporal_vector(result: Optional[Dict[str, Any]]) -> Optional[np.ndarray]:
 class VideoDimensionAnalysis:
     def __init__(
         self,
-        path: Union[str, Path],
-        profile: Optional[Dict[str, Any]] = None,
-        provenance: Optional[Dict[str, Any]] = None,
-        frames: Optional[List[np.ndarray]] = None,
-        ood_gate: Optional[OODGate] = None,
+        path: str | Path,
+        profile: dict[str, Any] | None = None,
+        provenance: dict[str, Any] | None = None,
+        frames: list[np.ndarray] | None = None,
+        ood_gate: OODGate | None = None,
     ):
         self.path = Path(path)
         self.profile = profile or {}
         self.provenance = normalize_provenance(provenance)
         self.frames = frames
         self._ood_gate = ood_gate
-        self._pre: List[Finding] = []
-        self._extra: Dict[str, Any] = {}
+        self._pre: list[Finding] = []
+        self._extra: dict[str, Any] = {}
 
     def _ctx(self, content=None, ai_result=None) -> CheckContext:
         if self.frames is not None:
@@ -116,11 +118,11 @@ class VideoDimensionAnalysis:
         return CheckContext(path=self.path, modality="video", profile=self.profile, provenance=self.provenance,
                             content=content or {}, ai_result=ai_result or {}, extra=self._extra)
 
-    def run_pre(self) -> Dict[str, float]:
+    def run_pre(self) -> dict[str, float]:
         self._pre = registry.run("video", self._ctx(), phase="pre")
         return dict(build_report(self._pre).score_terms)
 
-    def _ood(self, ai_result: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    def _ood(self, ai_result: dict[str, Any] | None) -> dict[str, Any]:
         gate = self._ood_gate or OODGate.load(DEFAULT_OOD_STATS)
         if not gate.calibrated:
             return {"status": "NOT_CALIBRATED", "distance": None, "threshold": None,
@@ -132,11 +134,11 @@ class VideoDimensionAnalysis:
 
     def run_post(
         self,
-        content: Optional[Dict[str, Any]] = None,
-        ai_result: Optional[Dict[str, Any]] = None,
-        attribution: Optional[Dict[str, Any]] = None,
-        gates: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        content: dict[str, Any] | None = None,
+        ai_result: dict[str, Any] | None = None,
+        attribution: dict[str, Any] | None = None,
+        gates: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         post = registry.run("video", self._ctx(content, ai_result), phase="post")
         out = build_report(self._pre + post, gates=gates).to_dict()
         out["ood"] = self._ood(ai_result)

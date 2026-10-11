@@ -7,8 +7,9 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional
+from typing import Any
 
 logger = logging.getLogger("core.batch")
 
@@ -20,7 +21,7 @@ _BUCKETS = {
 }
 
 
-def bucket_of(result: Dict[str, Any]) -> str:
+def bucket_of(result: dict[str, Any]) -> str:
     """ai_generated, composite, real, no_content, undecided or errors, from a pipeline result."""
     if result.get("error") or result.get("content_valid") is False:
         return "errors"
@@ -37,14 +38,14 @@ class SequentialBatch:
 
     def process_files(
         self,
-        file_paths: List[str | Path],
+        file_paths: list[str | Path],
         sensitivity: str = "balanced",
-        progress_callback: Optional[Callable[[int, int, Dict[str, Any]], None]] = None,
-    ) -> Dict[str, Any]:
+        progress_callback: Callable[[int, int, dict[str, Any]], None] | None = None,
+    ) -> dict[str, Any]:
         started = time.perf_counter()
         total = len(file_paths)
         counts = {k: 0 for k in ("ai_generated", "composite", "real", "undecided", "no_content", "errors")}
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         for index, path in enumerate(file_paths, 1):
             try:
                 res = self.pipeline.analyze(path, sensitivity=sensitivity)
@@ -69,8 +70,8 @@ class SequentialBatch:
         directory_path: str | Path,
         recursive: bool = True,
         sensitivity: str = "balanced",
-        progress_callback: Optional[Callable[[int, int, Dict[str, Any]], None]] = None,
-    ) -> Dict[str, Any]:
+        progress_callback: Callable[[int, int, dict[str, Any]], None] | None = None,
+    ) -> dict[str, Any]:
         folder = Path(directory_path)
         if not folder.is_dir():
             raise NotADirectoryError(f"Directory not found: {folder}")

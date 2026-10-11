@@ -7,8 +7,6 @@ import numpy as np
 from PIL import Image
 
 from image_detector.features import detect_digital_art_and_painting
-
-
 from tests.golden_support import assert_golden
 
 

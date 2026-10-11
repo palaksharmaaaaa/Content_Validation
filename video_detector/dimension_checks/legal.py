@@ -4,8 +4,6 @@ findings never alter P(AI) and are not legal advice.
 """
 from __future__ import annotations
 
-from typing import List
-
 from core.forensics.registry import CheckContext, registry
 from core.forensics.schemas import EvidenceClass, Finding, FindingStatus, Severity
 from video_detector.dimension_checks import _common as C
@@ -37,8 +35,8 @@ def _moov_info(ctx: CheckContext):
 
 
 @registry.register("video", "rights_and_privacy", phase="post")
-def check_rights_and_privacy(ctx: CheckContext) -> List[Finding]:
-    out: List[Finding] = []
+def check_rights_and_privacy(ctx: CheckContext) -> list[Finding]:
+    out: list[Finding] = []
     moov = _moov_info(ctx)
     items = (moov or {}).get("text_items", {})
     copyright_text = items.get("\xa9cpy", "")

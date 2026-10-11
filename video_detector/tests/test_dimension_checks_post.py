@@ -7,7 +7,14 @@ import pytest
 from core.forensics.registry import CheckContext
 from core.forensics.schemas import EvidenceClass, FindingStatus
 from video_detector.dimension_checks import (
-    VideoDimensionAnalysis, check_video_gates, context, legal, lifecycle, normalize_provenance, reliability, temporal_vector,
+    VideoDimensionAnalysis,
+    check_video_gates,
+    context,
+    legal,
+    lifecycle,
+    normalize_provenance,
+    reliability,
+    temporal_vector,
 )
 from video_detector.tests.video_fixtures import box, build_mp4, moving_square_frames, text_atom, trak, write_clip
 

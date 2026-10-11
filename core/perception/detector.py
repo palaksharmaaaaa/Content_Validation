@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import threading
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 
@@ -52,7 +52,7 @@ class ObjectDetector:
         """True once the model has loaded."""
         return self._ensure() is not None
 
-    def detect(self, image_bgr: np.ndarray, threshold: float = DEFAULT_THRESHOLD) -> List[Dict[str, Any]]:
+    def detect(self, image_bgr: np.ndarray, threshold: float = DEFAULT_THRESHOLD) -> list[dict[str, Any]]:
         """Objects as ``{label, score, box: (x, y, w, h)}`` in original pixels, most confident first."""
         model = self._ensure()
         if model is None or image_bgr is None or image_bgr.ndim != 3:
@@ -78,7 +78,7 @@ class ObjectDetector:
         return sorted(found, key=lambda d: d["score"], reverse=True)
 
 
-_default: Optional[ObjectDetector] = None
+_default: ObjectDetector | None = None
 _default_lock = threading.Lock()
 
 

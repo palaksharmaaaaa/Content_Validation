@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from image_detector.config import AI_SMOOTH_MU, REAL_SMOOTH_MU
 
@@ -36,27 +36,27 @@ _SMOOTH_MIDPOINT = (REAL_SMOOTH_MU + AI_SMOOTH_MU) / 2.0
 class _DossierContext:
     """Normalised views of the profile / detector / inventory dicts shared by the nine dimension builders."""
 
-    profile_data: Dict[str, Any]
-    ai_result: Dict[str, Any]
-    inv: Dict[str, Any]
-    prov: Dict[str, Any]
-    attr: Dict[str, Any]
-    geom: Dict[str, Any]
-    disp: Dict[str, Any]
-    pcol: Dict[str, Any]
-    exif: Dict[str, Any]
-    phys: Dict[str, Any]
-    f_metrics: Dict[str, Any]
-    entities: Dict[str, Any]
-    humans: Dict[str, Any]
-    env: Dict[str, Any]
-    light: Dict[str, Any]
-    tone: Dict[str, Any]
-    purpose: Dict[str, Any]
+    profile_data: dict[str, Any]
+    ai_result: dict[str, Any]
+    inv: dict[str, Any]
+    prov: dict[str, Any]
+    attr: dict[str, Any]
+    geom: dict[str, Any]
+    disp: dict[str, Any]
+    pcol: dict[str, Any]
+    exif: dict[str, Any]
+    phys: dict[str, Any]
+    f_metrics: dict[str, Any]
+    entities: dict[str, Any]
+    humans: dict[str, Any]
+    env: dict[str, Any]
+    light: dict[str, Any]
+    tone: dict[str, Any]
+    purpose: dict[str, Any]
     tax_state: str
 
     @classmethod
-    def build(cls, profile_data, ai_result, content_inventory, provenance_result, attribution_result) -> "_DossierContext":
+    def build(cls, profile_data, ai_result, content_inventory, provenance_result, attribution_result) -> _DossierContext:
         inv = content_inventory or {}
         entities = inv.get("living_entities") or inv.get("entities") or {}
         return cls(
@@ -87,7 +87,7 @@ def _join_known(*parts: Any) -> str:
     return " • ".join(dict.fromkeys(known)) if known else "Not determined"
 
 
-def _dimension_1(c: _DossierContext) -> Dict[str, Any]:
+def _dimension_1(c: _DossierContext) -> dict[str, Any]:
     """Dimension 1: Acquisition Hardware & Provenance Spectrum"""
     has_cam = bool(c.exif.get("camera_make") or c.prov.get("camera_make"))
     cam_str = f"{c.exif.get('camera_make') or c.prov.get('camera_make') or ''} {c.exif.get('camera_model') or c.prov.get('camera_model') or ''}".strip() or "No camera make or model recorded"
@@ -121,7 +121,7 @@ def _dimension_1(c: _DossierContext) -> Dict[str, Any]:
     return d1
 
 
-def _dimension_2(c: _DossierContext) -> Dict[str, Any]:
+def _dimension_2(c: _DossierContext) -> dict[str, Any]:
     """Dimension 2: Photometric, Spatial Geometry & Colorimetric Architecture"""
     w = c.geom.get("width") or c.profile_data.get("width") or 0
     h = c.geom.get("height") or c.profile_data.get("height") or 0
@@ -154,7 +154,7 @@ def _dimension_2(c: _DossierContext) -> Dict[str, Any]:
     return d2
 
 
-def _dimension_3(c: _DossierContext) -> Dict[str, Any]:
+def _dimension_3(c: _DossierContext) -> dict[str, Any]:
     """Dimension 3: Sensor-Noise Residual"""
     prnu_val = c.phys.get("flat_region_noise_mean", c.f_metrics.get("noise_residual_mean"))
     d3 = {
@@ -176,7 +176,7 @@ def _dimension_3(c: _DossierContext) -> Dict[str, Any]:
     return d3
 
 
-def _dimension_4(c: _DossierContext) -> Dict[str, Any]:
+def _dimension_4(c: _DossierContext) -> dict[str, Any]:
     """Dimension 4: Bilateral Surface Smoothness & Spatial Texture Variance"""
     smooth_val = c.phys.get("surface_smoothness_index", c.f_metrics.get("surface_smoothness"))
     d4 = {
@@ -196,7 +196,7 @@ def _dimension_4(c: _DossierContext) -> Dict[str, Any]:
     return d4
 
 
-def _dimension_5(c: _DossierContext) -> Dict[str, Any]:
+def _dimension_5(c: _DossierContext) -> dict[str, Any]:
     """Dimension 5: 2D Fourier FFT Frequency Power Spectrum Decay"""
     fft_alpha = c.phys.get("fft_decay_alpha", c.f_metrics.get("spectral_decay_alpha"))
     unmeasured = fft_alpha is None
@@ -218,7 +218,7 @@ def _dimension_5(c: _DossierContext) -> Dict[str, Any]:
     return d5
 
 
-def _dimension_6(c: _DossierContext) -> Dict[str, Any]:
+def _dimension_6(c: _DossierContext) -> dict[str, Any]:
     """Dimension 6: Visual Genre & Semantic Subject-Matter Catalog"""
     genre = c.purpose.get("primary_genre") or c.ai_result.get("subject_genre") or "Not determined"
     d6 = {
@@ -242,7 +242,7 @@ def _dimension_6(c: _DossierContext) -> Dict[str, Any]:
     return d6
 
 
-def _dimension_7(c: _DossierContext) -> Dict[str, Any]:
+def _dimension_7(c: _DossierContext) -> dict[str, Any]:
     """Dimension 7: Visual Art Mediums & Creative Styles Catalog"""
     medium = c.ai_result.get("visual_medium") or "Not determined"
     d7 = {
@@ -259,7 +259,7 @@ def _dimension_7(c: _DossierContext) -> Dict[str, Any]:
     return d7
 
 
-def _dimension_8(c: _DossierContext) -> Dict[str, Any]:
+def _dimension_8(c: _DossierContext) -> dict[str, Any]:
     """Dimension 8: Electromagnetic Spectrum & Acquisition Modalities"""
     spectrum = c.ai_result.get("sensor_spectrum") or "Not determined"
     d8 = {
@@ -273,7 +273,7 @@ def _dimension_8(c: _DossierContext) -> Dict[str, Any]:
     return d8
 
 
-def _dimension_9(c: _DossierContext) -> Dict[str, Any]:
+def _dimension_9(c: _DossierContext) -> dict[str, Any]:
     """Dimension 9: Generative AI Frontier & Attribution Fingerprint"""
     attributed_model = c.attr.get("attributed_model") or "Unknown / Unattributable"
     d9 = {
@@ -292,12 +292,12 @@ def _dimension_9(c: _DossierContext) -> Dict[str, Any]:
 
 
 def build_nine_dimensions_dossier(
-    profile_data: Dict[str, Any],
-    ai_result: Dict[str, Any],
-    content_inventory: Dict[str, Any],
-    provenance_result: Optional[Dict[str, Any]] = None,
-    attribution_result: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Dict[str, Any]]:
+    profile_data: dict[str, Any],
+    ai_result: dict[str, Any],
+    content_inventory: dict[str, Any],
+    provenance_result: dict[str, Any] | None = None,
+    attribution_result: dict[str, Any] | None = None,
+) -> dict[str, dict[str, Any]]:
     """
     Constructs an exhaustive 9-dimensional forensic analysis dossier.
     """
@@ -315,7 +315,7 @@ def build_nine_dimensions_dossier(
     }
 
 
-def _depiction_phrase(persons: int, faces: int, is_char: bool, animals: List[str], vehicles: List[str], genre: str) -> str:
+def _depiction_phrase(persons: int, faces: int, is_char: bool, animals: list[str], vehicles: list[str], genre: str) -> str:
     """Plain-English description of the main subject."""
     if is_char or (persons == 1 and faces == 0):
         return "a stylized character figure or artistic avatar"
@@ -332,7 +332,7 @@ def _depiction_phrase(persons: int, faces: int, is_char: bool, animals: List[str
     return f"a visual scene composed as a {genre.lower()}" if genre else "a visual scene"
 
 
-def _extra_entities_phrase(persons: int, animals: List[str], vehicles: List[str]) -> str:
+def _extra_entities_phrase(persons: int, animals: list[str], vehicles: list[str]) -> str:
     extra = []
     if persons > 0 and animals:
         extra.append(f"{len(animals)} animal(s) ({', '.join(sorted(set(animals)))})")
@@ -341,7 +341,7 @@ def _extra_entities_phrase(persons: int, animals: List[str], vehicles: List[str]
     return f", alongside {', and '.join(extra)}" if extra else ""
 
 
-def _palette_phrase(profile_data: Dict[str, Any]) -> str:
+def _palette_phrase(profile_data: dict[str, Any]) -> str:
     palette = profile_data.get("pixel_color_profile", {}).get("dominant_palette", [])
     if not palette:
         return ""
@@ -351,7 +351,7 @@ def _palette_phrase(profile_data: Dict[str, Any]) -> str:
     return f", with the palette predominantly shaped by {top_name} tones ({top_hex} covering {top_pct}% of the image)"
 
 
-def _screenshot_takeaway(noise: Optional[float]) -> str:
+def _screenshot_takeaway(noise: float | None) -> str:
     grain = f"zero optical camera grain (noise score: **{noise:.2f}**)" if noise is not None else "no optical camera grain measured"
     return (
         f"**The Simple Takeaway:** This image is a **digital screen capture** (a screenshot taken on a smartphone, tablet, or computer monitor), "
@@ -371,7 +371,7 @@ def _undetermined_takeaway(p_ai: float, p_real: float) -> str:
     )
 
 
-def _synthetic_takeaway(p_ai: float, tax_label: str, noise: Optional[float], smooth: Optional[float]) -> str:
+def _synthetic_takeaway(p_ai: float, tax_label: str, noise: float | None, smooth: float | None) -> str:
     grain = (
         "The fine-grain and smoothness measurements were not available for this file, so the lean towards AI comes from other signals; see the Evidence tab."
         if noise is None or smooth is None else
@@ -400,7 +400,7 @@ def _edited_takeaway(tax_label: str, p_real: float) -> str:
     )
 
 
-def _authentic_takeaway(tax_label: str, p_real: float, noise: Optional[float]) -> str:
+def _authentic_takeaway(tax_label: str, p_real: float, noise: float | None) -> str:
     grain_clause = f"and this picture has it (noise residual: **{noise:.2f}**) " if noise is not None else "(its level was not measured for this file) "
     return (
         f"**The Simple Takeaway:** This image is **consistent with a plain camera photograph** ({tax_label}); "
@@ -413,10 +413,10 @@ def _authentic_takeaway(tax_label: str, p_real: float, noise: Optional[float]) -
 
 def generate_newbie_explanation(
     filename: str,
-    profile_data: Dict[str, Any],
-    content_inventory: Dict[str, Any],
-    ai_result: Dict[str, Any],
-    decision: Dict[str, Any],
+    profile_data: dict[str, Any],
+    content_inventory: dict[str, Any],
+    ai_result: dict[str, Any],
+    decision: dict[str, Any],
 ) -> str:
     """
     Generates a descriptive, engaging, beginner-friendly narrative paragraph explaining:

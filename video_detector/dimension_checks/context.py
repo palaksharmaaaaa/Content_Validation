@@ -11,9 +11,8 @@ video_detector/data/video_fingerprint_index.jsonl. Always verify matches by eye.
 from __future__ import annotations
 
 import logging
-
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any
 
 from core.forensics.config import video_fp_index_file
 from core.forensics.jsonl_index import load_index
@@ -29,11 +28,11 @@ MIN_MATCHED = 4
 MATCH_FRACTION = 0.5
 
 
-def video_fingerprint_hashes(path: Union[str, Path], n: int = 16) -> List[str]:
+def video_fingerprint_hashes(path: str | Path, n: int = 16) -> list[str]:
     return [f"{C.phash64_gray(g):016x}" for g in C.read_spread_gray(Path(path), n=n)]
 
 
-def _prepare(row: Dict[str, Any]) -> None:
+def _prepare(row: dict[str, Any]) -> None:
     row["_h"] = [int(h, 16) for h in row["phashes"]]
 
 

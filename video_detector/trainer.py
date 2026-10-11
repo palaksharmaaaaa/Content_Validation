@@ -12,14 +12,14 @@ from __future__ import annotations
 import argparse
 import logging
 import os
-from pathlib import Path
 import random
-from typing import Any, Dict, List, Optional, Tuple
+from pathlib import Path
+from typing import Any
 
 import cv2
 import numpy as np
-from PIL import Image
 import torch
+from PIL import Image
 from torch import nn, optim
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
@@ -31,9 +31,9 @@ from video_detector.models.backbone import VideoTemporalTransitionModel
 logger = logging.getLogger("video_detector.trainer")
 
 
-def _labelled(root: Path, per_class: Optional[int] = None) -> List[Tuple[Path, int]]:
+def _labelled(root: Path, per_class: int | None = None) -> list[tuple[Path, int]]:
     """Videos under ``root/ai_generated`` (label 0) and ``root/real`` (label 1), in a stable order, at most ``per_class`` of each."""
-    out: List[Tuple[Path, int]] = []
+    out: list[tuple[Path, int]] = []
     for sub_dir, label in (("ai_generated", 0), ("real", 1)):
         folder = root / sub_dir
         if folder.is_dir():
@@ -45,7 +45,7 @@ def _labelled(root: Path, per_class: Optional[int] = None) -> List[Tuple[Path, i
 class FrameTransitionDataset(Dataset):
     """Dataset of consecutive frame pairs for temporal continuity classification."""
 
-    def __init__(self, pairs: List[Tuple[np.ndarray, np.ndarray, int]], transform=None):
+    def __init__(self, pairs: list[tuple[np.ndarray, np.ndarray, int]], transform=None):
         self.pairs = pairs
         self.transform = transform
 
@@ -73,8 +73,8 @@ class VideoDetectorTrainer:
 
     def __init__(
         self,
-        checkpoint_path: Optional[Path] = None,
-        device: Optional[str] = None,
+        checkpoint_path: Path | None = None,
+        device: str | None = None,
     ):
         self.checkpoint_path = checkpoint_path or DEFAULT_VIDEO_CHECKPOINT
         if device:
@@ -86,7 +86,7 @@ class VideoDetectorTrainer:
 
     def prepare_data_from_videos(
         self, dataset_dir: Path | str, max_videos_per_class: int = 50
-    ) -> List[Tuple[np.ndarray, np.ndarray, int]]:
+    ) -> list[tuple[np.ndarray, np.ndarray, int]]:
         """Consecutive frame pairs from a folder with ``ai_generated/`` and ``real/`` (at most ``max_videos_per_class`` of each), shuffled with a fixed seed."""
         samples = _labelled(Path(dataset_dir), max_videos_per_class)
         pairs = self.pairs_from_samples(samples)
@@ -96,12 +96,12 @@ class VideoDetectorTrainer:
 
     def train(
         self,
-        pairs: List[Tuple[np.ndarray, np.ndarray, int]],
+        pairs: list[tuple[np.ndarray, np.ndarray, int]],
         epochs: int = 5,
         batch_size: int = 16,
         lr: float = 1e-4,
-        val_pairs: Optional[List[Tuple[np.ndarray, np.ndarray, int]]] = None,
-    ) -> Dict[str, Any]:
+        val_pairs: list[tuple[np.ndarray, np.ndarray, int]] | None = None,
+    ) -> dict[str, Any]:
         """
         Trains temporal continuity model. If `val_pairs` is given (e.g. built from the content-hash
         validation partition in core.media_library), per-epoch held-out accuracy is recorded in
@@ -126,7 +126,7 @@ class VideoDetectorTrainer:
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.AdamW(self.model.parameters(), lr=lr)
 
-        history: Dict[str, Any] = {"loss": [], "val_accuracy": []}
+        history: dict[str, Any] = {"loss": [], "val_accuracy": []}
         self.training_meta = {                                  # saved with the checkpoint: what the model was trained on
             "train_samples": len(dataset), "val_samples": len(val_pairs or []),
             "unit": "frame pairs", "epochs_run": epochs, "initial_weights": "torchvision ImageNet-1K",
@@ -166,16 +166,16 @@ class VideoDetectorTrainer:
 
     def pairs_from_samples(
         self,
-        samples: List[Tuple[Path, int]],
-        max_videos: Optional[int] = None,
+        samples: list[tuple[Path, int]],
+        max_videos: int | None = None,
         frame_size: int = 224,
-    ) -> List[Tuple[np.ndarray, np.ndarray, int]]:
+    ) -> list[tuple[np.ndarray, np.ndarray, int]]:
         """
         Builds consecutive frame pairs from videos IN PLACE (label 0=ai_generated, 1=real).
         Frames are downscaled to frame_size x frame_size immediately so RAM stays bounded even for
         long/4K videos (the model resizes to 224x224 anyway). Unreadable videos are skipped.
         """
-        pairs: List[Tuple[np.ndarray, np.ndarray, int]] = []
+        pairs: list[tuple[np.ndarray, np.ndarray, int]] = []
         for path, label in (samples[:max_videos] if max_videos else samples):
             frames, _, _ = self.extractor.extract_sampled_frames(path, max_frames=12)
             small = [cv2.resize(f, (frame_size, frame_size)) for f in frames]
@@ -183,7 +183,7 @@ class VideoDetectorTrainer:
                 pairs.append((small[i], small[i + 1], label))
         return pairs
 
-    def save_checkpoint(self, path: Optional[Path] = None) -> None:
+    def save_checkpoint(self, path: Path | None = None) -> None:
         """Serializes video temporal checkpoint."""
         save_path = path or self.checkpoint_path
         save_path.parent.mkdir(parents=True, exist_ok=True)
@@ -202,15 +202,15 @@ class VideoDetectorTrainer:
         dataset_dir: Path | str,
         output_npz_path: Path | str,
         max_videos_per_class: int = 50,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Extracts compact temporal frame transition differences from videos and saves to compressed .npz.
         """
         output_path = Path(output_npz_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        diff_tensors: List[np.ndarray] = []
-        labels: List[int] = []
+        diff_tensors: list[np.ndarray] = []
+        labels: list[int] = []
         total_source_bytes = 0
 
         for vid, label in _labelled(Path(dataset_dir), max_videos_per_class):
@@ -245,7 +245,7 @@ class VideoDetectorTrainer:
         epochs: int = 5,
         batch_size: int = 16,
         lr: float = 1e-4,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Trains temporal model directly from a .npz feature bank with zero raw video on disk."""
         with np.load(str(npz_path)) as data:
             diffs, labels = data["diffs"], data["labels"]

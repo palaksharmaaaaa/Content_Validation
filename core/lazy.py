@@ -2,10 +2,9 @@
 from __future__ import annotations
 
 import importlib
-from typing import Dict, List, Tuple
 
 
-def install_lazy_exports(package: str, mapping: Dict[str, Tuple[str, str]], namespace: dict) -> None:
+def install_lazy_exports(package: str, mapping: dict[str, tuple[str, str]], namespace: dict) -> None:
     """mapping: exported name -> (module path, attribute name). Installs __getattr__/__dir__ into ``namespace``."""
 
     def __getattr__(name: str):
@@ -17,7 +16,7 @@ def install_lazy_exports(package: str, mapping: Dict[str, Tuple[str, str]], name
         namespace[name] = value  # cache so __getattr__ runs once per name
         return value
 
-    def __dir__() -> List[str]:
+    def __dir__() -> list[str]:
         return sorted(set(namespace) | set(mapping))
 
     namespace["__getattr__"] = __getattr__

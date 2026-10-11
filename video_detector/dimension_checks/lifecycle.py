@@ -4,7 +4,7 @@ RELIABILITY class: explains why forensic traces may be degraded; never changes P
 """
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from core.forensics.registry import CheckContext, registry
 from core.forensics.schemas import EvidenceClass, Finding, FindingStatus, Severity
@@ -14,7 +14,7 @@ from video_detector.dimension_checks import container
 PLATFORM_SIZES = {(1080, 1920), (720, 1280), (1920, 1080), (1280, 720), (640, 360), (854, 480), (480, 854), (360, 640)}
 
 
-def get_stream(ctx: CheckContext) -> Dict[str, Any]:
+def get_stream(ctx: CheckContext) -> dict[str, Any]:
     st = ctx.extra.get("stream")
     if st is None:
         st = C.stream_info(ctx.path)
@@ -32,7 +32,7 @@ def bits_per_pixel(ctx: CheckContext) -> float:
     return (size * 8.0 / px) if px > 0 else 0.0
 
 
-def assess_transcoding(ctx: CheckContext) -> Dict[str, Any]:
+def assess_transcoding(ctx: CheckContext) -> dict[str, Any]:
     st = get_stream(ctx)
     cues, score = [], 0.0
     bpp = bits_per_pixel(ctx)

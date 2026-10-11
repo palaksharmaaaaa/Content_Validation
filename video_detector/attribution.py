@@ -26,9 +26,11 @@ metadata (see provenance.py's vendor_signatures_found), with no dedicated motion
 heuristic yet. Add real calibration for them only once backed by actual sample analysis.
 """
 from __future__ import annotations
+
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from core.shared_results import finalize_attribution, unknown_attribution
 
 logger = logging.getLogger("video_detector.attribution")
@@ -141,7 +143,7 @@ def _region_for(model_key: str) -> str:
     return "United States" if model_key in _UNITED_STATES else "Global"
 
 
-def _score_vendor_signatures(provenance_data: Dict[str, Any], scores: Dict[str, float], cues: List[str]) -> bool:
+def _score_vendor_signatures(provenance_data: dict[str, Any], scores: dict[str, float], cues: list[str]) -> bool:
     """Vendor strings found in container metadata (unauthenticated claims: they steer the guess, never the verdict).
 
     container_atoms only ever holds generic MP4 box type names and can never contain a vendor identifier; vendor
@@ -159,7 +161,7 @@ def _score_vendor_signatures(provenance_data: Dict[str, Any], scores: Dict[str, 
     return declared
 
 
-def _score_c2pa(provenance_data: Dict[str, Any], scores: Dict[str, float], cues: List[str]) -> None:
+def _score_c2pa(provenance_data: dict[str, Any], scores: dict[str, float], cues: list[str]) -> None:
     """A Content Credentials marker says a tool signed the file, not which one: it adds weight to the generators that sign, nothing more."""
     if provenance_data.get("c2pa_present"):
         scores["openai_sora"] += 0.45
@@ -167,7 +169,7 @@ def _score_c2pa(provenance_data: Dict[str, Any], scores: Dict[str, float], cues:
         cues.append("C2PA Content Credentials markers present in video stream (unverified)")
 
 
-def _score_temporal_characteristics(temporal_data: Dict[str, Any], scores: Dict[str, float]) -> None:
+def _score_temporal_characteristics(temporal_data: dict[str, Any], scores: dict[str, float]) -> None:
     raw_var = (temporal_data.get("temporal_consistency") or {}).get("motion_variance")
     m_var = float(raw_var) if raw_var is not None else None            # None: too few frames, no reading
     if m_var is None:
@@ -192,17 +194,17 @@ class VideoModelAttributionEngine:
     def attribute_video(
         self,
         video_path: str | Path,
-        temporal_data: Optional[Dict[str, Any]] = None,
-        profile_data: Optional[Dict[str, Any]] = None,
-        provenance_data: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        temporal_data: dict[str, Any] | None = None,
+        profile_data: dict[str, Any] | None = None,
+        provenance_data: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Attributes video to likely generative source."""
         path = Path(video_path)
         if not path.is_file():
             return self._unknown_attribution("File not found")
 
-        scores: Dict[str, float] = {k: 0.05 for k in KNOWN_VIDEO_GENERATORS}
-        cues: List[str] = []
+        scores: dict[str, float] = {k: 0.05 for k in KNOWN_VIDEO_GENERATORS}
+        cues: list[str] = []
 
         declared = _score_vendor_signatures(provenance_data, scores, cues) if provenance_data else False
         declared_keys = {k for k, v in scores.items() if v > 0.05 + 1e-9}          # what the file itself claims, before any other cue is added
@@ -221,10 +223,10 @@ class VideoModelAttributionEngine:
         self,
         media_path: str | Path,
         modality: str = "video",
-        forensic_data: Optional[Dict[str, Any]] = None,
-        profile_data: Optional[Dict[str, Any]] = None,
-        provenance_data: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        forensic_data: dict[str, Any] | None = None,
+        profile_data: dict[str, Any] | None = None,
+        provenance_data: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Unified attribution interface for multi-modal workflows."""
         return self.attribute_video(
             video_path=media_path,
@@ -233,5 +235,5 @@ class VideoModelAttributionEngine:
             provenance_data=provenance_data,
         )
 
-    def _unknown_attribution(self, reason: str) -> Dict[str, Any]:
+    def _unknown_attribution(self, reason: str) -> dict[str, Any]:
         return unknown_attribution(reason)

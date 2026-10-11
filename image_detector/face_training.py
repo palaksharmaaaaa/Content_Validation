@@ -22,7 +22,6 @@ import os
 import random
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from PIL import Image
@@ -36,7 +35,7 @@ logger = logging.getLogger("image_detector.face_training")
 _EXT = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
 
 
-def list_files(folder: Path) -> List[Path]:
+def list_files(folder: Path) -> list[Path]:
     """Image files under ``folder``, sorted."""
     return sorted(p for p in Path(folder).rglob("*") if p.suffix.lower() in _EXT)
 
@@ -44,19 +43,19 @@ def list_files(folder: Path) -> List[Path]:
 NEAR_DUPLICATE_BITS = 2          # two pictures whose 64-bit difference hashes differ in at most this many bits are treated as the same picture
 
 
-def difference_hash(path: Path) -> Optional[int]:
+def difference_hash(path: Path) -> int | None:
     """64-bit difference hash (dHash) of a picture: the same picture re-saved, resized or lightly edited gets the same or a very close value.
     None if the file cannot be read."""
     try:
         with Image.open(path) as im:
-            small = np.asarray(im.convert("L").resize((9, 8), Image.BILINEAR), dtype=np.int16)
+            small = np.asarray(im.convert("L").resize((9, 8), Image.Resampling.BILINEAR), dtype=np.int16)
     except Exception:
         return None
     bits = (small[:, 1:] > small[:, :-1]).reshape(-1)
     return int("".join("1" if b else "0" for b in bits), 2)
 
 
-def near_duplicate_groups(hashes: List[Optional[int]], max_bits: int = NEAR_DUPLICATE_BITS) -> List[int]:
+def near_duplicate_groups(hashes: list[int | None], max_bits: int = NEAR_DUPLICATE_BITS) -> list[int]:
     """Group index for every picture (a picture without a hash is its own group): pictures closer than ``max_bits`` end up in one group,
     directly or through a chain of close neighbours."""
     n = len(hashes)
@@ -81,12 +80,12 @@ def near_duplicate_groups(hashes: List[Optional[int]], max_bits: int = NEAR_DUPL
     return [find(i) for i in range(n)]
 
 
-def split(files: List[Path]) -> Tuple[List[Path], List[Path]]:
+def split(files: list[Path]) -> tuple[list[Path], list[Path]]:
     """(train, validation). Near-duplicate pictures (re-saves, resizes, small edits) always land on the same side, so a validation picture
     never has a twin in training; the side is decided by the smallest content hash in the group, so it never reshuffles."""
     hashes = [difference_hash(p) for p in files]
     groups = near_duplicate_groups(hashes)
-    key: Dict[int, str] = {}
+    key: dict[int, str] = {}
     for p, g in zip(files, groups):
         digest = file_sha256(p, cached=False)
         key[g] = min(key.get(g, digest), digest)                 # the group's smallest content hash: the same whatever order the files come in
@@ -120,7 +119,7 @@ def _load(path: str):
     return img, 1.0
 
 
-def find_boxes(files: List[Path]) -> Dict[str, Tuple[str, Tuple[int, int, int, int]]]:
+def find_boxes(files: list[Path]) -> dict[str, tuple[str, tuple[int, int, int, int]]]:
     """Every face of at least MIN_TRAIN_FACE px, found with the detector inference uses, as
     ``{"<path>#<n>": (path, box)}`` with boxes in the downscaled image. Files with no usable face are omitted."""
     from core.face_detection import get_face_finder
@@ -135,7 +134,7 @@ def find_boxes(files: List[Path]) -> Dict[str, Tuple[str, Tuple[int, int, int, i
     return boxes
 
 
-def prepare(path: Path, box: Tuple[int, int, int, int], train: bool, stress: bool = False, seed: str = "") -> np.ndarray:
+def prepare(path: Path, box: tuple[int, int, int, int], train: bool, stress: bool = False, seed: str = "") -> np.ndarray:
     """The INPUT_SIZE RGB face crop for one training/validation image, built exactly as at inference
     (detector box + margin, ``crop_region``), plus the shortcut-removing degradations when requested."""
     import cv2
@@ -150,10 +149,10 @@ def prepare(path: Path, box: Tuple[int, int, int, int], train: bool, stress: boo
     crop = Image.fromarray(cv2.cvtColor(crop_region(img, (x, y, w, h)), cv2.COLOR_BGR2RGB))
     if train or stress:
         mid = rng.randint(56, 224)                        # random intermediate resolution: size is not a cue
-        crop = crop.resize((mid, mid), Image.BILINEAR)
+        crop = crop.resize((mid, mid), Image.Resampling.BILINEAR)
         if rng.random() < 0.8:
             crop = _jpeg(crop, rng.randint(40, 95))      # JPEG quality is not a cue
-    arr = np.asarray(crop.resize((INPUT_SIZE, INPUT_SIZE), Image.BILINEAR), dtype=np.uint8)
+    arr = np.asarray(crop.resize((INPUT_SIZE, INPUT_SIZE), Image.Resampling.BILINEAR), dtype=np.uint8)
     if train and rng.random() < 0.5:
         arr = arr[:, ::-1]
     return arr
@@ -162,7 +161,7 @@ def prepare(path: Path, box: Tuple[int, int, int, int], train: bool, stress: boo
 class FaceSet:
     """A list of (face key, label) as a torch dataset; ``boxes`` maps each key to (image path, face box)."""
 
-    def __init__(self, items: List[Tuple[str, int]], boxes: Dict[str, Tuple[str, Tuple[int, int, int, int]]], train: bool, stress: bool = False):
+    def __init__(self, items: list[tuple[str, int]], boxes: dict[str, tuple[str, tuple[int, int, int, int]]], train: bool, stress: bool = False):
         self.items, self.boxes, self.train, self.stress = items, boxes, train, stress
 
     def __len__(self):
@@ -174,7 +173,7 @@ class FaceSet:
         return to_tensor(prepare(Path(path), box, self.train, self.stress, seed=key)), label
 
 
-def evaluate(model, dataset: FaceSet, batch: int = 128, workers: int = 4) -> Dict[str, float]:
+def evaluate(model, dataset: FaceSet, batch: int = 128, workers: int = 4) -> dict[str, float]:
     """Accuracy, AI recall and real specificity at a 0.5 threshold."""
     import torch
     from torch.utils.data import DataLoader
@@ -196,7 +195,7 @@ def evaluate(model, dataset: FaceSet, batch: int = 128, workers: int = 4) -> Dic
     }
 
 
-def evaluate_inference(checkpoint: Path, items: List[Tuple[str, int]], boxes: Dict) -> Dict[str, float]:
+def evaluate_inference(checkpoint: Path, items: list[tuple[str, int]], boxes: dict) -> dict[str, float]:
     """Accuracy through the inference path (detector box -> ``crop_face`` -> classifier) on untouched validation faces."""
     from image_detector.face_authenticity import FaceAuthenticityClassifier
 
@@ -213,8 +212,8 @@ def evaluate_inference(checkpoint: Path, items: List[Tuple[str, int]], boxes: Di
             "real_specificity": float((~pred[ys == 0]).mean()), "n": int(len(ys))}
 
 
-def train(real_dirs: List[Path], ai_dirs: List[Path], epochs: int, out: Path, batch: int = 64, workers: int = 4, limit: int = 0,
-          dataset_name: str = "") -> Dict:
+def train(real_dirs: list[Path], ai_dirs: list[Path], epochs: int, out: Path, batch: int = 64, workers: int = 4, limit: int = 0,
+          dataset_name: str = "") -> dict:
     """Train, keep the best checkpoint by stress accuracy, and return the per-epoch history."""
     import torch
     from torch.utils.data import DataLoader
@@ -227,7 +226,7 @@ def train(real_dirs: List[Path], ai_dirs: List[Path], epochs: int, out: Path, ba
     if limit:
         r_tr, r_va, a_tr, a_va = r_tr[:limit], r_va[:max(8, limit // 4)], a_tr[:limit], a_va[:max(8, limit // 4)]
     boxes = find_boxes(r_tr + r_va + a_tr + a_va)
-    by_path: Dict[str, List[str]] = {}
+    by_path: dict[str, list[str]] = {}
     for key, (path, _box) in boxes.items():
         by_path.setdefault(path, []).append(key)
 
@@ -279,7 +278,7 @@ def train(real_dirs: List[Path], ai_dirs: List[Path], epochs: int, out: Path, ba
     return {"best_stress_accuracy": best, "inference_path": final, "history": history}
 
 
-def main(argv=None) -> Dict:
+def main(argv=None) -> dict:
     """Command-line entry point."""
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
     ap.add_argument("--real", type=Path, nargs="+", required=True, help="folders of real faces")

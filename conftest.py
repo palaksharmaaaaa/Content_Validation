@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
-from typing import Dict
 
 import pytest
 
@@ -28,11 +27,11 @@ PROTECTED_GLOBS = (
     "core/data/*",
 )
 
-_before: Dict[str, str] = {}
+_before: dict[str, str] = {}
 
 
-def _fingerprint() -> Dict[str, str]:
-    out: Dict[str, str] = {}
+def _fingerprint() -> dict[str, str]:
+    out: dict[str, str] = {}
     for pattern in PROTECTED_GLOBS:
         for p in sorted(ROOT.glob(pattern)):
             if p.is_file():

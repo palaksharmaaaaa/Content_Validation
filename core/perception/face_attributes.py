@@ -11,8 +11,9 @@ from __future__ import annotations
 
 import logging
 import threading
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any
 
 import cv2
 import numpy as np
@@ -30,7 +31,7 @@ SAME_PERSON_COSINE = 0.363     # the threshold published with SFace (about 99.4 
 _STD_POINTS = np.array([[38.2946, 51.6963], [73.5318, 51.5014], [56.0252, 71.7366], [41.5493, 92.3655], [70.7299, 92.2041]], dtype=np.float32)
 
 
-def _align(image_bgr: np.ndarray, landmarks: np.ndarray, size: int = 112) -> Optional[np.ndarray]:
+def _align(image_bgr: np.ndarray, landmarks: np.ndarray, size: int = 112) -> np.ndarray | None:
     """Similarity-warp the face so the five landmarks sit on the standard 112 x 112 template."""
     matrix, _ = cv2.estimateAffinePartial2D(np.asarray(landmarks, dtype=np.float32), _STD_POINTS, method=cv2.LMEDS)
     return None if matrix is None else cv2.warpAffine(image_bgr, matrix, (size, size), flags=cv2.INTER_LINEAR)
@@ -71,7 +72,7 @@ class FaceAttributes:
         self._load()
         return self._sface is not None
 
-    def expression(self, image_bgr: np.ndarray, landmarks: np.ndarray) -> Optional[Dict[str, Any]]:
+    def expression(self, image_bgr: np.ndarray, landmarks: np.ndarray) -> dict[str, Any] | None:
         """``{label, confidence, scores}`` for one face, or None."""
         self._load()
         aligned = _align(image_bgr, landmarks)
@@ -87,7 +88,7 @@ class FaceAttributes:
         return {"label": EXPRESSIONS[top], "confidence": round(float(probs[top]), 3),
                 "scores": {name: round(float(p), 3) for name, p in zip(EXPRESSIONS, probs)}}
 
-    def embedding(self, image_bgr: np.ndarray, landmarks: np.ndarray) -> Optional[np.ndarray]:
+    def embedding(self, image_bgr: np.ndarray, landmarks: np.ndarray) -> np.ndarray | None:
         """Unit-length 128-d identity embedding for one face, or None."""
         self._load()
         aligned = _align(image_bgr, landmarks)
@@ -99,11 +100,11 @@ class FaceAttributes:
         return vec / norm if norm else None
 
 
-def group_same_person(embeddings: Sequence[Optional[np.ndarray]], threshold: float = SAME_PERSON_COSINE) -> List[int]:
+def group_same_person(embeddings: Sequence[np.ndarray | None], threshold: float = SAME_PERSON_COSINE) -> list[int]:
     """Group index (0, 1, 2 ...) for each embedding: faces whose cosine similarity to a group's first member is at least
     ``threshold`` share a group. ``-1`` for faces without an embedding. Deterministic, greedy, order-stable."""
-    firsts: List[np.ndarray] = []
-    groups: List[int] = []
+    firsts: list[np.ndarray] = []
+    groups: list[int] = []
     for emb in embeddings:
         if emb is None:
             groups.append(-1)
@@ -117,7 +118,7 @@ def group_same_person(embeddings: Sequence[Optional[np.ndarray]], threshold: flo
     return groups
 
 
-_default: Optional[FaceAttributes] = None
+_default: FaceAttributes | None = None
 _default_lock = threading.Lock()
 
 

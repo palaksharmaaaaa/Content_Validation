@@ -14,3 +14,10 @@ timm==1.0.30
 huggingface-hub==2.2.0
 safetensors==0.8.0
 pytest==9.1.1
+# development and optional-quality tools (requirements-dev.txt)
+hypothesis==6.169.0
+evidently==0.7.23
+cleanlab==2.9.0
+ruff==0.17.0
+bandit==1.9.4
+coverage==7.16.2

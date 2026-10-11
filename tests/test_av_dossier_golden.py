@@ -3,10 +3,8 @@ import json
 import random
 
 from audio_detector.explain import build_audio_nine_dimensions_dossier
-from video_detector.explain import build_video_nine_dimensions_dossier
-
-
 from tests.golden_support import assert_golden
+from video_detector.explain import build_video_nine_dimensions_dossier
 
 
 def put(r, d, k, v, p=.6):

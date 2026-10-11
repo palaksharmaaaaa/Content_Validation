@@ -6,13 +6,12 @@ data for some PNGs, which later colour conversions reject. ``imread`` reads the 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional, Union
 
 import cv2
 import numpy as np
 
 
-def _within_pixel_ceiling(path: Union[str, Path]) -> bool:
+def _within_pixel_ceiling(path: str | Path) -> bool:
     """True if the header says the picture is no larger than ``SAFE_MAX_IMAGE_PIXELS``. OpenCV allocates the whole decoded array, so a
     small PNG that declares a huge canvas must be refused before it is decoded. A file whose header cannot be read is refused too."""
     from PIL import Image
@@ -27,7 +26,7 @@ def _within_pixel_ceiling(path: Union[str, Path]) -> bool:
     return width * height <= SAFE_MAX_IMAGE_PIXELS
 
 
-def imread(path: Union[str, Path], flags: int = cv2.IMREAD_COLOR) -> Optional[np.ndarray]:
+def imread(path: str | Path, flags: int = cv2.IMREAD_COLOR) -> np.ndarray | None:
     """Like ``cv2.imread`` but unicode-safe and always uint8. Returns None if the file cannot be decoded."""
     if not _within_pixel_ceiling(path):
         return None

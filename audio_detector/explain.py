@@ -6,7 +6,7 @@ into clear, engaging narrative explanations for beginners and comprehensive audi
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional, NamedTuple
+from typing import Any, NamedTuple
 
 from audio_detector.config import DIGITAL_SILENCE_RATIO_THRESHOLD, SYNTHETIC_FLATNESS_HIGH_THRESHOLD, SYNTHETIC_FLATNESS_LOW_THRESHOLD
 
@@ -38,7 +38,7 @@ def _channels_text(channels: Any) -> str:
     return f"{channels} channels" if isinstance(channels, int) and channels > 2 else "Not recorded"
 
 
-def _audio_dimension_1(c: _AudioDossierContext) -> Dict[str, Any]:
+def _audio_dimension_1(c: _AudioDossierContext) -> dict[str, Any]:
     """1. Hardware & Container Provenance"""
     has_c2pa = c.prov.get("c2pa_present", False)
     d1 = {
@@ -52,7 +52,7 @@ def _audio_dimension_1(c: _AudioDossierContext) -> Dict[str, Any]:
     return d1
 
 
-def _audio_dimension_2(c: _AudioDossierContext) -> Dict[str, Any]:
+def _audio_dimension_2(c: _AudioDossierContext) -> dict[str, Any]:
     """2. Acoustic Temporal Geometry"""
     d2 = {
         "dimension_id": 2,
@@ -70,7 +70,7 @@ def _measured(c: _AudioDossierContext) -> bool:
     return bool(c.acoustics) and c.acoustics.get("measured", True) is not False
 
 
-def _audio_dimension_3(c: _AudioDossierContext) -> Dict[str, Any]:
+def _audio_dimension_3(c: _AudioDossierContext) -> dict[str, Any]:
     """3. Vocoder High-Frequency Cutoff (Brickwalling)"""
     d3 = {
         "dimension_id": 3,
@@ -93,7 +93,7 @@ def _audio_dimension_3(c: _AudioDossierContext) -> Dict[str, Any]:
     return d3
 
 
-def _audio_dimension_4(c: _AudioDossierContext) -> Dict[str, Any]:
+def _audio_dimension_4(c: _AudioDossierContext) -> dict[str, Any]:
     """4. Wiener Spectral Flatness & Harmonic Over-Smoothing"""
     d4 = {
         "dimension_id": 4,
@@ -119,7 +119,7 @@ def _audio_dimension_4(c: _AudioDossierContext) -> Dict[str, Any]:
     return d4
 
 
-def _audio_dimension_5(c: _AudioDossierContext) -> Dict[str, Any]:
+def _audio_dimension_5(c: _AudioDossierContext) -> dict[str, Any]:
     """5. Silence Profile & Acoustic Room Ambience"""
     d5 = {
         "dimension_id": 5,
@@ -147,7 +147,7 @@ def _audio_dimension_5(c: _AudioDossierContext) -> Dict[str, Any]:
     return d5
 
 
-def _audio_dimension_6(c: _AudioDossierContext) -> Dict[str, Any]:
+def _audio_dimension_6(c: _AudioDossierContext) -> dict[str, Any]:
     """6. Sound type and delivery (what the recording is, as far as a spectrum and a level can say)"""
     d6 = {
         "dimension_id": 6,
@@ -160,7 +160,7 @@ def _audio_dimension_6(c: _AudioDossierContext) -> Dict[str, Any]:
     return d6
 
 
-def _audio_dimension_7(c: _AudioDossierContext) -> Dict[str, Any]:
+def _audio_dimension_7(c: _AudioDossierContext) -> dict[str, Any]:
     """7. Audio Synthesis Medium"""
     d7 = {
         "dimension_id": 7,
@@ -174,7 +174,7 @@ def _audio_dimension_7(c: _AudioDossierContext) -> Dict[str, Any]:
     return d7
 
 
-def _audio_dimension_8(c: _AudioDossierContext) -> Dict[str, Any]:
+def _audio_dimension_8(c: _AudioDossierContext) -> dict[str, Any]:
     """8. Frequency Spectrum Bandwidth & Nyquist Coverage"""
     d8 = {
         "dimension_id": 8,
@@ -187,7 +187,7 @@ def _audio_dimension_8(c: _AudioDossierContext) -> Dict[str, Any]:
     return d8
 
 
-def _audio_dimension_9(c: _AudioDossierContext) -> Dict[str, Any]:
+def _audio_dimension_9(c: _AudioDossierContext) -> dict[str, Any]:
     """9. Foundation Voice Model Attribution & Watermarking"""
     d9 = {
         "dimension_id": 9,
@@ -202,12 +202,12 @@ def _audio_dimension_9(c: _AudioDossierContext) -> Dict[str, Any]:
 
 
 def build_audio_nine_dimensions_dossier(
-    profile_data: Dict[str, Any],
-    audio_result: Dict[str, Any],
-    content_inventory: Optional[Dict[str, Any]] = None,
-    provenance_result: Optional[Dict[str, Any]] = None,
-    attribution_result: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Dict[str, Any]]:
+    profile_data: dict[str, Any],
+    audio_result: dict[str, Any],
+    content_inventory: dict[str, Any] | None = None,
+    provenance_result: dict[str, Any] | None = None,
+    attribution_result: dict[str, Any] | None = None,
+) -> dict[str, dict[str, Any]]:
     """Constructs an exhaustive 9-dimensional forensic analysis dossier for audio recordings."""
     prof = profile_data or {}
     geom = prof.get("geometry", {})
@@ -239,10 +239,10 @@ def build_audio_nine_dimensions_dossier(
 
 def generate_audio_newbie_explanation(
     filename: str,
-    profile_data: Dict[str, Any],
-    content_inventory: Dict[str, Any],
-    audio_result: Dict[str, Any],
-    decision: Dict[str, Any],
+    profile_data: dict[str, Any],
+    content_inventory: dict[str, Any],
+    audio_result: dict[str, Any],
+    decision: dict[str, Any],
 ) -> str:
     """Generates an engaging, accessible narrative explanation of audio forensics for non-technical users."""
     duration = profile_data.get("duration_seconds") or 0.0

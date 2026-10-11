@@ -6,7 +6,8 @@ text. ``render_table`` replaces ``st.dataframe`` (whose canvas cells truncate) w
 from __future__ import annotations
 
 import html
-from typing import Any, Dict, Iterable, List, Sequence
+from collections.abc import Iterable, Sequence
+from typing import Any
 
 import streamlit as st
 
@@ -58,13 +59,13 @@ def inject_css() -> None:
     st.markdown(_CSS, unsafe_allow_html=True)
 
 
-def render_table(rows: Sequence[Dict[str, Any]], percent_bars: Iterable[str] = ()) -> None:
+def render_table(rows: Sequence[dict[str, Any]], percent_bars: Iterable[str] = ()) -> None:
     """Draw ``rows`` (a list of dicts with the same keys) as a table whose cells wrap. Columns in ``percent_bars`` hold
     0-100 numbers drawn as a bar plus the value."""
     if not rows:
         return
     bars = set(percent_bars)
-    cols: List[str] = list(rows[0].keys())
+    cols: list[str] = list(rows[0].keys())
     head = "".join(f"<th>{html.escape(str(c))}</th>" for c in cols)
     body = []
     for row in rows:

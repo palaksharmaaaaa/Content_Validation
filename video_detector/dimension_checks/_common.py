@@ -5,17 +5,16 @@ instead of raising on malformed input.
 """
 from __future__ import annotations
 
-from core.ffmpeg import open_video
-from core.filecache import stat_cached
-
 import re
 import struct
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
+from core.ffmpeg import open_video
+from core.filecache import stat_cached
 from core.forensics.bytescan import extract_xmp, read_windows
 
 EXT_TO_FORMAT = {".mp4": "mp4", ".m4v": "mp4", ".mov": "mov", ".avi": "avi", ".mkv": "mkv", ".webm": "mkv", ".3gp": "mp4"}
@@ -41,11 +40,11 @@ def sniff_video_format(head: bytes) -> str:
 
 # ---- box walking ---------------------------------------------------------------------------------
 @stat_cached(16)
-def walk_top_level(path: Path, max_boxes: int = MAX_BOXES) -> Dict[str, Any]:
+def walk_top_level(path: Path, max_boxes: int = MAX_BOXES) -> dict[str, Any]:
     """Top-level ISOBMFF boxes read by seeking (no full-file load)."""
     size = path.stat().st_size
-    boxes: List[Dict[str, Any]] = []
-    issues: List[str] = []
+    boxes: list[dict[str, Any]] = []
+    issues: list[str] = []
     pos = 0
     with open(path, "rb") as f:
         while pos + 8 <= size and len(boxes) < max_boxes:
@@ -82,8 +81,8 @@ def read_range(path: Path, offset: int, length: int) -> bytes:
         return f.read(length)
 
 
-def _parse_children(buf: bytes, start: int, end: int, depth: int = 0) -> List[Dict[str, Any]]:
-    out: List[Dict[str, Any]] = []
+def _parse_children(buf: bytes, start: int, end: int, depth: int = 0) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
     pos = start
     while pos + 8 <= end and len(out) < 4096:
         sz, typ = struct.unpack(">I4s", buf[pos : pos + 8])
@@ -109,18 +108,18 @@ def _parse_children(buf: bytes, start: int, end: int, depth: int = 0) -> List[Di
     return out
 
 
-def _find(nodes: List[Dict[str, Any]], typ: bytes) -> Optional[Dict[str, Any]]:
+def _find(nodes: list[dict[str, Any]], typ: bytes) -> dict[str, Any] | None:
     for n in nodes:
         if n["type"] == typ:
             return n
     return None
 
 
-def _find_all(nodes: List[Dict[str, Any]], typ: bytes) -> List[Dict[str, Any]]:
+def _find_all(nodes: list[dict[str, Any]], typ: bytes) -> list[dict[str, Any]]:
     return [n for n in nodes if n["type"] == typ]
 
 
-def mac_time(seconds: int) -> Optional[datetime]:
+def mac_time(seconds: int) -> datetime | None:
     if seconds <= 0:
         return None
     try:
@@ -134,7 +133,7 @@ def _u32s(buf: bytes, start: int, count: int) -> np.ndarray:
     return np.frombuffer(buf[start : start + 4 * count], dtype=">u4").astype(np.uint64)
 
 
-def _text_from_item(buf: bytes, node: Dict[str, Any]) -> Optional[str]:
+def _text_from_item(buf: bytes, node: dict[str, Any]) -> str | None:
     # iTunes-style: <key> -> <data> (8 bytes type/locale, then text)
     data = _find(node["children"], b"data") if node["children"] else None
     if data is None and node["end"] - node["start"] >= 8 and node["type"].startswith(b"\xa9"):
@@ -150,7 +149,7 @@ def _text_from_item(buf: bytes, node: Dict[str, Any]) -> Optional[str]:
     return None
 
 
-def _collect_text(buf: bytes, nodes: List[Dict[str, Any]], out: Dict[str, str]) -> None:
+def _collect_text(buf: bytes, nodes: list[dict[str, Any]], out: dict[str, str]) -> None:
     for n in nodes:
         if n["type"] in (b"udta", b"meta"):
             _collect_text(buf, n["children"], out)
@@ -167,7 +166,7 @@ def _collect_text(buf: bytes, nodes: List[Dict[str, Any]], out: Dict[str, str]) 
                 out[n["type"].decode("latin-1")] = txt[:20000]
 
 
-def _fullbox_u32_u64(buf: bytes, ps: int, n_fields: List[str]) -> Tuple[int, ...]:
+def _fullbox_u32_u64(buf: bytes, ps: int, n_fields: list[str]) -> tuple[int, ...]:
     version = buf[ps]
     off = ps + 4
     vals = []
@@ -185,9 +184,9 @@ def _fullbox_u32_u64(buf: bytes, ps: int, n_fields: List[str]) -> Tuple[int, ...
     return tuple(vals)
 
 
-def parse_moov(buf: bytes) -> Dict[str, Any]:
+def parse_moov(buf: bytes) -> dict[str, Any]:
     """Interprets a moov payload (without its own header). Never raises; returns what could be read."""
-    out: Dict[str, Any] = {"mvhd": None, "tracks": [], "text_items": {}, "issues": []}
+    out: dict[str, Any] = {"mvhd": None, "tracks": [], "text_items": {}, "issues": []}
     try:
         top = _parse_children(buf, 0, len(buf))
         mvhd = _find(top, b"mvhd")
@@ -202,8 +201,8 @@ def parse_moov(buf: bytes) -> Dict[str, Any]:
     return out
 
 
-def _parse_track(buf: bytes, trak: Dict[str, Any]) -> Dict[str, Any]:
-    t: Dict[str, Any] = {"handler": None, "handler_name": "", "sample_entry": None, "mdhd": None, "tkhd": None,
+def _parse_track(buf: bytes, trak: dict[str, Any]) -> dict[str, Any]:
+    t: dict[str, Any] = {"handler": None, "handler_name": "", "sample_entry": None, "mdhd": None, "tkhd": None,
                          "stts": None, "ctts_negative": False, "stsz": None, "stss": None, "stco": None, "stsc": None,
                          "fiel": None, "issues": []}
     kids = trak["children"]
@@ -286,7 +285,7 @@ def _parse_track(buf: bytes, trak: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @stat_cached(16)
-def load_moov(path: Path, top: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def load_moov(path: Path, top: dict[str, Any]) -> dict[str, Any] | None:
     """Parsed moov for a file whose top-level walk is ``top`` (None if absent or too large)."""
     for b in top["boxes"]:
         if b["type"] == "moov" and b["size"] <= MOOV_LIMIT and b["offset"] + b["size"] <= top["file_size"]:
@@ -295,7 +294,7 @@ def load_moov(path: Path, top: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     return None
 
 
-def total_samples_from_stsc(stsc: np.ndarray, n_chunks: int) -> Optional[int]:
+def total_samples_from_stsc(stsc: np.ndarray, n_chunks: int) -> int | None:
     if stsc is None or len(stsc) == 0 or n_chunks <= 0:
         return None
     total = 0
@@ -311,8 +310,8 @@ _X265 = re.compile(rb"x265 \(build \d+\)[ -~]{0,400}")
 _LAVC = re.compile(rb"Lavc[0-9]+\.[0-9]+\.[0-9]+")
 
 
-def find_encoder_strings(data: bytes) -> Dict[str, str]:
-    out: Dict[str, str] = {}
+def find_encoder_strings(data: bytes) -> dict[str, str]:
+    out: dict[str, str] = {}
     for key, rx in (("x264", _X264), ("x265", _X265), ("libavcodec", _LAVC)):
         m = rx.search(data)
         if m:
@@ -321,7 +320,7 @@ def find_encoder_strings(data: bytes) -> Dict[str, str]:
 
 
 # ---- EBML (MKV / WebM) --------------------------------------------------------------------------------
-def _ebml_string_after(head: bytes, id_bytes: bytes) -> Optional[str]:
+def _ebml_string_after(head: bytes, id_bytes: bytes) -> str | None:
     i = head.find(id_bytes)
     if i == -1 or i + len(id_bytes) >= len(head):
         return None
@@ -342,7 +341,7 @@ def _ebml_string_after(head: bytes, id_bytes: bytes) -> Optional[str]:
     return head[start : start + size].decode("utf-8", errors="replace").strip("\x00 ")
 
 
-def ebml_info(head: bytes) -> Dict[str, Optional[str]]:
+def ebml_info(head: bytes) -> dict[str, str | None]:
     return {
         "doc_type": _ebml_string_after(head[:512], b"\x42\x82"),
         "muxing_app": _ebml_string_after(head, b"\x4d\x80"),
@@ -351,10 +350,10 @@ def ebml_info(head: bytes) -> Dict[str, Optional[str]]:
 
 
 # ---- text collection -----------------------------------------------------------------------------------
-def collect_text_fields(path: Path) -> Dict[str, str]:
+def collect_text_fields(path: Path) -> dict[str, str]:
     """Free-text metadata from MP4/MOV udta/ilst items and any XMP packet."""
     head, tail, _size = read_windows(path)
-    fields: Dict[str, str] = {}
+    fields: dict[str, str] = {}
     if sniff_video_format(head) in ("mp4", "mov"):
         top = walk_top_level(path)
         moov = load_moov(path, top)
@@ -368,12 +367,12 @@ def collect_text_fields(path: Path) -> Dict[str, str]:
 
 
 # ---- frame reading -------------------------------------------------------------------------------------
-def read_consecutive_gray(path: Path, n: int = 90, max_width: int = 480) -> List[np.ndarray]:
+def read_consecutive_gray(path: Path, n: int = 90, max_width: int = 480) -> list[np.ndarray]:
     """First ``n`` consecutive frames as grayscale uint8 arrays no wider than ``max_width`` (empty list on failure)."""
     import cv2
 
     cap = open_video(path)
-    frames: List[np.ndarray] = []
+    frames: list[np.ndarray] = []
     try:
         if not cap.isOpened():
             return frames
@@ -391,12 +390,12 @@ def read_consecutive_gray(path: Path, n: int = 90, max_width: int = 480) -> List
     return frames
 
 
-def read_spread_gray(path: Path, n: int = 16, max_width: int = 320) -> List[np.ndarray]:
+def read_spread_gray(path: Path, n: int = 16, max_width: int = 320) -> list[np.ndarray]:
     """Up to ``n`` evenly spaced grayscale frames across the whole clip (empty list on failure)."""
     import cv2
 
     cap = open_video(path)
-    out: List[np.ndarray] = []
+    out: list[np.ndarray] = []
     try:
         if not cap.isOpened():
             return out
@@ -430,7 +429,7 @@ def hamming64(a: int, b: int) -> int:
     return bin(int(a) ^ int(b)).count("1")
 
 
-def stream_info(path: Path) -> Dict[str, Any]:
+def stream_info(path: Path) -> dict[str, Any]:
     """fps, frame count, width, height, duration via OpenCV (zeros on failure)."""
     import cv2
 
